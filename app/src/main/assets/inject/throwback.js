@@ -1193,7 +1193,15 @@
    */
   var ATTR_REEL_STOP = 'data-tb-reelstop';
   var REELS_KEY = '__tb_reels';
-  var reels = { current: null, viewer: null };
+  var reels = { current: null, viewer: null, events: [] };
+
+  /** Reel-limit events with timestamps (last 100), read with __throwback.reelEvents() over DevTools. */
+  function reelEvent(what, extra) {
+    var e = { t: new Date().toISOString().slice(11, 23), what: what };
+    if (extra) for (var k in extra) e[k] = extra[k];
+    reels.events.push(e);
+    if (reels.events.length > 100) reels.events.shift();
+  }
 
   function reelLog() {
     var log = null;
@@ -1238,7 +1246,10 @@
     var opened = reels.viewer !== viewer || !viewer.isConnected;
     reels.current = v;
     reels.viewer = viewer;
-    if (opened) return; // the reel that was opened is free
+    if (opened) {
+      reelEvent('opened');
+      return; // the reel that was opened is free
+    }
     var now = Date.now();
     var log = reelLog();
     var cooling = log.poster && now - log.poster < rv.cooldownMs;
@@ -1250,6 +1261,7 @@
       log.limit = rv.minSwipe + Math.floor(Math.random() * (rv.maxSwipe - rv.minSwipe + 1));
     }
     log.swipes.push(now);
+    reelEvent('swipe', { n: log.swipes.length, limit: log.limit, cooling: !!cooling });
     if (cooling || log.swipes.length >= log.limit) {
       log.poster = now;
       log.swipes = [];
@@ -1271,12 +1283,14 @@
    * clicking the viewer's Close closes it every time (Instagram adds no history entry for it).
    */
   function stopReels(viewer) {
+    reelEvent('trigger');
     viewer.setAttribute(ATTR_REEL_STOP, '1');
     var vids = viewer.querySelectorAll('video');
     for (var i = 0; i < vids.length; i++) vids[i].pause();
     send({ t: 'reelLimit' });
     setTimeout(function () {
       var closed = closeReelViewer();
+      reelEvent('close', { ok: closed });
       if (!closed) {
         setTimeout(function () {
           perf.log.push({ page: 'reel-poster', viewerClosed: closeReelViewer(), retried: true });
@@ -2147,8 +2161,12 @@
     /** The app tells the page when one of its own screens (Settings, lock, pause) covers it. */
     setCovered: function (covered) {
       state.covered = !!covered;
+      reelEvent('covered', { on: !!covered });
       // Backup: when the poster goes away, a stopped viewer that is somehow still open gets closed.
       if (!covered) closeReelViewer();
+    },
+    reelEvents: function () {
+      return reels.events.slice();
     }
   };
   try {

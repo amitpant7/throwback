@@ -1,5 +1,6 @@
 package app.throwback.core
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -192,7 +193,10 @@ private fun MainScreen(
             onOpenSettings = onOpenSettings,
             backEnabled = !settingsOpen && !pauseShowing && !reelPoster,
             covered = settingsOpen || pauseShowing || lockShowing || reelPoster,
-            onReelLimit = { reelPoster = true },
+            onReelLimit = {
+                Log.d("ThrowbackApp", "reel poster shown (was showing: $reelPoster)")
+                reelPoster = true
+            },
             // While locked or paused, screen readers must not reach the feed underneath.
             modifier = if (lockShowing || pauseShowing) Modifier.clearAndSetSemantics {} else Modifier,
         )
@@ -235,7 +239,10 @@ private fun MainScreen(
 
         if (reelPoster && !lockShowing) {
             // The page has already closed Instagram's reel viewer: the poster just goes away.
-            ReelPoster(onBack = { reelPoster = false })
+            ReelPoster(onBack = {
+                Log.d("ThrowbackApp", "reel poster dismissed")
+                reelPoster = false
+            })
         }
 
         if (lockShowing) {

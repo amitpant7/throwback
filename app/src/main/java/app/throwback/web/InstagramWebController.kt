@@ -438,7 +438,10 @@ internal class InstagramWebController(
             }
             is BridgeMessage.Background -> pageBackground = m.argb
             BridgeMessage.OpenSettings -> host?.onOpenSettings()
-            BridgeMessage.ReelLimit -> host?.onReelLimit()
+            BridgeMessage.ReelLimit -> {
+                Log.d(TAG, "reel poster requested by the page")
+                host?.onReelLimit()
+            }
             null -> Unit
         }
     }

@@ -43,5 +43,5 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). In short: JDK 17, Android SDK 
 
 ## Licence
 
-[PolyForm Strict 1.0.0](LICENSE): you may read the code and use it for personal, non-commercial purposes; you may not redistribute it or publish changed versions. Earlier copies were published under GPL-3.0 for a short time on 2026-11-20. The Nunito font is under the SIL Open Font License
+[PolyForm Strict 1.0.0](LICENSE): you may read the code and use it for personal, non-commercial purposes; you may not redistribute it or publish changed versions. The Nunito font is under the SIL Open Font License
 ([docs/fonts-OFL.txt](docs/fonts-OFL.txt)).

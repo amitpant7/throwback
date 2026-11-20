@@ -167,20 +167,32 @@ internal class CallAudioLink {
 }
 
 /**
- * A short pass for when Throwback itself opens the Instagram app: the chat's call button ([Kind.CALL])
- * or "Open Instagram for 5 minutes" ([Kind.VISIT]). Ends early once the user has been in Instagram
- * and left it, so time can't be saved up; a call pass also ends once the call is running (the call
- * itself keeps Instagram allowed).
+ * A short pass for when Throwback itself opens the Instagram app (see CallInApp; how often: PassBook).
+ * Ends early once the user has been in Instagram and left it, so time can't be saved up; each kind
+ * has its own rules on top (GuardService).
  */
 internal object GuardPass {
-    /** CREATE: posting from the Instagram app ("+" / "Your story"), only its creation screens. */
-    enum class Kind { CALL, VISIT, CREATE, SETTINGS, STORY }
+    enum class Kind {
+        /** The chat's call button: ends once the call runs (the call itself keeps Instagram allowed). */
+        CALL,
 
-    /** STORY: since when the camera has been off (editing), or null while it's on. */
-    @Volatile
-    var cameraOffSince: Long? = null
+        /** "Open Instagram for 5 minutes". */
+        VISIT,
 
-    /** SETTINGS: time spent on the app's screens other than its settings (capped, see GuardService). */
+        /** "+": posting from the Instagram app, only its creation screens. */
+        CREATE,
+
+        /** "Open settings in the Instagram app": its settings screens. */
+        SETTINGS,
+
+        /** "Your story": a few minutes of Instagram, not counting time with the camera on. */
+        STORY,
+    }
+
+    /**
+     * Time that uses the pass up: SETTINGS, time on the app's screens other than its settings;
+     * STORY, time with the camera off (see GuardService).
+     */
     @Volatile
     var outsideMillis: Long = 0L
 
@@ -189,6 +201,7 @@ internal object GuardPass {
     var grantedAt: Long = 0L
         private set
 
+    /** The pass allows Instagram until then (elapsed millis); 0 when no pass runs. */
     @Volatile
     var allowUntil: Long = 0L
         private set
@@ -204,7 +217,6 @@ internal object GuardPass {
     fun grant(now: Long, durationMs: Long, kind: Kind) {
         grantedAt = now
         outsideMillis = 0L
-        cameraOffSince = null
         allowUntil = now + durationMs
         this.kind = kind
         sawInstagram = false

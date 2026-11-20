@@ -226,8 +226,9 @@ class GuardService : Service() {
 
     private suspend fun run() {
         val usm = getSystemService(UsageStatsManager::class.java) ?: return
-        val graceMillis = graceSeconds() * 1000L
         var lastPermissionCheck = 0L
+        // The rules (call grace, pass screens) are then read from memory at each check.
+        runCatching { RulesRepository.get(this).load() }
         // Back after being stopped (or killed): the Instagram app's time meanwhile counts first.
         withContext(Dispatchers.IO) { GuardHeartbeat.catchUp(this@GuardService) }
         while (scope.isActive) {
@@ -270,7 +271,7 @@ class GuardService : Service() {
                 instagramOnScreen = instagramOnScreen,
                 now = now,
                 calls = calls,
-                graceMillis = graceMillis,
+                graceMillis = rules().callGraceMillis, // read each time: a rules update applies at once
                 allowUntil = GuardPass.allowUntil,
                 coverShownAt = coverShownAt.takeIf { overlay.showing },
                 noCoverUntil = noCoverUntil,
@@ -437,12 +438,6 @@ class GuardService : Service() {
         }
     }
 
-    private suspend fun graceSeconds(): Int = try {
-        RulesRepository.get(this).let { it.rules.value ?: it.load() }.notifications?.callGraceSeconds ?: DEFAULT_CALL_GRACE_SECONDS
-    } catch (e: RuntimeException) {
-        DEFAULT_CALL_GRACE_SECONDS
-    }
-
     companion object {
         private const val TAG = "ThrowbackGuard"
         private const val POLL_MS = 500L
@@ -483,8 +478,11 @@ class GuardService : Service() {
         }
     }
 
-    /** The rules' pass settings, compiled once per rules object (not every 500 ms during a pass). */
+    /** The rules' guard and pass settings, worked out once per rules object (not every 500 ms). */
     private class GuardRules(val source: FilterRules?) {
+        /** A call is allowed this long after its notification went (`notifications.callGraceSeconds`). */
+        val callGraceMillis = (source?.notifications?.callGraceSeconds ?: DEFAULT_CALL_GRACE_SECONDS) * 1000L
+
         /** Instagram's creation and settings screens (`appCreate.screens`, `appSettings.screens`). */
         val createScreens = PassRules.screensPattern(source?.appCreate?.screens)
         val settingsScreens = PassRules.screensPattern(source?.appSettings?.screens)

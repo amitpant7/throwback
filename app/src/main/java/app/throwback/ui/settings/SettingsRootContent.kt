@@ -42,10 +42,11 @@ import app.throwback.ui.SettingsStart
 import app.throwback.ui.UiPrefs
 import app.throwback.ui.about.AboutScreen
 import app.throwback.ui.about.SupportScreen
-import app.throwback.ui.common.UiText
+import app.throwback.core.ui.UiText
 import app.throwback.ui.messages.MessagesSettingsScreen
 import app.throwback.ui.messages.MessagesWizard
 import app.throwback.ui.shortcut.ShortcutScreen
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 private val StackSaver = Saver<List<SettingsRoute>, ArrayList<String>>(
@@ -69,6 +70,10 @@ internal fun SettingsRootContent(
     val holder = rememberSaveableStateHolder()
     val snackbar = remember { SnackbarHostState() }
     var stack by rememberSaveable(startAt, stateSaver = StackSaver) { mutableStateOf(SettingsNav.initial(startAt)) }
+    // Read here, once per Settings visit: Home then has them from its first frame on every return
+    // (collected inside Home, it started from a default each time). Null for a frame while loading.
+    val homeValues by remember { combine(prefs.mindfulPause, prefs.messagesSetupDone, ::HomeValues) }
+        .collectAsStateWithLifecycle(initialValue = null)
 
     val showMessage: (String) -> Unit = { message ->
         scope.launch {
@@ -105,6 +110,7 @@ internal fun SettingsRootContent(
                     RouteContent(
                         route = current.last(),
                         prefs = prefs,
+                        homeValues = homeValues,
                         back = back,
                         push = push,
                         showMessage = showMessage,
@@ -132,6 +138,7 @@ internal fun SettingsRootContent(
 private fun RouteContent(
     route: SettingsRoute,
     prefs: UiPrefs,
+    homeValues: HomeValues?,
     back: () -> Unit,
     push: (SettingsRoute) -> Unit,
     showMessage: (String) -> Unit,
@@ -142,11 +149,14 @@ private fun RouteContent(
     val padded = Modifier.fillMaxSize().statusBarsPadding()
     when (route) {
         SettingsRoute.Home -> Box(padded) {
-            SettingsHomeScreen(
-                prefs = prefs,
-                onBack = back,
-                onOpen = push,
-            )
+            if (homeValues != null) {
+                SettingsHomeScreen(
+                    values = homeValues,
+                    prefs = prefs,
+                    onBack = back,
+                    onOpen = push,
+                )
+            }
         }
 
         // The timelimit area draws this screen (and handles its own insets).

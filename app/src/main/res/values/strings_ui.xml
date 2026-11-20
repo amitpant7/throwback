@@ -3,7 +3,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Common -->
-    <string name="ui_back">Back</string>
     <string name="ui_next">Next</string>
     <string name="ui_not_now">Not now</string>
     <string name="ui_finish">Finish</string>
@@ -49,11 +48,10 @@
     <string name="ui_removes_ads">Ads</string>
     <string name="ui_removes_note">Your feed and stories, from the people you follow. These are always on. That\'s the point.</string>
     <string name="ui_section_focus">Focus</string>
-    <string name="ui_time_limit_title">Daily time limit</string>
     <string name="ui_time_limit_sub">Lock Throwback after a set time each day</string>
     <string name="ui_pause_title">Mindful pause</string>
     <string name="ui_pause_sub">A short pause before Instagram opens</string>
-    <string name="ui_section_notifications">Connect</string>
+    <string name="ui_section_connect">Connect</string>
     <string name="ui_messages_title">Instagram</string>
     <string name="ui_messages_sub">Calls, message alerts, posting</string>
     <string name="ui_messages_value_setup">Set up</string>
@@ -128,8 +126,6 @@
     <string name="ui_also_notify">Other alerts</string>
     <string name="ui_extras_off">Off: likes, comments, followers and more</string>
     <string name="ui_extras_count">%1$d on</string>
-    <string name="ui_extras_show">Show other alerts</string>
-    <string name="ui_extras_hide">Hide other alerts</string>
     <string name="ui_notify_likes">Likes</string>
     <string name="ui_notify_comments">Comments</string>
     <string name="ui_notify_new_followers">New followers</string>
@@ -137,7 +133,6 @@
     <string name="ui_notify_live_videos">Live videos</string>
     <string name="ui_notify_footer">Everything you leave off is removed before you see it.</string>
     <string name="ui_turn_off_messages">Disconnect Instagram</string>
-    <string name="ui_messages_off_pending">Instagram disconnects tomorrow.</string>
     <string name="ui_messages_off_keep">Keep it on</string>
     <string name="ui_messages_off_scheduled">Instagram disconnects tomorrow.</string>
     <string name="ui_messages_off_cancelled">Instagram stays connected.</string>
@@ -168,22 +163,20 @@
     <string name="ui_tip_beer_line">A cold one, on you</string>
     <string name="ui_tip_rock_line">Toward a gig ticket</string>
     <string name="ui_tip_gta_line">Toward the next big game</string>
-    <!-- Placeholders until Google Play billing supplies the local prices. -->
-    <string name="ui_tip_beer_price">$3</string>
-    <string name="ui_tip_rock_price">$10</string>
-    <string name="ui_tip_gta_price">$25</string>
+    <!-- The currency, in this one place, until Google Play billing supplies the local prices. -->
+    <string name="ui_tip_currency">$</string>
+    <!-- A price: the currency, then the amount, e.g. "$3". -->
+    <string name="ui_tip_price">%1$s%2$d</string>
     <string name="ui_tip_any">Whatever you want</string>
     <string name="ui_tip_any_line">Type any amount</string>
     <string name="ui_tip_any_hint">Any amount</string>
-    <string name="ui_tip_any_button">Tip $%1$d</string>
+    <string name="ui_tip_any_button">Tip %1$s</string>
     <string name="ui_tip_any_button_empty">Tip</string>
     <string name="ui_support_fine">Paid through Google Play. Prices shown in your currency.</string>
     <string name="ui_support_how">How tips work</string>
     <string name="ui_link_source">Source code on GitHub</string>
     <string name="ui_link_privacy">Privacy policy</string>
     <string name="ui_filters_updated">Filters updated</string>
-    <string name="ui_filters_updated_unknown">—</string>
-    <string name="ui_filters_updated_unknown_description">%1$s: not known yet</string>
     <string name="ui_link_report">Report something Throwback missed</string>
     <string name="ui_disclaimer">Not affiliated with, endorsed or sponsored by Instagram or Meta. Instagram is a trademark of Meta Platforms, Inc.</string>
 
@@ -278,7 +271,4 @@
     <string name="ui_today_alerts">Instagram alerts kept away</string>
     <string name="ui_today_no_page">Counts start once the feed has been open.</string>
     <string name="ui_today_note">Counted on this phone only, reset at midnight.</string>
-    <string name="ui_today_minutes">%1$d min</string>
-    <string name="ui_today_under_minute">Under a minute</string>
-    <string name="ui_today_hours">%1$d h %2$d min</string>
 </resources>

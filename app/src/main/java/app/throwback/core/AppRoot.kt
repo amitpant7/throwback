@@ -11,8 +11,6 @@ import app.throwback.relay.CallInApp
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -62,7 +60,10 @@ import app.throwback.ui.shouldOfferInstagramPrompt
 import app.throwback.web.InstagramScreen
 import app.throwback.web.InstagramSession
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.launch
@@ -99,7 +100,7 @@ fun AppRoot(
     }
 
     // With the Instagram app connected, "+" and "Your story" open its create screen: tell the page.
-    val messagesConnected by UiPrefs.from(LocalContext.current).messagesSetupDone.collectAsStateWithLifecycle(initialValue = false)
+    val messagesConnected by remember { UiPrefs.from(app).messagesSetupDone }.collectAsStateWithLifecycle(initialValue = false)
     val featureContext = LocalContext.current.applicationContext
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(messagesConnected, lifecycleOwner) {
@@ -116,10 +117,13 @@ fun AppRoot(
     }
 
     // A Messages & calls turn-off scheduled with the PIN is due (a new day): turn it off now.
-    val limitView = GuardOffApi.view(app.timeLimit)?.collectAsStateWithLifecycle()?.value
+    // Only this flag: the whole view changes every second while a limit runs, recomposing AppRoot.
+    val guardOffDue by remember {
+        GuardOffApi.view(app.timeLimit)?.map { it.guardOffDue }?.distinctUntilChanged() ?: flowOf(false)
+    }.collectAsStateWithLifecycle(initialValue = false)
     val appContext = LocalContext.current.applicationContext
-    LaunchedEffect(limitView?.guardOffDue) {
-        if (limitView?.guardOffDue == true) {
+    LaunchedEffect(guardOffDue) {
+        if (guardOffDue) {
             UiPrefs.from(appContext).setMessagesSetupDone(false)
             GuardOffApi.handled(app.timeLimit)
         }
@@ -157,9 +161,14 @@ fun AppRoot(
                 todayScreen = { onClose -> TodayRoute(app.timeLimit, onClose) },
                 messagesOff = remember {
                     MessagesOffHooks(
+                        // Mapped and distinct, so the screen doesn't recompose with every tick of the view.
                         state = {
-                            val v = GuardOffApi.view(app.timeLimit)?.collectAsStateWithLifecycle()?.value
-                            MessagesOffState(limitOn = v?.limitMinutes != null, pendingDate = v?.pendingGuardOff)
+                            remember {
+                                GuardOffApi.view(app.timeLimit)
+                                    ?.map { MessagesOffState(limitOn = it.limitMinutes != null, pendingDate = it.pendingGuardOff) }
+                                    ?.distinctUntilChanged()
+                                    ?: flowOf(MessagesOffState())
+                            }.collectAsStateWithLifecycle(initialValue = MessagesOffState()).value
                         },
                         cancel = { GuardOffApi.cancel(app.timeLimit) },
                         pinScreen = { onScheduled, onBack -> GuardOffPinScreen(app.timeLimit, onScheduled, onBack) },
@@ -188,6 +197,9 @@ private fun MainScreen(
     // null while loading, so the feed never flashes for a frame before the pause screen.
     val mindfulPause by app.uiPreferences.mindfulPause.collectAsStateWithLifecycle(initialValue = null)
     var pauseDone by rememberSaveable { mutableStateOf(false) }
+    // Opening Settings ends the pause for this launch. It's a pause before Instagram: opened straight
+    // into Settings (the "Throwback settings" shortcut, a notification), it would only run unseen.
+    var pauseSkipped by rememberSaveable { mutableStateOf(false) }
     var mode by rememberSaveable { mutableStateOf(WebMode.FULL) }
     var path by remember { mutableStateOf("/") }
     val loggedIn by InstagramSession.loggedIn.collectAsStateWithLifecycle()
@@ -213,6 +225,7 @@ private fun MainScreen(
     }
     LaunchedEffect(settingsOpen) {
         if (settingsOpen) {
+            pauseSkipped = true
             markSettingsHintShown(context)
             settingsHint = false
         }
@@ -243,7 +256,7 @@ private fun MainScreen(
             pauseOverdue = true
         }
     }
-    val pauseShowing = mindfulPause == true && !(pauseDone && (pageShown || pauseOverdue)) && deepLink == null
+    val pauseShowing = mindfulPause == true && !pauseSkipped && !(pauseDone && (pageShown || pauseOverdue)) && deepLink == null
     val onInstagram = mindfulPause != null && !pauseShowing && !settingsOpen
     var resumed by remember { mutableStateOf(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { resumed = true }
@@ -284,7 +297,7 @@ private fun MainScreen(
             backEnabled = !settingsOpen && !pauseShowing && !reelPoster,
             covered = settingsOpen || pauseShowing || lockShowing || reelPoster,
             onReelLimit = { reelPoster = true },
-            // A calm, positive moment: after a week of use, Google Play's rating card (asked once).
+            // A calm, positive moment: after a month (30 days, 10 days of use), Google Play's rating card, asked once.
             onCaughtUp = { (context as? android.app.Activity)?.let { RateAsk.onGoodMoment(it) } },
             onCreateInApp = { story ->
                 if (story) {
@@ -316,12 +329,13 @@ private fun MainScreen(
                     Toast.makeText(context, R.string.create_in_app_failed, Toast.LENGTH_LONG).show()
                 }
             },
-            // While locked or paused, screen readers must not reach the feed underneath.
-            modifier = if (lockShowing || pauseShowing) Modifier.clearAndSetSemantics {} else Modifier,
+            // While locked, paused or showing the reel poster, screen readers must not reach the feed underneath.
+            modifier = if (lockShowing || pauseShowing || reelPoster) Modifier.clearAndSetSemantics {} else Modifier,
         )
 
-        // No Throwback button on the feed (owner's decision): Settings opens from the app icon's
-        // long-press shortcut. Only the time-limit chip shows, top-centre, on the logged-in home feed.
+        // No Throwback button on the feed (owner's decision): Settings opens from the page (profile icon,
+        // Instagram's settings page, long-press on Home) and the app icon's long-press shortcut
+        // (DECISIONS 33a). Only the time-limit chip shows, top-centre, on the logged-in home feed.
         val onHomeFeed = path == "/" || path.isEmpty()
         if (loggedIn && onHomeFeed && mode == WebMode.FULL && !pauseShowing) {
             TimeRemainingChip(timeLimit, Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 10.dp))
@@ -334,13 +348,16 @@ private fun MainScreen(
             )
         }
 
-        if (offerInstagramPrompt && !lockShowing && !pauseShowing) {
+        // The layers below Settings leave system Back to it (backEnabled): Android gives Back to the
+        // handler added last, and a layer can appear while Settings is open (the lock engaging).
+        if (offerInstagramPrompt && !lockShowing && !pauseShowing && !settingsOpen) {
             InstagramAppPrompt(
                 onOpenMessagesSetup = {
                     offerInstagramPrompt = false
                     onOpenMessagesSetup()
                 },
                 onDone = { offerInstagramPrompt = false },
+                backEnabled = !settingsOpen && !lockShowing,
             )
         }
 
@@ -358,7 +375,7 @@ private fun MainScreen(
 
         if (reelPoster && !lockShowing) {
             // The page has already closed Instagram's reel viewer: the poster just goes away.
-            ReelPoster(onBack = { reelPoster = false })
+            ReelPoster(onBack = { reelPoster = false }, backEnabled = !settingsOpen && !lockShowing)
         }
 
         if (lockShowing) {
@@ -366,22 +383,14 @@ private fun MainScreen(
                 controller = timeLimit,
                 onOpenMessagesOnly = { mode = WebMode.MESSAGES_ONLY },
                 onCloseApp = onCloseApp,
+                backEnabled = !settingsOpen,
             )
         }
 
         // On top of Instagram, which already loads underneath: the feed is ready when the pause ends.
         if (pauseShowing) {
-            // Taps on the pause's empty areas must not reach the page loading underneath.
-            Box(
-                // A plain click handler takes the touches; a consume-everything filter cancelled taps
-                // on the pause's own buttons (a finger always moves a little).
-                Modifier.fillMaxSize().clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) {},
-            ) {
-                MindfulPauseScreen(onContinue = { pauseDone = true }, onNotNow = onCloseApp)
-            }
+            // The pause keeps its touches from reaching the page loading underneath.
+            MindfulPauseScreen(onContinue = { pauseDone = true }, onBack = onCloseApp, backEnabled = !settingsOpen)
         }
     }
 }

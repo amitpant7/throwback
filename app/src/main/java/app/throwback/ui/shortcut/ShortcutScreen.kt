@@ -11,6 +11,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -57,9 +58,11 @@ import androidx.core.graphics.drawable.IconCompat
 import app.throwback.MainActivity
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.ui.common.PrimaryButton
-import app.throwback.ui.common.TopBar
-import app.throwback.ui.common.UiText
+import app.throwback.core.ui.SectionLabel
+import app.throwback.core.ui.TbButton
+import app.throwback.core.ui.TbCard
+import app.throwback.core.ui.TbTopBar
+import app.throwback.core.ui.UiText
 
 /** Icon choices for the pinned shortcut (DECISIONS.md #31). */
 internal enum class ShortcutStyle(
@@ -77,9 +80,11 @@ internal object ShortcutLabel {
     /** Launchers truncate long labels anyway; the platform recommends at most 25 characters. */
     const val MAX_LENGTH = 25
 
+    private val WHITESPACE = Regex("\\s+")
+
     /** What the shortcut will be called: trimmed, never blank, at most [MAX_LENGTH] characters. */
     fun sanitize(input: String, fallback: String): String {
-        val cleaned = input.replace(Regex("\\s+"), " ").trim()
+        val cleaned = input.replace(WHITESPACE, " ").trim()
         return cleaned.ifEmpty { fallback }.take(MAX_LENGTH).trim()
     }
 }
@@ -119,7 +124,7 @@ internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
     val unsupported = stringResource(R.string.ui_shortcut_unsupported)
 
     Column(Modifier.fillMaxSize().navigationBarsPadding().imePadding()) {
-        TopBar(stringResource(R.string.ui_shortcut_title), onBack = onBack)
+        TbTopBar(stringResource(R.string.ui_shortcut_title), onBack = onBack)
         Column(
             Modifier
                 .weight(1f)
@@ -127,14 +132,11 @@ internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                 .padding(start = 20.dp, end = 20.dp, top = 8.dp),
         ) {
             // Preview
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(colors.surface)
-                    .padding(vertical = 28.dp, horizontal = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+            TbCard(
+                radius = 20.dp,
+                contentPadding = PaddingValues(vertical = 28.dp, horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Image(
                     painter = painterResource(style.preview),
@@ -146,7 +148,7 @@ internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                 Text(stringResource(R.string.ui_shortcut_preview), style = UiText.fine, color = colors.muted)
             }
 
-            FieldLabel(stringResource(R.string.ui_shortcut_name_label))
+            SectionLabel(stringResource(R.string.ui_shortcut_name_label))
             val nameLabel = stringResource(R.string.ui_shortcut_name_label)
             BasicTextField(
                 value = name,
@@ -173,7 +175,7 @@ internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                 },
             )
 
-            FieldLabel(stringResource(R.string.ui_shortcut_icon_label))
+            SectionLabel(stringResource(R.string.ui_shortcut_icon_label))
             Row(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 ShortcutStyle.entries.forEach { option ->
                     IconOption(option, selected = option == style, onSelect = { style = option })
@@ -187,7 +189,7 @@ internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
             )
             Spacer(Modifier.height(20.dp))
         }
-        PrimaryButton(
+        TbButton(
             stringResource(R.string.ui_shortcut_add),
             onClick = {
                 focus.clearFocus()
@@ -199,16 +201,6 @@ internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 28.dp),
         )
     }
-}
-
-@Composable
-private fun FieldLabel(text: String) {
-    Text(
-        text,
-        style = UiText.section,
-        color = ThrowbackTheme.colors.muted,
-        modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 22.dp, bottom = 8.dp),
-    )
 }
 
 @Composable

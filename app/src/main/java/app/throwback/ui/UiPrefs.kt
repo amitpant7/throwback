@@ -100,7 +100,16 @@ internal class UiPrefs(private val store: DataStore<Preferences>) : UiPreference
         val MESSAGES_SETUP_DONE = booleanPreferencesKey("messages_setup_done")
         val SETTINGS_HINT_SHOWN = booleanPreferencesKey("settings_hint_shown")
 
-        /** Cheap wrapper around the process-wide DataStore; safe to call from any screen. */
-        fun from(context: Context): UiPrefs = UiPrefs(context.applicationContext.uiPrefsDataStore)
+        @Volatile
+        private var instance: UiPrefs? = null
+
+        /**
+         * The process-wide instance, so its flows are the same objects on every call (a screen can
+         * collect them without remembering them); safe to call from any screen.
+         */
+        fun from(context: Context): UiPrefs =
+            instance ?: synchronized(this) {
+                instance ?: UiPrefs(context.applicationContext.uiPrefsDataStore).also { instance = it }
+            }
     }
 }

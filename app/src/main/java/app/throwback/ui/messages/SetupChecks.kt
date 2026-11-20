@@ -8,16 +8,16 @@ import android.os.Build
 import android.os.Process
 import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
+import app.throwback.relay.InstagramPackages
 
 /** The real Instagram app (and Lite), which the manifest's <queries> lets us see. */
 internal object InstagramApp {
-    const val PACKAGE = "com.instagram.android"
-    const val LITE_PACKAGE = "com.instagram.lite"
-    private val PACKAGES = listOf(PACKAGE, LITE_PACKAGE)
+    /** The full app, for its Play Store page. */
+    const val PACKAGE = InstagramPackages.APP
 
     /** The installed (and enabled) Instagram package, preferring the full app, or null. */
     fun installedPackage(context: Context): String? =
-        PACKAGES.firstOrNull { isInstalled(context.packageManager, it) }
+        InstagramPackages.ALL.firstOrNull { isInstalled(context.packageManager, it) }
 
     private fun isInstalled(pm: PackageManager, packageName: String): Boolean = try {
         val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -44,7 +44,7 @@ internal data class MessagesSetupState(
 
     val permissionsGranted: Int get() = listOf(notificationAccess, usageAccess, drawOverlays).count { it }
 
-    /** The three special permissions of the wizard's step 3, plus Android 13's notification permission. */
+    /** The three special permissions of the wizard's permissions step, plus Android 13's notification permission. */
     val permissionsMissing: Int get() = PERMISSION_COUNT - permissionsGranted + (if (postNotifications) 0 else 1)
 
     val status: MessagesStatus

@@ -25,12 +25,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,19 +40,17 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.core.ui.TbButton
+import app.throwback.core.ui.TbButtonStyle
+import app.throwback.core.ui.TbIcon
+import app.throwback.core.ui.ThrowbackLogo
+import app.throwback.core.ui.UiText
 import app.throwback.ui.UiPrefs
-import app.throwback.ui.common.LineIcon
-import app.throwback.ui.common.PrimaryButton
-import app.throwback.ui.common.QuietButton
 import app.throwback.ui.common.SystemScreens
-import app.throwback.ui.common.ThrowbackLogo
-import app.throwback.ui.common.UiText
 import app.throwback.ui.messages.InstagramApp
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 
 /**
  * First launch. The "Instagram app found" choice is shown after login (InstagramAppPromptContent).
@@ -79,12 +72,12 @@ internal suspend fun shouldOfferInstagramPrompt(context: Context): Boolean =
 
 /** The "You still have the Instagram app" choice, shown once after the first login. */
 @Composable
-internal fun InstagramAppPromptContent(onOpenMessagesSetup: () -> Unit, onDone: () -> Unit) {
+internal fun InstagramAppPromptContent(onOpenMessagesSetup: () -> Unit, onDone: () -> Unit, backEnabled: Boolean = true) {
     val context = LocalContext.current
     val prefs = remember { UiPrefs.from(context) }
     val found = remember { InstagramApp.installedPackage(context) }
     LaunchedEffect(Unit) { prefs.write { setInstagramPromptShown() } }
-    BackHandler(onBack = onDone)
+    BackHandler(enabled = backEnabled, onBack = onDone)
     InstagramFoundScreen(
         onKeep = onOpenMessagesSetup,
         onRemove = {
@@ -131,7 +124,7 @@ private fun WelcomeScreen(onLogIn: () -> Unit) {
             FeatureGrid()
             Spacer(Modifier.height(24.dp))
         }
-        PrimaryButton(stringResource(R.string.ui_onb_login), onClick = onLogIn)
+        TbButton(stringResource(R.string.ui_onb_login), onClick = onLogIn)
         Text(
             stringResource(R.string.ui_onb_note),
             style = UiText.fine,
@@ -171,8 +164,8 @@ private fun FeatureItem(label: String, kept: Boolean, modifier: Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        LineIcon(
-            if (kept) R.drawable.ui_ic_check else R.drawable.ui_ic_blocked,
+        TbIcon(
+            if (kept) R.drawable.ic_check else R.drawable.ic_blocked,
             tint = if (kept) colors.accentText else colors.muted,
         )
         Text(label, style = UiText.body14, color = if (kept) colors.text else colors.muted)
@@ -205,14 +198,14 @@ private fun InstagramFoundScreen(onKeep: () -> Unit, onRemove: () -> Unit, onLat
             )
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 ChoiceCard(
-                    icon = R.drawable.ui_ic_phone,
+                    icon = R.drawable.ic_phone,
                     title = stringResource(R.string.ui_found_keep_title),
                     body = stringResource(R.string.ui_found_keep_body),
                     accentBadge = true,
                     onClick = onKeep,
                 )
                 ChoiceCard(
-                    icon = R.drawable.ui_ic_trash,
+                    icon = R.drawable.ic_trash,
                     title = stringResource(R.string.ui_found_remove_title),
                     body = stringResource(R.string.ui_found_remove_body),
                     accentBadge = false,
@@ -221,7 +214,12 @@ private fun InstagramFoundScreen(onKeep: () -> Unit, onRemove: () -> Unit, onLat
             }
             Spacer(Modifier.height(16.dp))
         }
-        QuietButton(stringResource(R.string.ui_found_later), onClick = onLater, color = colors.text, style = UiText.button.copy(fontWeight = FontWeight.Bold))
+        TbButton(
+            stringResource(R.string.ui_found_later),
+            onClick = onLater,
+            style = TbButtonStyle.Plain,
+            textStyle = UiText.button.copy(fontWeight = FontWeight.Bold),
+        )
         Text(
             stringResource(R.string.ui_found_footer),
             style = UiText.sub,
@@ -232,16 +230,16 @@ private fun InstagramFoundScreen(onKeep: () -> Unit, onRemove: () -> Unit, onLat
     }
 }
 
-/** 64dp app tile with a "!" badge at its top-right corner. */
+/** 64dp app tile with a "!" badge at its top-right corner; one image for TalkBack (not "…, !"). */
 @Composable
 private fun FoundIcon() {
     val colors = ThrowbackTheme.colors
     val description = stringResource(R.string.ui_found_icon_description)
-    Box(Modifier.size(64.dp).semantics { contentDescription = description }) {
+    Box(Modifier.size(64.dp).clearAndSetSemantics { contentDescription = description }) {
         Box(
             Modifier.size(64.dp).clip(RoundedCornerShape(18.dp)).background(colors.surface2),
             contentAlignment = Alignment.Center,
-        ) { LineIcon(R.drawable.ui_ic_camera_app, size = 30.dp) }
+        ) { TbIcon(R.drawable.ic_camera_app, size = 30.dp) }
         Box(
             Modifier
                 .align(Alignment.TopEnd)
@@ -251,7 +249,7 @@ private fun FoundIcon() {
                 .background(colors.accent),
             contentAlignment = Alignment.Center,
         ) {
-            Text("!", color = colors.onAccent, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
+            Text("!", style = UiText.row.copy(fontWeight = FontWeight.ExtraBold), color = colors.onAccent)
         }
     }
 }
@@ -283,7 +281,7 @@ private fun ChoiceCard(
                     .background(if (accentBadge) colors.accent else colors.surface2),
                 contentAlignment = Alignment.Center,
             ) {
-                LineIcon(icon, tint = if (accentBadge) colors.onAccent else colors.text)
+                TbIcon(icon, tint = if (accentBadge) colors.onAccent else colors.text)
             }
             Column(Modifier.weight(1f)) {
                 Text(title, style = UiText.rowStrong.copy(fontWeight = FontWeight.Bold), color = colors.text)

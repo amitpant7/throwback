@@ -1,49 +1,43 @@
 package app.throwback.ui.messages
 
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.semantics.Role
-import androidx.compose.foundation.clickable
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.platform.LocalContext
-import app.throwback.ui.common.SecondaryButton
-import app.throwback.relay.CallInApp
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.core.ui.CardDivider
+import app.throwback.core.ui.ExpandableRow
+import app.throwback.core.ui.PillButton
+import app.throwback.core.ui.SectionLabel
+import app.throwback.core.ui.SettingsScaffold
+import app.throwback.core.ui.SwitchRow
+import app.throwback.core.ui.TbButton
+import app.throwback.core.ui.TbButtonStyle
+import app.throwback.core.ui.TbCard
+import app.throwback.core.ui.TbIcon
+import app.throwback.core.ui.UiText
+import app.throwback.relay.CallInApp
 import app.throwback.ui.ExtraNotification
 import app.throwback.ui.UiPrefs
-import app.throwback.ui.common.CardDivider
-import app.throwback.ui.common.LineIcon
-import app.throwback.ui.common.PillButton
-import app.throwback.ui.common.QuietButton
-import app.throwback.ui.common.SectionLabel
-import app.throwback.ui.common.SwitchRow
-import app.throwback.ui.common.TbCard
-import app.throwback.ui.common.TopBar
-import app.throwback.ui.common.UiText
 import app.throwback.ui.common.rememberCheckedOnResume
 
 /** Labels for the "Also notify me about" toggles, in the order shown. */
@@ -72,123 +66,103 @@ internal fun MessagesSettingsScreen(
     val state by rememberCheckedOnResume { MessagesSetupState.read(it) }
     val extras by prefs.extraNotifications.collectAsStateWithLifecycle(initialValue = emptySet())
 
-    Column(Modifier.fillMaxSize().background(colors.bg)) {
-        TopBar(stringResource(R.string.ui_messages_title), onBack = onBack)
-        Column(
-            Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .navigationBarsPadding(),
-        ) {
-            StatusCard(state.status, onFinishSetup)
+    SettingsScaffold(stringResource(R.string.ui_messages_title), onBack = onBack) {
+        StatusCard(state.status, onFinishSetup)
 
-            SectionLabel(stringResource(R.string.ui_always_on))
-            TbCard {
-                AlwaysOnRow(R.drawable.ui_ic_chat, R.string.ui_always_messages)
-                CardDivider()
-                AlwaysOnRow(R.drawable.ui_ic_phone, R.string.ui_always_calls)
-                CardDivider()
-                AlwaysOnRow(R.drawable.ui_ic_camera_app, R.string.ui_always_posting)
-            }
+        SectionLabel(stringResource(R.string.ui_always_on))
+        TbCard {
+            AlwaysOnRow(R.drawable.ic_chat, R.string.ui_always_messages)
+            CardDivider()
+            AlwaysOnRow(R.drawable.ic_phone, R.string.ui_always_calls)
+            CardDivider()
+            AlwaysOnRow(R.drawable.ic_camera_app, R.string.ui_always_posting)
+        }
 
-            // Other alerts: one row (owner: the five switches took a lot of room); tap to show them.
-            var extrasOpen by rememberSaveable { mutableStateOf(false) }
-            val onLabels = ExtraNotification.entries.filter { it in extras }.map { stringResource(it.label()) }
-            val summary = when {
-                onLabels.isEmpty() -> stringResource(R.string.ui_extras_off)
-                onLabels.size <= 2 -> onLabels.joinToString(", ")
-                else -> stringResource(R.string.ui_extras_count, onLabels.size)
-            }
-            TbCard(Modifier.padding(top = 16.dp)) {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 56.dp)
-                        .clickable(role = Role.Button, onClickLabel = stringResource(if (extrasOpen) R.string.ui_extras_hide else R.string.ui_extras_show)) {
-                            extrasOpen = !extrasOpen
-                        }
-                        .padding(horizontal = 18.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
-                    LineIcon(R.drawable.ui_ic_bell)
-                    Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.ui_also_notify), style = UiText.row, color = colors.text)
-                        Text(summary, style = UiText.sub, color = colors.muted)
-                    }
-                    LineIcon(
-                        R.drawable.ui_ic_chevron,
-                        size = 18.dp,
-                        tint = colors.muted,
-                        modifier = Modifier.rotate(if (extrasOpen) 270f else 90f),
+        // Other alerts: one row (owner: the five switches took a lot of room); tap to show them.
+        var extrasOpen by rememberSaveable { mutableStateOf(false) }
+        val onLabels = ExtraNotification.entries.filter { it in extras }.map { stringResource(it.label()) }
+        val summary = when {
+            onLabels.isEmpty() -> stringResource(R.string.ui_extras_off)
+            onLabels.size <= 2 -> onLabels.joinToString(", ")
+            else -> stringResource(R.string.ui_extras_count, onLabels.size)
+        }
+        TbCard(Modifier.padding(top = 16.dp)) {
+            ExpandableRow(
+                title = stringResource(R.string.ui_also_notify),
+                summary = summary,
+                expanded = extrasOpen,
+                onToggle = { extrasOpen = !extrasOpen },
+                icon = R.drawable.ic_bell,
+            )
+            if (extrasOpen) {
+                ExtraNotification.entries.forEach { type ->
+                    CardDivider()
+                    SwitchRow(
+                        title = stringResource(type.label()),
+                        checked = type in extras,
+                        onCheckedChange = { on -> prefs.write { setExtraNotification(type, on) } },
+                        minHeight = 52.dp,
+                        titleStyle = UiText.row15,
                     )
                 }
-                if (extrasOpen) {
-                    ExtraNotification.entries.forEach { type ->
-                        CardDivider()
-                        SwitchRow(
-                            title = stringResource(type.label()),
-                            checked = type in extras,
-                            onCheckedChange = { on -> prefs.write { setExtraNotification(type, on) } },
-                            minHeight = 52.dp,
-                            titleStyle = UiText.row15,
-                        )
-                    }
-                    Text(
-                        stringResource(R.string.ui_notify_footer),
-                        style = UiText.sub,
-                        color = colors.muted,
-                        modifier = Modifier.padding(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 14.dp),
-                    )
-                }
-            }
-
-            QuietTipCard(showMessage = showMessage, modifier = Modifier.padding(top = 18.dp))
-
-            // A deliberate, short way into the real app (switching accounts, its own settings).
-            val notInstalled = stringResource(R.string.ui_instagram_not_installed_message)
-            val context = LocalContext.current
-            TbCard(Modifier.padding(top = 16.dp)) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.ui_visit_title), style = UiText.rowStrong, color = colors.text)
-                    Text(stringResource(R.string.ui_visit_body), style = UiText.sub, color = colors.muted)
-                    SecondaryButton(
-                        stringResource(R.string.ui_visit_button),
-                        onClick = {
-                            when (CallInApp.visit(context)) {
-                                CallInApp.VisitResult.OPENED -> Unit
-                                CallInApp.VisitResult.NO_APP -> showMessage(notInstalled)
-                                CallInApp.VisitResult.USED_TODAY -> showMessage(context.getString(R.string.ui_visit_used))
-                                CallInApp.VisitResult.LOCKED -> showMessage(context.getString(R.string.ui_visit_locked))
-                            }
-                        },
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-                }
-            }
-
-            if (pendingOff != null) {
                 Text(
-                    stringResource(R.string.ui_messages_off_pending),
-                    style = UiText.body14,
+                    stringResource(R.string.ui_notify_footer),
+                    style = UiText.sub,
                     color = colors.muted,
-                    modifier = Modifier.padding(start = 6.dp, top = 18.dp),
-                )
-                QuietButton(
-                    stringResource(R.string.ui_messages_off_keep),
-                    onClick = onCancelPendingOff,
-                    style = UiText.body14,
-                    modifier = Modifier.padding(bottom = 16.dp),
-                )
-            } else {
-                QuietButton(
-                    stringResource(R.string.ui_turn_off_messages),
-                    onClick = onTurnOff,
-                    style = UiText.body14,
-                    modifier = Modifier.padding(top = 18.dp, bottom = 16.dp),
+                    modifier = Modifier.padding(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 14.dp),
                 )
             }
+        }
+
+        QuietTipCard(showMessage = showMessage, modifier = Modifier.padding(top = 18.dp))
+
+        // A deliberate, short way into the real app (switching accounts, its own settings).
+        val notInstalled = stringResource(R.string.ui_instagram_not_installed_message)
+        val context = LocalContext.current
+        TbCard(
+            Modifier.padding(top = 16.dp),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(stringResource(R.string.ui_visit_title), style = UiText.rowStrong, color = colors.text)
+            Text(stringResource(R.string.ui_visit_body), style = UiText.sub, color = colors.muted)
+            TbButton(
+                stringResource(R.string.ui_visit_button),
+                onClick = {
+                    when (CallInApp.visit(context)) {
+                        CallInApp.VisitResult.OPENED -> Unit
+                        CallInApp.VisitResult.NO_APP -> showMessage(notInstalled)
+                        CallInApp.VisitResult.USED_TODAY -> showMessage(context.getString(R.string.ui_visit_used))
+                        CallInApp.VisitResult.LOCKED -> showMessage(context.getString(R.string.ui_visit_locked))
+                    }
+                },
+                modifier = Modifier.padding(top = 4.dp),
+                style = TbButtonStyle.Secondary,
+            )
+        }
+
+        if (pendingOff != null) {
+            Text(
+                stringResource(R.string.ui_messages_off_scheduled),
+                style = UiText.body14,
+                color = colors.muted,
+                modifier = Modifier.padding(start = 6.dp, top = 18.dp),
+            )
+            TbButton(
+                stringResource(R.string.ui_messages_off_keep),
+                onClick = onCancelPendingOff,
+                modifier = Modifier.padding(bottom = 16.dp),
+                style = TbButtonStyle.Quiet,
+                textStyle = UiText.body14,
+            )
+        } else {
+            TbButton(
+                stringResource(R.string.ui_turn_off_messages),
+                onClick = onTurnOff,
+                modifier = Modifier.padding(top = 18.dp, bottom = 16.dp),
+                style = TbButtonStyle.Quiet,
+                textStyle = UiText.body14,
+            )
         }
     }
 }
@@ -214,8 +188,8 @@ private fun StatusCard(status: MessagesStatus, onFinishSetup: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            LineIcon(
-                if (ready) R.drawable.ui_ic_shield_check else R.drawable.ui_ic_shield,
+            TbIcon(
+                if (ready) R.drawable.ic_shield_check else R.drawable.ic_shield,
                 size = 26.dp,
                 tint = if (ready) colors.ok else colors.muted,
             )
@@ -236,10 +210,10 @@ private fun AlwaysOnRow(@DrawableRes icon: Int, @StringRes label: Int) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        LineIcon(icon, size = 20.dp)
+        TbIcon(icon, size = 20.dp)
         Text(stringResource(label), style = UiText.row15, color = colors.text, modifier = Modifier.weight(1f))
-        LineIcon(
-            R.drawable.ui_ic_check,
+        TbIcon(
+            R.drawable.ic_check,
             size = 20.dp,
             tint = colors.ok,
             contentDescription = stringResource(R.string.ui_always_on_description),

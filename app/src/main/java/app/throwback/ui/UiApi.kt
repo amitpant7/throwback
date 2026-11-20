@@ -30,10 +30,16 @@ fun OnboardingFlow(onFinished: () -> Unit) {
 suspend fun shouldOfferInstagramPrompt(context: Context): Boolean =
     app.throwback.ui.onboarding.shouldOfferInstagramPrompt(context)
 
+/*
+ * The layers drawn over Instagram (prompt, poster, pause) take system Back while they show.
+ * backEnabled = false leaves it to the screen on top: Android gives Back to the handler added last,
+ * so a layer that appears while Settings is open would otherwise take Back from Settings.
+ */
+
 /** "You still have the Instagram app": keep it for calls & messages, remove it, or decide later. Shown after login. */
 @Composable
-fun InstagramAppPrompt(onOpenMessagesSetup: () -> Unit, onDone: () -> Unit) {
-    InstagramAppPromptContent(onOpenMessagesSetup = onOpenMessagesSetup, onDone = onDone)
+fun InstagramAppPrompt(onOpenMessagesSetup: () -> Unit, onDone: () -> Unit, backEnabled: Boolean = true) {
+    InstagramAppPromptContent(onOpenMessagesSetup = onOpenMessagesSetup, onDone = onDone, backEnabled = backEnabled)
 }
 
 enum class SettingsStart { Home, MessagesAndCalls, Support }
@@ -63,10 +69,13 @@ fun TodayScreen(stats: app.throwback.ui.today.TodayStats, onBack: () -> Unit) {
     app.throwback.ui.today.TodayScreen(stats, onBack)
 }
 
-/** Optional mindful pause before Instagram loads: a short line and a 3-second countdown. */
+/**
+ * Optional mindful pause before Instagram loads: a short line and a 4-second countdown, no buttons.
+ * [onContinue] when the time is up; [onBack] is system Back (it leaves the app).
+ */
 @Composable
-fun MindfulPauseScreen(onContinue: () -> Unit, onNotNow: () -> Unit) {
-    MindfulPauseContent(onContinue = onContinue, onNotNow = onNotNow)
+fun MindfulPauseScreen(onContinue: () -> Unit, onBack: () -> Unit, backEnabled: Boolean = true) {
+    MindfulPauseContent(onContinue = onContinue, onBack = onBack, backEnabled = backEnabled)
 }
 
 /** Whether the one-time "long-press Home for Throwback's settings" hint is still to be shown. */
@@ -85,6 +94,6 @@ fun SettingsHint(onDone: () -> Unit, modifier: Modifier = Modifier) {
 
 /** Full-screen poster after the reel allowance in Instagram's swipe viewer; [onBack] returns to the chat. */
 @Composable
-fun ReelPoster(onBack: () -> Unit) {
-    app.throwback.ui.reels.ReelPosterContent(onBack = onBack)
+fun ReelPoster(onBack: () -> Unit, backEnabled: Boolean = true) {
+    app.throwback.ui.reels.ReelPosterContent(onBack = onBack, backEnabled = backEnabled)
 }

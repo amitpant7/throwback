@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings of the shared UI kit (core/ui), used by the ui and timelimit screens. -->
+<resources>
+    <string name="back">Back</string>
+
+    <!-- A value that isn't known yet, and how TalkBack reads it. -->
+    <string name="value_unknown">—</string>
+    <string name="value_unknown_description">not known yet</string>
+    <!-- TalkBack for a row with a title and a value, e.g. "Filters updated: 20 Nov 2026". -->
+    <string name="label_value">%1$s: %2$s</string>
+
+    <!-- A row that shows or hides more below it: what a tap does, and its state, for TalkBack. -->
+    <string name="expand">Expand</string>
+    <string name="collapse">Collapse</string>
+    <string name="expanded">Expanded</string>
+    <string name="collapsed">Collapsed</string>
+
+    <!-- Durations (core/ui/Durations.kt). Compact ones are for countdowns in large type. -->
+    <string name="duration_min_sec">%1$d:%2$02d</string>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="duration_under_a_minute">Under a minute</string>
+    <string name="duration_minutes_short">%1$dm</string>
+    <string name="duration_hours_minutes_short">%1$dh %2$dm</string>
+    <string name="duration_days_hours_short">%1$dd %2$dh</string>
+</resources>

@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
@@ -26,10 +25,9 @@ import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.ui.UiPrefs
-import app.throwback.ui.common.PillButton
-import app.throwback.ui.common.UiText
+import app.throwback.core.ui.PillButton
+import app.throwback.core.ui.UiText
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 
 /** Whether the one-time settings hint is still to be shown. */
 internal suspend fun shouldShowSettingsHint(context: Context): Boolean =
@@ -48,9 +46,10 @@ internal suspend fun markSettingsHintShown(context: Context) {
 internal fun SettingsHintContent(onDone: () -> Unit, modifier: Modifier = Modifier) {
     val colors = ThrowbackTheme.colors
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val done: () -> Unit = {
-        scope.launch { markSettingsHintShown(context) }
+        // Process-wide write: onDone removes this card, and a scope of its own would be cancelled
+        // with it, possibly before the write.
+        UiPrefs.from(context).write { setSettingsHintShown() }
         onDone()
     }
     BoxWithConstraints(modifier.fillMaxWidth()) {

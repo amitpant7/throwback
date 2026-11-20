@@ -1,8 +1,10 @@
 package app.throwback.web
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.ConnectivityManager
@@ -296,6 +298,7 @@ internal class InstagramWebController(
 
     private fun openExternally(url: String) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)
+        if (!context.isActivity()) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         try {
             context.startActivity(intent)
         } catch (e: ActivityNotFoundException) {
@@ -303,6 +306,15 @@ internal class InstagramWebController(
         } catch (e: SecurityException) {
             showNotice(WebNotice.NO_APP)
         }
+    }
+
+    private fun Context.isActivity(): Boolean {
+        var c: Context? = this
+        while (c is ContextWrapper) {
+            if (c is Activity) return true
+            c = c.baseContext
+        }
+        return false
     }
 
     private fun reportLocation(url: String?) {

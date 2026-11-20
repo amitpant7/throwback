@@ -54,11 +54,13 @@
     leaving: false, // a redirect away from this document is under way
     readySent: false,
     lastBg: null,
+    bgDirty: true,
     markers: [],
     passQueued: false,
     lastNavScan: 0
   };
   var styleEl = null;
+  var styleCss = null; // what styleEl currently holds
   var dialogTries = typeof WeakMap === 'function' ? new WeakMap() : null;
 
   // ---------------------------------------------------------------- bridge
@@ -357,7 +359,10 @@
       styleEl = document.createElement('style');
       styleEl.id = '__tb_style';
     }
-    if (styleEl.textContent !== state.css) styleEl.textContent = state.css;
+    if (styleCss !== state.css) {
+      styleEl.textContent = state.css;
+      styleCss = state.css;
+    }
     if (styleEl.parentNode !== parent) parent.appendChild(styleEl);
   }
 
@@ -516,7 +521,8 @@
     }
     applyClasses();
     send({ t: 'loc', url: href });
-    schedulePass();
+    state.bgDirty = true;
+    schedulePass(true);
   }
 
   function goHome() {
@@ -586,6 +592,7 @@
     });
     c.hideText.forEach(function (h) {
       eachMatch(root, h.elements, function (el) {
+        if (el.childElementCount > 6) return;
         var text = el.textContent;
         if (text && text.length <= c.maxTextLength && h.set.has(norm(text))) addToken(el, ATTR, h.id);
       });
@@ -819,11 +826,19 @@
           }
         }
       }
+      if (state.mode === MODE_FULL) {
+        var bars = document.querySelectorAll('[' + ATTR_NAV + ']');
+        for (var b = 0; b < bars.length; b++) collapseSlots(bars[b]);
+      }
     }
-    if (state.mode === MODE_FULL) {
-      var bars = document.querySelectorAll('[' + ATTR_NAV + ']');
-      for (var b = 0; b < bars.length; b++) collapseSlots(bars[b]);
+  }
+
+  /** display:none on el or an ancestor below stop (stop itself excluded). */
+  function hiddenBelow(el, stop) {
+    for (var n = el; n && n !== stop; n = n.parentElement) {
+      if (getComputedStyle(n).display === 'none') return true;
     }
+    return false;
   }
 
   function collapseSlots(bar) {
@@ -836,8 +851,10 @@
         slot = slot.parentElement;
       }
       if (slot === button) continue;
-      slot.removeAttribute(ATTR_SLOT); // measure without our own collapse
-      if (button.getClientRects().length === 0) slot.setAttribute(ATTR_SLOT, '1');
+      // The slot's own collapse is excluded, so a button that shows again un-collapses its slot.
+      var collapse = hiddenBelow(button, slot);
+      if (collapse && !slot.hasAttribute(ATTR_SLOT)) slot.setAttribute(ATTR_SLOT, '1');
+      else if (!collapse && slot.hasAttribute(ATTR_SLOT)) slot.removeAttribute(ATTR_SLOT);
     }
   }
 
@@ -926,7 +943,10 @@
       detectNav(false);
       hideAfterMarkers();
       checkReady();
-      if (state.readySent) reportBackground();
+      if (state.readySent && state.bgDirty) {
+        state.bgDirty = false;
+        reportBackground();
+      }
     });
   }
 
@@ -1006,6 +1026,7 @@
       return true;
     }
     applyClasses();
+    state.bgDirty = true;
     if (document.documentElement) scanAll();
     return true;
   }
@@ -1017,7 +1038,8 @@
     if (window.matchMedia) {
       var mq = matchMedia('(prefers-color-scheme: dark)');
       var onScheme = function () {
-        raf(reportBackground);
+        state.bgDirty = true;
+        schedulePass(false);
       };
       if (mq.addEventListener) mq.addEventListener('change', onScheme);
       else if (mq.addListener) mq.addListener(onScheme);

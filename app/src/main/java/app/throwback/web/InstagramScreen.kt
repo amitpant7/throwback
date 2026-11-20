@@ -35,6 +35,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
@@ -222,7 +223,7 @@ private fun InstagramWebHost(
     // The system bar areas take the page's own background, so the app looks edge to edge.
     val pageColor = controller.pageBackground?.let { Color(it) } ?: colors.bg
     Box(modifier.fillMaxSize().background(pageColor)) {
-        Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+        Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).clipToBounds()) {
             AndroidView(
                 factory = {
                     // The same WebView instance is reused if this view is ever recreated.

@@ -41,7 +41,6 @@ import app.throwback.web.rules.AppStoryRules
 import app.throwback.web.rules.DEFAULT_CALL_GRACE_SECONDS
 import app.throwback.web.rules.FilterRules
 import app.throwback.web.rules.RulesRepository
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -266,6 +265,7 @@ class GuardService : Service() {
             // with the screen off), or the call started in Instagram.
             val igCallRecently = calls.inCall || calls.lastCallEndedAt?.let { now - it in 0 until IG_CALL_LINK_MS } == true
             if (callAudio.update(inCallAudio, tracker.current in watched, igCallRecently)) callAudioAt = now
+            instagramInFront = tracker.current in watched // for the camera callbacks (main thread too)
             if (GuardPass.active(now)) followPass(now, tracker.current, calls, inCallAudio)
             val action = GuardPolicy.decide(
                 instagramOnScreen = instagramOnScreen,
@@ -414,9 +414,9 @@ class GuardService : Service() {
         }
     }
 
-    /** Minutes of Instagram for a story; time with the camera on doesn't count. */
+    /** Minutes of Instagram for a story; time with Instagram's camera on doesn't count. */
     private fun storyPass() {
-        if (camerasInUse.isEmpty()) GuardPass.outsideMillis += POLL_MS
+        if (!cameras.instagramCamera()) GuardPass.outsideMillis += POLL_MS
         if (!PassRules.storyPassHolds(GuardPass.outsideMillis, (rules().story?.editMinutes ?: 5) * 60_000L)) {
             Log.i(TAG, "story pass: time is up")
             storyTimeUp = true
@@ -507,18 +507,22 @@ class GuardService : Service() {
     }
 
     /**
-     * Cameras in use by any app (Android reports this to every app, no permission). Throwback itself
-     * never uses the camera, so "in use" while Instagram is in front means its camera is open.
+     * Cameras in use (Android reports this to every app, not by whom). One that went into use while
+     * Instagram was in front is Instagram's (its story camera); one another app opened first, e.g. a
+     * camera app next to Instagram in split screen, doesn't stop the story pass's clock.
      */
-    private val camerasInUse = ConcurrentHashMap.newKeySet<String>()
+    private val cameras = CameraUse()
+
+    /** Whether Instagram was in front at the last check; read by the camera callbacks (main thread). */
+    private var instagramInFront = false
     private val cameraCallback = object : CameraManager.AvailabilityCallback() {
         override fun onCameraUnavailable(cameraId: String) {
-            camerasInUse.add(cameraId)
-            if (BuildConfig.DEBUG) Log.d(TAG, "camera $cameraId in use")
+            cameras.opened(cameraId, instagramInFront)
+            if (BuildConfig.DEBUG) Log.d(TAG, "camera $cameraId in use (Instagram in front: $instagramInFront)")
         }
 
         override fun onCameraAvailable(cameraId: String) {
-            camerasInUse.remove(cameraId)
+            cameras.closed(cameraId)
             if (BuildConfig.DEBUG) Log.d(TAG, "camera $cameraId free")
         }
     }

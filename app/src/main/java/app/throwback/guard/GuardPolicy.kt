@@ -310,3 +310,26 @@ internal object PassRules {
     fun screensPattern(pattern: String?): Regex? =
         pattern?.let { runCatching { Regex(it) }.getOrNull() }?.takeUnless { it.containsMatchIn("") }
 }
+
+/**
+ * Which cameras Instagram is using, for the story pass (pure, for tests). Android tells every app
+ * that a camera is in use, not by whom: a camera counts as Instagram's when it went into use while
+ * Instagram was in front. A camera another app opened before (a camera app next to Instagram in split
+ * screen) stays someone else's until it is released.
+ */
+internal class CameraUse {
+    private val byInstagram = mutableSetOf<String>()
+
+    @Synchronized
+    fun opened(cameraId: String, instagramInFront: Boolean) {
+        if (instagramInFront) byInstagram += cameraId else byInstagram -= cameraId
+    }
+
+    @Synchronized
+    fun closed(cameraId: String) {
+        byInstagram -= cameraId
+    }
+
+    @Synchronized
+    fun instagramCamera(): Boolean = byInstagram.isNotEmpty()
+}

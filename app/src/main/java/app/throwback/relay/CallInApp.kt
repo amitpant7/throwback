@@ -114,8 +114,8 @@ internal object CallInApp {
         val day = today.toEpochDay()
         val lastDay = prefs.getLong("storyDay", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }
         val count = if (lastDay == day) prefs.getInt("storyCount", 0) else 0
-        val last = prefs.getLong("storyLastAt", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }
-        return PassRules.storyAllowed(lastDay, count, day, last, nowWall, (st?.cooldownMinutes ?: 30) * 60_000L, st?.perDay ?: 3)
+        val waitUntil = prefs.getLong("storyWaitUntil", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }
+        return PassRules.storyAllowed(lastDay, count, day, waitUntil, nowWall, st?.perDay ?: 3)
     }
 
     /** Today's use of the Instagram app through Throwback's passes ("Your day"). */
@@ -152,8 +152,8 @@ internal object CallInApp {
         val lastDay = prefs.getLong("storyDay", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }
         val count = if (lastDay == day) prefs.getInt("storyCount", 0) else 0
         if (lastDay == day && count >= (st?.perDay ?: 3)) return null
-        val last = prefs.getLong("storyLastAt", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE } ?: return 0
-        val leftMs = (st?.cooldownMinutes ?: 30) * 60_000L - (nowWall - last).coerceAtLeast(0)
+        val waitUntil = prefs.getLong("storyWaitUntil", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE } ?: return 0
+        val leftMs = waitUntil - nowWall
         return ((leftMs + 59_999) / 60_000).toInt().coerceAtLeast(1)
     }
 
@@ -172,7 +172,8 @@ internal object CallInApp {
         return try {
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(pkg).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             GuardPass.grant(SystemClock.elapsedRealtime(), CREATE_PASS_MS, GuardPass.Kind.STORY)
-            prefs.edit().putLong("storyDay", day).putInt("storyCount", count + 1).putLong("storyLastAt", System.currentTimeMillis()).apply()
+            val waitUntil = System.currentTimeMillis() + (storyRules(context)?.cooldownMinutes ?: 30) * 60_000L
+            prefs.edit().putLong("storyDay", day).putInt("storyCount", count + 1).putLong("storyWaitUntil", waitUntil).apply()
             StoryResult.OPENED
         } catch (e: ActivityNotFoundException) {
             StoryResult.NO_APP
@@ -182,12 +183,22 @@ internal object CallInApp {
     }
 
     /**
-     * The story pass ended with Instagram posting, or the user left within a few minutes (owner,
-     * 2026-11-20): used honestly, so it neither starts the wait nor counts toward the day's passes.
+     * The story pass ended with Instagram posting (owner, 2026-11-20: a real upload means no
+     * cheating): it neither starts the wait nor counts toward the day's passes.
      */
-    fun storyForgiven(context: Context, today: LocalDate = LocalDate.now()) {
+    fun storyPosted(context: Context, today: LocalDate = LocalDate.now()) = storyForgiven(context, today, waitUntil = null)
+
+    /**
+     * The story pass was left early, having shown little but the camera (a change of mind): it
+     * doesn't count toward the day's passes, but a short wait follows so this can't be repeated.
+     */
+    fun storyLeftEarly(context: Context, today: LocalDate = LocalDate.now()) =
+        storyForgiven(context, today, waitUntil = System.currentTimeMillis() + PassRules.FREE_LEAVE_WAIT_MS)
+
+    private fun storyForgiven(context: Context, today: LocalDate, waitUntil: Long?) {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val e = prefs.edit().remove("storyLastAt")
+        val e = prefs.edit()
+        if (waitUntil == null) e.remove("storyWaitUntil") else e.putLong("storyWaitUntil", waitUntil)
         if (prefs.getLong("storyDay", Long.MIN_VALUE) == today.toEpochDay()) {
             e.putInt("storyCount", (prefs.getInt("storyCount", 0) - 1).coerceAtLeast(0))
         }

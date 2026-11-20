@@ -205,7 +205,7 @@ class RelayListenerService : NotificationListenerService() {
         if (facts.packageName in InstagramPackages.ALL && runCatching { Regex(pattern).containsMatchIn(channel) }.getOrDefault(false)) {
             Log.i(TAG, "Instagram is posting: pass ends")
             app.throwback.guard.GuardPass.end()
-            if (kind == app.throwback.guard.GuardPass.Kind.STORY) CallInApp.storyForgiven(this)
+            if (kind == app.throwback.guard.GuardPass.Kind.STORY) CallInApp.storyPosted(this)
         }
     }
 

@@ -163,16 +163,25 @@ internal object PassRules {
      */
     fun storyPassHolds(cameraOffMillis: Long, limitMillis: Long): Boolean = cameraOffMillis <= limitMillis
 
-    /**
-     * A story pass is available: fewer than [perDay] today, and [cooldownMillis] since the last one
-     * started ([lastStartWall], wall ms; a clock moved back counts as "just now").
-     */
-    fun storyAllowed(lastDay: Long?, countThatDay: Int, today: Long, lastStartWall: Long?, nowWall: Long, cooldownMillis: Long, perDay: Int): Boolean {
+    /** A story pass is available: fewer than [perDay] today, and no wait running ([waitUntilWall], wall ms). */
+    fun storyAllowed(lastDay: Long?, countThatDay: Int, today: Long, waitUntilWall: Long?, nowWall: Long, perDay: Int): Boolean {
         if (lastDay == today && countThatDay >= perDay) return false
-        if (lastStartWall == null) return true
-        val since = nowWall - lastStartWall
-        return since >= cooldownMillis
+        return waitUntilWall == null || nowWall >= waitUntilWall
     }
+
+    /** Camera-off time (the feed, Reels…) a story pass left early may have used and still be a change of mind. */
+    const val FREE_LEAVE_CAMERA_OFF_MS = 30_000L
+
+    /** Even a story pass left early is followed by this wait, so leaving early can't be repeated back to back. */
+    const val FREE_LEAVE_WAIT_MS = 10 * 60_000L
+
+    /**
+     * A story pass left within [freeLeaveMillis] of its start was a change of mind (owner): it doesn't
+     * count. Only if it showed almost nothing but the camera, though, since the story link opens on
+     * Instagram's feed: otherwise "Your story", ~3 minutes of feed, Home, again… would never count.
+     */
+    fun storyLeftEarly(sinceGrant: Long, cameraOffMillis: Long, freeLeaveMillis: Long): Boolean =
+        sinceGrant < freeLeaveMillis && cameraOffMillis <= FREE_LEAVE_CAMERA_OFF_MS
 
     /** Instagram's own redirects while the create screen opens. */
     const val CREATE_GRACE_MS = 3_000L

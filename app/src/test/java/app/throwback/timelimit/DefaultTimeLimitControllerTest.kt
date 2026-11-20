@@ -202,6 +202,25 @@ class DefaultTimeLimitControllerTest {
     }
 
     @Test
+    fun `the passes' trusted clock - none before loading, then today and trusted time`() = runTest {
+        val d = StandardTestDispatcher(testScheduler)
+        val clock = TestClock(this)
+        val c = DefaultTimeLimitController(clock, MemoryStore(), backgroundScope, d, d, PinHasher(1_000))
+        assertNull(c.trustedTime()) // no passes before the stored state is known
+        runCurrent()
+        val day = LocalDateTime.of(2026, 11, 20, 0, 0).toLocalDate().toEpochDay()
+        val t = c.trustedTime()!!
+        assertEquals(day, t.epochDay)
+        assertEquals(clock.now().wallMillis, t.wallMillis)
+        assertEquals(BERLIN, t.zone)
+        // Moving the phone's clock a day ahead changes neither (no app restart needed: it's the same boot).
+        clock.wallOffset += DAY
+        advanceTimeBy(MIN)
+        assertEquals(day, c.trustedTime()!!.epochDay)
+        assertEquals(t.wallMillis + MIN, c.trustedTime()!!.wallMillis)
+    }
+
+    @Test
     fun `forgot PIN, then set a new one after three days`() = runTest {
         val c = controller(MemoryStore())
         c.setup(30, "1234")

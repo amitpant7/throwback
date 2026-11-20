@@ -12,6 +12,7 @@ import app.throwback.timelimit.engine.PinHasher
 import app.throwback.timelimit.engine.TimeLimitEngine
 import app.throwback.timelimit.engine.TimeLimitState
 import app.throwback.timelimit.engine.TimeLimitView
+import app.throwback.timelimit.engine.TrustedTime
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -140,6 +141,13 @@ internal class DefaultTimeLimitController(
 
     /** See [pageClock]: [offsetMs] trusted minus phone clock; [day] epoch day; [nextDayAt] trusted ms. */
     data class PageClockInfo(val offsetMs: Long, val zoneOffsetMin: Int, val day: Long, val nextDayAt: Long)
+
+    /** The trusted clock for the passes' counters; null until the saved state is loaded. Changes nothing. */
+    fun trustedTime(): TrustedTime? = synchronized(lock) {
+        if (!loaded) return null
+        val r = clock.now()
+        TrustedTime(engine.trustedWall(current.anchor, r), engine.pageDay(current, r).first.toEpochDay(), engine.savedZone(current, r))
+    }
 
     /** Checks [pin] (counts towards the wrong-PIN block) without changing anything. */
     suspend fun verifyPin(pin: String): ActionResult = withPinCheck(pin) { s, r, ok -> engine.verifyPin(s, r, ok) }

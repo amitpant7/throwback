@@ -128,19 +128,8 @@ internal object GuardPass {
     }
 }
 
-/** How often the passes can be used (pure, for tests). */
+/** What a running pass allows inside the Instagram app (pure, for tests). How often: see [PassBook]. */
 internal object PassRules {
-    const val CALL_TAPS_PER_HOUR = 3
-    private const val HOUR_MS = 3_600_000L
-
-    fun visitAllowed(lastVisitDay: Long?, today: Long, locked: Boolean): Boolean =
-        !locked && lastVisitDay != today
-
-    /** [taps]: wall times of earlier call-button passes. */
-    fun callAllowed(taps: List<Long>, now: Long): Boolean = taps.count { now - it in 0 until HOUR_MS } < CALL_TAPS_PER_HOUR
-
-    fun recentTaps(taps: List<Long>, now: Long): List<Long> = taps.filter { now - it in 0 until HOUR_MS }
-
     /**
      * Android's own screens that Instagram opens along the way: the permission dialog, the photo
      * picker ("Select photos" / "Select more photos" with limited access), the file picker. Going
@@ -162,12 +151,6 @@ internal object PassRules {
      * while the phone's camera is off: taking photos never uses it up). False when it should end.
      */
     fun storyPassHolds(cameraOffMillis: Long, limitMillis: Long): Boolean = cameraOffMillis <= limitMillis
-
-    /** A story pass is available: fewer than [perDay] today, and no wait running ([waitUntilWall], wall ms). */
-    fun storyAllowed(lastDay: Long?, countThatDay: Int, today: Long, waitUntilWall: Long?, nowWall: Long, perDay: Int): Boolean {
-        if (lastDay == today && countThatDay >= perDay) return false
-        return waitUntilWall == null || nowWall >= waitUntilWall
-    }
 
     /** Camera-off time (the feed, Reels…) a story pass left early may have used and still be a change of mind. */
     const val FREE_LEAVE_CAMERA_OFF_MS = 30_000L

@@ -33,6 +33,13 @@ fun interface Clock {
  */
 data class Moment(val bootCount: Int, val elapsedMillis: Long, val wallMillis: Long)
 
+/**
+ * The time limit's trusted clock, for other features' daily counters (the passes into the Instagram
+ * app): trusted wall ms, today as an epoch day (never goes back; a new day needs 23 h of real time)
+ * and the zone days are counted in.
+ */
+data class TrustedTime(val wallMillis: Long, val epochDay: Long, val zone: ZoneId)
+
 /** Salted PBKDF2 hash of a 4-digit PIN. The PIN itself is never stored. Fields are Base64. */
 data class PinHash(val salt: String, val hash: String, val iterations: Int)
 

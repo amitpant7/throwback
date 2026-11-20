@@ -1,34 +1,41 @@
 package app.throwback.guard
 
-import app.throwback.relay.RelayListenerService
-import android.service.notification.NotificationListenerService
-import android.content.ComponentName
-import kotlinx.coroutines.withContext
-import android.media.AudioManager
+import android.app.PendingIntent
 import android.app.Service
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
+import android.hardware.camera2.CameraManager
+import android.media.AudioManager
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.PowerManager
 import android.os.SystemClock
+import android.service.notification.NotificationListenerService
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
+import app.throwback.BuildConfig
 import app.throwback.MainActivity
 import app.throwback.R
+import app.throwback.relay.CallInApp
+import app.throwback.relay.CallSnapshot
 import app.throwback.relay.CallState
 import app.throwback.relay.MessagesFeature
 import app.throwback.relay.RelayDebug
+import app.throwback.relay.RelayListenerService
 import app.throwback.relay.RelayNotifier
 import app.throwback.web.rules.DEFAULT_CALL_GRACE_SECONDS
 import app.throwback.web.rules.RulesRepository
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -39,6 +46,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * The guard (DECISIONS.md #27): while the screen is on, it checks about twice a second which app
@@ -74,6 +82,12 @@ class GuardService : Service() {
     private var lastRebindAt = 0L
     private var coverShownAt = 0L
     private lateinit var overlay: GuardOverlay
+
+    /** The story pass just ran out without a post: the next cover says so. */
+    private var storyTimeUp = false
+
+    /** Pass time in the Instagram app not yet saved for "Your day". */
+    private var unsavedAppMillis = 0L
 
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -118,12 +132,12 @@ class GuardService : Service() {
     }
 
     private fun goForeground() {
-        val open = android.app.PendingIntent.getActivity(
+        val open = PendingIntent.getActivity(
             this,
             0,
             Intent(MainActivity.ACTION_OPEN_SETTINGS, null, this, MainActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-            android.app.PendingIntent.FLAG_IMMUTABLE,
+            PendingIntent.FLAG_IMMUTABLE,
         )
         val notification = NotificationCompat.Builder(this, RelayNotifier.CHANNEL_GUARD)
             .setSmallIcon(R.drawable.ic_stat_throwback)
@@ -194,70 +208,11 @@ class GuardService : Service() {
                     }
                 }
             }
-            val audioMode = (getSystemService(AUDIO_SERVICE) as AudioManager).mode
+            val audioMode = getSystemService(AudioManager::class.java)?.mode
             val inCallAudio = audioMode == AudioManager.MODE_IN_CALL || audioMode == AudioManager.MODE_IN_COMMUNICATION
             // Pass bookkeeping: a call started from the call button counts as an Instagram call (its
             // notification may not show for outgoing calls), and then the pass itself ends.
-            if (GuardPass.active(now)) {
-                val watched = RelayDebug.watchedPackages()
-                // "Your day": time the Instagram app is in front during a pass (calls aren't passes).
-                if (fg != null && fg in watched) {
-                    unsavedAppMillis += POLL_MS
-                    if (unsavedAppMillis >= 10_000L) {
-                        app.throwback.relay.CallInApp.addAppTime(this, unsavedAppMillis)
-                        unsavedAppMillis = 0L
-                    }
-                }
-                if (fg != null && fg in watched) {
-                    GuardPass.sawInstagram = true
-                } else if (GuardPass.sawInstagram && fg != null && !PassRules.partOfInstagramFlow(fg, flowPackages() + settingsRules()?.flowPackages.orEmpty().takeIf { GuardPass.kind == GuardPass.Kind.SETTINGS }.orEmpty())) {
-                    // Left Instagram: the rest of the pass isn't kept for later. A story pass left within
-                    // a few minutes, having shown little but the camera, was a change of mind (owner):
-                    // it doesn't count, and only a short wait follows.
-                    if (GuardPass.kind == GuardPass.Kind.STORY && PassRules.storyLeftEarly(
-                            sinceGrant = now - GuardPass.grantedAt,
-                            cameraOffMillis = GuardPass.outsideMillis,
-                            freeLeaveMillis = (storyRules()?.freeLeaveMinutes ?: 3) * 60_000L,
-                        )
-                    ) {
-                        app.throwback.relay.CallInApp.storyLeftEarly(this)
-                    }
-                    GuardPass.end()
-                }
-                if (GuardPass.kind == GuardPass.Kind.CREATE && fg != null && fg in watched &&
-                    !PassRules.createPassHolds(tracker.currentClass, createScreens(), now - GuardPass.grantedAt)
-                ) {
-                    Log.i(TAG, "left Instagram's create screens: pass ends")
-                    GuardPass.end()
-                }
-                if (GuardPass.kind == GuardPass.Kind.STORY && fg != null && fg in watched) {
-                    // Minutes of Instagram for a story; time with the camera on doesn't count.
-                    if (camerasInUse.isEmpty()) GuardPass.outsideMillis += POLL_MS
-                    if (!PassRules.storyPassHolds(GuardPass.outsideMillis, (storyRules()?.editMinutes ?: 5) * 60_000L)) {
-                        Log.i(TAG, "story pass: time is up")
-                        storyTimeUp = true
-                        GuardPass.end()
-                    }
-                }
-                if (GuardPass.kind == GuardPass.Kind.SETTINGS && fg != null && fg in watched &&
-                    now - GuardPass.grantedAt >= PassRules.CREATE_GRACE_MS
-                ) {
-                    val rules = settingsRules()
-                    val screens = rules?.screens?.let { runCatching { Regex(it) }.getOrNull() }
-                    val cls = tracker.currentClass
-                    if (cls != null && (screens == null || !screens.containsMatchIn(cls))) {
-                        GuardPass.outsideMillis += POLL_MS
-                        if (GuardPass.outsideMillis > (rules?.otherScreenMinutes ?: 0) * 60_000L) {
-                            Log.i(TAG, "settings pass: time outside the settings screens is up")
-                            GuardPass.end()
-                        }
-                    }
-                }
-                if (GuardPass.kind == GuardPass.Kind.CALL && (inCallAudio || calls.inCall)) {
-                    if (inCallAudio) lastInstagramCallAt = now
-                    GuardPass.end()
-                }
-            }
+            if (GuardPass.active(now)) followPass(now, tracker.current, calls, inCallAudio)
             if (!inCallAudio) {
                 instagramCallAudio = false
             } else if (instagramCallAudio || (lastInstagramCallAt != null && now - lastInstagramCallAt!! < IG_CALL_LINK_MS)) {
@@ -296,6 +251,91 @@ class GuardService : Service() {
             tracker.onEvent(event.eventType, event.packageName, event.className)
         }
         lastQueryEnd = end
+    }
+
+    /** A pass is running: "Your day" time, leaving Instagram ends it, and each kind's own rules. */
+    private fun followPass(now: Long, fg: String?, calls: CallSnapshot, inCallAudio: Boolean) {
+        val inInstagram = fg != null && fg in RelayDebug.watchedPackages()
+        if (inInstagram) {
+            countAppTime()
+            GuardPass.sawInstagram = true
+        } else if (GuardPass.sawInstagram && fg != null && !PassRules.partOfInstagramFlow(fg, flowPackages(GuardPass.kind))) {
+            leftInstagram(now)
+        }
+        when (GuardPass.kind) {
+            GuardPass.Kind.CALL -> callPass(now, calls, inCallAudio)
+            GuardPass.Kind.VISIT -> Unit
+            GuardPass.Kind.CREATE -> if (inInstagram) createPass(now)
+            GuardPass.Kind.SETTINGS -> if (inInstagram) settingsPass(now)
+            GuardPass.Kind.STORY -> if (inInstagram) storyPass()
+        }
+    }
+
+    /** "Your day": time the Instagram app is in front during a pass (calls aren't passes). */
+    private fun countAppTime() {
+        unsavedAppMillis += POLL_MS
+        if (unsavedAppMillis >= 10_000L) {
+            CallInApp.addAppTime(this, unsavedAppMillis)
+            unsavedAppMillis = 0L
+        }
+    }
+
+    /**
+     * Left Instagram: the rest of the pass isn't kept for later. A story pass left within a few
+     * minutes, having shown little but the camera, was a change of mind (owner): it doesn't count,
+     * and only a short wait follows.
+     */
+    private fun leftInstagram(now: Long) {
+        if (GuardPass.kind == GuardPass.Kind.STORY && PassRules.storyLeftEarly(
+                sinceGrant = now - GuardPass.grantedAt,
+                cameraOffMillis = GuardPass.outsideMillis,
+                freeLeaveMillis = (storyRules()?.freeLeaveMinutes ?: 3) * 60_000L,
+            )
+        ) {
+            CallInApp.storyLeftEarly(this)
+        }
+        GuardPass.end()
+    }
+
+    /** The call button's pass ends once the call runs (the call itself then keeps Instagram allowed). */
+    private fun callPass(now: Long, calls: CallSnapshot, inCallAudio: Boolean) {
+        if (inCallAudio || calls.inCall) {
+            if (inCallAudio) lastInstagramCallAt = now
+            GuardPass.end()
+        }
+    }
+
+    /** Posting: only Instagram's creation screens. */
+    private fun createPass(now: Long) {
+        if (!PassRules.createPassHolds(tracker.currentClass, createScreens(), now - GuardPass.grantedAt)) {
+            Log.i(TAG, "left Instagram's create screens: pass ends")
+            GuardPass.end()
+        }
+    }
+
+    /** Instagram's settings screens, and its other screens for at most `appSettings.otherScreenMinutes`. */
+    private fun settingsPass(now: Long) {
+        if (now - GuardPass.grantedAt < PassRules.CREATE_GRACE_MS) return
+        val rules = settingsRules()
+        val screens = rules?.screens?.let { runCatching { Regex(it) }.getOrNull() }
+        val cls = tracker.currentClass
+        if (cls != null && (screens == null || !screens.containsMatchIn(cls))) {
+            GuardPass.outsideMillis += POLL_MS
+            if (GuardPass.outsideMillis > (rules?.otherScreenMinutes ?: 0) * 60_000L) {
+                Log.i(TAG, "settings pass: time outside the settings screens is up")
+                GuardPass.end()
+            }
+        }
+    }
+
+    /** Minutes of Instagram for a story; time with the camera on doesn't count. */
+    private fun storyPass() {
+        if (camerasInUse.isEmpty()) GuardPass.outsideMillis += POLL_MS
+        if (!PassRules.storyPassHolds(GuardPass.outsideMillis, (storyRules()?.editMinutes ?: 5) * 60_000L)) {
+            Log.i(TAG, "story pass: time is up")
+            storyTimeUp = true
+            GuardPass.end()
+        }
     }
 
     private fun cover(now: Long) {
@@ -356,53 +396,44 @@ class GuardService : Service() {
     }
 
     /** Instagram's creation screens (rules `appCreate.screens`). */
-    private fun createScreens(): Regex? = app.throwback.web.rules.RulesRepository.get(this).rules.value?.appCreate?.screens
+    private fun createScreens(): Regex? = RulesRepository.get(this).rules.value?.appCreate?.screens
         ?.let { runCatching { Regex(it) }.getOrNull() }
 
+    /** Android screens Instagram opens on the way (rules `appCreate.flowPackages`; for settings also `appSettings.flowPackages`). */
+    private fun flowPackages(kind: GuardPass.Kind): Set<String> {
+        val rules = RulesRepository.get(this).rules.value
+        val settings = if (kind == GuardPass.Kind.SETTINGS) rules?.appSettings?.flowPackages.orEmpty() else emptyList()
+        return (rules?.appCreate?.flowPackages.orEmpty() + settings).toSet()
+    }
 
-    /** Android screens Instagram opens on the way (rules `appCreate.flowPackages`, plus built-in ones). */
-    private fun flowPackages(): Set<String> =
-        app.throwback.web.rules.RulesRepository.get(this).rules.value?.appCreate?.flowPackages?.toSet().orEmpty()
+    private fun settingsRules() = RulesRepository.get(this).rules.value?.appSettings
 
-
-    private fun settingsRules() = app.throwback.web.rules.RulesRepository.get(this).rules.value?.appSettings
-
-
-    private fun storyRules() = app.throwback.web.rules.RulesRepository.get(this).rules.value?.appCreate?.story
+    private fun storyRules() = RulesRepository.get(this).rules.value?.appCreate?.story
 
     /**
      * Cameras in use by any app (Android reports this to every app, no permission). Throwback itself
      * never uses the camera, so "in use" while Instagram is in front means its camera is open.
      */
-    private val camerasInUse = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
-    private val cameraCallback = object : android.hardware.camera2.CameraManager.AvailabilityCallback() {
+    private val camerasInUse = ConcurrentHashMap.newKeySet<String>()
+    private val cameraCallback = object : CameraManager.AvailabilityCallback() {
         override fun onCameraUnavailable(cameraId: String) {
             camerasInUse.add(cameraId)
-            if (app.throwback.BuildConfig.DEBUG) Log.d(TAG, "camera $cameraId in use")
+            if (BuildConfig.DEBUG) Log.d(TAG, "camera $cameraId in use")
         }
 
         override fun onCameraAvailable(cameraId: String) {
             camerasInUse.remove(cameraId)
-            if (app.throwback.BuildConfig.DEBUG) Log.d(TAG, "camera $cameraId free")
+            if (BuildConfig.DEBUG) Log.d(TAG, "camera $cameraId free")
         }
     }
 
     private fun watchCameras(on: Boolean) {
-        val cm = getSystemService(android.hardware.camera2.CameraManager::class.java) ?: return
+        val cm = getSystemService(CameraManager::class.java) ?: return
         try {
-            if (on) cm.registerAvailabilityCallback(cameraCallback, android.os.Handler(android.os.Looper.getMainLooper()))
+            if (on) cm.registerAvailabilityCallback(cameraCallback, Handler(Looper.getMainLooper()))
             else cm.unregisterAvailabilityCallback(cameraCallback)
         } catch (e: RuntimeException) {
             Log.w(TAG, "camera watch unavailable: ${e.javaClass.simpleName}")
         }
     }
-
-
-    /** The story pass just ran out without a post: the next cover says so. */
-    private var storyTimeUp = false
-
-
-    /** Pass time in the Instagram app not yet saved for "Your day". */
-    private var unsavedAppMillis = 0L
-
 }

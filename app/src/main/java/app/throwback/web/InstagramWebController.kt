@@ -162,6 +162,27 @@ internal class InstagramWebController(
         }
     }
 
+    /** Set when the reel poster triggered: the next Back leaves Instagram's reel viewer entirely. */
+    private var reelExit = false
+
+    /**
+     * Instagram adds a history entry for every reel swiped to in its viewer, so one Back only goes
+     * back one reel. Step back until the viewer is gone (checked after each step), then stop.
+     */
+    private fun backOutOfReels(step: Int) {
+        if (destroyed) return
+        webView.evaluateJavascript("!!(window.__throwback && window.__throwback.reelViewerOpen && window.__throwback.reelViewerOpen())") { open ->
+            if (destroyed) return@evaluateJavascript
+            if (open == "true" && step < MAX_REEL_BACK_STEPS && webView.canGoBack()) {
+                webView.goBack()
+                handler.postDelayed({ backOutOfReels(step + 1) }, REEL_BACK_STEP_MS)
+            } else {
+                reelExit = false
+                webView.evaluateJavascript("window.__throwback && window.__throwback.reelExitDone && window.__throwback.reelExitDone()", null)
+            }
+        }
+    }
+
     private var covered = false
 
     /** Tells the page whether a Throwback screen covers it (its feed-time clock pauses). */
@@ -192,6 +213,10 @@ internal class InstagramWebController(
 
     /** Back: through the WebView history (skipping pages this mode doesn't show). False = nothing left. */
     fun goBack(): Boolean {
+        if (reelExit) {
+            backOutOfReels(0)
+            return true
+        }
         val router = router ?: return false
         if (mode == WebMode.MESSAGES_ONLY) {
             val history = webView.copyBackForwardList()
@@ -438,7 +463,10 @@ internal class InstagramWebController(
             }
             is BridgeMessage.Background -> pageBackground = m.argb
             BridgeMessage.OpenSettings -> host?.onOpenSettings()
-            BridgeMessage.ReelLimit -> host?.onReelLimit()
+            BridgeMessage.ReelLimit -> {
+                reelExit = true
+                host?.onReelLimit()
+            }
             null -> Unit
         }
     }
@@ -565,6 +593,8 @@ internal class InstagramWebController(
     companion object {
         private const val MAX_LOGIN_REDIRECTS = 2
         private const val TAG = "ThrowbackWeb"
+        private const val MAX_REEL_BACK_STEPS = 15
+        private const val REEL_BACK_STEP_MS = 250L
         private const val BRIDGE_OBJECT = "throwbackNative"
         private const val LEGACY_BRIDGE_OBJECT = "throwbackBridge"
         private const val VISUAL_STATE_REQUEST = 1L

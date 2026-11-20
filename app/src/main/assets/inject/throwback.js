@@ -1193,7 +1193,9 @@
    */
   var ATTR_REEL_STOP = 'data-tb-reelstop';
   var REELS_KEY = '__tb_reels';
-  var reels = { current: null, viewer: null };
+  // exiting: after the poster, while the app steps back out of the viewer (each reel swiped to is
+  // a history entry): reels passed on the way are paused and not counted.
+  var reels = { current: null, viewer: null, exiting: false };
 
   function reelLog() {
     var log = null;
@@ -1230,6 +1232,10 @@
     if (!rv || !v || v.tagName !== 'VIDEO' || pageActive('stories')) return;
     var viewer = reelViewerOf(v);
     if (!viewer) return;
+    if (reels.exiting) {
+      v.pause();
+      return;
+    }
     if (viewer.hasAttribute(ATTR_REEL_STOP)) {
       v.pause();
       return;
@@ -1263,10 +1269,25 @@
 
   /** Stops the viewer (no more swiping, videos paused); the app shows its poster. */
   function stopReels(viewer) {
+    reels.exiting = true;
     viewer.setAttribute(ATTR_REEL_STOP, '1');
     var vids = viewer.querySelectorAll('video');
     for (var i = 0; i < vids.length; i++) vids[i].pause();
     send({ t: 'reelLimit' });
+  }
+
+  /** Whether Instagram's reel swipe viewer is open (the app steps back until it isn't). */
+  function reelViewerOpen() {
+    var vids = document.querySelectorAll('video');
+    for (var i = 0; i < vids.length && i < 30; i++) if (reelViewerOf(vids[i])) return true;
+    return false;
+  }
+
+  /** The app finished stepping back out of the viewer. */
+  function reelExitDone() {
+    reels.exiting = false;
+    reels.viewer = null;
+    reels.current = null;
   }
 
   // ---------------------------------------------------------------- messages and stories warm-up
@@ -2097,7 +2118,9 @@
     /** The app tells the page when one of its own screens (Settings, lock, pause) covers it. */
     setCovered: function (covered) {
       state.covered = !!covered;
-    }
+    },
+    reelViewerOpen: reelViewerOpen,
+    reelExitDone: reelExitDone
   };
   try {
     Object.defineProperty(window, '__throwback', { value: api, enumerable: false, configurable: false, writable: false });

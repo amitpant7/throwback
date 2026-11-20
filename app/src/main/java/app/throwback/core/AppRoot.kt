@@ -295,11 +295,12 @@ private fun MainScreen(
                     val msg = when (result) {
                         CallInApp.StoryResult.OPENED -> R.string.story_in_app_hint
                         CallInApp.StoryResult.USED_UP -> R.string.story_in_app_used_up
+                        CallInApp.StoryResult.LOCKED -> R.string.app_pass_locked
                         CallInApp.StoryResult.NO_APP -> R.string.create_in_app_failed
                     }
                     Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                } else if (!CallInApp.create(context)) {
-                    Toast.makeText(context, R.string.create_in_app_failed, Toast.LENGTH_LONG).show()
+                } else {
+                    CallInApp.create(context).message?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
                 }
             },
             onSupportAskShown = {
@@ -314,9 +315,7 @@ private fun MainScreen(
                 Toast.makeText(context, text, Toast.LENGTH_LONG).show()
             },
             onSettingsInApp = {
-                if (!CallInApp.settings(context)) {
-                    Toast.makeText(context, R.string.create_in_app_failed, Toast.LENGTH_LONG).show()
-                }
+                CallInApp.settings(context).message?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
             },
             // While locked or paused, screen readers must not reach the feed underneath.
             modifier = if (lockShowing || pauseShowing) Modifier.clearAndSetSemantics {} else Modifier,

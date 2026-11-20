@@ -7,6 +7,8 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import androidx.annotation.StringRes
+import app.throwback.R
 import app.throwback.core.LockState
 import app.throwback.guard.GuardPass
 import app.throwback.guard.PassLedger
@@ -64,7 +66,7 @@ internal object CallInApp {
         val pkg = installedInstagram(context) ?: return VisitResult.NO_APP
         val launch = context.packageManager.getLaunchIntentForPackage(pkg) ?: return VisitResult.NO_APP
         val now = PassLedger.now(context) ?: return VisitResult.USED_TODAY
-        val locked = TimeLimitModule.create(context).state.value is LockState.Locked
+        val locked = locked(context)
         if (!PassLedger.read(context).visitAllowed(now.epochDay, locked)) {
             return if (locked) VisitResult.LOCKED else VisitResult.USED_TODAY
         }
@@ -74,22 +76,39 @@ internal object CallInApp {
         return VisitResult.OPENED
     }
 
-    /** Longest a create pass lasts (it normally ends when Instagram leaves its create screens). */
-    const val CREATE_PASS_MS = 30 * 60_000L
-
-    /**
-     * "+" / "Your story" with the Instagram app connected: its create screen (better editor), with a
-     * pass that only allows the creation screens (see GuardService). False if it couldn't open.
-     */
-    fun create(context: Context): Boolean {
-        val pkg = installedInstagram(context) ?: return false
-        val link = RulesRepository.get(context).rules.value?.appCreate?.link ?: "instagram://share"
-        if (!start(context, Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(pkg))) return false
-        GuardPass.grant(SystemClock.elapsedRealtime(), CREATE_PASS_MS, GuardPass.Kind.CREATE)
-        return true
+    /** A post-editor or settings pass: opened, or why not, with the message to show then. */
+    enum class AppPass(@StringRes val message: Int?) {
+        OPENED(null),
+        NO_APP(R.string.create_in_app_failed),
+        LOCKED(R.string.app_pass_locked),
+        CREATE_USED_UP(R.string.create_in_app_used_up),
+        SETTINGS_USED_UP(R.string.settings_in_app_used_up),
     }
 
-    enum class StoryResult { OPENED, NO_APP, USED_UP }
+    /** Longest a create pass lasts (it normally ends when Instagram leaves its create screens). */
+    const val CREATE_PASS_MS = 20 * 60_000L
+
+    /**
+     * "+" with the Instagram app connected: its post editor (the better one), with a pass that only
+     * allows the creation screens (see GuardService). [PassBook.CREATE_PER_DAY] a day, and not while
+     * the daily limit is reached.
+     */
+    fun create(context: Context): AppPass {
+        val pkg = installedInstagram(context) ?: return AppPass.NO_APP
+        if (locked(context)) return AppPass.LOCKED
+        val now = PassLedger.now(context) ?: return AppPass.CREATE_USED_UP
+        if (!PassLedger.read(context).createAllowed(now.epochDay)) return AppPass.CREATE_USED_UP
+        val link = RulesRepository.get(context).rules.value?.appCreate?.link ?: "instagram://share"
+        if (!start(context, Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(pkg))) return AppPass.NO_APP
+        GuardPass.grant(SystemClock.elapsedRealtime(), CREATE_PASS_MS, GuardPass.Kind.CREATE)
+        PassLedger.update(context) { it.createOpened(now.epochDay) }
+        return AppPass.OPENED
+    }
+
+    /** Longest a story pass lasts; its minutes without the camera end it much sooner (see GuardService). */
+    private const val STORY_PASS_MS = 30 * 60_000L
+
+    enum class StoryResult { OPENED, NO_APP, USED_UP, LOCKED }
 
     private fun storyRules(context: Context) = RulesRepository.get(context).rules.value?.appCreate?.story
 
@@ -135,11 +154,12 @@ internal object CallInApp {
      */
     fun story(context: Context): StoryResult {
         val pkg = installedInstagram(context) ?: return StoryResult.NO_APP
+        if (locked(context)) return StoryResult.LOCKED
         val now = PassLedger.now(context) ?: return StoryResult.USED_UP
         if (!PassLedger.read(context).storyAllowed(now.epochDay, now.wallMillis, storiesPerDay(context))) return StoryResult.USED_UP
         val link = storyRules(context)?.link ?: "instagram://story-camera"
         if (!start(context, Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(pkg))) return StoryResult.NO_APP
-        GuardPass.grant(SystemClock.elapsedRealtime(), CREATE_PASS_MS, GuardPass.Kind.STORY)
+        GuardPass.grant(SystemClock.elapsedRealtime(), STORY_PASS_MS, GuardPass.Kind.STORY)
         val wait = (storyRules(context)?.cooldownMinutes ?: 30) * 60_000L
         PassLedger.update(context) { it.storyStarted(now.epochDay, now.wallMillis, wait) }
         return StoryResult.OPENED
@@ -172,19 +192,28 @@ internal object CallInApp {
     }
 
     /** Longest a settings pass lasts. */
-    const val SETTINGS_PASS_MS = 60 * 60_000L
+    const val SETTINGS_PASS_MS = 10 * 60_000L
 
     /**
      * "Open settings in the Instagram app" (end of Instagram's settings page): its Settings and
-     * activity, with a pass for its settings screens (see GuardService). False if it couldn't open.
+     * activity, with a pass for its settings screens (see GuardService). The settings screen also
+     * holds Saved, Archive and Your activity, hence [SETTINGS_PASS_MS], [PassBook.SETTINGS_PER_DAY]
+     * a day, and not while the daily limit is reached.
      */
-    fun settings(context: Context): Boolean {
-        val pkg = installedInstagram(context) ?: return false
+    fun settings(context: Context): AppPass {
+        val pkg = installedInstagram(context) ?: return AppPass.NO_APP
+        if (locked(context)) return AppPass.LOCKED
+        val now = PassLedger.now(context) ?: return AppPass.SETTINGS_USED_UP
+        if (!PassLedger.read(context).settingsAllowed(now.epochDay)) return AppPass.SETTINGS_USED_UP
         val link = RulesRepository.get(context).rules.value?.appSettings?.link ?: "instagram://settings"
-        if (!start(context, Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(pkg))) return false
+        if (!start(context, Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(pkg))) return AppPass.NO_APP
         GuardPass.grant(SystemClock.elapsedRealtime(), SETTINGS_PASS_MS, GuardPass.Kind.SETTINGS)
-        return true
+        PassLedger.update(context) { it.settingsOpened(now.epochDay) }
+        return AppPass.OPENED
     }
+
+    /** The daily limit is reached: no pass into the app but calls (DECISIONS.md #20, #27a). */
+    private fun locked(context: Context): Boolean = TimeLimitModule.create(context).state.value is LockState.Locked
 
     private fun installedInstagram(context: Context): String? = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) }
 

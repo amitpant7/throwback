@@ -317,9 +317,7 @@ class GuardService : Service() {
     private fun settingsPass(now: Long) {
         if (now - GuardPass.grantedAt < PassRules.CREATE_GRACE_MS) return
         val rules = settingsRules()
-        val screens = rules?.screens?.let { runCatching { Regex(it) }.getOrNull() }
-        val cls = tracker.currentClass
-        if (cls != null && (screens == null || !screens.containsMatchIn(cls))) {
+        if (!PassRules.onScreens(tracker.currentClass, PassRules.screensPattern(rules?.screens))) {
             GuardPass.outsideMillis += POLL_MS
             if (GuardPass.outsideMillis > (rules?.otherScreenMinutes ?: 0) * 60_000L) {
                 Log.i(TAG, "settings pass: time outside the settings screens is up")
@@ -396,8 +394,7 @@ class GuardService : Service() {
     }
 
     /** Instagram's creation screens (rules `appCreate.screens`). */
-    private fun createScreens(): Regex? = RulesRepository.get(this).rules.value?.appCreate?.screens
-        ?.let { runCatching { Regex(it) }.getOrNull() }
+    private fun createScreens(): Regex? = PassRules.screensPattern(RulesRepository.get(this).rules.value?.appCreate?.screens)
 
     /** Android screens Instagram opens on the way (rules `appCreate.flowPackages`; for settings also `appSettings.flowPackages`). */
     private fun flowPackages(kind: GuardPass.Kind): Set<String> {

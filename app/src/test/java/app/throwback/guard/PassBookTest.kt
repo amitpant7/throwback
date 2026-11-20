@@ -83,6 +83,26 @@ class PassBookTest {
     }
 
     @Test
+    fun `the app's settings 5 times a day, its post editor 10 times`() {
+        var b = PassBook()
+        repeat(PassBook.SETTINGS_PER_DAY) {
+            assertTrue(b.settingsAllowed(today))
+            b = b.settingsOpened(today)
+        }
+        assertFalse(b.settingsAllowed(today))
+        assertTrue(b.settingsAllowed(today + 1))
+        repeat(PassBook.CREATE_PER_DAY) {
+            assertTrue(b.createAllowed(today))
+            b = b.createOpened(today)
+        }
+        assertFalse(b.createAllowed(today))
+        assertTrue(b.createAllowed(today + 1))
+        assertEquals(1, b.createOpened(today + 1).createCount) // a new day starts at 1
+        assertEquals(5, PassBook.SETTINGS_PER_DAY)
+        assertEquals(10, PassBook.CREATE_PER_DAY)
+    }
+
+    @Test
     fun `app time counts per day`() {
         val b = PassBook().withAppTime(today, 10_000).withAppTime(today, 20_000)
         assertEquals(30_000L, b.appMillisOn(today))

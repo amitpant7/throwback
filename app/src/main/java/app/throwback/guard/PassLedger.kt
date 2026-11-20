@@ -27,6 +27,12 @@ internal data class PassBook(
     /** "Your day": [appMillis] of the Instagram app in front during passes on [appDay]. */
     val appDay: Long? = null,
     val appMillis: Long = 0,
+    /** [settingsCount] passes into the app's settings on [settingsDay]. */
+    val settingsDay: Long? = null,
+    val settingsCount: Int = 0,
+    /** [createCount] passes into the app's post editor on [createDay]. */
+    val createDay: Long? = null,
+    val createCount: Int = 0,
 ) {
     // ---- "Open Instagram for 5 minutes": once a day, not while the daily limit is reached.
 
@@ -36,7 +42,7 @@ internal data class PassBook(
 
     // ---- "Your story": [perDay] a day, with a wait after each.
 
-    fun storiesOn(today: Long): Int = if (storyDay != null && storyDay >= today) storyCount else 0
+    fun storiesOn(today: Long): Int = countOn(storyDay, storyCount, today)
 
     fun storyAllowed(today: Long, now: Long, perDay: Int): Boolean = storiesOn(today) < perDay && !storyWaiting(now)
 
@@ -68,14 +74,28 @@ internal data class PassBook(
     /** Taps of the last hour; one "in the future" (only a wrong clock does that) counts as recent. */
     private fun recentCallTaps(now: Long) = callTaps.filter { now - it < HOUR_MS }
 
+    // ---- The app's settings ([SETTINGS_PER_DAY] a day) and its post editor ([CREATE_PER_DAY] a day).
+
+    fun settingsAllowed(today: Long): Boolean = countOn(settingsDay, settingsCount, today) < SETTINGS_PER_DAY
+
+    fun settingsOpened(today: Long) = copy(settingsDay = today, settingsCount = countOn(settingsDay, settingsCount, today) + 1)
+
+    fun createAllowed(today: Long): Boolean = countOn(createDay, createCount, today) < CREATE_PER_DAY
+
+    fun createOpened(today: Long) = copy(createDay = today, createCount = countOn(createDay, createCount, today) + 1)
+
     // ---- "Your day".
 
     fun appMillisOn(today: Long): Long = if (appDay == today) appMillis else 0L
 
     fun withAppTime(today: Long, millis: Long) = copy(appDay = today, appMillis = appMillisOn(today) + millis)
 
+    private fun countOn(day: Long?, count: Int, today: Long) = if (day != null && day >= today) count else 0
+
     companion object {
         const val CALL_TAPS_PER_HOUR = 3
+        const val SETTINGS_PER_DAY = 5
+        const val CREATE_PER_DAY = 10
         private const val HOUR_MS = 3_600_000L
     }
 }
@@ -99,6 +119,10 @@ internal object PassLedger {
             callTaps = p.getString(CALL_TAPS, null).orEmpty().split(',').mapNotNull { it.toLongOrNull() },
             appDay = p.longOrNull(APP_DAY),
             appMillis = p.getLong(APP_MILLIS, 0L),
+            settingsDay = p.longOrNull(SETTINGS_DAY),
+            settingsCount = p.getInt(SETTINGS_COUNT, 0),
+            createDay = p.longOrNull(CREATE_DAY),
+            createCount = p.getInt(CREATE_COUNT, 0),
         )
     }
 
@@ -114,6 +138,10 @@ internal object PassLedger {
             putString(CALL_TAPS, b.callTaps.joinToString(","))
             putOrRemove(APP_DAY, b.appDay)
             putLong(APP_MILLIS, b.appMillis)
+            putOrRemove(SETTINGS_DAY, b.settingsDay)
+            putInt(SETTINGS_COUNT, b.settingsCount)
+            putOrRemove(CREATE_DAY, b.createDay)
+            putInt(CREATE_COUNT, b.createCount)
         }
     }
 
@@ -132,4 +160,8 @@ internal object PassLedger {
     private const val CALL_TAPS = "callTaps"
     private const val APP_DAY = "appDay"
     private const val APP_MILLIS = "appMillis"
+    private const val SETTINGS_DAY = "settingsDay"
+    private const val SETTINGS_COUNT = "settingsCount"
+    private const val CREATE_DAY = "createDay"
+    private const val CREATE_COUNT = "createCount"
 }

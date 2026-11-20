@@ -171,8 +171,20 @@ internal object PassRules {
 
     /**
      * A create pass stays only while Instagram shows a creation screen ([screens], from the rules);
-     * any other screen (the feed after posting, Reels) ends it. Unknown screen: kept.
+     * any other screen (the feed after posting, Reels) ends it. Fails closed: without a usable
+     * pattern or a known screen, only the grace while the editor opens.
      */
     fun createPassHolds(className: String?, screens: Regex?, sinceGrant: Long): Boolean =
-        sinceGrant < CREATE_GRACE_MS || className == null || screens == null || screens.containsMatchIn(className)
+        sinceGrant < CREATE_GRACE_MS || onScreens(className, screens)
+
+    /** [className] is one of [screens] (a creation or settings screen). Unknown screen or no pattern: no. */
+    fun onScreens(className: String?, screens: Regex?): Boolean =
+        className != null && screens != null && screens.containsMatchIn(className)
+
+    /**
+     * A screens pattern from the rules (`appCreate.screens`, `appSettings.screens`); null if it is
+     * invalid or matches every screen (e.g. empty), so a bad rule can't open the whole app.
+     */
+    fun screensPattern(pattern: String?): Regex? =
+        pattern?.let { runCatching { Regex(it) }.getOrNull() }?.takeUnless { it.containsMatchIn("") }
 }

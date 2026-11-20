@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +40,7 @@ import app.throwback.ui.OnboardingFlow
 import app.throwback.ui.SettingsRoot
 import app.throwback.ui.SettingsStart
 import app.throwback.web.InstagramScreen
+import app.throwback.web.WebReadiness
 import kotlinx.coroutines.launch
 
 /**
@@ -49,7 +51,7 @@ import kotlinx.coroutines.launch
  * so the user never loses their place.
  */
 @Composable
-fun AppRoot(app: ThrowbackApp, deepLink: String?, onCloseApp: () -> Unit) {
+fun AppRoot(app: ThrowbackApp, deepLink: String?, onCloseApp: () -> Unit, onSplashHold: (Boolean) -> Unit) {
     val prefs = app.uiPreferences
     val onboardingDone by prefs.onboardingDone.collectAsStateWithLifecycle(initialValue = null)
     val scope = rememberCoroutineScope()
@@ -57,18 +59,22 @@ fun AppRoot(app: ThrowbackApp, deepLink: String?, onCloseApp: () -> Unit) {
 
     Box(Modifier.fillMaxSize().background(ThrowbackTheme.colors.bg)) {
         when (onboardingDone) {
-            null -> Unit // DataStore still loading; the splash screen covers this frame.
-            false -> OnboardingFlow(
+            null -> SideEffect { onSplashHold(true) } // DataStore still loading.
+            false -> {
+                SideEffect { onSplashHold(false) }
+                OnboardingFlow(
                 onFinished = { scope.launch { prefs.setOnboardingDone() } },
                 onOpenMessagesSetup = {
                     scope.launch { prefs.setOnboardingDone() }
                     settingsOpen = SettingsStart.MessagesAndCalls
                 },
-            )
+                )
+            }
             true -> MainScreen(
                 app = app,
                 deepLink = deepLink,
                 settingsOpen = settingsOpen != null,
+                onSplashHold = onSplashHold,
                 onCloseApp = onCloseApp,
                 onOpenSettings = { settingsOpen = SettingsStart.Home },
             )
@@ -90,6 +96,7 @@ private fun MainScreen(
     app: ThrowbackApp,
     deepLink: String?,
     settingsOpen: Boolean,
+    onSplashHold: (Boolean) -> Unit,
     onCloseApp: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -115,6 +122,11 @@ private fun MainScreen(
     LaunchedEffect(resumed, onInstagram, mode) {
         if (resumed && onInstagram) timeLimit.onForeground(mode) else timeLimit.onBackground()
     }
+
+    // Hold the splash until Instagram's first filtered page is drawn, unless something else
+    // (the mindful pause or settings) is what the user will see first. WebReadiness caps the wait.
+    val firstPageShown by WebReadiness.firstPageShown.collectAsStateWithLifecycle()
+    SideEffect { onSplashHold(mindfulPause == null || (!settingsOpen && !pauseShowing && !firstPageShown)) }
 
     if (mindfulPause == null) return
     if (pauseShowing) {

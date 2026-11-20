@@ -16,15 +16,24 @@ class MainActivity : ComponentActivity() {
     /** instagram.com link this activity was opened with (from another app or a notification). */
     private val deepLink = mutableStateOf<String?>(null)
 
+    /** Set by AppRoot: keep the splash up until the first screen is ready (no flash of unfiltered Instagram). */
+    @Volatile
+    private var holdSplash = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        installSplashScreen().setKeepOnScreenCondition { holdSplash }
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         deepLink.value = intent.instagramUrl()
         val app = application as ThrowbackApp
         setContent {
             ThrowbackTheme {
-                AppRoot(app = app, deepLink = deepLink.value, onCloseApp = { finish() })
+                AppRoot(
+                    app = app,
+                    deepLink = deepLink.value,
+                    onCloseApp = { finish() },
+                    onSplashHold = { holdSplash = it },
+                )
             }
         }
     }

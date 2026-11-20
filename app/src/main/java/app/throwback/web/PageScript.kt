@@ -26,6 +26,7 @@ internal object PageScript {
     fun config(rules: FilterRules? = null, css: String? = null, mode: WebMode? = null, clock: String? = PageClock.json()): String {
         val fields = linkedMapOf<String, JsonElement>()
         clock?.let { fields["clock"] = kotlinx.serialization.json.Json.parseToJsonElement(it) }
+        fields["createInApp"] = JsonPrimitive(PageFeatures.createInApp)
         mode?.let { fields["mode"] = JsonPrimitive(it.name) }
         css?.let { fields["css"] = JsonPrimitive(it) }
         rules?.let { fields["rules"] = RulesJson.encodeToJsonElement(FilterRules.serializer(), it) }

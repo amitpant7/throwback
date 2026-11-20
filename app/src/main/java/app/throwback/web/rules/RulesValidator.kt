@@ -105,6 +105,11 @@ object RulesValidator {
             checkSelector(e.items, "explore.items", errors)
             checkOn(e.on, "explore")
             check(e.dailySeconds in 0..3600) { "explore.dailySeconds out of range" }
+            rules.appCreate?.let { a ->
+                check(a.link.startsWith("instagram://")) { "appCreate.link must be an instagram:// link" }
+                check(runCatching { Regex(a.screens) }.isSuccess) { "appCreate.screens is not a valid pattern" }
+                check(a.triggers.size <= 10) { "appCreate.triggers: too many" }
+            }
             e.actions?.let { a ->
                 (a.like + a.unlike + a.save + a.unsave).forEach { check(it.isNotBlank() && it.length <= 60) { "explore.actions: bad label" } }
             }

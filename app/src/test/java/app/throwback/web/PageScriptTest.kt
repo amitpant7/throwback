@@ -37,7 +37,8 @@ class PageScriptTest {
 
     @Test
     fun `partial config for live updates`() {
-        assertEquals("""{"mode":"FULL"}""", PageScript.config(mode = WebMode.FULL))
+        // The app's features flag always goes along (no trusted clock in unit tests).
+        assertEquals("""{"createInApp":false,"mode":"FULL"}""", PageScript.config(mode = WebMode.FULL, clock = null))
     }
 
     @Test

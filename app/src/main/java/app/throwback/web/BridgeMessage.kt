@@ -36,6 +36,9 @@ internal sealed interface BridgeMessage {
     /** The feed showed "You're all caught up" (a good moment to ask for a rating). */
     data object CaughtUp : BridgeMessage
 
+    /** "+" or "Your story" tapped while the Instagram app is connected: open its create screen. */
+    data object CreateInApp : BridgeMessage
+
     /** Share a reel's link (Explore reel player) through Android's share sheet. */
     data class Share(val url: String) : BridgeMessage
 
@@ -66,6 +69,7 @@ internal sealed interface BridgeMessage {
                 "callInApp" -> CallInApp(str("thread")?.takeIf { THREAD.matches(it) }, str("user")?.takeIf { USER.matches(it) })
                 "reelLimit" -> ReelLimit
                 "caughtUp" -> CaughtUp
+                "createInApp" -> CreateInApp
                 "share" -> str("url")?.takeIf { SHARE_URL.matches(it) }?.let(::Share)
                 else -> null
             }

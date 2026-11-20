@@ -310,6 +310,12 @@
       dailySeconds: typeof ex.dailySeconds === 'number' ? ex.dailySeconds : 0,
       actions: ex.actions || null
     } : null;
+    var ac = rules.appCreate;
+    c.appCreate = ac && Array.isArray(ac.triggers) ? {
+      triggers: ac.triggers.filter(function (t) {
+        return t && ((t.selector && validSelector(t.selector)) || (Array.isArray(t.text) && t.text.length));
+      })
+    } : null;
     var nav = rules.nav;
     c.nav = nav && validSelector(nav.links) ? { links: nav.links, minLinks: nav.minLinks || 3 } : null;
     var fd = rules.feedData;
@@ -1075,9 +1081,36 @@
     location.assign(state.c.homeUrl);
   }
 
+  /*
+   * Posting through the Instagram app (owner, 2026-11-20): with the app connected, "+" and "Your
+   * story" open its create screen (better editor: music, filters, reels) instead of the website's.
+   * The app's guard allows only those screens. Buttons from the rules (appCreate.triggers).
+   */
+  function createInAppTap(e) {
+    var ac = state.c && state.c.appCreate;
+    if (!state.createInApp || !ac || state.mode === MODE_MESSAGES || !e.target || !e.target.closest) return false;
+    var hit = false;
+    for (var i = 0; i < ac.triggers.length && !hit; i++) {
+      var t = ac.triggers[i];
+      if (t.selector) {
+        var el = e.target.closest('[role=button],button,a');
+        hit = !!(el && (el.matches(t.selector) || el.querySelector(t.selector)));
+      } else if (t.text && t.text.length) {
+        var b = e.target.closest('[role=button],button');
+        hit = !!(b && t.text.indexOf((b.textContent || '').trim()) !== -1 && (!t.fileInput || b.querySelector('input[type=file]')));
+      }
+    }
+    if (!hit) return false;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    send({ t: 'createInApp' });
+    return true;
+  }
+
   /** Link taps, before Instagram's router sees them. */
   function onClick(e) {
     if (!state.c || e.defaultPrevented || e.button !== 0) return;
+    if (createInAppTap(e)) return;
     if (openClipFromTap(e)) return;
     var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
     if (!a) return;
@@ -3542,6 +3575,11 @@
 
   // ---------------------------------------------------------------- setup
 
+  /** App features passed in the config (see PageFeatures.kt). */
+  function applyFeatures(cfg) {
+    if (cfg && typeof cfg.createInApp === 'boolean') state.createInApp = cfg.createInApp;
+  }
+
   /** The app's trusted clock (see today()). */
   function applyClock(c) {
     if (!c || typeof c.offset !== 'number' || typeof c.zoneMin !== 'number') return;
@@ -3556,6 +3594,7 @@
   function configure(cfg) {
     if (!cfg) return false;
     applyClock(cfg.clock); // first: anything below may already ask which day it is
+    applyFeatures(cfg);
     var modeChanged = false;
     if (cfg.rules) {
       state.rules = cfg.rules;
@@ -3690,6 +3729,7 @@
 
   state.mode = config && config.mode === MODE_MESSAGES ? MODE_MESSAGES : MODE_FULL;
   applyClock(config && config.clock); // before anything asks which day it is
+  applyFeatures(config);
   state.baseCss = (config && config.css) || '';
   state.path = location.pathname;
   if (config && config.rules) {

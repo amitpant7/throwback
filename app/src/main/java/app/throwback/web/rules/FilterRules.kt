@@ -45,6 +45,8 @@ data class FilterRules(
     val sectionMarkers: List<TextRule> = emptyList(),
     val dialogs: List<DialogRule> = emptyList(),
     val explore: ExploreRules? = null,
+    /** Posting through the Instagram app (when it's connected): link, its creation screens, the web buttons. */
+    val appCreate: AppCreateRules? = null,
     val nav: NavRules? = null,
     val dismissMaxAttempts: Int = 40,
     /** Where Throwback adds its own section to Instagram's settings page (null: no section). */
@@ -298,3 +300,23 @@ object RulesSelection {
         else -> bundled
     }
 }
+
+@Serializable
+data class AppCreateRules(
+    /** Opens the Instagram app's create screen (post, story, reel). */
+    val link: String,
+    /** Regex on the activity class name: the screens the create pass allows. */
+    val screens: String,
+    /** The website's buttons that open the app's create screen instead. */
+    val triggers: List<AppCreateTrigger> = emptyList(),
+)
+
+@Serializable
+data class AppCreateTrigger(
+    /** A CSS selector of the button (or something inside it). */
+    val selector: String? = null,
+    /** Or: a button whose text is one of these (e.g. "Your story", any language)... */
+    val text: List<String> = emptyList(),
+    /** ...and that holds a file input (the web's own "add to story" picker). */
+    val fileInput: Boolean = false,
+)

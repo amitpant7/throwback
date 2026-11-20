@@ -73,6 +73,9 @@ internal class InstagramWebController(
         /** The feed reached "You're all caught up". */
         fun onCaughtUp() {}
 
+        /** "+" / "Your story" with the Instagram app connected. */
+        fun onCreateInApp() {}
+
         /** Opens a picker; must eventually call [deliverFiles]. False if no picker could be opened. */
         fun pickFiles(kind: PickKind, multiple: Boolean, documentIntent: Intent?): Boolean
     }
@@ -279,6 +282,12 @@ internal class InstagramWebController(
         pendingFiles = null
     }
 
+    /** The app's features changed (e.g. the Instagram app got connected): tell the page. */
+    fun pushFeatures() {
+        if (destroyed || !started) return
+        injector.configureLive(PageScript.config()) {}
+    }
+
     private fun share(url: String) {
         val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
             .putExtra(android.content.Intent.EXTRA_TEXT, url)
@@ -483,6 +492,7 @@ internal class InstagramWebController(
             }
             BridgeMessage.CaughtUp -> host?.onCaughtUp()
             is BridgeMessage.Share -> share(m.url)
+            BridgeMessage.CreateInApp -> host?.onCreateInApp()
             null -> Unit
         }
     }

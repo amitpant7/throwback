@@ -10,11 +10,21 @@ internal class ForegroundTracker {
     var current: String? = null
         private set
 
-    fun onEvent(type: Int, packageName: String?) {
+    /** The screen (activity class) of [current], when known. */
+    var currentClass: String? = null
+        private set
+
+    fun onEvent(type: Int, packageName: String?, className: String? = null) {
         packageName ?: return
         when (type) {
-            ACTIVITY_RESUMED -> current = packageName
-            ACTIVITY_PAUSED, ACTIVITY_STOPPED -> if (current == packageName) current = null
+            ACTIVITY_RESUMED -> {
+                current = packageName
+                currentClass = className
+            }
+            ACTIVITY_PAUSED, ACTIVITY_STOPPED -> if (current == packageName && (className == null || className == currentClass)) {
+                current = null
+                currentClass = null
+            }
         }
     }
 
@@ -74,7 +84,13 @@ internal object GuardPolicy {
  * itself keeps Instagram allowed).
  */
 internal object GuardPass {
-    enum class Kind { CALL, VISIT }
+    /** CREATE: posting from the Instagram app ("+" / "Your story"), only its creation screens. */
+    enum class Kind { CALL, VISIT, CREATE }
+
+    /** When the current pass began (elapsed millis). */
+    @Volatile
+    var grantedAt: Long = 0L
+        private set
 
     @Volatile
     var allowUntil: Long = 0L
@@ -89,6 +105,7 @@ internal object GuardPass {
     var sawInstagram: Boolean = false
 
     fun grant(now: Long, durationMs: Long, kind: Kind) {
+        grantedAt = now
         allowUntil = now + durationMs
         this.kind = kind
         sawInstagram = false
@@ -114,4 +131,14 @@ internal object PassRules {
     fun callAllowed(taps: List<Long>, now: Long): Boolean = taps.count { now - it in 0 until HOUR_MS } < CALL_TAPS_PER_HOUR
 
     fun recentTaps(taps: List<Long>, now: Long): List<Long> = taps.filter { now - it in 0 until HOUR_MS }
+
+    /** Instagram's own redirects while the create screen opens. */
+    const val CREATE_GRACE_MS = 3_000L
+
+    /**
+     * A create pass stays only while Instagram shows a creation screen ([screens], from the rules);
+     * any other screen (the feed after posting, Reels) ends it. Unknown screen: kept.
+     */
+    fun createPassHolds(className: String?, screens: Regex?, sinceGrant: Long): Boolean =
+        sinceGrant < CREATE_GRACE_MS || className == null || screens == null || screens.containsMatchIn(className)
 }

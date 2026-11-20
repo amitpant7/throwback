@@ -203,6 +203,12 @@ class GuardService : Service() {
                 } else if (GuardPass.sawInstagram && fg != null) {
                     GuardPass.end() // left Instagram: the rest of the pass isn't kept for later
                 }
+                if (GuardPass.kind == GuardPass.Kind.CREATE && fg != null && fg in watched &&
+                    !PassRules.createPassHolds(tracker.currentClass, createScreens(), now - GuardPass.grantedAt)
+                ) {
+                    Log.i(TAG, "left Instagram's create screens: pass ends")
+                    GuardPass.end()
+                }
                 if (GuardPass.kind == GuardPass.Kind.CALL && (inCallAudio || calls.inCall)) {
                     if (inCallAudio) lastInstagramCallAt = now
                     GuardPass.end()
@@ -243,7 +249,7 @@ class GuardService : Service() {
         val event = UsageEvents.Event()
         while (events.hasNextEvent()) {
             events.getNextEvent(event)
-            tracker.onEvent(event.eventType, event.packageName)
+            tracker.onEvent(event.eventType, event.packageName, event.className)
         }
         lastQueryEnd = end
     }
@@ -303,4 +309,9 @@ class GuardService : Service() {
             context.stopService(Intent(context, GuardService::class.java))
         }
     }
+
+    /** Instagram's creation screens (rules `appCreate.screens`). */
+    private fun createScreens(): Regex? = app.throwback.web.rules.RulesRepository.get(this).rules.value?.appCreate?.screens
+        ?.let { runCatching { Regex(it) }.getOrNull() }
+
 }

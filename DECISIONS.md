@@ -155,6 +155,12 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     off, a scheduled guard turn-off becomes due with it. Not preventable in-app: force-stopping
     Throwback or revoking its permissions in Android settings (to look at: count the real app's time
     against the limit when Throwback next runs).
+27c. **Posting through the Instagram app** (owner, 2026-11-20): with the app connected, "+" and
+    "Your story" in Throwback open the app's create screen (link `instagram://share`, its better
+    editor: music, filters, reels). The guard then follows the app's *screen*, not just the app: it
+    allows only creation screens (activity class `instagram.features.creation.*`, rules `appCreate`),
+    with 3 s of grace while it opens and at most 30 minutes. Any other screen (the feed after
+    posting, Reels) ends the pass and the guard brings the user back. Calls work as before.
 29. **Instagram app found:** after first login, if the Instagram app is installed, Throwback offers
     "Keep it for calls & messages", "Remove it" (opens Android Settings) or "Decide later".
 

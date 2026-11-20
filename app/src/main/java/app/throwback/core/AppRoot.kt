@@ -1,5 +1,7 @@
 package app.throwback.core
 
+import app.throwback.web.InstagramWebController
+import app.throwback.web.PageFeatures
 import app.throwback.ui.UiPrefs
 import app.throwback.ui.messages.MessagesOffState
 import app.throwback.ui.messages.MessagesOffHooks
@@ -92,6 +94,13 @@ fun AppRoot(
                 else -> null
             },
         )
+    }
+
+    // With the Instagram app connected, "+" and "Your story" open its create screen: tell the page.
+    val messagesConnected by UiPrefs.from(LocalContext.current).messagesSetupDone.collectAsStateWithLifecycle(initialValue = false)
+    LaunchedEffect(messagesConnected) {
+        PageFeatures.createInApp = messagesConnected
+        InstagramWebController.current?.get()?.pushFeatures()
     }
 
     // A Messages & calls turn-off scheduled with the PIN is due (a new day): turn it off now.
@@ -256,6 +265,11 @@ private fun MainScreen(
             },
             // A calm, positive moment: after a week of use, Google Play's rating card (asked once).
             onCaughtUp = { (context as? android.app.Activity)?.let { RateAsk.onGoodMoment(it) } },
+            onCreateInApp = {
+                if (!CallInApp.create(context)) {
+                    Toast.makeText(context, R.string.create_in_app_failed, Toast.LENGTH_LONG).show()
+                }
+            },
             // While locked or paused, screen readers must not reach the feed underneath.
             modifier = if (lockShowing || pauseShowing) Modifier.clearAndSetSemantics {} else Modifier,
         )

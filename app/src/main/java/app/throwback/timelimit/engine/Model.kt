@@ -2,7 +2,6 @@ package app.throwback.timelimit.engine
 
 import app.throwback.core.LockState
 import app.throwback.core.WebMode
-import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -21,10 +20,7 @@ data class ClockReading(
     val zone: ZoneId,
     /** Identifies the current boot (Settings.Global.BOOT_COUNT); -1 when unknown. */
     val bootCount: Int,
-) {
-    /** Local date of the raw wall clock (the engine itself uses its trusted time, see TimeLimitEngine). */
-    val localDate: LocalDate get() = Instant.ofEpochMilli(wallMillis).atZone(zone).toLocalDate()
-}
+)
 
 /** Source of [ClockReading]s; Android implementation in AndroidClock, a fake one in tests. */
 fun interface Clock {

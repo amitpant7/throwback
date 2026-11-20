@@ -500,10 +500,7 @@ internal class InstagramWebController(
             is BridgeMessage.Background -> pageBackground = m.argb
             BridgeMessage.OpenSettings -> host?.onOpenSettings()
             is BridgeMessage.CallInApp -> host?.onCallInApp(m.thread, m.user)
-            BridgeMessage.ReelLimit -> {
-                Log.d(TAG, "reel poster requested by the page")
-                host?.onReelLimit()
-            }
+            BridgeMessage.ReelLimit -> host?.onReelLimit()
             BridgeMessage.CaughtUp -> host?.onCaughtUp()
             is BridgeMessage.Share -> share(m.url)
             is BridgeMessage.CreateInApp -> host?.onCreateInApp(m.story)

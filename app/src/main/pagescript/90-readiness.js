@@ -33,7 +33,7 @@
   function sendReady() {
     if (state.readySent || state.leaving) return;
     state.readySent = true;
-    perf.log.push({ page: pageKind(location.pathname), fullLoadToReady: Math.round(performance.now()) });
+    perfNote({ page: pageKind(location.pathname), fullLoadToReady: Math.round(performance.now()) });
     scheduleWarmups();
     // Two frames: the filtered DOM is styled and laid out before the app reveals the WebView.
     raf(function () {

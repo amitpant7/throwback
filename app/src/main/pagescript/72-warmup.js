@@ -88,7 +88,7 @@
       (document.head || document.documentElement).appendChild(link);
       n++;
     });
-    perf.log.push({ page: 'messages-warmup', prefetched: n });
+    perfNote({ page: 'messages-warmup', prefetched: n });
   }
 
   function scheduleWarmups() {

@@ -130,7 +130,6 @@ internal object GuardPass {
 
 /** How often the passes can be used (pure, for tests). */
 internal object PassRules {
-    const val VISITS_PER_DAY = 1
     const val CALL_TAPS_PER_HOUR = 3
     private const val HOUR_MS = 3_600_000L
 

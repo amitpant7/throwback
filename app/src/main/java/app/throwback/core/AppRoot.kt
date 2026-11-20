@@ -10,7 +10,6 @@ import app.throwback.timelimit.GuardOffPinScreen
 import app.throwback.timelimit.GuardOffApi
 import app.throwback.relay.CallInApp
 import android.widget.Toast
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -69,9 +68,9 @@ import kotlinx.coroutines.launch
 /**
  * Owned by integration: decides what is on screen and wires the three feature areas together.
  *
- * Layering on the main screen (bottom to top): Instagram WebView, Throwback's top-start controls
- * (home feed only), time-limit overlay, settings. The WebView stays alive underneath everything
- * so the user never loses their place.
+ * Layering on the main screen (bottom to top): Instagram WebView, the time-left chip (home feed
+ * only), the one-time cards, the reel poster, the time-limit overlay, the mindful pause, settings.
+ * The WebView stays alive underneath everything so the user never loses their place.
  */
 @Composable
 fun AppRoot(
@@ -285,10 +284,7 @@ private fun MainScreen(
             },
             backEnabled = !settingsOpen && !pauseShowing && !reelPoster,
             covered = settingsOpen || pauseShowing || lockShowing || reelPoster,
-            onReelLimit = {
-                Log.d("ThrowbackApp", "reel poster shown (was showing: $reelPoster)")
-                reelPoster = true
-            },
+            onReelLimit = { reelPoster = true },
             // A calm, positive moment: after a week of use, Google Play's rating card (asked once).
             onCaughtUp = { (context as? android.app.Activity)?.let { RateAsk.onGoodMoment(it) } },
             onCreateInApp = { story ->
@@ -364,10 +360,7 @@ private fun MainScreen(
 
         if (reelPoster && !lockShowing) {
             // The page has already closed Instagram's reel viewer: the poster just goes away.
-            ReelPoster(onBack = {
-                Log.d("ThrowbackApp", "reel poster dismissed (Back)")
-                reelPoster = false
-            })
+            ReelPoster(onBack = { reelPoster = false })
         }
 
         if (lockShowing) {

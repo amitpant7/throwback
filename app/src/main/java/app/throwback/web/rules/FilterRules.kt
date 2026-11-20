@@ -287,8 +287,6 @@ object RulesParser {
         val errors = RulesValidator.validate(rules)
         return if (errors.isEmpty()) RulesParseResult.Valid(rules) else RulesParseResult.Invalid(errors)
     }
-
-    fun parseOrNull(text: String?): FilterRules? = (parse(text) as? RulesParseResult.Valid)?.rules
 }
 
 object RulesSelection {

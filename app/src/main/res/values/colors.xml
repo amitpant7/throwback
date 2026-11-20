@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="tb_bg">#F3F6F3</color>
-    <color name="tb_accent">#8FD1AD</color>
-    <color name="tb_on_accent">#0C1F15</color>
 </resources>

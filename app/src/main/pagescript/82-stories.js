@@ -189,7 +189,14 @@
     return /(^|\.)(cdninstagram\.com|fbcdn\.net)$/.test(u.hostname);
   }
 
-  /** The player asks for a piece of a video: learn its quality, and hand it over from memory if we can. */
+  /**
+   * The player asks for a piece of a video: learn its quality, and hand it over from memory if we can.
+   * Each piece is handed over once, and on a later task, never at once. Instagram's player can ask for
+   * the same piece again and again (seen on the emulator, 2026-11-20: the last piece of a short audio
+   * track, about twice a millisecond). Over the network each ask waits for an answer; from memory,
+   * answered at once, that became an endless loop that froze the page and grew memory by ~20 MB/s. A
+   * repeated ask now goes to the network, as it would without Throwback.
+   */
   function storyFetchHit(url) {
     if (url.indexOf('bytestart=') === -1 || !state.c) return null;
     var u = parseUrl(url);
@@ -200,11 +207,17 @@
     var start = +u.searchParams.get('bytestart');
     var end = +u.searchParams.get('byteend');
     if (!e || !e.buf || !(start >= 0) || !(end >= start) || end >= e.buf.byteLength) return null;
+    var range = start + '-' + end;
+    if (e.served[range]) return null;
+    e.served[range] = true;
     la.stats.hits++;
-    return Promise.resolve(new Response(e.buf.slice(start, end + 1), {
-      status: 200,
-      headers: { 'Content-Type': e.audio ? 'audio/mp4' : 'video/mp4' }
-    }));
+    var body = e.buf.slice(start, end + 1);
+    var headers = { 'Content-Type': e.audio ? 'audio/mp4' : 'video/mp4', 'Content-Length': String(body.byteLength) };
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        resolve(new Response(body, { status: 200, headers: headers }));
+      }, 0);
+    });
   }
 
   function noteStoryPlaying(path) {
@@ -269,7 +282,7 @@
 
   function prefetchPiece(la, rp, bytes) {
     if (!bytes) return;
-    var entry = { audio: rp.audio, buf: null };
+    var entry = { audio: rp.audio, buf: null, served: {} };
     la.store[rp.path] = entry;
     var url = rp.url + (rp.url.indexOf('?') === -1 ? '?' : '&') + 'bytestart=0&byteend=' + (bytes - 1);
     nativeFetch.call(window, url, { credentials: 'omit', mode: 'cors' }).then(function (res) {

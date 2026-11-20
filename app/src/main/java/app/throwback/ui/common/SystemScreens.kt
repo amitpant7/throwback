@@ -31,11 +31,6 @@ internal object SystemScreens {
     fun openAppDetails(context: Context, packageName: String): Boolean =
         context.tryStart(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
 
-    fun launchApp(context: Context, packageName: String): Boolean {
-        val intent = context.packageManager.getLaunchIntentForPackage(packageName) ?: return false
-        return context.tryStart(intent)
-    }
-
     /**
      * Android's notification settings for another app (its notification categories with on/off
      * switches). Falls back to that app's details page.

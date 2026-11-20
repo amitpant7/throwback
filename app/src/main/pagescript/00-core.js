@@ -3,21 +3,24 @@
  *
  * Injected into www.instagram.com documents at document start (WebViewCompat.addDocumentStartJavaScript),
  * or as early as onPageStarted on WebViews without that feature. The app replaces the token at the
- * bottom with {mode, css, rules}: rules come from filters/rules.json (validated by the app),
- * css from throwback.css. Kotlin side: app/src/main/java/app/throwback/web/ (PageScript, ScriptInjector).
+ * bottom with the config {mode, css, rules, clock, features}: rules come from filters/rules.json
+ * (validated by the app), css from throwback.css. Kotlin side: app/src/main/java/app/throwback/web/
+ * (PageScript, ScriptInjector, BridgeMessage). The parts of this script and the rules for editing
+ * them are in README.md next to this file.
  *
  * What it does:
  *  - Routing for in-page navigation (pushState/replaceState/popstate and link taps), mirroring
  *    UrlRouter.kt: Reels pages blocked (a single reel opens as a post), the home feed is always the
  *    home feed, messages-only mode keeps to /direct/.
- *  - Hides Reels links, the Explore grid, ads, suggestions, app nags, and Instagram's wordmark on
- *    the home feed, using stable signals only (hrefs, aria-labels, visible text). Everything runs in
- *    a MutationObserver callback, before the browser paints, so filtered content never flashes.
+ *  - Removes ads and suggestions from the feed data before Instagram draws them, and hides Reels
+ *    links, the Explore grid (after its daily minutes) and app nags using stable signals only (hrefs,
+ *    aria-labels, visible text). DOM work runs in a MutationObserver callback, before the browser
+ *    paints, so filtered content never flashes.
  *  - Never hides captions or video descriptions (DECISIONS.md #15): text labels only count in a
  *    post's header, before its media.
  *  - Reports location changes, readiness, touches (pull-to-refresh) and the page background to the app.
  *
- * Written for old Chromium too (fallback mode): no optional chaining, no nullish coalescing.
+ * Written for old Chromium too (fallback mode): ES5 style, no optional chaining, no nullish coalescing.
  */
 (function (config) {
   'use strict';
@@ -49,7 +52,6 @@
 
   var state = {
     mode: MODE_FULL,
-    rules: null,
     c: null, // compiled rules
     baseCss: '',
     css: '',

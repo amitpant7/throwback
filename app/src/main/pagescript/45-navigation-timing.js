@@ -6,7 +6,14 @@
    * DevTools with __throwback.perf(). Nothing is sent anywhere.
    */
   var PERF_SETTLE_MS = 300;
+  var PERF_LOG_MAX = 30;
   var perf = { lastTap: 0, rec: null, lastChange: 0, timer: 0, log: [] };
+
+  /** Adds a record to the in-memory log read by __throwback.perf() (the last PERF_LOG_MAX). */
+  function perfNote(rec) {
+    perf.log.push(rec);
+    if (perf.log.length > PERF_LOG_MAX) perf.log.shift();
+  }
 
   function pageKind(path) {
     var c = state.c;
@@ -37,8 +44,7 @@
       rec.tapToSettled = Math.round(perf.lastChange - rec.tap);
       if (WARM_PAGES.indexOf(rec.page) !== -1) learnDmAssets(rec.tap - 50, perf.lastChange, rec);
       delete rec.tap;
-      perf.log.push(rec);
-      if (perf.log.length > 30) perf.log.shift();
+      perfNote(rec);
       perf.rec = null;
     }, PERF_SETTLE_MS);
   }

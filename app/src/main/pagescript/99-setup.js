@@ -23,10 +23,7 @@
     applyClock(cfg.clock); // first: anything below may already ask which day it is
     applyFeatures(cfg);
     var modeChanged = false;
-    if (cfg.rules) {
-      state.rules = cfg.rules;
-      state.c = compile(cfg.rules);
-    }
+    if (cfg.rules) state.c = compile(cfg.rules);
     if (!state.c) return false;
     installDataFilter();
     installRequestTweak();
@@ -119,7 +116,6 @@
     /** The app tells the page when one of its own screens (Settings, lock, pause) covers it. */
     setCovered: function (covered) {
       state.covered = !!covered;
-      reelEvent('covered', { on: !!covered });
       if (covered) pauseAllMedia();
       else onClipVisibility(); // the Explore reel player picks up where it was
       // Backup: when the poster goes away, a stopped viewer that is somehow still open gets closed.
@@ -130,9 +126,6 @@
     /** The trusted clock the app passed (for tests over DevTools). */
     clockInfo: function () {
       return { offset: clock.offset, zoneMin: clock.zoneMin, day: clock.day, nextAt: clock.nextAt, now: trustedNow() };
-    },
-    reelEvents: function () {
-      return reels.events.slice();
     },
     storyStats: function () {
       var s = stories.stats;
@@ -160,7 +153,6 @@
   state.baseCss = (config && config.css) || '';
   state.path = location.pathname;
   if (config && config.rules) {
-    state.rules = config.rules;
     state.c = compile(config.rules);
     state.css = buildCss(state.c, state.baseCss);
     ensureStyle();

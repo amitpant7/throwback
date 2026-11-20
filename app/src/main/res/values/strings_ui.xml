@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Strings owned by the ui area (onboarding, settings, Messages & calls, shortcut, About, mindful pause). -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Common -->
     <string name="ui_back">Back</string>
@@ -159,7 +159,6 @@
     <!-- 6 · About & support -->
     <string name="ui_about_version">v%1$s</string>
     <string name="ui_support_title">Support Throwback</string>
-    <string name="ui_support_body">Throwback is free and stays free. If it gave you some time back, you can say thanks. Nothing unlocks; it just keeps the filters working. (And yes, the rock show and GTA 6 are for all the free time I now have.)</string>
     <string name="ui_tip_beer">Beer</string>
     <string name="ui_tip_rock">Rock show</string>
     <string name="ui_tip_gta">GTA 6</string>
@@ -263,13 +262,13 @@
     <string name="ui_today_reels_free">A few free swipes</string>
     <string name="ui_today_reels_cooling">Free again in %1$s</string>
     <string name="ui_today_discover">Discover posts</string>
-    <string name="ui_today_discover_value">%1$d of %2$d left</string>
+    <string name="ui_today_discover_value" tools:ignore="PluralsCandidate">%1$d of %2$d left</string>
     <string name="ui_today_section_removed">Removed today</string>
     <string name="ui_today_section_app">Instagram app</string>
     <string name="ui_today_story_passes">Story passes</string>
-    <string name="ui_today_story_ready">%1$d of %2$d used · ready</string>
-    <string name="ui_today_story_wait">%1$d of %2$d used · next in %3$d min</string>
-    <string name="ui_today_story_tomorrow">%1$d of %2$d used · tomorrow</string>
+    <string name="ui_today_story_ready" tools:ignore="PluralsCandidate">%1$d of %2$d used · ready</string>
+    <string name="ui_today_story_wait" tools:ignore="PluralsCandidate">%1$d of %2$d used · next in %3$d min</string>
+    <string name="ui_today_story_tomorrow" tools:ignore="PluralsCandidate">%1$d of %2$d used · tomorrow</string>
     <string name="ui_today_visit">Open Instagram for 5 minutes</string>
     <string name="ui_today_visit_used">Used today</string>
     <string name="ui_today_visit_free">Available</string>

@@ -64,7 +64,7 @@ import kotlinx.coroutines.launch
  * @param startUrl an instagram.com URL to open (deep link / notification), or null for the home feed.
  *        Each new value is opened once.
  * @param onLocationChanged called with the current path (e.g. "/", "/direct/inbox/") after every navigation,
- *        including in-page (pushState) navigation. Integration shows its top-start controls only on the home feed.
+ *        including in-page (pushState) navigation. Integration shows the time-left chip only on the home feed.
  *        Outside instagram.com (Facebook login) the full URL is passed instead, so it never looks like "/".
  * @param onExitRequest back pressed with no web history left; integration decides (normally finishes the activity).
  * @param onOpenSettings Throwback's settings icon (on the user's own profile page) was tapped.

@@ -463,11 +463,3 @@ internal fun pinProblemText(result: ActionResult?, blockedMillis: Long): String?
     result is ActionResult.NotAllowed || result is ActionResult.PinRequired -> stringResource(R.string.tl_error_generic)
     else -> null
 }
-
-/** Makes a clickable surface read as one button with [description]. */
-internal fun Modifier.buttonSemantics(description: String, onClick: () -> Unit): Modifier =
-    clearAndSetSemantics {
-        contentDescription = description
-        role = Role.Button
-        this.onClick { onClick(); true }
-    }.clickable(role = Role.Button, onClick = onClick)

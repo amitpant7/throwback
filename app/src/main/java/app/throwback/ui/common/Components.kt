@@ -297,22 +297,6 @@ internal fun throwbackSwitchColors(): SwitchColors {
     )
 }
 
-/** Small bordered note with an info icon, e.g. the "Preview" honesty note. */
-@Composable
-internal fun InfoNote(text: String, modifier: Modifier = Modifier) {
-    val colors = ThrowbackTheme.colors
-    Row(
-        modifier
-            .fillMaxWidth()
-            .border(1.dp, colors.line, RoundedCornerShape(14.dp))
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        LineIcon(R.drawable.ui_ic_info, size = 18.dp, tint = colors.muted)
-        Text(text, style = UiText.sub, color = colors.muted, modifier = Modifier.weight(1f))
-    }
-}
-
 /** Four-segment progress indicator used at the top of each wizard step. */
 @Composable
 internal fun StepBars(current: Int, total: Int, modifier: Modifier = Modifier) {

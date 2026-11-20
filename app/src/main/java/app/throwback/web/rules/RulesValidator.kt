@@ -108,6 +108,10 @@ object RulesValidator {
             check(n.minLinks in 2..10) { "nav.minLinks out of range" }
         }
         checkSelector(rules.readySelector, "readySelector", errors)
+        rules.settingsSection?.let { ss ->
+            checkPattern(ss.path, "settingsSection.path", errors)
+            checkTexts(ss.after, "settingsSection.after", errors)
+        }
 
         // Entry points must be Instagram pages that their own mode actually shows.
         // Skipped when the patterns above are broken (the router would throw).

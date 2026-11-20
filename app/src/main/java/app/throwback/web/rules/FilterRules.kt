@@ -47,6 +47,8 @@ data class FilterRules(
     val explore: ExploreRules? = null,
     val nav: NavRules? = null,
     val dismissMaxAttempts: Int = 40,
+    /** Where Throwback adds its own section to Instagram's settings page (null: no section). */
+    val settingsSection: SettingsSectionRules? = null,
 )
 
 @Serializable
@@ -141,6 +143,14 @@ data class DialogRule(
 
 @Serializable
 data class ExploreRules(val on: String = "explore", val keep: String, val items: String)
+
+@Serializable
+data class SettingsSectionRules(
+    /** Path pattern of Instagram's settings page. */
+    val path: String,
+    /** Section headings (any language) after whose section Throwback's section goes, e.g. "Your account". */
+    val after: List<String>,
+)
 
 @Serializable
 data class NavRules(val links: String, val minLinks: Int = 3)

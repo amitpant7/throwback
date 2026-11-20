@@ -56,6 +56,11 @@ internal object WebViewConfig {
         if (WebViewFeature.isFeatureSupported(WebViewFeature.ATTRIBUTION_REGISTRATION_BEHAVIOR)) {
             WebSettingsCompat.setAttributionRegistrationBehavior(s, WebSettingsCompat.ATTRIBUTION_BEHAVIOR_DISABLED)
         }
+        // Smoother scrolling: draw the page a little beyond the screen ahead of time (more memory, so
+        // the WebView only keeps it while visible). Pairs with the page script's look-ahead.
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.OFF_SCREEN_PRERASTER)) {
+            WebSettingsCompat.setOffscreenPreRaster(s, true)
+        }
         // User-agent client hints name "Android WebView" as a brand; drop it to match the UA string.
         if (WebViewFeature.isFeatureSupported(WebViewFeature.USER_AGENT_METADATA)) {
             val metadata = WebSettingsCompat.getUserAgentMetadata(s)

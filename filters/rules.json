@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112005,
+  "version": 2026112006,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -143,5 +143,10 @@
     "note": "The bottom bar is the smallest block that holds at least minLinks of these and no post content. It is hidden in messages-only mode, and slots whose only link is hidden collapse so the remaining icons spread out."
   },
 
+  "settingsSection": {
+    "note": "Throwback adds its own section (opens Throwback's settings) to Instagram's settings page, right after the section with one of these headings.",
+    "path": "^/accounts/settings/?$",
+    "after": ["Your account", "Dein Konto", "Votre compte", "Tu cuenta", "Sua conta", "Il tuo account"]
+  },
   "dismissMaxAttempts": 40
 }

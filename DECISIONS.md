@@ -36,8 +36,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 13b. **A little discovery** (decided 2026-11-20): of Instagram's suggested posts (never ads), a few are
     shown, tagged "Discover · not someone you follow". Per 5 minutes of time actually spent on the feed:
     at most 1 video/reel and 1 photo post; at most 20 a day; only after 8 posts from people you follow
-    since the previous one; never after "You're all caught up". Always on, no setting. When only hidden
-    suggestions are left, the feed shows "You're all caught up" instead of an endless spinner.
+    since the previous one; never after "You're all caught up". Always on, no setting.
+13c. **Feed bottom** (decided 2026-11-20): never blank space. Gaps between waves of followed posts show
+    Instagram's loading spinner; "You're all caught up" only when only suggestions are left (20 hidden
+    in a row, or nothing new for 10 s at the bottom). The next posts are loaded ahead for smooth scrolling.
 14. **No toggles.** Throwback is minimal; there is no setting to bring distractions back.
     Settings shows a read-only "Throwback removes" list.
 15. Video captions and descriptions must never be hidden (a known complaint about a competitor).
@@ -85,7 +87,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 33a. **Throwback settings ("portal") has no button on the feed** (decided 2026-11-20); the feed looks
     exactly like Instagram. Ways in:
     1. **Profile page:** Throwback's icon at the top right of your own profile, replacing the Threads icon.
-    2. **Instagram's settings page:** a "Throwback" section right after "Your account".
+    2. **Instagram's settings page:** a "Throwback" section right after "Your account" (page path and
+       heading texts in `rules.json` `settingsSection`, so it can be fixed remotely).
     3. **Long-press the Home tab** in the bottom bar (a normal tap still goes home).
     4. **Long-press the Throwback app icon** → "Throwback settings" (launcher shortcut).
 33. **Mockups:** https://claude.ai/artifact/JVunY8kiNTP8abRP43LSGV (private to the owner).

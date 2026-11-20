@@ -2,6 +2,7 @@ package app.throwback.web.rules
 
 import app.throwback.web.TestRules
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -24,6 +25,23 @@ class RulesParserTest {
         assertEquals("https://www.instagram.com/", rules.homeUrl)
         assertTrue(rules.hide.isNotEmpty())
         assertTrue(rules.posts.labels.any { it.id == "sponsored" })
+    }
+
+    @Test
+    fun `bundled rules place the settings section after 'Your account'`() {
+        val section = TestRules.bundled.settingsSection
+        assertNotNull(section)
+        assertTrue(Regex(section!!.path).containsMatchIn("/accounts/settings/"))
+        assertTrue("Your account" in section.after)
+    }
+
+    @Test
+    fun `broken settings section rules are rejected`() {
+        assertRejected(TestRules.bundledWith { it.replace("\"^/accounts/settings/?$\"", "\"^/accounts/(settings\"") }, "invalid pattern")
+        assertRejected(
+            TestRules.bundledWith { it.replace(Regex("\"after\": \\[[^\\]]*\\]"), "\"after\": []") },
+            "text list size",
+        )
     }
 
     @Test

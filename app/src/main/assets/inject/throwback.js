@@ -304,6 +304,9 @@
     c.explore = ex && validSelector(ex.keep) && validSelector(ex.items) ? { on: ex.on || 'explore', keep: ex.keep, items: ex.items } : null;
     var nav = rules.nav;
     c.nav = nav && validSelector(nav.links) ? { links: nav.links, minLinks: nav.minLinks || 3 } : null;
+    var ss = rules.settingsSection;
+    var ssRe = ss && toRegex(ss.path);
+    c.settingsSection = ssRe && ss.after && ss.after.length ? { re: ssRe, after: textSet(ss.after) } : null;
     // Text nodes longer than any matcher (plus slack for whitespace) can be skipped cheaply.
     c.maxTextLength = maxLen + 8;
     return c;
@@ -455,6 +458,122 @@
     threads.parentNode.insertBefore(btn, threads.nextSibling);
   }
 
+  // ---------------------------------------------------------------- settings-page section
+
+  /*
+   * On Instagram's settings page, a "Throwback" section right after "Your account" (rules:
+   * settingsSection) opens Throwback's settings. Styled from Instagram's own heading and rows, so it
+   * looks native; re-added on the next pass if Instagram re-renders the page.
+   */
+  var SETTINGS_SECTION_ID = '__tb_settings_section';
+
+  function updateSettingsSection() {
+    var ss = state.c && state.c.settingsSection;
+    var existing = document.getElementById(SETTINGS_SECTION_ID);
+    if (!ss || state.mode === MODE_MESSAGES || !ss.re.test(location.pathname)) {
+      if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+      return;
+    }
+    if (existing && existing.isConnected) return;
+    var heading = findExactText(ss.after);
+    if (!heading) return;
+    var place = sectionPlacement(heading);
+    if (!place) return;
+    place.parent.insertBefore(buildSettingsSection(heading, place.sample), place.before);
+  }
+
+  /** The element whose whole text is one of the given texts (deepest match, in reading order). */
+  function findExactText(set) {
+    var root = document.querySelector('main') || document.body;
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (var t = walker.nextNode(); t; t = walker.nextNode()) {
+      var el = t.parentElement;
+      if (el && !el.closest('#' + SETTINGS_SECTION_ID) && set.has(norm(el.textContent || ''))) return el;
+    }
+    return null;
+  }
+
+  /**
+   * Where the section goes. Usually the heading sits in a block with its rows: insert after that block.
+   * If headings and rows are flat siblings in one long list, insert after the row following the heading.
+   */
+  function sectionPlacement(heading) {
+    var label = (heading.textContent || '').trim();
+    var n = heading;
+    for (var depth = 0; depth < 8; depth++) {
+      var p = n.parentElement;
+      if (!p || p === document.body || p.tagName === 'MAIN') return null;
+      var text = (p.textContent || '').trim();
+      if (text.length > label.length + 2) {
+        if (text.length <= 400 && p.parentElement) return { parent: p.parentElement, before: p.nextSibling, sample: p };
+        var row = n.nextElementSibling;
+        return { parent: p, before: row ? row.nextSibling : n.nextSibling, sample: row || p };
+      }
+      n = p;
+    }
+    return null;
+  }
+
+  /** Text styles of the first two text lines in sample after the heading (a row's label and subtitle). */
+  function rowTextStyles(sample, heading) {
+    var out = [];
+    var walker = document.createTreeWalker(sample, NodeFilter.SHOW_TEXT);
+    for (var t = walker.nextNode(); t && out.length < 2; t = walker.nextNode()) {
+      var el = t.parentElement;
+      if (!el || !(t.textContent || '').trim() || heading.contains(el)) continue;
+      var cs = getComputedStyle(el);
+      out.push({ size: cs.fontSize, weight: cs.fontWeight, color: cs.color });
+    }
+    return out;
+  }
+
+  function buildSettingsSection(heading, sample) {
+    var hs = getComputedStyle(heading);
+    var rows = rowTextStyles(sample, heading);
+    var label = rows[0] || { size: '15px', weight: '400', color: hs.color };
+    var sub = rows[1] || { size: '13px', weight: '400', color: label.color };
+    var left = Math.max(12, Math.round(heading.getBoundingClientRect().left)) + 'px';
+
+    var wrap = document.createElement('div');
+    wrap.id = SETTINGS_SECTION_ID;
+    wrap.style.cssText = 'font-family:inherit;padding:8px 0';
+    var title = document.createElement('div');
+    title.textContent = 'Throwback';
+    title.style.cssText = 'font-size:' + hs.fontSize + ';font-weight:' + hs.fontWeight + ';color:' + hs.color +
+      ';padding:12px ' + left + ' 8px ' + left;
+    var row = document.createElement('div');
+    row.setAttribute('role', 'button');
+    row.setAttribute('tabindex', '0');
+    row.setAttribute('aria-label', 'Throwback settings');
+    row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px ' + left + ';cursor:pointer;' +
+      'color:' + label.color + ';-webkit-tap-highlight-color:transparent';
+    row.innerHTML =
+      '<span style="display:flex;width:24px;height:24px;flex:none">' + THROWBACK_ICON + '</span>' +
+      '<span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">' +
+      '<span style="font-size:' + label.size + ';font-weight:' + label.weight + '">Throwback settings</span>' +
+      '<span style="font-size:' + sub.size + ';color:' + sub.color + (rows[1] ? '' : ';opacity:.65') +
+      '">Time limit, mindful pause, messages &amp; calls</span></span>' +
+      '<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
+      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5;flex:none">' +
+      '<path d="m9 6 6 6-6 6"/></svg>';
+    row.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      send({ t: 'settings' });
+    }, true);
+    row.addEventListener('touchstart', function () {
+      row.style.background = 'rgba(128,128,128,.14)';
+    }, { passive: true });
+    ['touchend', 'touchcancel'].forEach(function (ev) {
+      row.addEventListener(ev, function () {
+        row.style.background = '';
+      }, { passive: true });
+    });
+    wrap.appendChild(title);
+    wrap.appendChild(row);
+    return wrap;
+  }
+
   /**
    * Long-press on the Home tab of the bottom bar opens Throwback's settings (a normal tap still goes
    * home). The Home tab is the bottom-bar link to "/" (any feed variant).
@@ -514,7 +633,10 @@
   var END_HIDDEN_RUN = 20; // this many hidden posts in a row at the bottom = only suggestions are left
   var END_IDLE_MS = 10000; // ... or nothing new loaded for this long at the bottom
   var ATTR_FEED_LIST = 'data-tb-feedlist'; // the feed's (virtualized) list element
-  var END_PAST_MS = 400; // how long blank space must show under the last real post before acting on it
+  var END_PAST_MS = 400; // how long the condition must hold before entering the bottom state
+  var LOOKAHEAD_SCREENS = 2; // enter the bottom state while the last real post is within this many screens
+  var LOOKAHEAD_POSTS = 4; // real posts below the screen whose images load early
+  var ATTR_WARM = 'data-tb-warm';
 
   /**
    * Instagram's ranked feed keeps loading suggested posts after the people you follow run out.
@@ -548,10 +670,14 @@
     //    so it is removed; Instagram's own loading spinner shows while it fetches more.
     //  - ended (ATTR_FEED_END): at the bottom and END_HIDDEN_RUN hidden posts in a row, or nothing
     //    new loaded for END_IDLE_MS. "You're all caught up", no spinner, no more loading.
+    warmUpcoming(list);
     if (state.atBottom) {
       if (!hasFreshRealPost(list)) {
         var kids = list.children.length;
-        if (kids !== state.bottomKids) {
+        // The idle clock only runs while the bottom is actually on screen (someone still reading the
+        // last post isn't waiting for more).
+        var bottomOnScreen = lastVisible.getBoundingClientRect().bottom < window.innerHeight * 0.9;
+        if (kids !== state.bottomKids || (!bottomOnScreen && !document.documentElement.hasAttribute(ATTR_FEED_END))) {
           state.bottomKids = kids;
           state.bottomSince = now;
         }
@@ -560,8 +686,11 @@
       }
       clearFeedBottom();
     }
-    var blankBelow = trailingHidden > 0 && lastVisible.getBoundingClientRect().bottom < window.innerHeight * 0.9;
-    if (!blankBelow) {
+    // Look-ahead: act while the last real post is still up to LOOKAHEAD_SCREENS below, not only once
+    // blank space shows. Removing the reserved space early also brings Instagram's "load more" point
+    // closer, so the next batch is fetched before the user gets there.
+    var nearEnd = trailingHidden > 0 && lastVisible.getBoundingClientRect().bottom < window.innerHeight * LOOKAHEAD_SCREENS;
+    if (!nearEnd) {
       state.pastSince = 0;
       return;
     }
@@ -578,6 +707,21 @@
     state.bottomSince = now;
     state.bottomTimer = setInterval(updateEndCard, 1000); // for the idle check
     document.documentElement.setAttribute(ATTR_FEED_GAP, '1');
+  }
+
+  /** Images of the next few real posts below the screen load now instead of when scrolled to. */
+  function warmUpcoming(list) {
+    var n = 0;
+    var vh = window.innerHeight;
+    for (var a = list.firstElementChild; a && n < LOOKAHEAD_POSTS; a = a.nextElementSibling) {
+      if (a.tagName !== 'ARTICLE' || a.hasAttribute(ATTR_POST)) continue;
+      if (a.getBoundingClientRect().top < vh) continue;
+      n++;
+      if (a.hasAttribute(ATTR_WARM)) continue;
+      a.setAttribute(ATTR_WARM, '1');
+      var imgs = a.querySelectorAll('img[loading="lazy"]');
+      for (var i = 0; i < imgs.length; i++) imgs[i].loading = 'eager';
+    }
   }
 
   function realPostKeys(list) {
@@ -1277,6 +1421,7 @@
       ensureStyle();
       fixViewport();
       updateProfileEntry();
+      updateSettingsSection();
       updateEndCard();
       dismissDialogs();
       applyExplore();

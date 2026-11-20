@@ -149,12 +149,29 @@ Highlights:
 | Way | Where it's implemented |
 |---|---|
 | Profile page icon (replaces the Threads icon, own profile only) | `throwback.js` `updateProfileEntry()`, bridge message `{"t":"settings"}` |
-| "Throwback" section on Instagram's settings page, after "Your account" | `throwback.js` (in progress) |
+| "Throwback" section on Instagram's settings page, after "Your account" | `throwback.js` `updateSettingsSection()`; path and headings in `rules.json` `settingsSection` (built, not yet checked on the phone) |
 | Long-press the Home tab | `throwback.js` `installHomeLongPress()` |
 | Long-press the app icon → "Throwback settings" | `res/xml/shortcuts.xml`, action `app.throwback.action.OPEN_SETTINGS` |
 
 All of them end in `AppRoot` opening `SettingsRoot`. Test builds can also use
 `adb shell am start -n app.throwback/.MainActivity --es debug_open settings`.
+
+## 5c. How the feed bottom works (`throwback.js` `updateEndCard()`)
+
+Instagram's ranked home feed comes in waves: posts from people you follow, then a long run of
+suggestions (hidden by Throwback), then older followed posts. Its list is virtualized: unrendered posts
+stand in as a large `padding-bottom` on the list. Throwback therefore uses two latched states, cleared
+only when a genuinely new real post appears:
+
+- **At the bottom** (`html[data-tb-feedgap]`): only hidden posts follow the last real post, which is
+  within 2 screens. The list's reserved padding is removed (no blank space, and Instagram's "load more"
+  point moves closer, so the next batch loads early); Instagram's own spinner shows while it loads.
+- **Ended** (`html[data-tb-feedend]`): at the bottom with 20 hidden posts in a row, or nothing new loaded
+  for 10 s while the bottom is on screen. "You're all caught up" card, spinner hidden.
+
+Also: images of the next 4 real posts below the screen load early, and the WebView pre-rasters
+off-screen content (`WebViewConfig`). Discovery (DECISIONS 13b) lets a few suggestions through; see
+`allowDiscovery()`.
 
 ## 5b. Ideas for later (owner)
 
@@ -198,13 +215,20 @@ paid tip product names should be rechecked before the Play release.
       "Log in or sign up" landing page) → after login, "You still have the Instagram app" (only if it's
       installed) → the feed.
 - [ ] **Splash:** goes straight to the filtered home feed, with no white flash and no unfiltered posts.
-- [ ] **Home feed:** stories row shows; suggested posts and everything after "You're all caught up"
-      are hidden; tapping Home causes no reload loop.
+- [ ] **Home feed:** stories row shows; suggested posts and ads ("Sponsored" and "Ad") are hidden;
+      tapping Home causes no reload loop.
+- [ ] **Feed bottom:** no blank space; Instagram's spinner shows in gaps between waves of followed
+      posts; "You're all caught up" only at the true end, with no flicker.
+- [ ] **Discovery:** now and then a post tagged "Discover · not someone you follow" (at most 1 video
+      and 1 photo per 5 min of feed time, 20 a day).
+- [ ] **Scrolling** feels smooth (look-ahead images, off-screen pre-raster); no memory trouble.
 - [ ] **Hidden:** no Reels tab and no gap in the bottom bar; no Explore grid (search still works);
       no "Suggested for you"; no ads.
 - [ ] **Captions:** captions and video descriptions are always visible.
-- [ ] **Throwback button:** sits top-left on the feed, opens Settings, and doesn't overlap Instagram's
-      heart and DM icons.
+- [ ] **Settings entry points:** no Throwback button on the feed. Own profile: white Throwback icon
+      where the Threads icon was, opens Settings. Instagram's settings page: "Throwback" section right
+      after "Your account", looks native, opens Settings. Long-press Home opens Settings; a normal tap
+      still goes home. Long-press the app icon → "Throwback settings".
 - [ ] **Login persists** after killing the app; two-factor login works.
 - [ ] **Dark/light** follows the phone, including a live toggle.
 - [ ] **Posting** a photo or video works through the photo picker.

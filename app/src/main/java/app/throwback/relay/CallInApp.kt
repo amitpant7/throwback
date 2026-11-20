@@ -115,9 +115,13 @@ internal object CallInApp {
 
     private fun storiesPerDay(context: Context) = storyRules(context)?.perDay ?: 3
 
-    /** Whether "Your story" can open the Instagram app now (else the website's story upload). */
+    /**
+     * Whether "Your story" can open the Instagram app now (else the website's story upload). Only
+     * tells the page where to send the tap; [story] checks again. So while the time limit is still
+     * loading its state (at start), it says yes rather than send the page to the website for a minute.
+     */
     fun storyAvailable(context: Context): Boolean {
-        val now = PassLedger.now(context) ?: return false
+        val now = PassLedger.now(context) ?: return true
         return PassLedger.read(context).storyAllowed(now.epochDay, now.wallMillis, storiesPerDay(context))
     }
 

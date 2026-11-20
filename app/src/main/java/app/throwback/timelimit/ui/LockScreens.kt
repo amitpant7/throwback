@@ -1,5 +1,6 @@
 package app.throwback.timelimit.ui
 
+import android.view.inputmethod.InputMethodManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
@@ -40,6 +41,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -79,6 +81,15 @@ internal fun LockOverlay(
     if (view.lockState != LockState.Locked || phase == null) return
 
     var page by remember { mutableStateOf(LockPage.Main) }
+    val hostView = LocalView.current
+
+    // If the user was typing (say, a message) when time ran out, close the keyboard and take focus
+    // away from the WebView so nothing can be typed into it blind.
+    LaunchedEffect(Unit) {
+        hostView.context.getSystemService(InputMethodManager::class.java)
+            ?.hideSoftInputFromWindow(hostView.windowToken, 0)
+        hostView.rootView.findFocus()?.clearFocus()
+    }
 
     // Keep the countdowns moving even when no foreground session is ticking.
     LaunchedEffect(controller) {

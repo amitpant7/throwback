@@ -28,11 +28,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -40,6 +43,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -47,6 +51,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -158,9 +164,11 @@ internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
     val tipsSoon = stringResource(R.string.ui_tips_soon)
     val linkFailed = stringResource(R.string.ui_link_failed)
     val open: (String) -> Unit = { url -> if (!SystemScreens.openUrl(context, url)) showMessage(linkFailed) }
+    val focus = LocalFocusManager.current
     var bigOpen by rememberSaveable { mutableStateOf(false) }
 
-    Column(Modifier.fillMaxSize()) {
+    // imePadding: edge to edge, the screen itself keeps the amount field above the keyboard.
+    Column(Modifier.fillMaxSize().imePadding()) {
         TopBar(stringResource(R.string.ui_support_title), onBack = onBack)
         Column(
             Modifier
@@ -209,6 +217,7 @@ internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                     // the closest tip product (set up in steps); until then it says tips are coming.
                     var amount by rememberSaveable { mutableStateOf("") }
                     val value = amount.toIntOrNull()?.takeIf { it in 1..9999 }
+                    val tip = { if (value != null) showMessage(tipsSoon) }
                     Row(
                         Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -230,8 +239,12 @@ internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                                 singleLine = true,
                                 textStyle = UiText.row15.copy(fontWeight = FontWeight.Bold, color = colors.text),
                                 cursorBrush = androidx.compose.ui.graphics.SolidColor(colors.accent),
-                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                                keyboardActions = KeyboardActions(
+                                    onDone = {
+                                        focus.clearFocus()
+                                        tip()
+                                    },
                                 ),
                                 modifier = Modifier.weight(1f).padding(start = 4.dp),
                                 decorationBox = { inner ->
@@ -245,7 +258,7 @@ internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                             )
                         }
                         Surface(
-                            onClick = { if (value != null) showMessage(tipsSoon) },
+                            onClick = tip,
                             enabled = value != null,
                             shape = RoundedCornerShape(12.dp),
                             color = if (value != null) colors.accent else colors.surface2,

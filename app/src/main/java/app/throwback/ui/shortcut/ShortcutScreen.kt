@@ -80,9 +80,11 @@ internal object ShortcutLabel {
     /** Launchers truncate long labels anyway; the platform recommends at most 25 characters. */
     const val MAX_LENGTH = 25
 
+    private val WHITESPACE = Regex("\\s+")
+
     /** What the shortcut will be called: trimmed, never blank, at most [MAX_LENGTH] characters. */
     fun sanitize(input: String, fallback: String): String {
-        val cleaned = input.replace(Regex("\\s+"), " ").trim()
+        val cleaned = input.replace(WHITESPACE, " ").trim()
         return cleaned.ifEmpty { fallback }.take(MAX_LENGTH).trim()
     }
 }

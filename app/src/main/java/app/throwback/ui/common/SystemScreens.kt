@@ -10,12 +10,16 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.throwback.relay.RelayListenerService
 
 /**
@@ -96,6 +100,18 @@ internal object SystemScreens {
 internal fun <T> rememberCheckedOnResume(check: (Context) -> T): State<T> {
     val context = LocalContext.current
     val state = remember { mutableStateOf(check(context)) }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { state.value = check(context) }
+    val currentCheck by rememberUpdatedState(check)
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle, context) {
+        // An observer added to a resumed screen is sent ON_RESUME straight away; [check] has just
+        // run, so only the later ones count.
+        var adding = true
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME && !adding) state.value = currentCheck(context)
+        }
+        lifecycle.addObserver(observer)
+        adding = false
+        onDispose { lifecycle.removeObserver(observer) }
+    }
     return state
 }

@@ -59,7 +59,10 @@ import app.throwback.ui.shouldOfferInstagramPrompt
 import app.throwback.web.InstagramScreen
 import app.throwback.web.InstagramSession
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.launch
 
@@ -95,7 +98,7 @@ fun AppRoot(
     }
 
     // With the Instagram app connected, "+" and "Your story" open its create screen: tell the page.
-    val messagesConnected by UiPrefs.from(LocalContext.current).messagesSetupDone.collectAsStateWithLifecycle(initialValue = false)
+    val messagesConnected by remember { UiPrefs.from(app).messagesSetupDone }.collectAsStateWithLifecycle(initialValue = false)
     val featureContext = LocalContext.current.applicationContext
     LaunchedEffect(messagesConnected) {
         PageFeatures.createInApp = messagesConnected
@@ -115,10 +118,13 @@ fun AppRoot(
     }
 
     // A Messages & calls turn-off scheduled with the PIN is due (a new day): turn it off now.
-    val limitView = GuardOffApi.view(app.timeLimit)?.collectAsStateWithLifecycle()?.value
+    // Only this flag: the whole view changes every second while a limit runs, recomposing AppRoot.
+    val guardOffDue by remember {
+        GuardOffApi.view(app.timeLimit)?.map { it.guardOffDue }?.distinctUntilChanged() ?: flowOf(false)
+    }.collectAsStateWithLifecycle(initialValue = false)
     val appContext = LocalContext.current.applicationContext
-    LaunchedEffect(limitView?.guardOffDue) {
-        if (limitView?.guardOffDue == true) {
+    LaunchedEffect(guardOffDue) {
+        if (guardOffDue) {
             UiPrefs.from(appContext).setMessagesSetupDone(false)
             GuardOffApi.handled(app.timeLimit)
         }
@@ -156,9 +162,14 @@ fun AppRoot(
                 todayScreen = { onClose -> TodayRoute(app.timeLimit, onClose) },
                 messagesOff = remember {
                     MessagesOffHooks(
+                        // Mapped and distinct, so the screen doesn't recompose with every tick of the view.
                         state = {
-                            val v = GuardOffApi.view(app.timeLimit)?.collectAsStateWithLifecycle()?.value
-                            MessagesOffState(limitOn = v?.limitMinutes != null, pendingDate = v?.pendingGuardOff)
+                            remember {
+                                GuardOffApi.view(app.timeLimit)
+                                    ?.map { MessagesOffState(limitOn = it.limitMinutes != null, pendingDate = it.pendingGuardOff) }
+                                    ?.distinctUntilChanged()
+                                    ?: flowOf(MessagesOffState())
+                            }.collectAsStateWithLifecycle(initialValue = MessagesOffState()).value
                         },
                         cancel = { GuardOffApi.cancel(app.timeLimit) },
                         pinScreen = { onScheduled, onBack -> GuardOffPinScreen(app.timeLimit, onScheduled, onBack) },

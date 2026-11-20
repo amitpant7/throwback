@@ -311,9 +311,11 @@ private fun noticeText(n: Notice): String = when (n) {
 
 /** "tomorrow", or a date if a change is further out. */
 @Composable
-private fun whenText(date: LocalDate, today: LocalDate?): String =
-    if (today != null && date == today.plusDays(1)) stringResource(R.string.tl_tomorrow)
-    else date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
+private fun whenText(date: LocalDate, today: LocalDate?): String {
+    // Built once per screen, not on every one-second refresh (and anew after a language change).
+    val format = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
+    return if (today != null && date == today.plusDays(1)) stringResource(R.string.tl_tomorrow) else date.format(format)
+}
 
 @Composable
 private fun PendingRow(text: String, onCancel: () -> Unit) {

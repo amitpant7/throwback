@@ -524,6 +524,8 @@
 
   function updateProfileEntry() {
     var existing = document.getElementById(PROFILE_ENTRY_ID);
+    // Only profile-shaped paths (/name/): not a whole-document query every frame on every page.
+    if (!existing && !/^\/(?!(explore|direct|reels?|accounts|p|stories)\/?$)[^\/]+\/?$/.test(location.pathname)) return;
     var gear = state.mode === MODE_MESSAGES ? null : document.querySelector('a[href^="/accounts/settings/"]');
     var gearBox = gear && gear.getBoundingClientRect();
     if (!gear || gearBox.width === 0 || gearBox.top > 80) {
@@ -2415,6 +2417,7 @@
       if (la.images[path]) return;
       for (var i = la.items.length - 1; i >= 0; i--) {
         var cands = la.items[i].cands;
+        if (!cands) continue; // not parsed yet (feed posts far from the screen)
         for (var c = 0; c < cands.length; c++) {
           if (cands[c].path !== path) continue;
           if (cands[c].width) la.imgWidth = cands[c].width;
@@ -2486,6 +2489,7 @@
     [stories, feedAhead].forEach(function (la) {
       for (var i = la.items.length - 1; i >= 0; i--) {
         var reps = la.items[i].reps;
+        if (!reps) continue; // not parsed yet
         for (var r = 0; r < reps.length; r++) {
           if (reps[r].path !== path) continue;
           if (!reps[r].audio && reps[r].height) la.height = reps[r].height; // the quality the player picks
@@ -2639,7 +2643,9 @@
     if (!id || feedAhead.ids[id]) return;
     var first = media.carousel_media && media.carousel_media[0] ? media.carousel_media[0] : media;
     feedAhead.ids[id] = 1;
-    feedAhead.items.push({ id: id, reps: storyReps(first), cands: storyImages(first) });
+    // Parsed later, only for the posts that come into the look-ahead window (parsing every post's
+    // video manifest here ran inside Instagram's JSON.parse: ~24 ms per feed page on a slow phone).
+    feedAhead.items.push({ id: id, media: first, reps: null, cands: null });
     feedAhead.stats.learned++;
     if (feedAhead.items.length > 400) feedAhead.items.splice(0, feedAhead.items.length - 400);
   }
@@ -2668,12 +2674,27 @@
     }
   }
 
+  /** The post's video pieces and image candidates, parsed on first use. */
+  function aheadParsed(it) {
+    if (it && it.reps === null) {
+      try {
+        it.reps = storyReps(it.media);
+        it.cands = storyImages(it.media);
+      } catch (e) {
+        it.reps = [];
+        it.cands = [];
+      }
+      it.media = null;
+    }
+    return it;
+  }
+
   function feedLookAhead() {
     var fd = state.c && state.c.feedData;
     if (!fd || !nativeFetch || feedAhead.current < 0 || !pageActive('home')) return;
     var conn = navigator.connection;
     var wanted = {};
-    var now = feedAhead.items[feedAhead.current];
+    var now = aheadParsed(feedAhead.items[feedAhead.current]);
     if (now) now.reps.forEach(function (rp) {
       wanted[rp.path] = 1;
     });
@@ -2681,7 +2702,7 @@
       var videos = 0;
       var bytes = fd.videoKB * 1024;
       for (var i = feedAhead.current + 1; i <= feedAhead.current + fd.lookAheadPosts && i < feedAhead.items.length; i++) {
-        var it = feedAhead.items[i];
+        var it = aheadParsed(feedAhead.items[i]);
         if (it.cands.length) prefetchImage(feedAhead, pickImage(feedAhead, it.cands)); // photo, or a video's thumbnail
         if (!it.reps.length || videos >= fd.lookAheadVideos) continue;
         videos++;
@@ -2899,6 +2920,18 @@
   function dismissDialogs() {
     var c = state.c;
     if (!c.dialogs.length || !dialogTries) return;
+    // At most every 200 ms (a whole-document query); a timer makes sure the check still runs.
+    var nowD = Date.now();
+    if (nowD - (state.lastDialogScan || 0) < 200) {
+      if (!state.dialogRecheck) {
+        state.dialogRecheck = setTimeout(function () {
+          state.dialogRecheck = 0;
+          schedulePass(false);
+        }, 200);
+      }
+      return;
+    }
+    state.lastDialogScan = nowD;
     var dialogs = document.querySelectorAll('[role="dialog"], [aria-modal="true"]');
     for (var i = 0; i < dialogs.length; i++) {
       var d = dialogs[i];
@@ -2986,7 +3019,8 @@
       state.lastNavScan = now;
       var links = document.querySelectorAll(nav.links);
       for (var i = 0; i < links.length; i++) {
-        if (links[i].closest('[' + ATTR_NAV + ']')) continue;
+        // Links inside a post (hashtags, mentions) are never the navigation bar.
+        if (links[i].closest('[' + ATTR_NAV + '], article')) continue;
         var n = links[i].parentElement;
         for (var depth = 0; n && depth < 10 && n !== document.body; depth++, n = n.parentElement) {
           if (n.querySelector('main, article, input, textarea, [contenteditable="true"], [role="main"]')) break;
@@ -3167,14 +3201,18 @@
         texts.push(r.target.parentElement);
       }
     }
-    if (added.length > 400) {
-      scanAll();
-    } else {
-      for (var k = 0; k < added.length; k++) {
-        if (!added[k].isConnected) continue;
-        scanHide(added[k]);
-        scanText(added[k]);
-      }
+    // Scan only the top-most added nodes: one whose parent was added too is inside that parent's
+    // scan. (Was: a whole-document scan for batches over 400 nodes, 7 times during page load.)
+    if (added.length > 1) {
+      var addedSet = new Set(added);
+      var roots = [];
+      for (var q = 0; q < added.length; q++) if (!addedSet.has(added[q].parentNode)) roots.push(added[q]);
+      added = roots;
+    }
+    for (var k = 0; k < added.length; k++) {
+      if (!added[k].isConnected) continue;
+      scanHide(added[k]);
+      scanText(added[k]);
     }
     var scanTexts = textScanActive();
     for (var t = 0; scanTexts && t < texts.length; t++) {

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tip icon: Beer. Original artwork from the About mockup; swap this file to change it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="42dp" android:height="42dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M33 19h4.2a5 5 0 0 1 5 5v7.5a5 5 0 0 1 -5 5H33"
+        android:strokeColor="#DBE7EC" android:strokeWidth="3.6"
+        android:strokeLineCap="round" />
+    <path android:fillColor="#DBE7EC" android:fillAlpha="0.45"
+        android:pathData="M12.5 13h17a4.5 4.5 0 0 1 4.5 4.5v22a4.5 4.5 0 0 1 -4.5 4.5h-17a4.5 4.5 0 0 1 -4.5 -4.5v-22a4.5 4.5 0 0 1 4.5 -4.5z" />
+    <path android:pathData="M13.5 17h15a3 3 0 0 1 3 3v18.5a3 3 0 0 1 -3 3h-15a3 3 0 0 1 -3 -3v-18.5a3 3 0 0 1 3 -3z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="10.5" android:startY="17"
+                android:endX="31.5" android:endY="17">
+                <item android:offset="0" android:color="#F7C04A" />
+                <item android:offset="0.55" android:color="#EDA22C" />
+                <item android:offset="1" android:color="#C97A14" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.28"
+        android:pathData="M13 23a2 3.2 0 1 0 4 0a2 3.2 0 1 0 -4 0z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.28"
+        android:pathData="M19 23a2 3.2 0 1 0 4 0a2 3.2 0 1 0 -4 0z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.28"
+        android:pathData="M25 23a2 3.2 0 1 0 4 0a2 3.2 0 1 0 -4 0z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.28"
+        android:pathData="M13 33a2 3.2 0 1 0 4 0a2 3.2 0 1 0 -4 0z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.28"
+        android:pathData="M19 33a2 3.2 0 1 0 4 0a2 3.2 0 1 0 -4 0z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.28"
+        android:pathData="M25 33a2 3.2 0 1 0 4 0a2 3.2 0 1 0 -4 0z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.7"
+        android:pathData="M17.1 38a0.9 0.9 0 1 0 1.8 0a0.9 0.9 0 1 0 -1.8 0z" />
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.7"
+        android:pathData="M23.8 29a0.7 0.7 0 1 0 1.4 0a0.7 0.7 0 1 0 -1.4 0z" />
+    <path android:fillColor="#FFFAF0"
+        android:pathData="M7 16.5c0 -3.4 2.6 -5.8 5.8 -5.8 .9 -2.5 3.3 -4.2 6 -4.2 2.5 0 4.6 1.3 5.7 3.4 3.7 -.4 6.9 2.5 6.9 6.3v1.6H7z" />
+    <path android:fillColor="#FFFAF0"
+        android:pathData="M11 18v3.2a1.3 1.3 0 0 0 2.6 0V18zM25 18v2.2a1.2 1.2 0 0 0 2.4 0V18z" />
+    <path android:pathData="M12.5 13h17a4.5 4.5 0 0 1 4.5 4.5v22a4.5 4.5 0 0 1 -4.5 4.5h-17a4.5 4.5 0 0 1 -4.5 -4.5v-22a4.5 4.5 0 0 1 4.5 -4.5z"
+        android:strokeColor="#F4F8FA" android:strokeWidth="1.2" android:strokeAlpha="0.7"
+        android:strokeLineCap="butt" />
+</vector>

@@ -164,6 +164,22 @@
     <string name="ui_tip_rock">Rock show</string>
     <string name="ui_tip_gta">GTA 6</string>
     <string name="ui_tips_soon">Tips arrive with the Play Store release.</string>
+    <string name="ui_support_intro">Throwback is free and stays free. If it gave you some time back, you can say thanks. Nothing unlocks.</string>
+    <string name="ui_support_leave_tip">Leave a tip</string>
+    <string name="ui_tip_beer_line">A cold one, on you</string>
+    <string name="ui_tip_rock_line">Toward a gig ticket</string>
+    <string name="ui_tip_gta_line">Toward the next big game</string>
+    <!-- Placeholders until Google Play billing supplies the local prices. -->
+    <string name="ui_tip_beer_price">$3</string>
+    <string name="ui_tip_rock_price">$10</string>
+    <string name="ui_tip_gta_price">$25</string>
+    <string name="ui_tip_any">Whatever you want</string>
+    <string name="ui_tip_any_line">$50, $100 or $200</string>
+    <string name="ui_tip_any_50">$50</string>
+    <string name="ui_tip_any_100">$100</string>
+    <string name="ui_tip_any_200">$200</string>
+    <string name="ui_support_fine">Paid through Google Play. Prices shown in your currency.</string>
+    <string name="ui_support_how">How tips work</string>
     <string name="ui_link_source">Source code on GitHub</string>
     <string name="ui_link_privacy">Privacy policy</string>
     <string name="ui_filters_updated">Filters updated</string>

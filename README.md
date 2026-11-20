@@ -41,6 +41,13 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). In short: JDK 17, Android SDK 
 
 <!-- Personal story to be written with the author before release. -->
 
+## How tips work
+
+Throwback is free, with no paid features. If you'd like to say thanks, Settings → Support Throwback
+offers a few tips (Beer, Rock show, GTA 6, or "Whatever you want"). They're one-time payments made
+through Google Play in your own currency; Google keeps its fee and the rest goes to the developer.
+Nothing unlocks: tips help keep the filters working as Instagram changes.
+
 ## Licence
 
 [PolyForm Strict 1.0.0](LICENSE): you may read the code and use it for personal, non-commercial purposes; you may not redistribute it or publish changed versions. The Nunito font is under the SIL Open Font License

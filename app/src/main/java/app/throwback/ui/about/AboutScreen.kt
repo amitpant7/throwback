@@ -1,5 +1,19 @@
 package app.throwback.ui.about
 
+import app.throwback.ui.common.SectionLabel
+import app.throwback.ui.common.LineIcon
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.clickable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
@@ -52,16 +66,18 @@ import app.throwback.ui.common.UiText
  * PLACEHOLDERS: the public repository doesn't exist yet. Replace OWNER/REPO before release.
  */
 internal object AboutLinks {
-    const val PLACEHOLDER_REPO_URL = "https://github.com/OWNER/throwback"
-    const val PLACEHOLDER_PRIVACY_POLICY_URL = "$PLACEHOLDER_REPO_URL/blob/main/PRIVACY.md"
-    const val PLACEHOLDER_REPORT_MISSED_URL = "$PLACEHOLDER_REPO_URL/issues/new"
+    const val REPO_URL = "https://github.com/amitpant7/throwback"
+    const val PRIVACY_POLICY_URL = "$REPO_URL/blob/main/PRIVACY.md"
+    const val REPORT_MISSED_URL = "$REPO_URL/issues/new"
+    /** README section explaining tips (Play Billing only; no other payment links: Play policy). */
+    const val HOW_TIPS_WORK_URL = "$REPO_URL#how-tips-work"
 }
 
 /** Tip tiers (DECISIONS.md #4). Each icon is one drawable so the artwork can be swapped later. */
-private enum class Tip(@DrawableRes val icon: Int, @StringRes val label: Int) {
-    Beer(R.drawable.ui_tip_beer, R.string.ui_tip_beer),
-    RockShow(R.drawable.ui_tip_rock, R.string.ui_tip_rock),
-    Gta6(R.drawable.ui_tip_gta, R.string.ui_tip_gta),
+private enum class Tip(@DrawableRes val icon: Int, @StringRes val label: Int, @StringRes val line: Int, @StringRes val price: Int) {
+    Beer(R.drawable.ui_tip_beer, R.string.ui_tip_beer, R.string.ui_tip_beer_line, R.string.ui_tip_beer_price),
+    RockShow(R.drawable.ui_tip_rock, R.string.ui_tip_rock, R.string.ui_tip_rock_line, R.string.ui_tip_rock_price),
+    Gta6(R.drawable.ui_tip_gta, R.string.ui_tip_gta, R.string.ui_tip_gta_line, R.string.ui_tip_gta_price),
 }
 
 @Composable
@@ -100,13 +116,13 @@ internal fun AboutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
             TbCard {
                 NavRow(
                     title = stringResource(R.string.ui_link_source),
-                    onClick = { open(AboutLinks.PLACEHOLDER_REPO_URL) },
+                    onClick = { open(AboutLinks.REPO_URL) },
                     minHeight = 52.dp,
                 )
                 CardDivider()
                 NavRow(
                     title = stringResource(R.string.ui_link_privacy),
-                    onClick = { open(AboutLinks.PLACEHOLDER_PRIVACY_POLICY_URL) },
+                    onClick = { open(AboutLinks.PRIVACY_POLICY_URL) },
                     minHeight = 52.dp,
                 )
                 CardDivider()
@@ -114,7 +130,7 @@ internal fun AboutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                 CardDivider()
                 NavRow(
                     title = stringResource(R.string.ui_link_report),
-                    onClick = { open(AboutLinks.PLACEHOLDER_REPORT_MISSED_URL) },
+                    onClick = { open(AboutLinks.REPORT_MISSED_URL) },
                     minHeight = 52.dp,
                 )
             }
@@ -130,11 +146,19 @@ internal fun AboutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
     }
 }
 
-/** Support Throwback: the optional tips (no paid features). Separate from About (owner, 2026-11-20). */
+/**
+ * Support Throwback (design A "list rows", owner 2026-11-20): one row per tip with its icon, a line
+ * and the price, plus "Whatever you want" ($50 / $100 / $200: Play needs fixed prices). Prices are
+ * placeholders until Google Play billing supplies the local ones.
+ */
 @Composable
 internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
     val colors = ThrowbackTheme.colors
+    val context = LocalContext.current
     val tipsSoon = stringResource(R.string.ui_tips_soon)
+    val linkFailed = stringResource(R.string.ui_link_failed)
+    val open: (String) -> Unit = { url -> if (!SystemScreens.openUrl(context, url)) showMessage(linkFailed) }
+    var bigOpen by rememberSaveable { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize()) {
         TopBar(stringResource(R.string.ui_support_title), onBack = onBack)
@@ -142,51 +166,114 @@ internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, top = 12.dp)
+                .padding(start = 16.dp, end = 16.dp, top = 4.dp)
                 .navigationBarsPadding(),
         ) {
+            Row(
+                Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Image(painterResource(R.drawable.tb_logo), contentDescription = null, modifier = Modifier.size(52.dp))
+                Text(stringResource(R.string.ui_support_intro), style = UiText.body14, color = colors.muted)
+            }
+            SectionLabel(stringResource(R.string.ui_support_leave_tip))
             TbCard {
-                Column(Modifier.padding(18.dp)) {
-                    Text(
-                        stringResource(R.string.ui_support_body),
-                        style = UiText.body14,
-                        color = colors.muted,
-                        modifier = Modifier.padding(bottom = 14.dp),
+                Tip.entries.forEachIndexed { i, tip ->
+                    if (i > 0) CardDivider()
+                    TipRow(
+                        icon = { Image(painterResource(tip.icon), contentDescription = null, modifier = Modifier.size(40.dp)) },
+                        name = stringResource(tip.label),
+                        line = stringResource(tip.line),
+                        onClick = { showMessage(tipsSoon) },
+                    ) { PricePill(stringResource(tip.price)) }
+                }
+                CardDivider()
+                TipRow(
+                    icon = {
+                        Box(Modifier.size(40.dp).clip(CircleShape).background(colors.surface2), contentAlignment = Alignment.Center) {
+                            LineIcon(R.drawable.ui_ic_heart, size = 22.dp, tint = colors.accentText)
+                        }
+                    },
+                    name = stringResource(R.string.ui_tip_any),
+                    line = stringResource(R.string.ui_tip_any_line),
+                    onClick = { bigOpen = !bigOpen },
+                ) {
+                    LineIcon(
+                        R.drawable.ui_ic_chevron, size = 18.dp, tint = colors.muted,
+                        modifier = Modifier.rotate(if (bigOpen) 270f else 90f),
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Tip.entries.forEach { tip ->
-                            TipButton(tip, onClick = { showMessage(tipsSoon) }, modifier = Modifier.weight(1f))
+                }
+                if (bigOpen) {
+                    Row(
+                        Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 14.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        listOf(R.string.ui_tip_any_50, R.string.ui_tip_any_100, R.string.ui_tip_any_200).forEach { amount ->
+                            Surface(
+                                onClick = { showMessage(tipsSoon) },
+                                shape = RoundedCornerShape(12.dp),
+                                color = colors.surface2,
+                                contentColor = colors.text,
+                                modifier = Modifier.weight(1f).heightIn(min = 44.dp),
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(stringResource(amount), style = UiText.row15.copy(fontWeight = FontWeight.Bold))
+                                }
+                            }
                         }
                     }
                 }
             }
+            Text(
+                stringResource(R.string.ui_support_fine),
+                style = UiText.sub,
+                color = colors.muted,
+                modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 10.dp),
+            )
+            TbCard(Modifier.padding(top = 18.dp)) {
+                NavRow(title = stringResource(R.string.ui_support_how), onClick = { open(AboutLinks.HOW_TIPS_WORK_URL) })
+                CardDivider()
+                NavRow(title = stringResource(R.string.ui_link_report), onClick = { open(AboutLinks.REPORT_MISSED_URL) })
+            }
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
 
 @Composable
-private fun TipButton(tip: Tip, onClick: () -> Unit, modifier: Modifier) {
+private fun TipRow(icon: @Composable () -> Unit, name: String, line: String, onClick: () -> Unit, trailing: @Composable () -> Unit) {
     val colors = ThrowbackTheme.colors
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
-        color = colors.surface2,
-        contentColor = colors.text,
-        modifier = modifier.heightIn(min = 96.dp),
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 64.dp)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Column(
-            Modifier.padding(horizontal = 4.dp, vertical = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
-        ) {
-            Image(painterResource(tip.icon), contentDescription = null, modifier = Modifier.size(42.dp))
-            Text(
-                stringResource(tip.label),
-                style = UiText.row15.copy(fontWeight = FontWeight.SemiBold),
-                color = colors.text,
-                textAlign = TextAlign.Center,
-            )
+        icon()
+        Column(Modifier.weight(1f)) {
+            Text(name, style = UiText.row.copy(fontWeight = FontWeight.Bold), color = colors.text)
+            Text(line, style = UiText.sub, color = colors.muted)
         }
+        trailing()
+    }
+}
+
+@Composable
+private fun PricePill(price: String) {
+    val colors = ThrowbackTheme.colors
+    Box(
+        Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(colors.accent)
+            .heightIn(min = 32.dp)
+            .padding(horizontal = 14.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(price, style = UiText.row15.copy(fontWeight = FontWeight.ExtraBold), color = colors.onAccent)
     }
 }
 

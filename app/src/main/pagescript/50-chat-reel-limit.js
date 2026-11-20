@@ -15,22 +15,13 @@
   var reels = { current: null, viewer: null };
 
   function reelLog() {
-    var log = null;
-    try {
-      log = JSON.parse(localStorage.getItem(REELS_KEY) || 'null');
-    } catch (e) {
-      log = null;
-    }
+    var log = loadJson(REELS_KEY);
     if (!log || !Array.isArray(log.swipes)) log = { swipes: [], poster: 0, limit: 0 };
     return log;
   }
 
   function saveReelLog(log) {
-    try {
-      localStorage.setItem(REELS_KEY, JSON.stringify(log));
-    } catch (e) {
-      // Storage unavailable: the limit still works for this page.
-    }
+    saveJson(REELS_KEY, log);
   }
 
   /** The swipe viewer around a video: a vertical scroll-snap container holding several videos. */
@@ -46,7 +37,10 @@
   function onMediaPlay(e) {
     var v = e.target;
     var rv = state.c && state.c.reelViewer;
-    if (!rv || !v || v.tagName !== 'VIDEO' || pageActive('stories') || clipPlayer) return;
+    // A viewer the user closed themselves: let go of it (and its videos).
+    if (reels.viewer && !reels.viewer.isConnected) reels.viewer = reels.current = null;
+    // Chats only (DECISIONS 13f): every other video play (the feed autoplays) skips the style lookups.
+    if (!rv || !v || v.tagName !== 'VIDEO' || !pageActive('direct') || clipPlayer) return;
     var viewer = reelViewerOf(v);
     if (!viewer) return;
     if (viewer.hasAttribute(ATTR_REEL_STOP)) {

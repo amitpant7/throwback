@@ -42,7 +42,7 @@
       var idle = performance.now() - perf.lastChange;
       if (idle < PERF_SETTLE_MS) return perfCheck();
       rec.tapToSettled = Math.round(perf.lastChange - rec.tap);
-      if (WARM_PAGES.indexOf(rec.page) !== -1) learnDmAssets(rec.tap - 50, perf.lastChange, rec);
+      if (WARM_PAGES.indexOf(rec.page) !== -1) learnCodeAssets(rec.tap - 50, perf.lastChange, rec);
       delete rec.tap;
       perfNote(rec);
       perf.rec = null;

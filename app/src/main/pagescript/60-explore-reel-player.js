@@ -8,21 +8,21 @@
    * order shown. Everything it needs (MP4 address, poster, username, caption) is already in the data
    * Explore loaded; videos come from Instagram's CDN like any video; no extra logged-in requests.
    * The time counts toward the 5 minutes; when they run out the player closes and "Enough for
-   * today" shows. Back or ✕ closes it. "Open post" shows the post (likes, comments, profile).
+   * today" shows. Back or ✕ closes it. Like and save press Instagram's own buttons on the post's page,
+   * rendered under the player; Comments and the username open Instagram's pages.
    */
   var CLIP_MAX = 300;
   var CLIP_ID = '__tb_clips';
   var clips = { byCode: {}, order: [] };
   var clipPlayer = null;
-  var CDN_HOST = /(^|\.)(cdninstagram\.com|fbcdn\.net)$/;
 
   function onExploreOrSearch() {
-    return /^\/explore\//.test(location.pathname);
+    return !!state.c && pageActive('explore');
   }
 
   function cdnUrl(url) {
     var u = typeof url === 'string' && parseUrl(url);
-    return !!(u && u.protocol === 'https:' && CDN_HOST.test(u.hostname));
+    return !!(u && u.protocol === 'https:' && isCdnHost(u.hostname));
   }
 
   function learnClips(o, depth) {
@@ -102,7 +102,7 @@
   }
 
   function openClipFromTap(e) {
-    if (clipPlayer || state.clipBypass || state.mode === MODE_MESSAGES || !onExploreOrSearch() || !exploreAllowed()) return false;
+    if (clipPlayer || state.mode === MODE_MESSAGES || !onExploreOrSearch() || !exploreAllowed()) return false;
     var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
     var code = tileCode(a);
     if (!code || !clips.byCode[code]) return false;
@@ -121,9 +121,10 @@
     '#' + CLIP_ID + ' .tbc-slide{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;' +
       'display:flex;align-items:center;justify-content:center;overflow:hidden}' +
     '#' + CLIP_ID + ' video{width:100%;height:100%;object-fit:cover;background:#000}' +
-    '#' + CLIP_ID + ' .tbc-info{position:absolute;left:0;right:0;bottom:0;padding:48px 16px 24px;' +
+    '#' + CLIP_ID + ' .tbc-info{position:absolute;left:0;right:72px;bottom:0;padding:48px 16px 24px;' +
       'background:linear-gradient(transparent,rgba(0,0,0,.65));pointer-events:none}' +
-    '#' + CLIP_ID + ' .tbc-user{font-weight:600;font-size:15px}' +
+    '#' + CLIP_ID + ' .tbc-user{pointer-events:auto;background:none;border:0;color:#fff;padding:6px 0;font:inherit;' +
+      'font-weight:600;font-size:15px}' +
     '#' + CLIP_ID + ' .tbc-cap{margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;' +
       'overflow:hidden;opacity:.92;white-space:pre-line}' +
     '#' + CLIP_ID + ' .tbc-top{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;' +
@@ -137,8 +138,6 @@
       'border-radius:50%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;' +
       'opacity:0;transition:opacity .2s;pointer-events:none}' +
     '#' + CLIP_ID + ' .tbc-mute.on{opacity:1}' +
-    '#' + CLIP_ID + ' .tbc-info{right:72px}' +
-    '#' + CLIP_ID + ' .tbc-user{pointer-events:auto;background:none;border:0;color:#fff;padding:6px 0;font:inherit;font-weight:600;font-size:15px}' +
     '#' + CLIP_ID + ' .tbc-side{position:absolute;right:6px;bottom:28px;display:flex;flex-direction:column;align-items:center;gap:14px}' +
     '#' + CLIP_ID + ' .tbc-act{width:52px;min-height:48px;border:0;background:none;color:#fff;display:flex;flex-direction:column;' +
       'align-items:center;gap:2px;font:600 12px/1.2 -apple-system,system-ui,Roboto,sans-serif;text-shadow:0 1px 2px rgba(0,0,0,.5);padding:0}' +
@@ -172,7 +171,7 @@
     'stroke-linejoin="round" aria-hidden="true"><path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.5L3.5 20.5l1-4.4A8.5 8.5 0 1 1 20.5 12z"/></svg>';
   var ICON_SHARE = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
     'stroke-linejoin="round" aria-hidden="true"><path d="M21.5 3.5 2.5 10.6l7.3 2.9 2.9 7.4z"/><path d="M21.5 3.5 9.8 13.5"/></svg>';
-  var ICON_SAVE = '<svg class="tbc-save-ic" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+  var ICON_SAVE = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
     'stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 21 12 15.5 5.5 21V4.5a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1z"/></svg>';
   var ICON_SAVE_ON = ICON_SAVE.replace('fill="none"', 'fill="currentColor"');
 
@@ -198,12 +197,12 @@
   }
 
   /** The right-hand buttons: like, comments, share, save (Instagram's reel layout). */
-  function clipSide(code) {
-    var c = clips.byCode[code];
+  function clipSide(c) {
+    var code = c.code;
     var side = document.createElement('div');
     side.className = 'tbc-side';
     var like = clipActButton('Like', c.liked ? ICON_HEART_ON : ICON_HEART, c.likes, function () {
-      setClipLiked(code, !clips.byCode[code].liked);
+      setClipLiked(c, !c.liked);
     });
     if (c.liked) like.classList.add('on');
     like.setAttribute('data-tbc', 'like');
@@ -215,7 +214,7 @@
       send({ t: 'share', url: 'https://www.instagram.com/reel/' + code + '/' });
     }));
     var save = clipActButton('Save', c.saved ? ICON_SAVE_ON : ICON_SAVE, null, function () {
-      setClipSaved(code, !clips.byCode[code].saved);
+      setClipSaved(c, !c.saved);
     });
     save.setAttribute('data-tbc', 'save');
     side.appendChild(save);
@@ -227,47 +226,45 @@
     return p ? p.slides[p.list.indexOf(code)] : null;
   }
 
-  function showClipLiked(code) {
-    var c = clips.byCode[code];
-    var b = clipSlideOf(code) && clipSlideOf(code).querySelector('[data-tbc=like]');
+  function showClipLiked(c) {
+    var slide = clipSlideOf(c.code);
+    var b = slide && slide.querySelector('[data-tbc=like]');
     if (!b) return;
     b.classList.toggle('on', c.liked);
     b.innerHTML = (c.liked ? ICON_HEART_ON : ICON_HEART) + '<span>' + countText(c.likes) + '</span>';
   }
 
-  function showClipSaved(code) {
-    var c = clips.byCode[code];
-    var b = clipSlideOf(code) && clipSlideOf(code).querySelector('[data-tbc=save]');
+  function showClipSaved(c) {
+    var slide = clipSlideOf(c.code);
+    var b = slide && slide.querySelector('[data-tbc=save]');
     if (b) b.innerHTML = (c.saved ? ICON_SAVE_ON : ICON_SAVE) + '<span></span>';
   }
 
-  function setClipLiked(code, liked) {
-    var c = clips.byCode[code];
+  function setClipLiked(c, liked) {
     if (!c || c.liked === liked) return;
     c.liked = liked;
     if (typeof c.likes === 'number') c.likes += liked ? 1 : -1;
-    showClipLiked(code); // at once; undone if Instagram's own button can't be pressed
-    clipAct(code, liked ? 'like' : 'unlike', function (ok) {
+    showClipLiked(c); // at once; undone if Instagram's own button can't be pressed
+    clipAct(c.code, liked ? 'like' : 'unlike', function (ok) {
       if (ok) return;
       c.liked = !liked;
       if (typeof c.likes === 'number') c.likes += liked ? -1 : 1;
-      showClipLiked(code);
+      showClipLiked(c);
       clipToast(liked ? 'Couldn’t like this one. Try “Comments” to open the post.' : 'Couldn’t undo the like.');
     });
   }
 
-  function setClipSaved(code, saved) {
-    var c = clips.byCode[code];
+  function setClipSaved(c, saved) {
     if (!c || c.saved === saved) return;
     c.saved = saved;
-    showClipSaved(code);
-    clipAct(code, saved ? 'save' : 'unsave', function (ok) {
+    showClipSaved(c);
+    clipAct(c.code, saved ? 'save' : 'unsave', function (ok) {
       if (ok) {
         clipToast(saved ? 'Saved' : 'Removed from saved');
         return;
       }
       c.saved = !saved;
-      showClipSaved(code);
+      showClipSaved(c);
       clipToast('Couldn’t save this one.');
     });
   }
@@ -290,13 +287,13 @@
   }
 
   /** Single tap: sound on/off. Double tap: like (with the big heart), as on Instagram. */
-  function onClipVideoTap(code) {
+  function onClipVideoTap(c) {
     var p = clipPlayer;
     if (!p) return;
     if (p.tapTimer) {
       clearTimeout(p.tapTimer);
       p.tapTimer = 0;
-      var slide = clipSlideOf(code);
+      var slide = clipSlideOf(c.code);
       var pop = slide && slide.querySelector('.tbc-pop');
       if (pop) {
         pop.className = 'tbc-pop on';
@@ -304,7 +301,7 @@
           pop.className = 'tbc-pop';
         }, 600);
       }
-      setClipLiked(code, true);
+      setClipLiked(c, true);
       return;
     }
     p.tapTimer = setTimeout(function () {
@@ -329,16 +326,37 @@
   /**
    * Like/unlike/save/unsave through Instagram's own button: the post's page is rendered under the
    * player and its button is pressed, so Instagram's own code sends the request (Throwback sends
-   * none). Labels come from the rules (explore.actions). done(true) once pressed.
+   * none). Labels come from the rules (explore.actions). done(true) once pressed. One at a time, in
+   * order (a second like must not replace the first one's page before its button is pressed), and
+   * closing the player waits for them (closeClipPlayer).
    */
+  var clipActs = [];
+
   function clipAct(code, action, done) {
+    clipActs.push({ code: code, action: action, done: done });
+    if (clipActs.length === 1) runClipAct();
+  }
+
+  function runClipAct() {
+    var a = clipActs[0];
+    if (!a) {
+      var leave = state.clipLeave; // the player was closed while these were pending
+      state.clipLeave = null;
+      if (leave) leaveClipPlayer(leave);
+      return;
+    }
+    var finish = function (ok) {
+      clipActs.shift();
+      a.done(ok);
+      runClipAct();
+    };
     var ex = state.c && state.c.explore;
-    var labels = ex && ex.actions && ex.actions[action];
-    if (!labels || !labels.length || !clipPlayer) return done(false);
+    var labels = ex && ex.actions && ex.actions[a.action];
+    if (!labels || !labels.length) return finish(false);
+    var code = a.code;
     clipUnderneath('/p/' + code + '/');
     var tries = 0;
     (function look() {
-      if (!clipPlayer) return done(false);
       var main = document.querySelector('main');
       var btn = null;
       if (main && main.querySelector('a[href*="/' + code + '/"]')) {
@@ -352,9 +370,9 @@
       if (btn) {
         clickElement(btn);
         pauseUnderPlayer();
-        return done(true);
+        return finish(true);
       }
-      if (++tries > 40) return done(false); // ~6 s
+      if (++tries > 40) return finish(false); // ~6 s
       setTimeout(look, 150);
     })();
   }
@@ -378,17 +396,12 @@
    * coming Back to Explore reopens the player at that reel.
    */
   function openClipPath(path, resume) {
-    closeClipPlayer(true);
-    setTimeout(function () {
-      state.clipResume = resume ? { code: resume, at: location.pathname } : null;
-      state.clipBypass = true;
-      try {
-        history.pushState(null, '', path);
-        window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
-      } finally {
-        state.clipBypass = false;
-      }
-    }, 150);
+    closeClipPlayer(true, function () {
+      var at = location.pathname; // Explore, where Back returns to
+      history.pushState(null, '', path);
+      window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
+      state.clipResume = resume ? { code: resume, at: at } : null; // after the push (a push clears it)
+    });
   }
 
   function clipText(tag, cls, text) {
@@ -428,7 +441,7 @@
     var mute = document.createElement('div');
     mute.className = 'tbc-mute';
     root.appendChild(mute);
-    clipPlayer = { root: root, strip: strip, left: left, mute: mute, list: [], slides: [], current: -1,
+    clipPlayer = { root: root, strip: strip, left: left, mute: mute, list: [], clips: [], slides: [], current: -1,
       muted: false, observer: null, muteTimer: 0 };
     for (var i = 0; i < list.length; i++) addClipSlide(list[i]);
     clipPlayer.observer = typeof IntersectionObserver === 'function' ? new IntersectionObserver(function (entries) {
@@ -458,10 +471,9 @@
     var v = document.createElement('video');
     v.setAttribute('playsinline', '');
     v.loop = true;
-    v.preload = 'none';
-    if (c.poster) v.poster = c.poster;
+    v.preload = 'none'; // address and poster only near the reel on screen (setClipCurrent)
     v.addEventListener('click', function () {
-      onClipVideoTap(code);
+      onClipVideoTap(c);
     });
     slide.appendChild(v);
     var heart = document.createElement('div');
@@ -480,22 +492,31 @@
     }
     if (c.caption) info.appendChild(clipText('div', 'tbc-cap', c.caption));
     slide.appendChild(info);
-    slide.appendChild(clipSide(code));
+    slide.appendChild(clipSide(c));
     clipPlayer.strip.appendChild(slide);
     clipPlayer.list.push(code);
+    clipPlayer.clips.push(c); // its own reference: the shared list may drop old reels meanwhile
     clipPlayer.slides.push(slide);
     if (clipPlayer.observer) clipPlayer.observer.observe(slide);
   }
 
-  /** Plays slide i; only it and its neighbours keep a video address (memory), the rest are emptied. */
+  /**
+   * Plays slide i; only it and its neighbours keep a video address, and the next two on each side a
+   * poster (each poster is a download: a player can hold hundreds of reels).
+   */
   function setClipCurrent(i) {
     var p = clipPlayer;
     if (!p || i < 0 || i >= p.slides.length) return;
     p.current = i;
     for (var k = 0; k < p.slides.length; k++) {
       var v = p.slides[k].firstChild;
-      var c = clips.byCode[p.list[k]];
-      if (Math.abs(k - i) <= 1 && c) {
+      var c = p.clips[k];
+      if (Math.abs(k - i) <= 2 && c.poster) {
+        if (v.getAttribute('poster') !== c.poster) v.poster = c.poster;
+      } else if (v.hasAttribute('poster')) {
+        v.removeAttribute('poster');
+      }
+      if (Math.abs(k - i) <= 1) {
         if (v.getAttribute('src') !== c.video) {
           v.src = c.video;
           v.preload = k === i ? 'auto' : 'metadata';
@@ -557,10 +578,16 @@
     if (p.left.textContent !== t) p.left.textContent = t;
   }
 
-  /** @param viaHistory true when closed by ✕ or time-out: also drops the history entry it added. */
-  function closeClipPlayer(viaHistory) {
+  /**
+   * @param viaHistory true when closed by ✕ or time-out: also drops the history entry it added.
+   * @param then optional: runs once the page under the player is back (after the Back has landed).
+   */
+  function closeClipPlayer(viaHistory, then) {
     var p = clipPlayer;
-    if (!p) return;
+    if (!p) {
+      if (then) then();
+      return;
+    }
     clipPlayer = null;
     clearTimeout(p.muteTimer);
     if (p.observer) p.observer.disconnect();
@@ -575,15 +602,27 @@
     if (p.root.parentNode) p.root.parentNode.removeChild(p.root);
     clearTimeout(p.tapTimer);
     clearTimeout(p.toastTimer);
-    // The page under the player may show a post (like/save); Instagram renders the address again.
-    state.clipRerender = !!p.dirty;
-    if (viaHistory && p.pushed && history.state && history.state.__tbClips) {
-      state.clipPopIgnore = true;
-      history.back();
-    } else if (p.dirty) {
-      rerenderUnderneath();
-    }
+    var leave = { back: !!(viaHistory && p.pushed), dirty: !!p.dirty, then: then || null };
+    // A like or save still waiting for Instagram's button needs the post's page under the player.
+    if (clipActs.length) state.clipLeave = leave;
+    else leaveClipPlayer(leave);
     updateExploreCard();
+  }
+
+  /**
+   * Back to the page under the player: drops the player's history entry (Instagram doesn't see that
+   * Back), or has Instagram render the address again if the player put a post's page there.
+   */
+  function leaveClipPlayer(leave) {
+    state.clipRerender = leave.dirty;
+    if (leave.back) {
+      state.clipPopIgnore = true;
+      state.clipAfterBack = leave.then;
+      history.back();
+      return;
+    }
+    rerenderUnderneath();
+    if (leave.then) setTimeout(leave.then, 0);
   }
 
 
@@ -604,6 +643,9 @@
       state.clipPopIgnore = false;
       e.stopImmediatePropagation();
       rerenderUnderneath();
+      var then = state.clipAfterBack;
+      state.clipAfterBack = null;
+      if (then) setTimeout(then, 0);
       return;
     }
     if (!clipPlayer) {

@@ -2,7 +2,9 @@
 
   function scanHide(root) {
     var c = state.c;
-    c.hide.forEach(function (h) {
+    c.hideTagged.forEach(function (h) {
+      // A mode switch rescans the whole page (configure), so the other mode's rules can wait.
+      if ((h.on === 'messagesOnly' && state.mode !== MODE_MESSAGES) || (h.on === 'full' && state.mode !== MODE_FULL)) return;
       eachMatch(root, h.selector, function (el) {
         var target = h.closest ? closestWithin(el, h.closest, h.depth) || el : el;
         addToken(target, ATTR, h.id);
@@ -38,13 +40,16 @@
       var el = node.parentElement;
       if (el && !seen.has(el)) {
         seen.add(el);
-        checkTextElement(el, 0);
+        checkTextElement(el, 0, seen);
       }
     }
   }
 
-  /** Checks an element whose whole text may be a label; also its parent (labels split over spans). */
-  function checkTextElement(el, depth) {
+  /**
+   * Checks an element whose whole text may be a label; also its parent and grandparent (labels split
+   * over spans). `seen` holds the elements already checked in this pass, so each is checked once.
+   */
+  function checkTextElement(el, depth, seen) {
     var c = state.c;
     if (el.childElementCount > 6) return; // a container, not a label (and textContent would be costly)
     var text = el.textContent;
@@ -53,7 +58,7 @@
     if (!t) return;
     var i;
     for (i = 0; i < c.labels.length; i++) {
-      if (c.labels[i].set.has(t)) {
+      if (c.labels[i].set.has(t) && pageActive(c.labels[i].on)) {
         onPostLabel(el, c.labels[i].id);
         break;
       }
@@ -73,7 +78,9 @@
     // Labels can be split over spans ("Spon" + "sored"): also try the parent, but never a block
     // with images or videos in it, which could hold a photo and its caption together.
     var parent = el.parentElement;
-    if (depth < 2 && parent && !parent.querySelector('img, video')) checkTextElement(parent, depth + 1);
+    if (depth >= 2 || !parent || seen.has(parent)) return;
+    seen.add(parent);
+    if (!parent.querySelector('img, video')) checkTextElement(parent, depth + 1, seen);
   }
 
   /** How many images/videos of the post come before el (0 or 1 = at most the avatar: el is in the header). */

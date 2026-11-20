@@ -7,8 +7,9 @@
    *  - look-ahead: while a story plays, the first prefetchKB of the next prefetchAhead videos (and a
    *    little of their audio) are downloaded and kept in memory; when the player asks for a piece
    *    inside that range it is handed over from memory, otherwise it goes to the network as usual.
-   * Memory stays small (under about 3 MB with the defaults: the current story plus 5 ahead): entries behind the current story or past the
-   * look-ahead are dropped, and everything is dropped when leaving stories. Off with Data Saver.
+   * Memory stays small (under about 3 MB with the defaults: the current story plus 5 ahead): video
+   * pieces behind the current story or past the look-ahead are dropped, and all of them when leaving
+   * stories; what was parsed for stories well behind the current one is released. Off with Data Saver.
    */
   var nativeFetch = null;
   var STORY_AUDIO_BYTES = 64 * 1024;
@@ -17,9 +18,17 @@
   // one for the home feed; each is cleared when leaving its page.
   function newAhead() {
     return {
-      items: [], ids: {}, store: {}, images: {}, height: 0, imgWidth: 0, current: -1,
+      items: [], ids: {}, store: {}, images: {}, nImages: 0, height: 0, imgWidth: 0, current: -1,
       stats: { learned: 0, prefetched: 0, hits: 0, failed: 0, images: 0 }
     };
+  }
+
+  /** Leaving the page: nothing is kept in memory or remembered as prefetched; the items stay. */
+  function resetAhead(la) {
+    la.store = {};
+    la.images = {};
+    la.nImages = 0;
+    la.current = -1;
   }
   var stories = newAhead();
   var feedAhead = newAhead();
@@ -54,18 +63,20 @@
     }
   }
 
-  /** Story items in viewing order, each with its video (and audio) versions from the DASH manifest. */
+  /**
+   * Story items in viewing order. This runs inside Instagram's JSON.parse, so only the shape is
+   * checked here; the video manifest is parsed when the story comes into the look-ahead window
+   * (aheadParsed), as for the feed.
+   */
   function learnStoryItems(items) {
     for (var i = 0; i < items.length; i++) {
       var it = items[i];
       if (!it) continue;
       var id = String(it.pk || it.id || '');
       if (!id || stories.ids[id]) continue;
-      var reps = storyReps(it);
-      var cands = reps.length ? [] : storyImages(it);
-      if (!reps.length && !cands.length) continue;
+      if (typeof it.video_dash_manifest !== 'string' && !it.video_versions && !(it.image_versions2 && it.image_versions2.candidates)) continue;
       stories.ids[id] = 1;
-      stories.items.push({ id: id.split('_')[0], reps: reps, cands: cands });
+      stories.items.push({ id: id.split('_')[0], media: it, reps: null, cands: null });
       stories.stats.learned++;
     }
     if (stories.items.length > 300) stories.items.splice(0, stories.items.length - 300);
@@ -153,13 +164,16 @@
     if (!window.PerformanceObserver) return;
     try {
       new PerformanceObserver(function (list) {
-        if (!state.c || !(pageActive('stories') || pageActive('home'))) return;
+        var images = !!state.c && (pageActive('stories') || pageActive('home'));
         list.getEntries().forEach(function (e) {
-          if (e.initiatorType !== 'img') return;
-          var u = parseUrl(e.name);
+          if (e.initiatorType !== 'img') {
+            noteCodeEntry(e); // for the warm-up (72-warmup.js)
+            return;
+          }
+          var u = images && parseUrl(e.name);
           if (u && storyCdn(u)) noteStoryImage(u.pathname);
         });
-      }).observe({ type: 'resource', buffered: false });
+      }).observe({ type: 'resource', buffered: true });
     } catch (e) {
       // Not supported: the video look-ahead still works.
     }
@@ -176,6 +190,10 @@
   /** Into the browser's disk cache (not memory): Instagram's own image then loads from there. */
   function prefetchImage(la, c) {
     if (!c || la.images[c.path]) return;
+    if (++la.nImages > 1000) { // a long session: forget the oldest ones rather than grow
+      la.images = {};
+      la.nImages = 1;
+    }
     la.images[c.path] = 1;
     var img = new Image();
     img.decoding = 'async';
@@ -186,7 +204,7 @@
   }
 
   function storyCdn(u) {
-    return /(^|\.)(cdninstagram\.com|fbcdn\.net)$/.test(u.hostname);
+    return isCdnHost(u.hostname);
   }
 
   /**
@@ -234,33 +252,52 @@
     });
   }
 
-  /** Keeps the start of the next few videos in memory; drops everything else. */
   function storyLookAhead() {
     var st = state.c && state.c.stories;
     if (!st || !nativeFetch || stories.current < 0 || !pageActive('stories')) return;
+    lookAhead(stories, st.ahead, st.ahead, st.bytes, false);
+  }
+
+  /**
+   * From the item on screen (la.current): the next `count` items' photos go to the disk cache (with
+   * `thumbs`, video thumbnails too), and the start of up to `maxVideos` videos (`bytes`, plus a little
+   * audio) is kept in memory. The item on screen keeps what it had: the player may ask for it a moment
+   * after the address changes. Everything else in memory is dropped. Off with Data Saver.
+   */
+  function lookAhead(la, count, maxVideos, bytes, thumbs) {
     var conn = navigator.connection;
     var wanted = {};
-    // The story on screen keeps what was already looked ahead for it: the player may ask for it a
-    // moment after the address changes.
-    var now = stories.items[stories.current];
+    var now = aheadParsed(la.items[la.current]);
     if (now) now.reps.forEach(function (rp) {
       wanted[rp.path] = 1;
     });
     if (!(conn && conn.saveData)) {
-      for (var i = stories.current + 1; i <= stories.current + st.ahead && i < stories.items.length; i++) {
-        if (stories.items[i].cands.length) {
-          prefetchImage(stories, pickImage(stories, stories.items[i].cands));
-          continue;
-        }
-        pickReps(stories, stories.items[i].reps).forEach(function (rp) {
+      var videos = 0;
+      for (var i = la.current + 1; i <= la.current + count && i < la.items.length; i++) {
+        var it = aheadParsed(la.items[i]);
+        if (it.cands.length && (thumbs || !it.reps.length)) prefetchImage(la, pickImage(la, it.cands));
+        if (!it.reps.length || videos >= maxVideos) continue;
+        videos++;
+        pickReps(la, it.reps).forEach(function (rp) {
           wanted[rp.path] = 1;
-          if (!stories.store[rp.path]) prefetchPiece(stories, rp, rp.audio ? Math.min(STORY_AUDIO_BYTES, st.bytes) : st.bytes);
+          if (!la.store[rp.path]) prefetchPiece(la, rp, rp.audio ? Math.min(STORY_AUDIO_BYTES, bytes) : bytes);
         });
       }
     }
-    Object.keys(stories.store).forEach(function (path) {
-      if (!wanted[path]) delete stories.store[path];
+    Object.keys(la.store).forEach(function (path) {
+      if (!wanted[path]) delete la.store[path];
     });
+    releaseBehind(la);
+  }
+
+  var RELEASED = [];
+
+  /** Items well behind the one on screen won't be looked ahead again: drop what was parsed for them. */
+  function releaseBehind(la) {
+    for (var j = la.current - 10; j >= 0 && la.items[j].reps !== RELEASED; j--) {
+      la.items[j].reps = la.items[j].cands = RELEASED;
+      la.items[j].media = null;
+    }
   }
 
   /** The video version closest to what the player last used (else the smallest), plus one audio. */

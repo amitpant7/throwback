@@ -10,31 +10,20 @@
    */
   var ATTR_DISCOVER = 'data-tb-discover';
   var DISCOVER = { windowSec: 300, perDay: 20, spacing: 8, storageKey: '__tb_discover' };
-  var disc = null;
   // Posts let through on this page, so a re-render keeps them. Deliberately not stored: when Instagram
   // suggests the same post again after a restart, it counts against the allowance like any other.
   var discoveredKeys = {};
 
+  var discRecord = dailyRecord(DISCOVER.storageKey, function () {
+    return { count: 0, feedSec: 0, win: -1, video: 0, photo: 0 };
+  });
+
   function discState() {
-    if (!disc) {
-      try {
-        disc = JSON.parse(localStorage.getItem(DISCOVER.storageKey) || 'null');
-      } catch (e) {
-        disc = null;
-      }
-    }
-    if (!disc || disc.date !== today()) {
-      disc = { date: today(), count: 0, feedSec: 0, win: -1, video: 0, photo: 0 };
-    }
-    return disc;
+    return discRecord.get();
   }
 
   function saveDisc() {
-    try {
-      localStorage.setItem(DISCOVER.storageKey, JSON.stringify(disc));
-    } catch (e) {
-      // Storage unavailable: the allowance just resets with the page.
-    }
+    discRecord.save();
   }
 
   /** Key of a post (its /p/ or /reel/ code), so a post shown once stays shown when Instagram re-renders it. */
@@ -77,14 +66,11 @@
     return true;
   }
 
-  /** Counts time actually spent looking at the feed (the 5-minute windows). */
-  function startFeedClock() {
-    setInterval(function () {
-      if (document.visibilityState !== 'visible' || state.covered || state.mode === MODE_MESSAGES || !state.c ||
-        !pageActive('home')) return;
-      var d = discState();
-      d.feedSec++;
-      if (d.feedSec % 10 === 0) saveDisc();
-    }, 1000);
+  /** Each second (startTick): counts time actually spent looking at the feed (the 5-minute windows). */
+  function tickFeed(seen) {
+    if (!seen || state.mode === MODE_MESSAGES || !pageActive('home')) return;
+    var d = discState();
+    d.feedSec++;
+    if (d.feedSec % 10 === 0) saveDisc();
   }
 

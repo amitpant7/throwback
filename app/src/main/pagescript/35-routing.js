@@ -84,7 +84,7 @@
     return true;
   }
 
-  /** @param source 'push', 'replace', 'pop', 'start' or 'configure' */
+  /** @param source 'push', 'replace', 'pop' or 'start' */
   function onLocation(source) {
     var href = location.href;
     if (href === state.href) return;
@@ -93,6 +93,10 @@
     state.path = location.pathname;
     if (state.leaving) return;
     if (clipPlayer && !state.clipNav && state.path !== previousPath) closeClipPlayer(false);
+    if (!state.clipNav && (source === 'push' || source === 'pop')) {
+      state.clipLeave = null; // the user went on: don't step back for a player closed earlier
+      if (source === 'push') state.clipResume = null; // Back to Explore later doesn't reopen it
+    }
     var u = parseUrl(href);
     var r = u && route(u);
     // Instagram tidying the address of the page already on screen (e.g. dropping ?variant=following)
@@ -106,23 +110,17 @@
     updateExploreCard(); // remove "Enough for today" at once when leaving Explore
     send({ t: 'loc', url: href });
     perfStart(state.path);
-    if (!pageActive('stories')) {
-      stories.store = {};
-      stories.images = {};
-      stories.current = -1;
-    } else {
-      noteStoryLocation();
-    }
-    if (!pageActive('home')) {
-      feedAhead.store = {};
-      feedAhead.images = {};
-      feedAhead.current = -1;
-    }
+    if (!pageActive('stories')) resetAhead(stories);
+    else noteStoryLocation();
+    if (!pageActive('home')) resetAhead(feedAhead);
     state.bgDirty = true;
     if (state.textScanSkipped && textScanActive()) {
-      // Back from DMs or stories: catch up on what changed while text scanning was off.
+      // Back from DMs or stories: catch up on what changed while text scanning was off, right after
+      // Instagram's own navigation code (this runs inside it).
       state.textScanSkipped = false;
-      scanAll();
+      setTimeout(function () {
+        if (state.c) scanAll();
+      }, 0);
     } else if (!textScanActive()) {
       state.textScanSkipped = true;
     }

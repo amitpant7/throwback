@@ -46,6 +46,10 @@
         invisible: h.style === 'invisible'
       };
     });
+    // Rules without 'closest' are hidden by the CSS directly (buildCss); only the others need tagging.
+    c.hideTagged = c.hide.filter(function (h) {
+      return !!h.closest;
+    });
     c.hideText = (rules.hideText || []).filter(function (h) {
       return validId(h.id) && validSelector(h.elements);
     }).map(function (h) {
@@ -114,7 +118,7 @@
     c.stories = stR ? {
       connections: stR.connections || [],
       adKeys: stR.adKeys || [],
-      markers: (stR.connections || []).concat(stR.adKeys || []),
+      markers: shortestMarkers((stR.connections || []).concat(stR.adKeys || [])),
       ahead: typeof stR.prefetchAhead === 'number' ? stR.prefetchAhead : 3,
       bytes: (typeof stR.prefetchKB === 'number' ? stR.prefetchKB : 400) * 1024
     } : null;
@@ -131,6 +135,18 @@
     // Text nodes longer than any matcher (plus slack for whitespace) can be skipped cheaply.
     c.maxTextLength = maxLen + 8;
     return c;
+  }
+
+  /**
+   * Markers for a text search: one that contains another marker is dropped (wherever it occurs, the
+   * shorter one does too), saving a full scan of every large response.
+   */
+  function shortestMarkers(list) {
+    return list.filter(function (m, i) {
+      return m && !list.some(function (o, j) {
+        return j !== i && o && o.length < m.length && m.indexOf(o) !== -1;
+      });
+    });
   }
 
   function scopeFor(on) {

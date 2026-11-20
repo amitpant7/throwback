@@ -18,8 +18,11 @@ export CDP_PORT=9333
 | Script | What it does |
 |---|---|
 | `devtools/cdp-eval.mjs '<expr>'` | Evaluates an expression in the page, e.g. `__throwback.feedStats()` |
-| `devtools/cdp-scope.mjs '<expr>' [function]` | Evaluates **inside the page script's closure** (its private functions and `state`): pauses once in a function that runs often (default `onMutations`) and evaluates on that frame. Useful to drive one part directly, e.g. `showEndCard(...)` |
+| `devtools/cdp-scope.mjs '<expr>' [function]` | Evaluates **inside the page script's closure** (its private functions and `state`): pauses once in a function that runs often (default `onMutations`; on a page where nothing changes use `tickDay`, which runs every second) and evaluates on that frame. Useful to drive one part directly, e.g. `updateEndCard()`. Declare no `var` at the top level of the expression (wrap it in a function) |
 | `devtools/memwatch.mjs <port> <seconds> <interval>` | Every interval: forces a garbage collection, then prints retained JS heap, DOM nodes, event listeners, main-thread time spent since the last sample, and the page script's own cache sizes |
+| `devtools/profile.mjs <seconds>` | Sampling heap and CPU profile while you use the page: the functions that keep memory and the ones that take main-thread time (Throwback's frames show as `(injected)`) |
+| `devtools/netwatch.mjs <seconds> [interval]` | Requests per interval by kind (GraphQL query name or file type) plus main-thread time, to spot request loops |
+| `devtools/catchloop.mjs <seconds> [pagescript dir] ['<expr>']` | Attaches the debugger, pings the page, and when it stops answering pauses it and prints the JavaScript stack, with Throwback's frames mapped to their part file; optionally evaluates an expression on the top frame |
 
 ## Emulator
 
@@ -30,6 +33,12 @@ export CDP_PORT=9333
 
 `memrun.sh` with the test-build switch `files/debug_noscript` (see `docs/HANDOFF.md`, Testing) gives
 the same run without Throwback's page script, as a baseline.
+
+## Page script lint
+
+`tools/pagescript-lint.sh` joins the page script as the build does and runs ESLint on it as ES5
+(undefined and unused names, redeclarations, unreachable code). Run it after changing the page
+script; it needs Node and, the first time, network access for `npx`.
 
 ## Test-build switches
 

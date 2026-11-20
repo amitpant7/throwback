@@ -7,21 +7,18 @@
     if (cfg && 'supportAsk' in cfg) state.supportAsk = cfg.supportAsk === 'first' || cfg.supportAsk === 'again' ? cfg.supportAsk : null;
   }
 
-  /** The app's trusted clock (see today()). */
-  function applyClock(c) {
-    if (!c || typeof c.offset !== 'number' || typeof c.zoneMin !== 'number') return;
-    clock.offset = c.offset;
-    clock.zoneMin = c.zoneMin;
-    if (typeof c.day === 'number' && c.day > 0 && typeof c.nextAt === 'number') {
-      clock.day = c.day;
-      clock.nextAt = c.nextAt;
-    }
-  }
-
   function configure(cfg) {
     if (!cfg) return false;
     applyClock(cfg.clock); // first: anything below may already ask which day it is
     applyFeatures(cfg);
+    // Only a clock or features (sent when the page is ready and whenever the app comes to the front):
+    // nothing to rebuild or rescan. The day may have changed, so the page classes are refreshed.
+    if (!cfg.rules && typeof cfg.css !== 'string' && !cfg.mode) {
+      if (!state.c) return false;
+      applyClasses();
+      schedulePass(false);
+      return true;
+    }
     var modeChanged = false;
     if (cfg.rules) state.c = compile(cfg.rules);
     if (!state.c) return false;
@@ -52,13 +49,37 @@
     return true;
   }
 
+  /**
+   * The page's one clock, once a second: counts time where Instagram is seen (visible, not covered by
+   * a Throwback screen) for Your day, the feed's discovery windows and Explore, and notices a location
+   * change the history hooks missed (history calls through History.prototype on old WebViews).
+   */
+  function startTick() {
+    setInterval(function () {
+      if (!state.c) return;
+      if (location.href !== state.href) onLocation('replace');
+      var seen = document.visibilityState === 'visible' && !state.covered;
+      tickDay(seen);
+      tickFeed(seen);
+      tickExplore(seen);
+    }, 1000);
+    // Counted time is saved every few seconds and whenever the page is hidden or left.
+    var flush = function () {
+      saveDay();
+      saveDisc();
+      exploreRecord.save();
+    };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') flush();
+    });
+  }
+
   function start() {
     hookHistory();
     installHomeLongPress();
-    startFeedClock();
     watchStoryImages();
-    startExploreClock();
-    startDayClock();
+    startTick();
     // Scrolling into Instagram's empty placeholder space changes nothing in the page, so check the
     // end of the feed on scroll too (at most once a frame).
     var endCheckQueued = false;
@@ -109,7 +130,6 @@
 
   var api = {
     configure: configure,
-    version: 1,
     perf: function () {
       return perf.log.slice();
     },
@@ -125,7 +145,7 @@
     dayStats: dayStats,
     /** The trusted clock the app passed (for tests over DevTools). */
     clockInfo: function () {
-      return { offset: clock.offset, zoneMin: clock.zoneMin, day: clock.day, nextAt: clock.nextAt, now: trustedNow() };
+      return { fresh: clock.fresh, zoneMin: clock.zoneMin, day: clock.day, nextAt: clock.nextAt, now: trustedNow(), today: today() };
     },
     storyStats: function () {
       var s = stories.stats;
@@ -137,7 +157,7 @@
       var s = feedAhead.stats;
       return { requestsRaised: feedTweak.raised, refused: feedTweak.refused, raiseOff: feedTweak.off,
         postsLearned: s.learned, current: feedAhead.current, postsLoadedAhead: feedAhead.items.length - 1 - feedAhead.current,
-        fewestAheadSeen: feedTweak.minAhead, photosAhead: s.images, videosAhead: s.prefetched,
+        photosAhead: s.images, videosAhead: s.prefetched,
         videoPiecesFromMemory: s.hits, failed: s.failed, inMemoryKB: memoryKB(feedAhead) };
     }
   };

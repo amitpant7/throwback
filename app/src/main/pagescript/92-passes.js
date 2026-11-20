@@ -16,6 +16,7 @@
     raf(function () {
       state.passQueued = false;
       if (!state.c) return;
+      if (location.href !== state.href) onLocation('replace'); // a change the history hooks missed
       ensureStyle();
       fixViewport();
       updateProfileEntry();
@@ -46,6 +47,8 @@
     }).observe(root, { attributes: true, attributeFilter: ['class'] });
   }
 
+  var TEXT_PASS_MS = 250;
+
   function onMutations(records) {
     if (!state.c) return;
     perfChanged();
@@ -54,17 +57,25 @@
     var root = document.documentElement;
     if (root && !root.classList.contains(state.mode === MODE_MESSAGES ? 'tb-messages-only' : 'tb-full')) applyClasses();
     var added = [];
-    var texts = [];
+    var texts = []; // parents of new or changed text, each once
+    var textSet = new Set();
+    var noteText = function (t) {
+      var p = t.parentElement;
+      if (p && !textSet.has(p) && /\S/.test(t.nodeValue || '')) {
+        textSet.add(p);
+        texts.push(p);
+      }
+    };
     for (var i = 0; i < records.length; i++) {
       var r = records[i];
       if (r.type === 'childList') {
         for (var j = 0; j < r.addedNodes.length; j++) {
           var n = r.addedNodes[j];
           if (n.nodeType === 1) added.push(n);
-          else if (n.nodeType === 3 && n.parentElement) texts.push(n.parentElement);
+          else if (n.nodeType === 3) noteText(n);
         }
-      } else if (r.type === 'characterData' && r.target.parentElement) {
-        texts.push(r.target.parentElement);
+      } else if (r.type === 'characterData') {
+        noteText(r.target);
       }
     }
     // Scan only the top-most added nodes: one whose parent was added too is inside that parent's
@@ -81,8 +92,12 @@
       scanText(added[k]);
     }
     var scanTexts = textScanActive();
+    var checked = new Set();
     for (var t = 0; scanTexts && t < texts.length; t++) {
-      if (texts[t].isConnected) checkTextElement(texts[t], 0);
+      if (texts[t].isConnected && !checked.has(texts[t])) {
+        checked.add(texts[t]);
+        checkTextElement(texts[t], 0, checked);
+      }
     }
     // After the label checks, in the same task (before paint): reveal the posts that passed.
     if (pageActive('home') && state.mode !== MODE_MESSAGES) {
@@ -98,6 +113,15 @@
         if (hostT) approvePost(hostT);
       }
     }
-    if (added.length || texts.length) schedulePass(false);
+    // A pass after new elements, or text that is scanned. Text that changes all the time where it
+    // isn't scanned (typing and timestamps in chats, the story viewer) gets at most one pass per
+    // TEXT_PASS_MS, which still lets dialogs and the call button see their text.
+    if (added.length || (texts.length && scanTexts)) schedulePass(false);
+    else if (texts.length && !state.textPassTimer) {
+      state.textPassTimer = setTimeout(function () {
+        state.textPassTimer = 0;
+        schedulePass(false);
+      }, TEXT_PASS_MS);
+    }
   }
 

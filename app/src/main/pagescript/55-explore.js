@@ -1,25 +1,20 @@
   // ---------------------------------------------------------------- Explore: a few minutes a day
 
   /*
-   * The Explore grid shows for explore.dailySeconds a day (5 minutes), counted only while actually on
-   * the Explore tab (visible, not covered). Then it is hidden as before and "Enough for today"
-   * shows in its place until midnight. Search keeps working. Stored per day, so a restart doesn't
-   * reset it.
+   * The Explore grid shows for explore.dailySeconds a day (5 minutes), counted only while it is seen
+   * (visible, not covered): on the grid pages and in Throwback's reel player, not while typing a
+   * search. Then it is hidden as before and "Enough for today" shows in its place until the next day.
+   * Search keeps working. Stored per day, so a restart doesn't reset it.
    */
-  var EXPLORE_KEY = '__tb_explore';
   var EXPLORE_CARD_ID = '__tb_explore_card';
-  var exploreDay = null;
+  var exploreRecord = dailyRecord('__tb_explore', function () {
+    return { used: 0 };
+  }, function (d) {
+    return typeof d.used === 'number';
+  });
 
   function exploreLog() {
-    if (!exploreDay) {
-      try {
-        exploreDay = JSON.parse(localStorage.getItem(EXPLORE_KEY) || 'null');
-      } catch (e) {
-        exploreDay = null;
-      }
-    }
-    if (!exploreDay || exploreDay.date !== today()) exploreDay = { date: today(), used: 0 };
-    return exploreDay;
+    return exploreRecord.get();
   }
 
   function exploreAllowed() {
@@ -32,29 +27,35 @@
    * all on the same daily minutes). Not the search page while typing.
    */
   function onExploreGrid() {
-    return /^\/explore\//.test(location.pathname) && !/^\/explore\/search\/?$/.test(location.pathname);
+    return pageActive('explore') && !/^\/explore\/search\/?$/.test(state.path);
   }
 
-  function startExploreClock() {
-    setInterval(function () {
-      var ex = state.c && state.c.explore;
-      if (clipPlayer && !exploreAllowed()) closeClipPlayer(true); // time's up: the card shows on Explore
-      if (!ex || !ex.dailySeconds || state.mode === MODE_MESSAGES || !(pageActive('explore') || clipPlayer)) return;
-      if (document.visibilityState === 'visible' && !state.covered && exploreAllowed()) {
-        var d = exploreLog();
-        d.used++;
-        if (d.used % 5 === 0 || d.used >= ex.dailySeconds) {
-          try {
-            localStorage.setItem(EXPLORE_KEY, JSON.stringify(d));
-          } catch (e) {
-            // Storage unavailable: counted for this page only.
-          }
-        }
-        if (d.used >= ex.dailySeconds) applyClasses(); // time's up: the grid hides now
+  var exploreWasAllowed = null;
+
+  /** Each second (startTick): counts Explore time while it is seen; the grid opens and closes. */
+  function tickExplore(seen) {
+    var allowed = exploreAllowed();
+    if (allowed !== exploreWasAllowed) { // time's up, or a new day began: the grid hides or shows
+      exploreWasAllowed = allowed;
+      applyClasses();
+      schedulePass(false); // tags the grid's blocks (applyExplore) once it is closed
+    }
+    if (clipPlayer && !allowed) closeClipPlayer(true); // time's up: the card shows on Explore
+    var ex = state.c.explore;
+    if (!ex || !ex.dailySeconds || state.mode === MODE_MESSAGES || !(pageActive('explore') || clipPlayer)) return;
+    // Counted on the grid and in the reel player; not while typing a search (finding a friend is free).
+    if (seen && allowed && (onExploreGrid() || clipPlayer)) {
+      var d = exploreLog();
+      d.used++;
+      if (d.used % 5 === 0 || d.used >= ex.dailySeconds) exploreRecord.save();
+      if (d.used >= ex.dailySeconds) { // time's up: the grid hides now
+        exploreWasAllowed = false;
+        applyClasses();
+        schedulePass(false);
       }
-      updateClipClock();
-      updateExploreCard();
-    }, 1000);
+    }
+    updateClipClock();
+    updateExploreCard();
   }
 
   /** "Enough for today" in place of the grid, once the allowance is used up. */
@@ -159,7 +160,8 @@
   /** Explore: hide every block that holds post tiles but not the search box. */
   function applyExplore() {
     var ex = state.c.explore;
-    if (!ex || !pageActive(ex.on)) return;
+    // While the grid is open the tags would do nothing (whole-page queries on every pass otherwise).
+    if (!ex || !pageActive(ex.on) || exploreAllowed()) return;
     var keep = document.querySelector(ex.keep);
     var items = document.querySelectorAll(ex.items);
     for (var i = 0; i < items.length; i++) {

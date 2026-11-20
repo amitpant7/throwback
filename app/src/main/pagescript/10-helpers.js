@@ -134,3 +134,32 @@
     else setTimeout(fn, 16);
   }
 
+  /** A JSON value from localStorage, or null (missing, unreadable, or storage unavailable). */
+  function loadJson(key) {
+    try {
+      return JSON.parse(localStorage.getItem(key) || 'null');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /** Stores a JSON value in localStorage; without storage the value lasts for this page only. */
+  function saveJson(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      // Storage unavailable or full.
+    }
+  }
+
+  /** Instagram's media and code CDN (photos, videos, static files). */
+  function isCdnHost(hostname) {
+    return /(^|\.)(cdninstagram\.com|fbcdn\.net)$/.test(hostname);
+  }
+
+  /** True when text contains any of the strings in list. */
+  function containsAny(text, list) {
+    for (var i = 0; i < list.length; i++) if (text.indexOf(list[i]) !== -1) return true;
+    return false;
+  }
+

@@ -20,17 +20,11 @@
       if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
       return;
     }
-    // The other person's username (one-to-one chats): the profile link in the top bar.
-    var user = '';
-    var bar = infoBtn.parentNode;
-    for (var up = 0; bar && up < 4 && !user; up++, bar = bar.parentNode) {
-      var links = bar.querySelectorAll ? bar.querySelectorAll('a[href]') : [];
-      for (var i = 0; i < links.length && !user; i++) {
-        var um = /^\/([A-Za-z0-9._]{1,30})\/$/.exec(links[i].getAttribute('href') || '');
-        if (um && links[i].getBoundingClientRect().top < 120) user = um[1];
-      }
-    }
-    if (existing && existing.isConnected && existing.nextSibling === infoBtn) {
+    var placed = existing && existing.isConnected && existing.nextSibling === infoBtn;
+    // Already in place for this chat with its username: nothing to look up again on every keystroke.
+    if (placed && existing.getAttribute('data-thread') === m[1] && existing.getAttribute('data-user')) return;
+    var user = chatUser(infoBtn);
+    if (placed) {
       existing.setAttribute('data-thread', m[1]);
       existing.setAttribute('data-user', user);
       return;
@@ -48,12 +42,30 @@
       'width:' + size + 'px;height:' + size + 'px;color:' + getComputedStyle(info).color +
       ';-webkit-tap-highlight-color:transparent';
     if (!existing) {
-      btn.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        send({ t: 'callInApp', thread: btn.getAttribute('data-thread') || '', user: btn.getAttribute('data-user') || '' });
-      }, true);
+      tapToApp(btn, function () {
+        return { t: 'callInApp', thread: btn.getAttribute('data-thread') || '', user: btn.getAttribute('data-user') || '' };
+      });
     }
     infoBtn.parentNode.insertBefore(btn, infoBtn);
   }
 
+  /**
+   * The other person's username in a one-to-one chat: a profile link inside the top bar's band. A
+   * group chat's top bar has none ('' then: the app opens the chat by its id), and links further down
+   * (senders' avatars, mentions) never count. Looks no higher than a quarter of the screen.
+   */
+  function chatUser(infoBtn) {
+    var band = infoBtn.getBoundingClientRect();
+    var bar = infoBtn.parentNode;
+    for (var up = 0; bar && bar.querySelectorAll && up < 4; up++, bar = bar.parentNode) {
+      if (bar.getBoundingClientRect().height > window.innerHeight / 4) break; // past the top bar
+      var links = bar.querySelectorAll('a[href]');
+      for (var i = 0; i < links.length; i++) {
+        var um = /^\/([A-Za-z0-9._]{1,30})\/$/.exec(links[i].getAttribute('href') || '');
+        if (!um) continue;
+        var r = links[i].getBoundingClientRect();
+        if (r.top >= 0 && r.bottom <= band.bottom + 8) return um[1];
+      }
+    }
+    return '';
+  }

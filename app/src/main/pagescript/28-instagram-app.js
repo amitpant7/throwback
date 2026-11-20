@@ -80,11 +80,7 @@
       '<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
       'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5;flex:none">' +
       '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
-    row.addEventListener('click', function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      send({ t: 'settingsInApp' });
-    }, true);
+    tapToApp(row, { t: 'settingsInApp' });
     wrap.appendChild(row);
     return wrap;
   }

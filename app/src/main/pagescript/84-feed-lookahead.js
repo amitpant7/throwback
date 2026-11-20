@@ -1,20 +1,22 @@
   // ---------------------------------------------------------------- feed: bigger batches, look-ahead
 
   /*
-   * Feed (rules: feedData). Instagram's feed request asks for 12 entries (`first`); after removing
-   * ads and suggestions only ~2-3 real posts are left, so it keeps waiting on slow requests (4.5 s
-   * measured). Its own request is raised to pageSize (24): the same request at the same moment, with
-   * more entries. If Instagram ever answers that with an error, it goes back to 12 for the session.
-   * Look-ahead as in stories: photos/thumbnails of the next lookAheadPosts posts go into the disk
-   * cache; the start of the next lookAheadVideos videos is kept in memory (cleared off the feed).
+   * Feed (rules: feedData).
+   *  - Batch size: Instagram's feed request asks for 12 entries (`first`). With feedData.pageSize set,
+   *    its own request is raised to that size (same request, same moment); if Instagram answers with
+   *    an error it goes back to 12 for the session. Off today (pageSize 0, DECISIONS 13h: the server
+   *    returns 10 entries whatever is asked), and then nothing is patched at all.
+   *  - Look-ahead as in stories: photos/thumbnails of the next lookAheadPosts posts go into the disk
+   *    cache; the start of the next lookAheadVideos videos is kept in memory (cleared off the feed).
    */
-  var feedTweak = { off: false, raised: 0, refused: 0, minAhead: null };
+  var feedTweak = { off: false, raised: 0, refused: 0 };
 
   var tweakInstalled = false;
 
   function installRequestTweak() {
     var X = window.XMLHttpRequest;
-    if (tweakInstalled || !X || !X.prototype) return;
+    var fd = state.c && state.c.feedData;
+    if (tweakInstalled || !fd || !fd.pageSize || !X || !X.prototype) return;
     tweakInstalled = true;
     var open = X.prototype.open;
     var send = X.prototype.send;
@@ -89,8 +91,6 @@
       if (!key) return;
       for (var i = feedAhead.items.length - 1; i >= 0; i--) {
         if (feedAhead.items[i].id !== key) continue;
-        var ahead = feedAhead.items.length - 1 - i;
-        if (feedTweak.minAhead === null || ahead < feedTweak.minAhead) feedTweak.minAhead = ahead;
         if (feedAhead.current !== i) {
           feedAhead.current = i;
           setTimeout(feedLookAhead, 0);
@@ -119,28 +119,6 @@
   function feedLookAhead() {
     var fd = state.c && state.c.feedData;
     if (!fd || !nativeFetch || feedAhead.current < 0 || !pageActive('home')) return;
-    var conn = navigator.connection;
-    var wanted = {};
-    var now = aheadParsed(feedAhead.items[feedAhead.current]);
-    if (now) now.reps.forEach(function (rp) {
-      wanted[rp.path] = 1;
-    });
-    if (!(conn && conn.saveData)) {
-      var videos = 0;
-      var bytes = fd.videoKB * 1024;
-      for (var i = feedAhead.current + 1; i <= feedAhead.current + fd.lookAheadPosts && i < feedAhead.items.length; i++) {
-        var it = aheadParsed(feedAhead.items[i]);
-        if (it.cands.length) prefetchImage(feedAhead, pickImage(feedAhead, it.cands)); // photo, or a video's thumbnail
-        if (!it.reps.length || videos >= fd.lookAheadVideos) continue;
-        videos++;
-        pickReps(feedAhead, it.reps).forEach(function (rp) {
-          wanted[rp.path] = 1;
-          if (!feedAhead.store[rp.path]) prefetchPiece(feedAhead, rp, rp.audio ? Math.min(STORY_AUDIO_BYTES, bytes) : bytes);
-        });
-      }
-    }
-    Object.keys(feedAhead.store).forEach(function (path) {
-      if (!wanted[path]) delete feedAhead.store[path];
-    });
+    lookAhead(feedAhead, fd.lookAheadPosts, fd.lookAheadVideos, fd.videoKB * 1024, true);
   }
 

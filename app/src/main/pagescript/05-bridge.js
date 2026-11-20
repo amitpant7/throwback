@@ -20,3 +20,15 @@
     }
   }
 
+  /**
+   * Taps on el (Throwback's own buttons and rows in the page) go to the app as a bridge message, never
+   * to Instagram's handlers. msg is the message, or a function that builds it at tap time.
+   */
+  function tapToApp(el, msg) {
+    el.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      send(typeof msg === 'function' ? msg() : msg);
+    }, true);
+  }
+

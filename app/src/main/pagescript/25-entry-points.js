@@ -21,8 +21,9 @@
       return;
     }
     if (existing && existing.isConnected) return;
-    // The other top-bar button, at the far right of the same bar (the Threads link).
-    var threads = null;
+    // The other top-bar button, at the far right of the same bar (the Threads link). Once found it
+    // stays tagged (and hidden), so it is found again after the bar was hidden for a while.
+    var threads = document.querySelector('[' + ATTR_THREADS + ']');
     for (var up = gear.parentElement, depth = 0; up && depth < 6 && !threads; up = up.parentElement, depth++) {
       var candidates = up.querySelectorAll('a, [role="link"], [role="button"]');
       for (var i = 0; i < candidates.length; i++) {
@@ -36,11 +37,11 @@
       }
     }
     if (!threads || !threads.parentNode) return;
-    var size = Math.round(threads.getBoundingClientRect().width) || 24;
+    var size = Math.round(threads.getBoundingClientRect().width) || +threads.getAttribute(ATTR_THREADS) || 24;
     // Match Instagram's own top-bar icons (the gear), not the link colour of the Threads link.
     var gearIcon = gear.querySelector('svg');
     var color = getComputedStyle(gearIcon || gear).color;
-    threads.setAttribute(ATTR_THREADS, '1');
+    threads.setAttribute(ATTR_THREADS, String(size)); // remembers its size for when it is hidden
     var btn = document.createElement('a');
     btn.id = PROFILE_ENTRY_ID;
     btn.href = '#';
@@ -49,11 +50,7 @@
     btn.innerHTML = THROWBACK_ICON;
     btn.style.cssText = 'display:flex;align-items:center;justify-content:center;cursor:pointer;' +
       'width:' + size + 'px;height:' + size + 'px;color:' + color + ';-webkit-tap-highlight-color:transparent';
-    btn.addEventListener('click', function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      send({ t: 'settings' });
-    }, true);
+    tapToApp(btn, { t: 'settings' });
     threads.parentNode.insertBefore(btn, threads.nextSibling);
   }
 
@@ -71,9 +68,14 @@
     var existing = document.getElementById(SETTINGS_SECTION_ID);
     if (!ss || state.mode === MODE_MESSAGES || !ss.re.test(location.pathname)) {
       if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+      // Its row at the end of the page too: Instagram may keep <main> across the route change.
+      var appRow = document.getElementById(APP_SETTINGS_ROW_ID);
+      if (appRow && appRow.parentNode) appRow.parentNode.removeChild(appRow);
       return;
     }
-    var heading = (!existing || !existing.isConnected || state.createInApp) ? findExactText(ss.after) : null;
+    // The heading is looked for only while something is missing (a whole-page text search).
+    var missingRow = state.createInApp && !document.getElementById(APP_SETTINGS_ROW_ID);
+    var heading = (!existing || !existing.isConnected || missingRow) ? findExactText(ss.after) : null;
     if (!existing || !existing.isConnected) {
       if (!heading) return;
       var place = sectionPlacement(heading);
@@ -157,11 +159,7 @@
       '<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
       'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5;flex:none">' +
       '<path d="m9 6 6 6-6 6"/></svg>';
-    row.addEventListener('click', function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      send({ t: 'settings' });
-    }, true);
+    tapToApp(row, { t: 'settings' });
     row.addEventListener('touchstart', function () {
       row.style.background = 'rgba(128,128,128,.14)';
     }, { passive: true });

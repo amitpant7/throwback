@@ -6,54 +6,39 @@
    * __throwback.dayStats() when the screen opens. Time counts while the page is visible and not
    * covered by a Throwback screen.
    */
-  var DAY_KEY = '__tb_day';
-  var dayRec = null;
+  var dayRecord = dailyRecord('__tb_day', function () {
+    return { sec: {}, ads: 0, sugg: 0 };
+  }, function (d) {
+    return typeof d.sec === 'object' && !!d.sec;
+  });
+  var dayUnsaved = 0; // seconds counted since the last save
 
   function dayLog() {
-    if (!dayRec) {
-      try {
-        dayRec = JSON.parse(localStorage.getItem(DAY_KEY) || 'null');
-      } catch (e) {
-        dayRec = null;
-      }
-    }
-    if (!dayRec || dayRec.date !== today() || typeof dayRec.sec !== 'object' || !dayRec.sec) {
-      dayRec = { date: today(), sec: {}, ads: 0, sugg: 0 };
-    }
-    return dayRec;
+    return dayRecord.get();
   }
 
   function saveDay() {
-    if (totals && totals.dirty) saveTotals();
-    try {
-      localStorage.setItem(DAY_KEY, JSON.stringify(dayRec));
-    } catch (e) {
-      // Storage unavailable: today's counts last for this page only.
-    }
+    if (totalsUnsaved) saveTotals();
+    dayRecord.save();
+    dayUnsaved = 0;
   }
 
   function dayArea() {
     if (clipPlayer) return 'explore';
-    var p = location.pathname;
-    if (state.mode === MODE_MESSAGES || /^\/direct\//.test(p)) return 'messages';
-    if (/^\/stories\//.test(p)) return 'stories';
-    if (/^\/explore\//.test(p)) return 'explore';
-    if (p === '/') return 'feed';
+    if (state.mode === MODE_MESSAGES || pageActive('direct')) return 'messages';
+    if (pageActive('stories')) return 'stories';
+    if (pageActive('explore')) return 'explore';
+    if (pageActive('home')) return 'feed';
     return 'other'; // profiles, single posts, settings
   }
 
-  function startDayClock() {
-    setInterval(function () {
-      if (document.visibilityState !== 'visible' || state.covered) return;
-      var d = dayLog();
-      var a = dayArea();
-      d.sec[a] = (d.sec[a] || 0) + 1;
-      d.dirty = (d.dirty || 0) + 1;
-      if (d.dirty >= 10) {
-        d.dirty = 0;
-        saveDay();
-      }
-    }, 1000);
+  /** Each second (startTick): one more second on the part of Instagram that is seen. */
+  function tickDay(seen) {
+    if (!seen) return;
+    var d = dayLog();
+    var a = dayArea();
+    d.sec[a] = (d.sec[a] || 0) + 1;
+    if (++dayUnsaved >= 10) saveDay();
   }
 
   function countRemoved(field) {
@@ -61,7 +46,7 @@
     d[field] = (d[field] || 0) + 1;
     var t = totalsLog();
     t[field] = (t[field] || 0) + 1;
-    t.dirty = true;
+    totalsUnsaved = true;
   }
 
   /*
@@ -70,14 +55,11 @@
    */
   var TOTALS_KEY = '__tb_totals';
   var totals = null;
+  var totalsUnsaved = false;
 
   function totalsLog() {
     if (!totals) {
-      try {
-        totals = JSON.parse(localStorage.getItem(TOTALS_KEY) || 'null');
-      } catch (e) {
-        totals = null;
-      }
+      totals = loadJson(TOTALS_KEY);
       if (!totals || typeof totals.since !== 'number') totals = { since: trustedNow(), ads: 0, sugg: 0 };
     }
     return totals;
@@ -85,12 +67,8 @@
 
   function saveTotals() {
     if (!totals) return;
-    totals.dirty = false;
-    try {
-      localStorage.setItem(TOTALS_KEY, JSON.stringify({ since: totals.since, ads: totals.ads || 0, sugg: totals.sugg || 0 }));
-    } catch (e) {
-      // Storage unavailable: counts last for this page only.
-    }
+    totalsUnsaved = false;
+    saveJson(TOTALS_KEY, { since: totals.since, ads: totals.ads || 0, sugg: totals.sugg || 0 });
   }
 
   function dayStats() {

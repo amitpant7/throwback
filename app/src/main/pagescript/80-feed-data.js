@@ -1,14 +1,15 @@
-  // ---------------------------------------------------------------- feed data filter (option 1)
+  // ---------------------------------------------------------------- feed data filter
 
   /*
    * Instagram's page downloads the feed as JSON pages of edges; each node holds a post from someone you
    * follow ("media"), a suggested post ("explore_story") or an ad (rules: feedData). Throwback removes
    * ads and suggestions from that data before Instagram's code sees it, so the page never draws them:
    * no hiding afterwards, no flicker, correct scrolling. The first batch comes built into the page;
-   * it is parsed with JSON.parse too, and the page-level filter below stays as the safety net.
+   * it is parsed with JSON.parse too, and the page-level filters (40-filtering.js, 86-approve-posts.js)
+   * stay as the safety net.
    * Nothing extra is requested from Instagram: only data the page already downloaded is filtered.
    */
-  var feedDataState = { emptyPages: 0, sinceDiscovery: 0, cursors: {}, ended: false };
+  var feedDataState = { emptyPages: 0, sinceDiscovery: 0, cursors: {}, ended: false, endCursor: null };
   var dataFilterInstalled = false;
 
   function installDataFilter() {
@@ -17,37 +18,26 @@
     var nativeParse = JSON.parse;
     var parse = function parse(text, reviver) {
       var out = nativeParse.apply(JSON, arguments);
-      var st = state.c && state.c.stories;
-      if (st && typeof text === 'string' && text.length > 200 && out && typeof out === 'object') {
-        for (var j = 0; j < st.markers.length; j++) {
-          if (text.indexOf(st.markers[j]) === -1) continue;
-          try {
-            filterStoryData(out, st, 0);
-          } catch (e) {
-            // Never break Instagram's own parsing.
-          }
-          break;
-        }
+      // Only large objects hold feed, story or Explore data (Instagram parses many small ones). Each
+      // filter is on its own: one failing never breaks Instagram's parsing or the other filters (the
+      // page-level filters still apply).
+      if (!state.c || typeof text !== 'string' || text.length <= 200 || !out || typeof out !== 'object') return out;
+      var st = state.c.stories;
+      if (st && containsAny(text, st.markers)) {
+        try {
+          filterStoryData(out, st, 0);
+        } catch (e) {}
       }
-      if (typeof text === 'string' && text.length > 200 && out && typeof out === 'object' &&
-        onExploreOrSearch() && text.indexOf('"video_versions"') !== -1) {
+      if (onExploreOrSearch() && text.indexOf('"video_versions"') !== -1) {
         try {
           learnClips(out, 0);
-        } catch (e) {
-          // Never break Instagram's own parsing.
-        }
+        } catch (e) {}
       }
-      var fd = state.c && state.c.feedData;
-      if (fd && typeof text === 'string' && text.length > 200 && out && typeof out === 'object') {
-        for (var i = 0; i < fd.connections.length; i++) {
-          if (text.indexOf(fd.connections[i]) === -1) continue;
-          try {
-            filterFeedData(out, fd, 0);
-          } catch (e) {
-            // Never break Instagram's own parsing; the page-level filter still applies.
-          }
-          break;
-        }
+      var fd = state.c.feedData;
+      if (fd && containsAny(text, fd.connections)) {
+        try {
+          filterFeedData(out, fd, 0);
+        } catch (e) {}
       }
       return out;
     };
@@ -166,11 +156,14 @@
     }
     conn.edges = kept;
     if (fresh) feedDataState.emptyPages = followed > 0 ? 0 : feedDataState.emptyPages + 1;
-    var ended = endAt || feedDataState.emptyPages >= fd.endAfterEmptyPages;
+    // A page parsed again later (Instagram's cache, coming back to the feed) ends it only if it is
+    // the page that ended it, not any page once the end has been reached.
+    var ended = endAt || (fresh ? feedDataState.emptyPages >= fd.endAfterEmptyPages : !!cursor && cursor === feedDataState.endCursor);
     // Only suggestions are left: tell Instagram there are no more pages, so it stops loading.
     if (ended && info) info.has_next_page = false;
     if (fresh) {
       feedDataState.ended = ended;
+      if (ended) feedDataState.endCursor = cursor || null;
       if (state.c) schedulePass(false);
     }
   }

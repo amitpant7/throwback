@@ -1,4 +1,4 @@
-  // ---------------------------------------------------------------- hide until approved (option 2)
+  // ---------------------------------------------------------------- hide until approved
 
   /** Allows home-feed posts in root that have been checked (their header rendered, no ad/suggestion label). */
   function approvePosts(root) {
@@ -30,9 +30,10 @@
       return;
     }
     // Not seen in the data: checked once its header has rendered (the profile link, and the photo or
-    // video below the header, so a "Sponsored" label in the header has been seen too). A post without
-    // media is let through after APPROVE_WAIT_MS, so nothing can stay hidden for good.
-    if (!p.querySelector('img, video') && approveSeen) {
+    // video below the header, so a "Sponsored" label in the header has been seen too; the header's own
+    // avatar doesn't count). A post without media is let through after APPROVE_WAIT_MS, so nothing can
+    // stay hidden for good.
+    if (p.querySelectorAll('img, video').length <= state.c.maxMediaBefore && approveSeen) {
       var first = approveSeen.get(p);
       var now = Date.now();
       if (!first) {

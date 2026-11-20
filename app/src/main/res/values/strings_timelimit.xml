@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Owned by the timelimit area. All names start with tl_ so they can't clash with other areas. -->
+<resources>
+    <!-- Shared -->
+    <string name="tl_title">Daily time limit</string>
+    <string name="tl_back">Back</string>
+    <string name="tl_cancel">Cancel</string>
+    <string name="tl_open_messages">Open messages only</string>
+    <string name="tl_close">Close Throwback</string>
+    <string name="tl_speed_bump">Throwback is a speed bump, not a cage.</string>
+    <string name="tl_error_generic">That didn\'t work. Try again.</string>
+    <string name="tl_tomorrow">tomorrow</string>
+
+    <!-- Durations -->
+    <string name="tl_dur_min_sec">%1$d:%2$02d</string>
+    <string name="tl_dur_hours_minutes">%1$dh %2$dm</string>
+    <string name="tl_dur_minutes">%1$dm</string>
+    <string name="tl_dur_days_hours">%1$dd %2$dh</string>
+
+    <!-- Setup (mockup 7) -->
+    <string name="tl_setup_step_minutes">1 · How long per day?</string>
+    <string name="tl_minutes_chip">%1$d min</string>
+    <plurals name="tl_rule_locks">
+        <item quantity="one">When %1$d minute is up, Throwback locks.</item>
+        <item quantity="other">When %1$d minutes are up, Throwback locks.</item>
+    </plurals>
+    <string name="tl_rule_extend">Need more? Wait 5 minutes, enter your PIN, get 5 more. Twice a day, then it\'s locked until midnight.</string>
+    <string name="tl_rule_messages">Messages stay open while locked. Calls never count.</string>
+    <string name="tl_setup_step_pin">2 · Create a 4-digit PIN</string>
+    <string name="tl_setup_pin_note">Turning the limit off, raising it or changing the PIN later needs this PIN.</string>
+    <string name="tl_setup_pin_empty_cd">Create a PIN</string>
+    <string name="tl_setup_pin_set_cd">PIN created. Change it</string>
+    <string name="tl_turn_on">Turn on %1$d-minute limit</string>
+
+    <!-- PIN entry -->
+    <string name="tl_create_pin_title">Create a 4-digit PIN</string>
+    <string name="tl_confirm_pin_title">Enter it again</string>
+    <string name="tl_new_pin_title">Choose a new PIN</string>
+    <string name="tl_write_it_down">Write it down somewhere you won\'t see every day.</string>
+    <string name="tl_pin_mismatch">Those didn\'t match. Start again.</string>
+    <string name="tl_key_delete">Delete</string>
+    <string name="tl_pin_progress_cd">%1$d of 4 digits entered</string>
+    <plurals name="tl_wrong_pin">
+        <item quantity="one">Wrong PIN. %d try left before a short pause.</item>
+        <item quantity="other">Wrong PIN. %d tries left before a short pause.</item>
+    </plurals>
+    <string name="tl_pin_blocked">Too many tries. Try again in %1$s.</string>
+    <string name="tl_pin_reset_pending">A PIN reset is running, so the PIN can\'t be used. Cancel the reset first.</string>
+    <string name="tl_checking">Checking…</string>
+
+    <!-- Time's up, 5-minute wait (mockup 8) -->
+    <string name="tl_times_up_title">Time\'s up for today</string>
+    <plurals name="tl_times_up_body">
+        <item quantity="one">You\'ve used your %1$d minute.\nNow get back to work.</item>
+        <item quantity="other">You\'ve used your %1$d minutes.\nNow get back to work.</item>
+    </plurals>
+    <string name="tl_until_you_can_ask">until you can ask</string>
+    <string name="tl_you_can_ask_now">you can ask now</string>
+    <string name="tl_wait_cd">%1$s until you can ask for more time</string>
+    <string name="tl_then_pin">Then your PIN unlocks 5 more minutes.</string>
+    <plurals name="tl_extensions_left">
+        <item quantity="one">%1$d of %2$d extension left today</item>
+        <item quantity="other">%1$d of %2$d extensions left today</item>
+    </plurals>
+    <string name="tl_ask_in">Ask for 5 more minutes (in %1$s)</string>
+    <string name="tl_ask">Ask for 5 more minutes</string>
+    <string name="tl_reset_paused_note">Extensions are paused while your PIN reset runs.</string>
+    <string name="tl_reset_in_progress">PIN reset in progress</string>
+
+    <!-- PIN for +5 minutes (mockup 9) -->
+    <string name="tl_extension_n_of">EXTENSION %1$d OF %2$d</string>
+    <string name="tl_enter_pin_title">Enter PIN for 5 more minutes</string>
+    <string name="tl_enter_pin_sub">Still want to keep going? Your call.</string>
+    <string name="tl_forgot_pin">Forgot PIN?</string>
+    <string name="tl_granted_title">5 more minutes</string>
+    <plurals name="tl_granted_left">
+        <item quantity="one">%d extension left today.</item>
+        <item quantity="other">%d extensions left today.</item>
+    </plurals>
+    <string name="tl_granted_last">That was your last extension today.</string>
+    <string name="tl_granted_lock_again">We\'ll lock again in 5 minutes.</string>
+    <string name="tl_back_to_feed">Back to feed</string>
+
+    <!-- Locked until midnight (mockup 10) -->
+    <string name="tl_done_title">That\'s it for today</string>
+    <string name="tl_done_body">Both extensions are used.\nThrowback opens again at midnight.</string>
+    <string name="tl_until_unlock">until it unlocks</string>
+    <string name="tl_calls_note">Calls still ring, and messages stay open.</string>
+
+    <!-- Forgot PIN (mockup 12) -->
+    <string name="tl_reset_title">Reset your PIN</string>
+    <string name="tl_reset_label_start">FORGOT YOUR PIN?</string>
+    <string name="tl_reset_big_start">3 days</string>
+    <string name="tl_reset_label_requested">RESET REQUESTED</string>
+    <string name="tl_reset_until">until you can set a new PIN</string>
+    <string name="tl_reset_label_ready">RESET READY</string>
+    <string name="tl_reset_ready_big">Ready</string>
+    <string name="tl_reset_ready_sub">You can set a new PIN now.</string>
+    <string name="tl_reset_step_wait">The 3-day wait stops impulse resets. If it were instant, the PIN wouldn\'t protect anything.</string>
+    <string name="tl_reset_step_limit">Your daily limit stays on meanwhile. Extensions need the old PIN.</string>
+    <string name="tl_reset_step_cancel">Remembered it? Cancel the reset below.</string>
+    <string name="tl_reset_step_cancel_start">Remembered it after all? You can cancel the reset at any time.</string>
+    <string name="tl_reset_start">Start 3-day reset</string>
+    <string name="tl_reset_cancel">Cancel reset</string>
+    <string name="tl_reset_set_new">Set a new PIN</string>
+    <plurals name="tl_reset_progress_cd">
+        <item quantity="one">%1$d percent of the wait done</item>
+        <item quantity="other">%1$d percent of the wait done</item>
+    </plurals>
+
+    <!-- Manage an existing limit -->
+    <string name="tl_today_label">TODAY</string>
+    <string name="tl_min_left">%1$d min left</string>
+    <string name="tl_locked_now">Locked for now</string>
+    <string name="tl_locked_until_midnight">Locked until midnight</string>
+    <plurals name="tl_manage_summary">
+        <item quantity="one">%1$d-minute daily limit · %2$d of %3$d extension used</item>
+        <item quantity="other">%1$d-minute daily limit · %2$d of %3$d extensions used</item>
+    </plurals>
+    <string name="tl_pending_label">FROM %1$s</string>
+    <string name="tl_pending_off">The limit turns off</string>
+    <plurals name="tl_pending_raise">
+        <item quantity="one">The limit goes up to %1$d minute</item>
+        <item quantity="other">The limit goes up to %1$d minutes</item>
+    </plurals>
+    <string name="tl_pending_pin">Your new PIN starts working</string>
+    <string name="tl_cancel_pending_cd">Cancel: %1$s</string>
+    <string name="tl_section_limit">Daily limit</string>
+    <string name="tl_limit_help">Lowering works right away. Raising needs your PIN and starts tomorrow.</string>
+    <string name="tl_section_pin">PIN</string>
+    <string name="tl_change_pin">Change PIN</string>
+    <string name="tl_change_pin_sub">Needs your PIN. The new one works from tomorrow.</string>
+    <string name="tl_forgot_pin_sub">Start a 3-day reset</string>
+    <string name="tl_reset_running_sub">Reset running: %1$s left</string>
+    <string name="tl_reset_ready_row_sub">Ready: set a new PIN</string>
+    <string name="tl_turn_off">Turn off the daily limit</string>
+    <string name="tl_turn_off_sub">Needs your PIN. Takes effect tomorrow.</string>
+    <string name="tl_unavailable_reset">Not available while a PIN reset runs</string>
+    <plurals name="tl_enter_pin_raise">
+        <item quantity="one">Enter your PIN to raise the limit to %1$d minute</item>
+        <item quantity="other">Enter your PIN to raise the limit to %1$d minutes</item>
+    </plurals>
+    <string name="tl_enter_pin_off">Enter your PIN to turn off the limit</string>
+    <string name="tl_enter_pin_change">Enter your current PIN</string>
+    <string name="tl_starts_tomorrow">The change starts tomorrow.</string>
+    <plurals name="tl_lower_dialog_title">
+        <item quantity="one">Lower to %1$d minute?</item>
+        <item quantity="other">Lower to %1$d minutes?</item>
+    </plurals>
+    <string name="tl_lower_dialog_body">This starts right away. Raising it again needs your PIN and only takes effect tomorrow.</string>
+    <string name="tl_lower_confirm">Lower now</string>
+    <plurals name="tl_notice_lowered">
+        <item quantity="one">Your limit is now %1$d minute a day.</item>
+        <item quantity="other">Your limit is now %1$d minutes a day.</item>
+    </plurals>
+    <plurals name="tl_notice_raise">
+        <item quantity="one">Your limit goes up to %1$d minute tomorrow.</item>
+        <item quantity="other">Your limit goes up to %1$d minutes tomorrow.</item>
+    </plurals>
+    <string name="tl_notice_off">The limit turns off tomorrow.</string>
+    <string name="tl_notice_pin">Your new PIN works from tomorrow.</string>
+    <string name="tl_notice_reset_done">New PIN saved. It works right away.</string>
+    <string name="tl_notice_cancelled">Cancelled.</string>
+
+    <!-- Chip on the home feed (mockup 2) -->
+    <string name="tl_chip_seconds_left">%1$s left</string>
+    <plurals name="tl_chip_minutes_cd">
+        <item quantity="one">%d minute of Throwback left today</item>
+        <item quantity="other">%d minutes of Throwback left today</item>
+    </plurals>
+    <plurals name="tl_chip_seconds_cd">
+        <item quantity="one">%d second of Throwback left today</item>
+        <item quantity="other">%d seconds of Throwback left today</item>
+    </plurals>
+</resources>

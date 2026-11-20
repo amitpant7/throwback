@@ -52,6 +52,7 @@ import app.throwback.core.ui.IconBullet
 import app.throwback.core.ui.NavRow
 import app.throwback.core.ui.SectionLabel
 import app.throwback.core.ui.SettingsScaffold
+import app.throwback.core.ui.TbBackButton
 import app.throwback.core.ui.TbButton
 import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.TbTopBar
@@ -258,6 +259,7 @@ private fun ManageScreen(controller: DefaultTimeLimitController, view: TimeLimit
             onForgot = { page = ManagePage.Reset },
             check = { pin -> controller.setLimit(p.minutes, pin) },
             onSuccess = { home(Notice.Raised(p.minutes)) },
+            subtitle = stringResource(R.string.tl_starts_tomorrow),
         )
         ManagePage.TurnOffPin -> PinPrompt(
             title = stringResource(R.string.tl_enter_pin_off),
@@ -266,6 +268,7 @@ private fun ManageScreen(controller: DefaultTimeLimitController, view: TimeLimit
             onForgot = { page = ManagePage.Reset },
             check = { pin -> controller.turnOff(pin) },
             onSuccess = { home(Notice.TurnsOff) },
+            subtitle = stringResource(R.string.tl_starts_tomorrow),
         )
         ManagePage.ChangePinCurrent -> PinPrompt(
             title = stringResource(R.string.tl_enter_pin_change),
@@ -494,13 +497,19 @@ internal fun GuardOffPin(controller: DefaultTimeLimitController, onScheduled: ()
             onForgot = { forgot = true },
             check = { pin -> controller.scheduleGuardOff(pin) },
             onSuccess = onScheduled,
+            subtitle = stringResource(R.string.tl_starts_tomorrow),
         )
     }
 }
 
-/** PIN keypad for a protected change, with a back arrow and "Forgot PIN?". */
+/**
+ * PIN keypad for a protected action, with "Forgot PIN?" below. [check] runs the action with the PIN;
+ * when it's done (or scheduled) [onSuccess] runs, or [onSuccessWithPin] with the PIN; otherwise the
+ * digits clear and the reason shows. The settings screens show the time-limit top bar ([showHeader]);
+ * the lock screen has a floating back arrow instead.
+ */
 @Composable
-private fun PinPrompt(
+internal fun PinPrompt(
     title: String,
     view: TimeLimitView,
     onBack: () -> Unit,
@@ -508,42 +517,52 @@ private fun PinPrompt(
     check: suspend (String) -> ActionResult,
     onSuccess: () -> Unit = {},
     onSuccessWithPin: ((String) -> Unit)? = null,
+    eyebrow: String? = null,
+    subtitle: String? = null,
+    showHeader: Boolean = true,
 ) {
-    val c = ThrowbackTheme.colors
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
     var attempt by remember { mutableIntStateOf(0) }
     var lastResult by remember { mutableStateOf<ActionResult?>(null) }
 
-    Column(Modifier.fillMaxSize()) {
-        TbTopBar(stringResource(R.string.tl_title), onBack)
-        PinEntry(
-            title = title,
-            subtitle = stringResource(R.string.tl_starts_tomorrow).takeIf { onSuccessWithPin == null },
-            message = if (busy) stringResource(R.string.tl_checking) else pinProblemText(lastResult, view.pinBlockedMillis),
-            enabled = !busy && view.pinBlockedMillis == 0L,
-            clearKey = attempt,
-            topPadding = 16.dp,
-            onPin = { pin ->
-                scope.launch {
-                    busy = true
-                    val result = check(pin)
-                    busy = false
-                    lastResult = result
-                    val ok = result == ActionResult.Done || result is ActionResult.Scheduled
-                    when {
-                        ok && onSuccessWithPin != null -> onSuccessWithPin(pin)
-                        ok -> onSuccess()
-                        else -> attempt++
+    Box(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize()) {
+            if (showHeader) TbTopBar(stringResource(R.string.tl_title), onBack)
+            PinEntry(
+                title = title,
+                eyebrow = eyebrow,
+                subtitle = subtitle,
+                message = if (busy) stringResource(R.string.tl_checking) else pinProblemText(lastResult, view.pinBlockedMillis),
+                enabled = !busy && view.pinBlockedMillis == 0L,
+                clearKey = attempt,
+                topPadding = if (showHeader) 16.dp else 64.dp,
+                onPin = { pin ->
+                    scope.launch {
+                        busy = true
+                        val result = check(pin)
+                        busy = false
+                        lastResult = result
+                        val ok = result == ActionResult.Done || result is ActionResult.Scheduled
+                        when {
+                            ok && onSuccessWithPin != null -> onSuccessWithPin(pin)
+                            ok -> onSuccess()
+                            else -> attempt++
+                        }
                     }
-                }
-            },
-            footer = {
-                TextButton(onClick = onForgot, modifier = Modifier.height(48.dp)) {
-                    Text(stringResource(R.string.tl_forgot_pin), style = MaterialTheme.typography.bodyMedium, color = c.muted)
-                }
-            },
-        )
+                },
+                footer = { ForgotPinLink(onForgot) },
+            )
+        }
+        if (!showHeader) TbBackButton(onBack, Modifier.padding(6.dp).align(Alignment.TopStart))
+    }
+}
+
+/** "Forgot PIN?" under a PIN keypad. */
+@Composable
+private fun ForgotPinLink(onForgot: () -> Unit) {
+    TextButton(onClick = onForgot, modifier = Modifier.heightIn(min = 48.dp)) {
+        Text(stringResource(R.string.tl_forgot_pin), style = MaterialTheme.typography.bodyMedium, color = ThrowbackTheme.colors.muted)
     }
 }
 

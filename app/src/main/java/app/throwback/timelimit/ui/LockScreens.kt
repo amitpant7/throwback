@@ -7,8 +7,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,14 +23,11 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,7 +49,6 @@ import app.throwback.R
 import app.throwback.core.LockState
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.ScreenColumn
-import app.throwback.core.ui.TbBackButton
 import app.throwback.core.ui.TbButton
 import app.throwback.core.ui.TbButtonStyle
 import app.throwback.core.ui.TbCard
@@ -61,11 +56,9 @@ import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.UiText
 import app.throwback.core.ui.blockTouches
 import app.throwback.timelimit.DefaultTimeLimitController
-import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.LockPhase
 import app.throwback.timelimit.engine.Rules
 import app.throwback.timelimit.engine.TimeLimitView
-import kotlinx.coroutines.launch
 
 private enum class LockPage { Main, Pin, Reset }
 
@@ -122,14 +115,17 @@ internal fun LockOverlay(
             })
             phase is LockPhase.DoneForToday -> DoneForTodayScreen(phase, onOpenMessagesOnly, onCloseApp)
             page == LockPage.Reset -> ForgotPinScreen(controller, view, onBack = { page = LockPage.Main })
-            page == LockPage.Pin && phase is LockPhase.CanExtend && view.pinReset == null ->
-                ExtensionPinScreen(
-                    controller = controller,
-                    view = view,
-                    extensionNumber = phase.extensionNumber,
-                    onBack = { page = LockPage.Main },
-                    onForgot = { page = LockPage.Reset },
-                )
+            page == LockPage.Pin && phase is LockPhase.CanExtend && view.pinReset == null -> PinPrompt(
+                // Mockup 9: PIN for +5 minutes.
+                title = stringResource(R.string.tl_enter_pin_title),
+                view = view,
+                onBack = { page = LockPage.Main },
+                onForgot = { page = LockPage.Reset },
+                check = { pin -> controller.extend(pin) },
+                eyebrow = stringResource(R.string.tl_extension_n_of, phase.extensionNumber, Rules.MAX_EXTENSIONS_PER_DAY),
+                subtitle = stringResource(R.string.tl_enter_pin_sub),
+                showHeader = false,
+            )
             else -> TimesUpScreen(
                 view = view,
                 phase = phase,
@@ -272,48 +268,7 @@ private fun CountdownRing(fraction: Float, description: String, content: @Compos
     }
 }
 
-// ---- Mockup 9: PIN for +5 minutes ---------------------------------------------------------
-
-@Composable
-private fun ExtensionPinScreen(
-    controller: DefaultTimeLimitController,
-    view: TimeLimitView,
-    extensionNumber: Int,
-    onBack: () -> Unit,
-    onForgot: () -> Unit,
-) {
-    val c = ThrowbackTheme.colors
-    val scope = rememberCoroutineScope()
-    var busy by remember { mutableStateOf(false) }
-    var attempt by remember { mutableIntStateOf(0) }
-    var lastResult by remember { mutableStateOf<ActionResult?>(null) }
-
-    Box(Modifier.fillMaxSize()) {
-        PinEntry(
-            eyebrow = stringResource(R.string.tl_extension_n_of, extensionNumber, Rules.MAX_EXTENSIONS_PER_DAY),
-            title = stringResource(R.string.tl_enter_pin_title),
-            subtitle = stringResource(R.string.tl_enter_pin_sub),
-            message = if (busy) stringResource(R.string.tl_checking) else pinProblemText(lastResult, view.pinBlockedMillis),
-            enabled = !busy && view.pinBlockedMillis == 0L,
-            clearKey = attempt,
-            onPin = { pin ->
-                scope.launch {
-                    busy = true
-                    val result = controller.extend(pin)
-                    busy = false
-                    lastResult = result
-                    if (result != ActionResult.Done) attempt++
-                }
-            },
-            footer = {
-                TextButton(onClick = onForgot, modifier = Modifier.height(48.dp)) {
-                    Text(stringResource(R.string.tl_forgot_pin), style = MaterialTheme.typography.bodyMedium, color = c.muted)
-                }
-            },
-        )
-        TbBackButton(onBack, Modifier.padding(6.dp).align(Alignment.TopStart))
-    }
-}
+// ---- After the PIN for +5 minutes -------------------------------------------------------
 
 @Composable
 private fun GrantedScreen(view: TimeLimitView, onContinue: () -> Unit) {

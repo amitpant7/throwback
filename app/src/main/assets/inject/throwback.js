@@ -2177,7 +2177,7 @@
     }
   }
 
-  var APPROVE_WAIT_MS = 800;
+  var APPROVE_WAIT_MS = 300;
   var approveSeen = typeof WeakMap === 'function' ? new WeakMap() : null;
 
   function approvePost(p) {
@@ -2188,10 +2188,16 @@
       p.setAttribute(ATTR_DISCOVER, '1');
       return;
     }
-    // Checked only once its header has rendered: the profile link, and the photo or video below the
-    // header (so a "Sponsored" label in the header has been seen too). A post without media is let
-    // through after APPROVE_WAIT_MS, so nothing can stay hidden for good.
     if (!p.querySelector('a[href]')) return;
+    // Already checked in the data: the data filter kept it (a followed post). Show it at once; waiting
+    // for its photo element left the lower half of the first screen blank for a moment.
+    if (key && feedAhead.ids[key]) {
+      p.setAttribute(ATTR_OK, '1');
+      return;
+    }
+    // Not seen in the data: checked once its header has rendered (the profile link, and the photo or
+    // video below the header, so a "Sponsored" label in the header has been seen too). A post without
+    // media is let through after APPROVE_WAIT_MS, so nothing can stay hidden for good.
     if (!p.querySelector('img, video') && approveSeen) {
       var first = approveSeen.get(p);
       var now = Date.now();

@@ -1,8 +1,8 @@
 // Profiles the page for a while: where memory is allocated (sampling heap profiler) and where main-thread
 // time goes (CPU profiler). Scroll or use the app meanwhile.
 // Usage: CDP_PORT=9333 node profile.mjs <seconds> [top=25]
-// Prints the top functions by retained allocation and by CPU time. Frames of Throwback's page script
-// have no URL ("(injected)"); their line numbers are lines of the joined script
+// Prints the top functions by retained allocation and by CPU time, and the page script's own share.
+// Frames without a URL show as "(injected)" (the page script, or a built-in when the line is 0); line numbers are lines of the joined script
 // (app/build/generated/assets/join<Variant>PageScript/inject/throwback.js).
 const secs = +process.argv[2] || 30;
 const top = +process.argv[3] || 25;
@@ -59,6 +59,13 @@ if (cpu.result) {
     self.set(k, (self.get(k) || 0) + h * dt);
   }
   const busy = [...self.entries()].filter(([k]) => !/^\((idle|program|garbage collector)\)/.test(k)).reduce((a, [, v]) => a + v, 0);
+  // Throwback's page script: frames without a URL but with a line number (built-ins have line 0).
+  let own = 0;
+  for (const [nid, h] of hits) {
+    const f = nodes.get(nid).callFrame;
+    if (!f.url && f.lineNumber > 0) own += h * dt;
+  }
+  console.log(`Throwback page script (own code): ${(own / 1000).toFixed(2)} s of ${(busy / 1000).toFixed(1)} s busy`);
   console.log(`\nCPU: ${(busy / 1000).toFixed(1)} s busy of ${secs} s; GC ${((self.get([...self.keys()].find(k => k.startsWith('(garbage collector)'))) || 0) / 1000).toFixed(1)} s`);
   [...self.entries()].sort((a, b) => b[1] - a[1]).slice(0, top)
     .forEach(([k, v]) => console.log(`${(v / 1000).toFixed(2).padStart(8)} s   ${k}`));

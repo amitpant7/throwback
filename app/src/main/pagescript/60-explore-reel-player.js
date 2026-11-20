@@ -379,10 +379,7 @@
 
   /** Nothing under the player may play (the post page underneath autoplays its video). */
   function pauseUnderPlayer() {
-    var p = clipPlayer;
-    if (!p) return;
-    var media = document.querySelectorAll('video, audio');
-    for (var i = 0; i < media.length; i++) if (!p.root.contains(media[i]) && !media[i].paused) media[i].pause();
+    if (clipPlayer) pauseAllMedia(clipPlayer.root);
   }
 
   function onClipUnderPlay(e) {

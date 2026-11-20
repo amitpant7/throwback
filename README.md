@@ -32,10 +32,33 @@ There's no Throwback button on the feed, so it looks exactly like Instagram. Ope
 
 The first time the feed shows, a one-time hint points at the Home long-press.
 
+## Repository layout
+
+A standard single-module Android project: all source code is under `app/src/`.
+
+| Path | What's there |
+|---|---|
+| `app/src/main/java/app/throwback/` | The app (Kotlin, Jetpack Compose), one package per area: `core` (wiring, theme, shared UI), `web` (the Instagram WebView, filter rules, page bridge), `timelimit` (daily limit, PIN, lock screens), `ui` (settings, onboarding, other screens), `relay` and `guard` (the optional Instagram app connection) |
+| `app/src/main/pagescript/` | The page script injected into instagram.com (JavaScript, one file per area; the build joins them). Its [README](app/src/main/pagescript/README.md) lists the files |
+| `app/src/main/res/`, `app/src/main/assets/` | Resources and the page's CSS |
+| `app/src/test/` | Unit tests (JVM) |
+| `app/src/debug/` | Test-build helpers (fake notifications for the emulator) |
+| `filters/rules.json` | The filter rules: bundled into the app and fetched daily from this repository |
+| `tools/` | Development tools: DevTools scripts, emulator helpers, the page-script lint ([README](tools/README.md)) |
+| `docs/` | [Architecture](docs/ARCHITECTURE.md) and [handoff notes](docs/HANDOFF.md); [DECISIONS.md](DECISIONS.md) records the product decisions |
+| `design/` | Logo masters |
+
 ## Building
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). In short: JDK 17, Android SDK 35, then
-`./gradlew assembleDebug`.
+JDK 17 and Android SDK 35 (Android Studio bundles both), then:
+
+```bash
+./gradlew assembleDebug testDebugUnitTest lintDebug
+tools/pagescript-lint.sh        # after changing the page script (needs Node)
+```
+
+The debug APK is `app/build/outputs/apk/debug/app-debug.apk`. More in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Why
 

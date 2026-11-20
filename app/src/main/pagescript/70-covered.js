@@ -5,9 +5,12 @@
    * may keep playing underneath: what plays is paused, and anything that starts while covered is
    * paused at once. Nothing is resumed afterwards; Instagram starts videos again itself on scroll.
    */
-  function pauseAllMedia() {
+  /** Pauses every video and audio on the page, except inside `except` (an element) if given. */
+  function pauseAllMedia(except) {
     var media = document.querySelectorAll('video, audio');
-    for (var i = 0; i < media.length; i++) if (!media[i].paused) media[i].pause();
+    for (var i = 0; i < media.length; i++) {
+      if (!media[i].paused && !(except && except.contains(media[i]))) media[i].pause();
+    }
   }
 
   function onCoveredPlay(e) {

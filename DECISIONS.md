@@ -6,7 +6,9 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 
 1. **What it is:** a free Android app that shows Instagram "the way it used to be": only people you
    follow (with stories), no Reels, no Explore grid, no suggested posts, no ads.
-2. **Codename:** Throwback. The public app name and logo are chosen later; the current logo is a placeholder.
+2. **Name** (owner, 2026-11-20): **"Throwback: 2019 Mode"** on the Play Store (colon, the usual
+   "name: what it is" pattern; 20 of Play's 30 characters). Under the icon it is just "Throwback"
+   (launchers cut longer names). The logo is still a placeholder.
 3. **Repository:** public on GitHub, licensed GPL-3.0, so nobody can repackage it as a closed paid app.
 4. **Money:** free, with optional tips through Google Play Billing (no paid features). The tip tiers in
    the mockup are Beer / Rock show / GTA 6. Beer and GTA 6 have original icons; Rock show uses a prism

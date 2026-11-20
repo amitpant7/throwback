@@ -190,6 +190,8 @@ data class ReelViewerRules(
     val allowedSwipes: Int = 3,
     /** ... per this many minutes, so closing and reopening the viewer doesn't reset it. */
     val windowMinutes: Int = 10,
+    /** After the poster showed, no free swipes for this many minutes (the opened reel still plays). */
+    val cooldownMinutes: Int = 60,
 )
 
 @Serializable

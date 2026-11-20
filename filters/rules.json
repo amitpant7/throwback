@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112009,
+  "version": 2026112010,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -163,9 +163,10 @@
     "endAfterEmptyPages": 3
   },
   "reelViewer": {
-    "note": "A reel opened from a chat plays in Instagram's full-screen swipe viewer (same address, a vertical scroll-snap strip of videos). The opened reel is free; after allowedSwipes swipes to other reels within windowMinutes, the viewer stops and Throwback's poster shows.",
+    "note": "A reel opened from a chat plays in Instagram's full-screen swipe viewer (same address, a vertical scroll-snap strip of videos). The opened reel is free; after allowedSwipes swipes to other reels within windowMinutes, the viewer stops and Throwback's poster shows. After the poster, no free swipes for cooldownMinutes (stored on the device, so restarting doesn't reset it).",
     "allowedSwipes": 3,
-    "windowMinutes": 10
+    "windowMinutes": 10,
+    "cooldownMinutes": 60
   },
   "dismissMaxAttempts": 40
 }

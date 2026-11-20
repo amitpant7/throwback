@@ -67,6 +67,7 @@ class RulesParserTest {
         val rv = TestRules.bundled.reelViewer
         assertNotNull(rv)
         assertEquals(3, rv!!.allowedSwipes)
+        assertEquals(60, rv.cooldownMinutes)
         assertRejected(TestRules.bundledWith { it.replace("\"windowMinutes\": 10", "\"windowMinutes\": 0") }, "windowMinutes")
     }
 

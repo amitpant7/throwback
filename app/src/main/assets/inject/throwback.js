@@ -323,7 +323,8 @@
     var rv = rules.reelViewer;
     c.reelViewer = rv ? {
       allowed: typeof rv.allowedSwipes === 'number' ? rv.allowedSwipes : 3,
-      windowMs: (typeof rv.windowMinutes === 'number' ? rv.windowMinutes : 10) * 60000
+      windowMs: (typeof rv.windowMinutes === 'number' ? rv.windowMinutes : 10) * 60000,
+      cooldownMs: (typeof rv.cooldownMinutes === 'number' ? rv.cooldownMinutes : 60) * 60000
     } : null;
     var ss = rules.settingsSection;
     var ssRe = ss && toRegex(ss.path);
@@ -1185,9 +1186,31 @@
    * reel someone sent is fine; swiping on through more is the endless feed again. The opened reel is
    * free; swipes to other reels are counted (rules: reelViewer), across viewers, so closing and
    * reopening doesn't reset it. Past the allowance the videos stop and the app shows its poster.
+   * After the poster, no free swipes for the cooldown (an hour): opening other reels to get "3 more"
+   * each time doesn't work. Swipes and the last poster time are stored, so a restart doesn't reset.
    */
   var ATTR_REEL_STOP = 'data-tb-reelstop';
-  var reels = { current: null, viewer: null, swipes: [] };
+  var REELS_KEY = '__tb_reels';
+  var reels = { current: null, viewer: null };
+
+  function reelLog() {
+    var log = null;
+    try {
+      log = JSON.parse(localStorage.getItem(REELS_KEY) || 'null');
+    } catch (e) {
+      log = null;
+    }
+    if (!log || !Array.isArray(log.swipes)) log = { swipes: [], poster: 0 };
+    return log;
+  }
+
+  function saveReelLog(log) {
+    try {
+      localStorage.setItem(REELS_KEY, JSON.stringify(log));
+    } catch (e) {
+      // Storage unavailable: the limit still works for this page.
+    }
+  }
 
   /** The swipe viewer around a video: a vertical scroll-snap container holding several videos. */
   function reelViewerOf(video) {
@@ -1215,11 +1238,20 @@
     reels.viewer = viewer;
     if (opened) return; // the reel that was opened is free
     var now = Date.now();
-    reels.swipes = reels.swipes.filter(function (t) {
+    var log = reelLog();
+    var cooling = log.poster && now - log.poster < rv.cooldownMs;
+    log.swipes = log.swipes.filter(function (t) {
       return now - t < rv.windowMs;
     });
-    reels.swipes.push(now);
-    if (reels.swipes.length > rv.allowed) stopReels(viewer);
+    log.swipes.push(now);
+    if (cooling || log.swipes.length > rv.allowed) {
+      log.poster = now;
+      log.swipes = [];
+      saveReelLog(log);
+      stopReels(viewer);
+      return;
+    }
+    saveReelLog(log);
   }
 
   function stopReels(viewer) {

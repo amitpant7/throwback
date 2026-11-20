@@ -128,7 +128,8 @@ the setup and the permissions.
   20 minutes, 10 a day, not while locked), Instagram's settings (its settings screens, 10 minutes,
   5 a day, not while locked), story (5 minutes of Instagram time without the camera, a 30-minute
   wait, 3 a day, not while locked; a pass ended by posting doesn't count; one left with at most 30 s
-  outside the camera doesn't count either but starts a 10-minute wait). Screen patterns that fail
+  outside the camera doesn't count either but starts a 10-minute wait). Only Instagram's own camera
+  stops the clock: a camera that went into use while Instagram was in front. Screen patterns that fail
   or are missing allow nothing beyond a 3-second grace.
 - Pure rules (`GuardPolicy`, `RelayRouting`, the classifier) are unit-tested; test builds can post
   fake notifications and watch another app (`relay/RelayDebug`, `app/src/debug/`).

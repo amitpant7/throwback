@@ -120,8 +120,13 @@ time limit and guard) and measurements on the emulator led to these changes:
   replaced the duplicated components of the ui and timelimit areas; dead code and stale comments
   removed; `.editorconfig`; `tools/`.
 
-Not verifiable here (needs a phone or a fresh login): the login/logout flows, and the Instagram
-app's own screens (Instagram's editor can't render on the emulator).
+Verified on the emulator: the freeze is gone (6-minute scroll), Explore minutes, the end card and
+support line, the profile icon and settings-page rows, deep-link refusal, the Tagged tab, renderer
+crash recovery, recreation after a deep link, the daily rules check, the time-zone pass reset, the
+guard covering the real app (also in a pop-up window and in picture-in-picture, with the cover
+stepping aside so the window can be closed), and an empty feed showing "You're all caught up".
+Not verifiable here (needs the phone or a fresh login): the login/logout flows, and Instagram's own
+editor screens (they can't render on the emulator).
 
 ## 5. Open items
 
@@ -139,16 +144,15 @@ app's own screens (Instagram's editor can't render on the emulator).
   permitted in the 2026-11-20 session, so `.editorconfig` and Android lint are the standard for now.
 
 **Known issues:**
-- When the home feed shows no posts at all (Instagram's empty-feed state, seen twice on the test
-  account), Instagram's "Suggested for you" account list shows. The module rule finds such blocks
-  relative to posts, so it can't place this one. Needs the DOM of that state to write a rule.
 - Accessibility under the lock (`clearAndSetSemantics {}` on the WebView): verify with TalkBack.
 - `ui_prefs` is not in Auto Backup, so a reinstall forgets the Instagram connection (the owner
   accepted reinstalling as the emergency exit).
 
 **Questions for the owner** (from the reviews):
 1. During an Instagram call the whole Instagram app is allowed until the call ends. Restrict it to
-   the call screen?
+   the call screen? (Call audio counts as Instagram's only after an Instagram call notification,
+   within 30 s, or when it starts in Instagram; a call already running when an Instagram call is
+   declined still counts, so switching from a WhatsApp call to an Instagram call is never covered.)
 2. With a daily limit on and the Instagram app installed but not connected, the limit covers only
    Throwback. Offer to connect the app when turning on a limit?
 3. Below Android 13 there is no network time, so clock forward + reboot still works there. Accept,

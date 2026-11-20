@@ -106,6 +106,9 @@ class RelayListenerService : NotificationListenerService() {
         )
         val groupHasCall = facts.groupSummary && facts.group != null && groupHasCall(facts)
         val action = RelayRouting.decide(kind, ctx, facts.groupSummary, groupHasCall)
+        if (!facts.groupSummary && kind != NotificationKind.MESSAGE && kind != NotificationKind.MISSED_CALL) {
+            RelayStats.recordOtherGroup(this) // for the "quieter phone" suggestion; a count only
+        }
         Log.d(TAG, "${kind.ruleName}${if (facts.groupSummary) " (summary)" else ""} -> $action")
         when (action) {
             RelayAction.Keep -> Unit

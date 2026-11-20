@@ -1,5 +1,9 @@
 package app.throwback.ui.messages
 
+import app.throwback.ui.common.rememberCheckedOnResume
+import app.throwback.relay.RelayStats
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.runtime.getValue
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -54,6 +58,13 @@ internal fun QuietTipCard(showMessage: (String) -> Unit, modifier: Modifier = Mo
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.ui_quiet_tip_title), style = UiText.rowStrong, color = colors.text)
             Text(stringResource(R.string.ui_quiet_tip_body), style = UiText.sub, color = colors.muted)
+            // What the relay saw (Android doesn't let Throwback read Instagram's switches directly).
+            val seen by rememberCheckedOnResume { RelayStats.otherGroupLastDays(it) }
+            Text(
+                if (seen > 0) pluralStringResource(R.plurals.ui_quiet_seen_other, seen, seen) else stringResource(R.string.ui_quiet_seen_none),
+                style = UiText.body14Strong,
+                color = if (seen > 0) colors.text else colors.accentText,
+            )
         }
         QUIET_GROUPS.forEach { row ->
             CardDivider()

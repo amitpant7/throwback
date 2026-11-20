@@ -50,15 +50,3 @@ html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
-
-/* Home feed header: the feed title ("Following") is a link to the feed switcher (/?variant=home is
-   the algorithmic "For you" feed). Make room for Throwback's button at top-start and make the title
-   inert, so the switcher can't be opened. */
-html.tb-on-home a[href^="/?variant="] {
-  margin-left: 40px !important;
-  pointer-events: none !important;
-}
-/* The "<" arrow in that title also leads back to "For you": hide it. */
-html.tb-on-home a[href^="/?variant="] svg {
-  display: none !important;
-}

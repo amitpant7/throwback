@@ -144,6 +144,12 @@ Highlights:
    - GitHub Releases APK.
    - The owner's personal story in the README "Why" section, written with the owner.
 
+## 5b. Ideas for later (owner)
+
+- **Search tab looks empty** now that the Explore grid is hidden. Ideas: a calm motivating line or
+  quote (short, original or public domain), or a small "filtered" set of content. Not decided; think
+  it through before building.
+
 ## 6. Known issues and open questions
 
 **Known issues / loose ends**

@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import app.throwback.core.AppRoot
@@ -16,6 +17,9 @@ class MainActivity : ComponentActivity() {
     /** instagram.com link this activity was opened with (from another app or a notification). */
     private val deepLink = mutableStateOf<String?>(null)
 
+    /** Bumped each time the "Throwback settings" shortcut opens the app. */
+    private val settingsRequests = mutableIntStateOf(0)
+
     /** Set by AppRoot: keep the splash up until the first screen is ready (no flash of unfiltered Instagram). */
     @Volatile
     private var holdSplash = true
@@ -25,6 +29,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         deepLink.value = intent.instagramUrl()
+        if (intent.action == ACTION_OPEN_SETTINGS) settingsRequests.intValue++
         // Test builds only: `adb shell am start -n app.throwback/.MainActivity --es debug_open settings`
         // (or messages) opens Settings directly, so screens can be checked without an Instagram login.
         val debugOpen = if (BuildConfig.DEBUG) intent.getStringExtra("debug_open") else null
@@ -37,6 +42,7 @@ class MainActivity : ComponentActivity() {
                     onCloseApp = { finish() },
                     onSplashHold = { holdSplash = it },
                     debugOpen = debugOpen,
+                    settingsRequests = settingsRequests.intValue,
                 )
             }
         }
@@ -45,8 +51,14 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         intent.instagramUrl()?.let { deepLink.value = it }
+        if (intent.action == ACTION_OPEN_SETTINGS) settingsRequests.intValue++
     }
 
     private fun Intent.instagramUrl(): String? =
         dataString?.takeIf { it.startsWith("https://www.instagram.com") || it.startsWith("https://instagram.com") }
+
+    companion object {
+        /** Intent action of the "Throwback settings" app-icon shortcut (res/xml/shortcuts.xml). */
+        const val ACTION_OPEN_SETTINGS = "app.throwback.action.OPEN_SETTINGS"
+    }
 }

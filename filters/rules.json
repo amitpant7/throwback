@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112003,
+  "version": 2026112004,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -75,10 +75,6 @@
       "note": "'See all' suggested accounts." },
     { "id": "app-links", "selector": "a[href^='intent:'], a[href^='instagram:'], a[href*='play.google.com/store/apps'], a[href*='apps.apple.com'], a[href*='itunes.apple.com']", "on": "always", "style": "remove",
       "note": "'Get the app' / 'Open in app' links and store badges." },
-    { "id": "wordmark", "selector": "[aria-label='Instagram']", "closest": "a, [role='link'], [role='button'], h1", "closestDepth": 4, "on": "home", "style": "invisible",
-      "note": "Instagram wordmark in the home feed's top bar (it also opens the For you / Following switcher). Invisible rather than removed so the bar keeps its layout; Throwback's own button sits in that spot." },
-    { "id": "wordmark-chevron", "selector": "svg[aria-label='Down chevron icon' i]", "closest": "a, [role='link'], [role='button']", "closestDepth": 3, "on": "home", "style": "invisible",
-      "note": "Dropdown arrow next to the wordmark (feed switcher)." },
     { "id": "explore-tiles", "selector": "main a[href^='/p/'], main a[href^='/reel/']", "on": "explore", "style": "remove",
       "note": "Fallback for the Explore grid: hides every tile. The script also hides the grid's container (see 'explore')." },
     { "id": "mo-home", "selector": "a[href='/'], a[href^='/?']", "on": "messagesOnly", "style": "remove",

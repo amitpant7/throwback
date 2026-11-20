@@ -60,6 +60,7 @@ fun AppRoot(
     onCloseApp: () -> Unit,
     onSplashHold: (Boolean) -> Unit,
     debugOpen: String? = null,
+    settingsRequests: Int = 0,
 ) {
     val prefs = app.uiPreferences
     val onboardingDone by prefs.onboardingDone.collectAsStateWithLifecycle(initialValue = null)
@@ -74,6 +75,9 @@ fun AppRoot(
         )
     }
 
+    // "Throwback settings" app-icon shortcut (MainActivity counts the requests).
+    LaunchedEffect(settingsRequests) { if (settingsRequests > 0) settingsOpen = SettingsStart.Home }
+
     Box(Modifier.fillMaxSize().background(ThrowbackTheme.colors.bg)) {
         when (onboardingDone) {
             null -> SideEffect { onSplashHold(true) } // DataStore still loading.
@@ -87,7 +91,6 @@ fun AppRoot(
                 settingsOpen = settingsOpen != null,
                 onSplashHold = onSplashHold,
                 onCloseApp = onCloseApp,
-                onOpenSettings = { settingsOpen = SettingsStart.Home },
                 onOpenMessagesSetup = { settingsOpen = SettingsStart.MessagesAndCalls },
             )
         }
@@ -110,7 +113,6 @@ private fun MainScreen(
     settingsOpen: Boolean,
     onSplashHold: (Boolean) -> Unit,
     onCloseApp: () -> Unit,
-    onOpenSettings: () -> Unit,
     onOpenMessagesSetup: () -> Unit,
 ) {
     val timeLimit = app.timeLimit
@@ -168,16 +170,11 @@ private fun MainScreen(
             modifier = if (lockShowing) Modifier.clearAndSetSemantics {} else Modifier,
         )
 
-        // Throwback's own controls only on the logged-in home feed (never over Instagram's login page).
+        // No Throwback button on the feed (owner's decision): Settings opens from the app icon's
+        // long-press shortcut. Only the time-limit chip shows, top-centre, on the logged-in home feed.
         val onHomeFeed = path == "/" || path.isEmpty()
         if (loggedIn && onHomeFeed && mode == WebMode.FULL) {
-            Row(
-                Modifier.align(Alignment.TopStart).statusBarsPadding().padding(start = 12.dp, top = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ThrowbackMarkButton(onClick = onOpenSettings)
-                TimeRemainingChip(timeLimit, Modifier.padding(start = 8.dp))
-            }
+            TimeRemainingChip(timeLimit, Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 10.dp))
         }
 
         if (mode == WebMode.MESSAGES_ONLY) {

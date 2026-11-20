@@ -26,7 +26,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -55,7 +54,6 @@ import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.LockPhase
 import app.throwback.timelimit.engine.Rules
 import app.throwback.timelimit.engine.TimeLimitView
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -64,15 +62,8 @@ import java.time.format.FormatStyle
 /** Settings → Daily time limit: first-time setup, or managing an existing limit. */
 @Composable
 internal fun TimeLimitSettings(controller: DefaultTimeLimitController, onClose: () -> Unit) {
-    val view by controller.view.collectAsStateWithLifecycle()
+    val view by rememberLiveView(controller)
     val ready by controller.ready.collectAsStateWithLifecycle()
-
-    LaunchedEffect(controller) {
-        while (true) {
-            controller.refresh()
-            delay(1_000)
-        }
-    }
 
     Box(
         Modifier
@@ -505,7 +496,8 @@ private fun SettingsRow(title: String, subtitle: String?, onClick: () -> Unit, e
 /** "Turn off Messages & calls" while a limit is on: PIN, then it turns off tomorrow. */
 @Composable
 internal fun GuardOffPin(controller: DefaultTimeLimitController, onScheduled: () -> Unit, onBack: () -> Unit) {
-    val view by controller.view.collectAsStateWithLifecycle()
+    // Live, so the 30-second pause after wrong PINs counts down and ends here too.
+    val view by rememberLiveView(controller)
     var forgot by remember { mutableStateOf(false) }
     BackHandler { if (forgot) forgot = false else onBack() }
     if (forgot) {

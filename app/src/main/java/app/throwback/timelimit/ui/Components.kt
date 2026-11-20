@@ -30,6 +30,8 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -59,15 +61,43 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.Rules
+import app.throwback.timelimit.engine.TimeLimitView
+import kotlinx.coroutines.delay
 
 /*
  * Building blocks shared by the lock screens and the settings screens, following the mockups
  * (Sage theme: colours from ThrowbackTheme.colors, type from MaterialTheme.typography).
  */
+
+// ---- Live state -----------------------------------------------------------------------------
+
+/**
+ * The controller's view for a time-limit screen, refreshed every second while the screen is resumed
+ * so countdowns and the wrong-PIN pause keep moving (the controller's own tick runs only while
+ * Instagram is in front). Stops when the app goes to the background: each refresh may save.
+ */
+@Composable
+internal fun rememberLiveView(controller: DefaultTimeLimitController): State<TimeLimitView> {
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(controller, lifecycle) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                controller.refresh()
+                delay(1_000)
+            }
+        }
+    }
+    return controller.view.collectAsStateWithLifecycle()
+}
 
 // ---- Text styles derived from the theme's typography ----------------------------------------
 

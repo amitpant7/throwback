@@ -51,7 +51,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.R
 import app.throwback.core.LockState
 import app.throwback.core.theme.ThrowbackTheme
@@ -60,7 +59,6 @@ import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.LockPhase
 import app.throwback.timelimit.engine.Rules
 import app.throwback.timelimit.engine.TimeLimitView
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private enum class LockPage { Main, Pin, Reset }
@@ -79,7 +77,7 @@ internal fun LockOverlay(
     modifier: Modifier = Modifier,
     backEnabled: Boolean = true,
 ) {
-    val view by controller.view.collectAsStateWithLifecycle()
+    val view by rememberLiveView(controller)
     val phase = view.lock
     if (view.lockState != LockState.Locked || phase == null) return
 
@@ -94,13 +92,6 @@ internal fun LockOverlay(
         hostView.rootView.findFocus()?.clearFocus()
     }
 
-    // Keep the countdowns moving even when no foreground session is ticking.
-    LaunchedEffect(controller) {
-        while (true) {
-            delay(1_000)
-            controller.refresh()
-        }
-    }
     // Back leaves a sub-page; on the main lock screen it closes Throwback rather than reaching the WebView.
     // Off under Settings: the lock can engage while Settings is open, and the handler added last wins.
     BackHandler(enabled = backEnabled) {

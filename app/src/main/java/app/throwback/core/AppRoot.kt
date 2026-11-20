@@ -27,6 +27,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -155,10 +156,6 @@ private fun MainScreen(
     SideEffect { onSplashHold(mindfulPause == null) }
 
     if (mindfulPause == null) return
-    if (pauseShowing) {
-        MindfulPauseScreen(onContinue = { pauseDone = true }, onNotNow = onCloseApp)
-        return
-    }
 
     val lockShowing = mode == WebMode.FULL && lockState is LockState.Locked
 
@@ -169,14 +166,15 @@ private fun MainScreen(
             onLocationChanged = { path = it },
             onExitRequest = onCloseApp,
             onOpenSettings = onOpenSettings,
-            // While locked, screen readers must not reach the feed under the lock screen.
-            modifier = if (lockShowing) Modifier.clearAndSetSemantics {} else Modifier,
+            backEnabled = !settingsOpen && !pauseShowing,
+            // While locked or paused, screen readers must not reach the feed underneath.
+            modifier = if (lockShowing || pauseShowing) Modifier.clearAndSetSemantics {} else Modifier,
         )
 
         // No Throwback button on the feed (owner's decision): Settings opens from the app icon's
         // long-press shortcut. Only the time-limit chip shows, top-centre, on the logged-in home feed.
         val onHomeFeed = path == "/" || path.isEmpty()
-        if (loggedIn && onHomeFeed && mode == WebMode.FULL) {
+        if (loggedIn && onHomeFeed && mode == WebMode.FULL && !pauseShowing) {
             TimeRemainingChip(timeLimit, Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 10.dp))
         }
 
@@ -187,7 +185,7 @@ private fun MainScreen(
             )
         }
 
-        if (offerInstagramPrompt && !lockShowing) {
+        if (offerInstagramPrompt && !lockShowing && !pauseShowing) {
             InstagramAppPrompt(
                 onOpenMessagesSetup = {
                     offerInstagramPrompt = false
@@ -203,6 +201,20 @@ private fun MainScreen(
                 onOpenMessagesOnly = { mode = WebMode.MESSAGES_ONLY },
                 onCloseApp = onCloseApp,
             )
+        }
+
+        // On top of Instagram, which already loads underneath: the feed is ready when the pause ends.
+        if (pauseShowing) {
+            // Taps on the pause's empty areas must not reach the page loading underneath.
+            Box(
+                Modifier.fillMaxSize().pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) awaitPointerEvent().changes.forEach { it.consume() }
+                    }
+                },
+            ) {
+                MindfulPauseScreen(onContinue = { pauseDone = true }, onNotNow = onCloseApp)
+            }
         }
     }
 }

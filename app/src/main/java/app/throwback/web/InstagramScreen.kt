@@ -77,6 +77,8 @@ fun InstagramScreen(
     modifier: Modifier = Modifier,
     startUrl: String? = null,
     onOpenSettings: () -> Unit = {},
+    /** False while a Throwback screen covers the page (Settings): system back must not reach the page. */
+    backEnabled: Boolean = true,
 ) {
     val context = LocalContext.current
     val repository = remember { RulesRepository.get(context) }
@@ -120,6 +122,7 @@ fun InstagramScreen(
             onExitRequest = onExitRequest,
             onOpenSettings = onOpenSettings,
             onRecreate = { generation++ },
+            backEnabled = backEnabled,
             modifier = modifier,
         )
     }
@@ -139,6 +142,7 @@ private fun InstagramWebHost(
     onExitRequest: () -> Unit,
     onOpenSettings: () -> Unit,
     onRecreate: () -> Unit,
+    backEnabled: Boolean,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
@@ -223,7 +227,9 @@ private fun InstagramWebHost(
     LifecycleEventEffect(Lifecycle.Event.ON_START) { controller.onStart() }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { controller.onStop() }
 
-    BackHandler {
+    // Disabled under covering screens: handlers registered later win, and this one is registered
+    // again whenever the page loads after Settings opened, which then closed the app on back.
+    BackHandler(enabled = backEnabled) {
         if (!controller.goBack()) latestOnExitRequest()
     }
 

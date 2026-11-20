@@ -79,6 +79,8 @@ fun InstagramScreen(
     onOpenSettings: () -> Unit = {},
     /** False while a Throwback screen covers the page (Settings): system back must not reach the page. */
     backEnabled: Boolean = true,
+    /** True while Throwback's own screens (Settings, lock, pause) cover the page. */
+    covered: Boolean = false,
 ) {
     val context = LocalContext.current
     val repository = remember { RulesRepository.get(context) }
@@ -123,6 +125,7 @@ fun InstagramScreen(
             onOpenSettings = onOpenSettings,
             onRecreate = { generation++ },
             backEnabled = backEnabled,
+            covered = covered,
             modifier = modifier,
         )
     }
@@ -143,6 +146,7 @@ private fun InstagramWebHost(
     onOpenSettings: () -> Unit,
     onRecreate: () -> Unit,
     backEnabled: Boolean,
+    covered: Boolean,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
@@ -219,6 +223,9 @@ private fun InstagramWebHost(
     }
     LaunchedEffect(controller, mode) {
         controller.setMode(mode)
+    }
+    LaunchedEffect(controller, covered) {
+        controller.setCovered(covered)
     }
     val night = LocalConfiguration.current.uiMode and Configuration.UI_MODE_NIGHT_MASK
     LaunchedEffect(controller, night) {

@@ -1431,10 +1431,34 @@
     }
   }
 
+  var APPROVE_WAIT_MS = 800;
+  var approveSeen = typeof WeakMap === 'function' ? new WeakMap() : null;
+
   function approvePost(p) {
     if (p.hasAttribute(ATTR_OK) || p.hasAttribute(ATTR_POST) || p.hasAttribute(ATTR_DISCOVER)) return;
-    // Until its header (profile link) has rendered, a post can't be checked: it waits, hidden.
+    // A suggestion the data filter let through: tag it, whatever its header says.
+    var key = postKey(p);
+    if (key && discoveredKeys[key]) {
+      p.setAttribute(ATTR_DISCOVER, '1');
+      return;
+    }
+    // Checked only once its header has rendered: the profile link, and the photo or video below the
+    // header (so a "Sponsored" label in the header has been seen too). A post without media is let
+    // through after APPROVE_WAIT_MS, so nothing can stay hidden for good.
     if (!p.querySelector('a[href]')) return;
+    if (!p.querySelector('img, video') && approveSeen) {
+      var first = approveSeen.get(p);
+      var now = Date.now();
+      if (!first) {
+        approveSeen.set(p, now);
+        // Directly, not via the next frame: frames don't run while nothing on screen changes.
+        setTimeout(function () {
+          if (p.isConnected && pageActive('home')) approvePost(p);
+        }, APPROVE_WAIT_MS + 50);
+        return;
+      }
+      if (now - first < APPROVE_WAIT_MS) return;
+    }
     p.setAttribute(ATTR_OK, '1');
   }
 
@@ -1490,10 +1514,10 @@
 
   function allowDiscovery(post) {
     if (state.mode === MODE_MESSAGES || !pageActive('home')) return false;
-    if (document.documentElement.hasAttribute(ATTR_FEED_END)) return false;
-    var d = discState();
     var key = postKey(post);
     if (key && discoveredKeys[key]) return true; // already let through on this page (or by the data filter)
+    if (document.documentElement.hasAttribute(ATTR_FEED_END)) return false;
+    var d = discState();
     var kind = post.querySelector('video') ? 'video' : 'photo';
     // Spread out: enough posts from people you follow since the previous discovery (or the top).
     var followed = 0;
@@ -1524,7 +1548,8 @@
   /** Counts time actually spent looking at the feed (the 5-minute windows). */
   function startFeedClock() {
     setInterval(function () {
-      if (document.visibilityState !== 'visible' || state.mode === MODE_MESSAGES || !state.c || !pageActive('home')) return;
+      if (document.visibilityState !== 'visible' || state.covered || state.mode === MODE_MESSAGES || !state.c ||
+        !pageActive('home')) return;
       var d = discState();
       d.feedSec++;
       if (d.feedSec % 10 === 0) saveDisc();
@@ -1968,6 +1993,10 @@
     version: 1,
     perf: function () {
       return perf.log.slice();
+    },
+    /** The app tells the page when one of its own screens (Settings, lock, pause) covers it. */
+    setCovered: function (covered) {
+      state.covered = !!covered;
     }
   };
   try {

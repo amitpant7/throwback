@@ -159,6 +159,22 @@ internal class InstagramWebController(
         }
     }
 
+    private var covered = false
+
+    /** Tells the page whether a Throwback screen covers it (its feed-time clock pauses). */
+    fun setCovered(value: Boolean) {
+        covered = value
+        pushCovered()
+    }
+
+    private fun pushCovered() {
+        if (destroyed) return
+        webView.evaluateJavascript(
+            "window.__throwback && window.__throwback.setCovered && window.__throwback.setCovered($covered)",
+            null,
+        )
+    }
+
     /** Switches FULL / MESSAGES_ONLY without reloading when the page script is present. */
     fun setMode(newMode: WebMode) {
         if (newMode == mode) return
@@ -408,7 +424,10 @@ internal class InstagramWebController(
         if (destroyed) return
         when (val m = BridgeMessage.parse(json)) {
             is BridgeMessage.Location -> reportLocation(m.url)
-            BridgeMessage.Ready -> requestReveal()
+            BridgeMessage.Ready -> {
+                requestReveal()
+                if (covered) pushCovered() // a new page starts uncovered
+            }
             is BridgeMessage.Blocked -> showNotice(noticeFor(m.kind))
             is BridgeMessage.Touch -> {
                 pull.scriptReport(m.atTop)

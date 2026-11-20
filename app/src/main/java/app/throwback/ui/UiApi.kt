@@ -5,6 +5,8 @@ import androidx.compose.runtime.Composable
 import app.throwback.core.UiPreferences
 import app.throwback.ui.onboarding.InstagramAppPromptContent
 import app.throwback.ui.onboarding.OnboardingFlowContent
+import app.throwback.ui.onboarding.SettingsHintContent
+import androidx.compose.ui.Modifier
 import app.throwback.ui.pause.MindfulPauseContent
 import app.throwback.ui.settings.SettingsRootContent
 
@@ -54,4 +56,18 @@ fun SettingsRoot(
 @Composable
 fun MindfulPauseScreen(onContinue: () -> Unit, onNotNow: () -> Unit) {
     MindfulPauseContent(onContinue = onContinue, onNotNow = onNotNow)
+}
+
+/** Whether the one-time "long-press Home for Throwback's settings" hint is still to be shown. */
+suspend fun shouldShowSettingsHint(context: Context): Boolean =
+    app.throwback.ui.onboarding.shouldShowSettingsHint(context)
+
+/** Marks the settings hint as done (also when the user opened settings on their own). */
+suspend fun markSettingsHintShown(context: Context) =
+    app.throwback.ui.onboarding.markSettingsHintShown(context)
+
+/** The one-time hint card, pointing at Instagram's Home tab; "Got it" marks it shown and calls [onDone]. */
+@Composable
+fun SettingsHint(onDone: () -> Unit, modifier: Modifier = Modifier) {
+    SettingsHintContent(onDone = onDone, modifier = modifier)
 }

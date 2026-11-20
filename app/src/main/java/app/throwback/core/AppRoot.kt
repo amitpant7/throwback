@@ -38,6 +38,9 @@ import app.throwback.timelimit.TimeLimitOverlay
 import app.throwback.timelimit.TimeLimitSettingsScreen
 import app.throwback.timelimit.TimeRemainingChip
 import app.throwback.ui.InstagramAppPrompt
+import app.throwback.ui.SettingsHint
+import app.throwback.ui.markSettingsHintShown
+import app.throwback.ui.shouldShowSettingsHint
 import app.throwback.ui.MindfulPauseScreen
 import app.throwback.ui.OnboardingFlow
 import app.throwback.ui.SettingsRoot
@@ -45,6 +48,7 @@ import app.throwback.ui.SettingsStart
 import app.throwback.ui.shouldOfferInstagramPrompt
 import app.throwback.web.InstagramScreen
 import app.throwback.web.InstagramSession
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -134,6 +138,22 @@ private fun MainScreen(
         if (loggedIn && shouldOfferInstagramPrompt(context)) offerInstagramPrompt = true
     }
 
+    // Once, after setup: where Throwback's settings are (long-press Home). Opening settings any other
+    // way also counts as found.
+    var settingsHint by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(loggedIn) {
+        if (loggedIn && shouldShowSettingsHint(context)) {
+            delay(SETTINGS_HINT_DELAY_MS) // let the feed appear first
+            settingsHint = true
+        }
+    }
+    LaunchedEffect(settingsOpen) {
+        if (settingsOpen) {
+            markSettingsHintShown(context)
+            settingsHint = false
+        }
+    }
+
     // Leaving the lock (extension granted, or a new day) returns to the full app.
     LaunchedEffect(lockState) {
         if (lockState !is LockState.Locked && mode == WebMode.MESSAGES_ONLY) mode = WebMode.FULL
@@ -167,6 +187,7 @@ private fun MainScreen(
             onExitRequest = onCloseApp,
             onOpenSettings = onOpenSettings,
             backEnabled = !settingsOpen && !pauseShowing,
+            covered = settingsOpen || pauseShowing || lockShowing,
             // While locked or paused, screen readers must not reach the feed underneath.
             modifier = if (lockShowing || pauseShowing) Modifier.clearAndSetSemantics {} else Modifier,
         )
@@ -192,6 +213,18 @@ private fun MainScreen(
                     onOpenMessagesSetup()
                 },
                 onDone = { offerInstagramPrompt = false },
+            )
+        }
+
+        if (settingsHint && loggedIn && onHomeFeed && mode == WebMode.FULL && !offerInstagramPrompt &&
+            !lockShowing && !pauseShowing && !settingsOpen
+        ) {
+            SettingsHint(
+                onDone = { settingsHint = false },
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .navigationBarsPadding()
+                    .padding(start = 12.dp, end = 12.dp, bottom = 54.dp),
             )
         }
 
@@ -239,3 +272,5 @@ private fun MessagesOnlyBar(onAskForMoreTime: () -> Unit, modifier: Modifier = M
         }
     }
 }
+
+private const val SETTINGS_HINT_DELAY_MS = 1500L

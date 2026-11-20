@@ -98,4 +98,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
        heading texts in `rules.json` `settingsSection`, so it can be fixed remotely).
     3. **Long-press the Home tab** in the bottom bar (a normal tap still goes home).
     4. **Long-press the Throwback app icon** → "Throwback settings" (launcher shortcut).
+33b. **One-time settings hint** (decided 2026-11-20): after setup, once the logged-in feed shows, a
+    small card above the Home tab says long-press Home opens Throwback's settings (and mentions the
+    profile icon and the section in Instagram's settings). Shown once; opening settings any other way
+    also counts.
 33. **Mockups:** https://claude.ai/artifact/JVunY8kiNTP8abRP43LSGV (private to the owner).

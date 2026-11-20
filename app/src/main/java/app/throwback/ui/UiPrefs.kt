@@ -56,6 +56,9 @@ internal class UiPrefs(private val store: DataStore<Preferences>) : UiPreference
     /** The user finished the Messages & calls wizard (and hasn't turned the feature off). */
     val messagesSetupDone: Flow<Boolean> = flag(MESSAGES_SETUP_DONE)
 
+    /** The one-time "how to open Throwback's settings" hint was shown (or settings were found anyway). */
+    val settingsHintShown: Flow<Boolean> = flag(SETTINGS_HINT_SHOWN)
+
     /** Extra notification types the user turned on. Empty by default. */
     val extraNotifications: Flow<Set<ExtraNotification>> = data.map { prefs ->
         ExtraNotification.entries.filterTo(mutableSetOf()) { prefs[it.prefKey] ?: false }
@@ -68,6 +71,8 @@ internal class UiPrefs(private val store: DataStore<Preferences>) : UiPreference
     suspend fun setInstagramPromptShown() = set(INSTAGRAM_PROMPT_SHOWN, true)
 
     suspend fun setMessagesSetupDone(done: Boolean) = set(MESSAGES_SETUP_DONE, done)
+
+    suspend fun setSettingsHintShown() = set(SETTINGS_HINT_SHOWN, true)
 
     suspend fun setExtraNotification(type: ExtraNotification, enabled: Boolean) = set(type.prefKey, enabled)
 
@@ -92,6 +97,7 @@ internal class UiPrefs(private val store: DataStore<Preferences>) : UiPreference
         val MINDFUL_PAUSE = booleanPreferencesKey("mindful_pause")
         val INSTAGRAM_PROMPT_SHOWN = booleanPreferencesKey("instagram_prompt_shown_after_login")
         val MESSAGES_SETUP_DONE = booleanPreferencesKey("messages_setup_done")
+        val SETTINGS_HINT_SHOWN = booleanPreferencesKey("settings_hint_shown")
 
         /** Cheap wrapper around the process-wide DataStore; safe to call from any screen. */
         fun from(context: Context): UiPrefs = UiPrefs(context.applicationContext.uiPrefsDataStore)

@@ -176,4 +176,8 @@
         <item>Check in on your friends, not on the feed.</item>
         <item>Say hello, see what\'s new, and leave while it still feels good.</item>
     </string-array>
+    <!-- One-time hint on the feed: where Throwback's settings are -->
+    <string name="ui_settings_hint_title">Throwback\'s settings</string>
+    <string name="ui_settings_hint_body">Long-press Home to open them. There\'s also a Throwback icon at the top of your profile, and a Throwback section in Instagram\'s settings.</string>
+    <string name="ui_settings_hint_ok">Got it</string>
 </resources>

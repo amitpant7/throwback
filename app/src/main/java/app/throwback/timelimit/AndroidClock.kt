@@ -32,32 +32,49 @@ internal open class AndroidClock(context: Context) : Clock {
          * TEST BUILDS ONLY: a file `files/debug_clock` makes time run faster, so the time-limit flow can
          * be tested end to end in minutes. Contents: `<speed> [HH:MM]`, e.g. `60 23:55` = 60x, and the
          * wall clock starts at 23:55 today (to reach midnight quickly). Release builds never read it.
-         * Put it there with `adb shell run-as app.throwback sh -c 'echo 60 > files/debug_clock'`.
+         * Put it there with `adb shell "run-as app.throwback sh -c 'echo 60 > /data/data/app.throwback/files/debug_clock'"`.
+         * Remove debug_clock and debug_clock_anchor (and the time-limit data) to go back to real time.
          */
         fun create(context: Context): Clock {
             val real = AndroidClock(context)
             if (!BuildConfig.DEBUG) return real
-            val spec = runCatching { File(context.filesDir, "debug_clock").readText().trim() }.getOrNull()
-                ?: return real
+            val dir = context.filesDir
+            val spec = runCatching { File(dir, "debug_clock").readText().trim() }.getOrNull() ?: return real
             val parts = spec.split(Regex("\\s+"))
             val speed = parts[0].toLongOrNull()?.coerceIn(1, 3600) ?: return real
-            val start = parts.getOrNull(1)?.let { runCatching { LocalTime.parse(it) }.getOrNull() }
-            Log.w("ThrowbackTime", "DEBUG fast clock: ${speed}x" + (start?.let { ", starting at $it" } ?: ""))
-            return FastClock(real, speed, start)
+            // The starting point is saved, so fast time continues across app restarts and reinstalls
+            // (otherwise times saved by the previous run would lie "in the future").
+            val anchorFile = File(dir, "debug_clock_anchor")
+            val saved = runCatching {
+                anchorFile.readText().trim().split(" ").map { it.toLong() }.takeIf { it.size == 2 }
+            }.getOrNull()
+            val anchor = saved ?: run {
+                val now = real.now()
+                val start = parts.getOrNull(1)?.let { runCatching { LocalTime.parse(it) }.getOrNull() }
+                val fastWall = start?.let {
+                    LocalDate.now(now.zone).atTime(it).atZone(now.zone).toInstant().toEpochMilli()
+                } ?: now.wallMillis
+                listOf(now.wallMillis, fastWall).also { a -> runCatching { anchorFile.writeText("${a[0]} ${a[1]}") } }
+            }
+            Log.w("ThrowbackTime", "DEBUG fast clock: ${speed}x, anchor ${anchor[0]} -> ${anchor[1]}")
+            return FastClock(real, speed, anchorReal = anchor[0], anchorFast = anchor[1])
         }
     }
 }
 
-/** Test-build clock: both clocks advance [speed] times faster from the moment the app started. */
-private class FastClock(private val real: Clock, private val speed: Long, start: LocalTime?) : Clock {
-    private val base = real.now()
-    private val baseWall = start?.let {
-        LocalDate.now(base.zone).atTime(it).atZone(base.zone).toInstant().toEpochMilli()
-    } ?: base.wallMillis
-
+/**
+ * Test-build clock. Fast wall time = anchorFast + (real wall time - anchorReal) x speed; monotonic
+ * time keeps the same offset, so both advance [speed] times faster, consistently across restarts.
+ */
+private class FastClock(
+    private val real: Clock,
+    private val speed: Long,
+    private val anchorReal: Long,
+    private val anchorFast: Long,
+) : Clock {
     override fun now(): ClockReading {
         val r = real.now()
-        val passed = (r.elapsedMillis - base.elapsedMillis) * speed
-        return r.copy(elapsedMillis = base.elapsedMillis + passed, wallMillis = baseWall + passed)
+        val fastWall = anchorFast + (r.wallMillis - anchorReal) * speed
+        return r.copy(elapsedMillis = r.elapsedMillis + (fastWall - r.wallMillis), wallMillis = fastWall)
     }
 }

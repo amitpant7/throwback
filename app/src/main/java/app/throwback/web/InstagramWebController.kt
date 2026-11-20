@@ -338,10 +338,13 @@ internal class InstagramWebController(
         host?.onStartUrlHandled(url)
     }
 
-    /** @return true when the WebView must not load [url] itself. */
-    private fun handleNavigation(url: String, currentUrl: String?): Boolean {
+    /**
+     * @param userGesture a tap started it (or a server redirected one): only then may it open another app.
+     * @return true when the WebView must not load [url] itself.
+     */
+    private fun handleNavigation(url: String, currentUrl: String?, userGesture: Boolean): Boolean {
         val router = router ?: return false
-        return when (val d = router.decide(url, mode, currentUrl)) {
+        return when (val d = router.decide(url, mode, currentUrl, userGesture)) {
             UrlRouter.Decision.Load -> {
                 navigatingTo = url
                 false
@@ -552,7 +555,7 @@ internal class InstagramWebController(
 
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
             if (!request.isForMainFrame) return false
-            return handleNavigation(request.url.toString(), view.url)
+            return handleNavigation(request.url.toString(), view.url, userGesture = request.hasGesture() || request.isRedirect)
         }
 
         override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {

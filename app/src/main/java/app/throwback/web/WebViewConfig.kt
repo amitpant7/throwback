@@ -8,13 +8,14 @@ import androidx.webkit.UserAgentMetadata
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewFeature
 import app.throwback.BuildConfig
+import app.throwback.web.rules.INSTAGRAM_HOSTS
 import kotlin.math.roundToInt
 
 /** WebView setup for Instagram. Everything here is applied once, when the WebView is created. */
 internal object WebViewConfig {
 
-    /** Origins that get the page script and the message bridge. */
-    val INSTAGRAM_ORIGINS: Set<String> = setOf("https://www.instagram.com", "https://instagram.com")
+    /** Origins that get the page script and the message bridge: the pinned Instagram hosts, https only. */
+    val INSTAGRAM_ORIGINS: Set<String> = INSTAGRAM_HOSTS.mapTo(LinkedHashSet()) { "https://$it" }
 
     @SuppressLint("SetJavaScriptEnabled") // Instagram is a JavaScript app; the bridge is origin-restricted.
     fun apply(webView: WebView, fontScale: Float) {
@@ -25,6 +26,8 @@ internal object WebViewConfig {
         s.domStorageEnabled = true
         s.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
         s.allowFileAccess = false
+        // No content:// URLs in pages (uploads come back through the file chooser's callback).
+        s.allowContentAccess = false
         @Suppress("DEPRECATION")
         s.allowFileAccessFromFileURLs = false
         @Suppress("DEPRECATION")

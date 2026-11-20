@@ -9,8 +9,9 @@ import app.throwback.web.UrlRouter
  * this returns no errors, so a broken edit on GitHub can never break installed apps.
  *
  * Besides syntax, it checks the invariants the app relies on: the home and messages URLs are
- * reachable in their own mode (otherwise every load would redirect forever), selectors cannot
- * break out of the generated CSS, and sizes stay small.
+ * reachable in their own mode (otherwise every load would redirect forever), only Instagram's own
+ * hosts are treated as Instagram, patterns work the same in the page and stay cheap
+ * ([RulePatterns]), selectors cannot break out of the generated CSS, and sizes stay small.
  */
 object RulesValidator {
 
@@ -20,46 +21,55 @@ object RulesValidator {
     private val FIELD = Regex("^[A-Za-z_][A-Za-z0-9_]{0,80}$")
     private val FIELD_PATH = Regex("^[A-Za-z_][A-Za-z0-9_]{0,80}(\\.[A-Za-z_][A-Za-z0-9_]{0,80}){0,6}$")
     private val KINDS = Regex("^[a-zA-Z][a-zA-Z0-9-]{0,30}$")
+    private val PACKAGE = Regex("^[A-Za-z][A-Za-z0-9_]{0,40}(\\.[A-Za-z][A-Za-z0-9_]{0,40}){1,8}$")
 
-    private const val MAX_PATTERN = 300
+    /** Where `explore.images` may point: Throwback's own repository. */
+    private const val IMAGES_PREFIX = "https://raw.githubusercontent.com/amitpant7/throwback/"
+
     private const val MAX_SELECTOR = 1000
-    private const val MAX_TEXT = 100
     private const val MAX_LIST = 300
+    private const val MAX_PACKAGES = 20
 
     fun validate(rules: FilterRules): List<String> {
         val errors = mutableListOf<String>()
         fun check(ok: Boolean, message: () -> String) {
             if (!ok) errors += message()
         }
+        fun pattern(p: String, where: String): Regex? = RulePatterns.check(p, where, errors)
 
         check(rules.schema == SUPPORTED_RULES_SCHEMA) { "unsupported schema ${rules.schema}" }
         check(rules.version > 0) { "version must be positive" }
 
-        // Hosts
-        check(rules.hosts.instagram.isNotEmpty()) { "hosts.instagram is empty" }
-        val allHosts = rules.hosts.instagram + rules.hosts.internal + rules.hosts.login + rules.hosts.linkShims.map { it.host }
+        // Hosts. Which sites count as Instagram, or may stay in the WebView, is pinned in the app.
+        val h = rules.hosts
+        check(h.instagram.isNotEmpty()) { "hosts.instagram is empty" }
+        val allHosts = h.instagram + h.internal + h.login + h.linkShims.map { it.host }
         allHosts.forEach { check(HOST.matches(it)) { "bad host '$it'" } }
-        rules.hosts.linkShims.forEach { check(it.param.isNotBlank()) { "link shim ${it.host} has no param" } }
-        rules.hosts.blockedUrls.forEach { checkPattern(it, "hosts.blockedUrls", errors) }
+        h.instagram.forEach { check(it in INSTAGRAM_HOSTS) { "hosts.instagram: '$it' is not one of $INSTAGRAM_HOSTS" } }
+        (h.internal + h.login + h.linkShims.map { it.host }).forEach {
+            check(isMetaHost(it)) { "hosts: '$it' is not under ${META_DOMAINS.joinToString(", ")}" }
+        }
+        h.linkShims.forEach { check(it.param.isNotBlank()) { "link shim ${it.host} has no param" } }
+        h.blockedUrls.forEach { pattern(it, "hosts.blockedUrls") }
 
         // Paths
         val p = rules.paths
         check(p.messagesOnly.isNotEmpty()) { "paths.messagesOnly is empty" }
         check(p.blocked.size <= MAX_LIST) { "too many blocked paths" }
         p.blocked.forEach { b ->
-            checkPattern(b.pattern, "paths.blocked", errors)
+            pattern(b.pattern, "paths.blocked")
             check(KINDS.matches(b.kind)) { "bad kind '${b.kind}'" }
             b.redirect?.let { r ->
                 // A template starting with "//" would turn into a link to another site in the page.
                 check(r.startsWith("/") && !r.startsWith("//") && !r.contains("\\")) { "bad redirect '$r'" }
             }
         }
-        (p.alwaysAllowed + p.auth + p.messagesOnly + p.pullToRefresh).forEach { checkPattern(it, "paths", errors) }
+        (p.alwaysAllowed + p.auth + p.messagesOnly + p.pullToRefresh).forEach { pattern(it, "paths") }
 
         // Pages
-        rules.pages.forEach { (name, pattern) ->
+        rules.pages.forEach { (name, regex) ->
             check(PAGE_NAME.matches(name)) { "bad page name '$name'" }
-            checkPattern(pattern, "pages.$name", errors)
+            pattern(regex, "pages.$name")
         }
         val onValues = setOf(ON_ALWAYS, ON_FULL, ON_MESSAGES_ONLY) + rules.pages.keys
         fun checkOn(on: String, where: String) = check(on in onValues) { "$where: unknown 'on' value '$on'" }
@@ -68,23 +78,25 @@ object RulesValidator {
         check(rules.hide.size + rules.hideText.size <= MAX_LIST) { "too many hide rules" }
         val ids = (rules.hide.map { it.id } + rules.hideText.map { it.id })
         ids.groupBy { it }.filter { it.value.size > 1 }.keys.forEach { errors += "duplicate rule id '$it'" }
-        rules.hide.forEach { h ->
-            check(ID.matches(h.id)) { "bad id '${h.id}'" }
-            checkSelector(h.selector, "hide.${h.id}", errors)
-            h.closest?.let { checkSelector(it, "hide.${h.id}.closest", errors) }
-            check(h.closestDepth in 1..20) { "hide.${h.id}: closestDepth out of range" }
-            check(h.style == STYLE_REMOVE || h.style == STYLE_INVISIBLE) { "hide.${h.id}: bad style '${h.style}'" }
-            checkOn(h.on, "hide.${h.id}")
+        rules.hide.forEach { r ->
+            check(ID.matches(r.id)) { "bad id '${r.id}'" }
+            checkSelector(r.selector, "hide.${r.id}", errors)
+            r.closest?.let { checkSelector(it, "hide.${r.id}.closest", errors) }
+            check(r.closestDepth in 1..20) { "hide.${r.id}: closestDepth out of range" }
+            check(r.style == STYLE_REMOVE || r.style == STYLE_INVISIBLE) { "hide.${r.id}: bad style '${r.style}'" }
+            checkOn(r.on, "hide.${r.id}")
         }
-        rules.hideText.forEach { h ->
-            check(ID.matches(h.id)) { "bad id '${h.id}'" }
-            checkSelector(h.elements, "hideText.${h.id}", errors)
-            checkTexts(h.text, "hideText.${h.id}", errors)
-            checkOn(h.on, "hideText.${h.id}")
+        rules.hideText.forEach { r ->
+            check(ID.matches(r.id)) { "bad id '${r.id}'" }
+            checkSelector(r.elements, "hideText.${r.id}", errors)
+            checkTexts(r.text, "hideText.${r.id}", errors)
+            checkOn(r.on, "hideText.${r.id}")
         }
 
         // Feed posts and blocks
         checkSelector(rules.posts.container, "posts.container", errors)
+        // The page pastes it into compound selectors: a list ("article, div") would hide every home post.
+        check(!hasTopLevelComma(rules.posts.container)) { "posts.container must be a single selector (no top-level comma)" }
         check(rules.posts.maxMediaBefore in 0..10) { "posts.maxMediaBefore out of range" }
         check(rules.posts.headerMaxFraction in 0.05..1.0) { "posts.headerMaxFraction out of range" }
         (rules.posts.labels + rules.modules + rules.sectionMarkers).forEach { t ->
@@ -96,7 +108,7 @@ object RulesValidator {
             check(ID.matches(d.id)) { "bad id '${d.id}'" }
             checkTexts(d.whenText, "dialogs.${d.id}.whenText", errors)
             check(d.click.isNotEmpty() || d.clickSelector != null) { "dialogs.${d.id}: nothing to click" }
-            d.click.forEach { check(it.isNotBlank() && it.length <= MAX_TEXT) { "dialogs.${d.id}: bad click text" } }
+            d.click.forEach { check(it.isNotBlank() && it.length <= RulePatterns.MAX_TEXT) { "dialogs.${d.id}: bad click text" } }
             d.clickSelector?.let { checkSelector(it, "dialogs.${d.id}.clickSelector", errors) }
         }
         check(rules.dismissMaxAttempts in 0..500) { "dismissMaxAttempts out of range" }
@@ -107,28 +119,35 @@ object RulesValidator {
             check(e.dailySeconds in 0..3600) { "explore.dailySeconds out of range" }
             check(e.images.size <= 50) { "explore.images: too many" }
             e.images.forEach {
-                check(it.startsWith("https://raw.githubusercontent.com/amitpant7/throwback/")) { "explore.images must be in Throwback's repo" }
-            }
-            rules.appSettings?.let { a ->
-                check(a.link.startsWith("instagram://")) { "appSettings.link must be an instagram:// link" }
-                check(runCatching { Regex(a.screens) }.isSuccess) { "appSettings.screens is not a valid pattern" }
-                check(a.otherScreenMinutes in 0..30) { "appSettings.otherScreenMinutes out of range" }
-            }
-            rules.appCreate?.let { a ->
-                check(a.link.startsWith("instagram://")) { "appCreate.link must be an instagram:// link" }
-                check(runCatching { Regex(a.screens) }.isSuccess) { "appCreate.screens is not a valid pattern" }
-                check(a.triggers.size <= 10) { "appCreate.triggers: too many" }
-                a.story?.let { st ->
-                    check(st.link.startsWith("instagram://")) { "appCreate.story.link must be an instagram:// link" }
-                    check(st.editMinutes in 1..15) { "appCreate.story.editMinutes out of range" }
-                    check(st.openSeconds in 3..30) { "appCreate.story.openSeconds out of range" }
-                    check(st.cooldownMinutes in 0..240) { "appCreate.story.cooldownMinutes out of range" }
-                    check(st.perDay in 0..20) { "appCreate.story.perDay out of range" }
-                    check(runCatching { Regex(st.postingChannels) }.isSuccess) { "appCreate.story.postingChannels invalid" }
+                // No way out of the repository: "throwback/../other/" or its encoded form.
+                check(it.startsWith(IMAGES_PREFIX) && ".." !in it && !it.contains("%2e", ignoreCase = true)) {
+                    "explore.images must be in Throwback's repo"
                 }
             }
             e.actions?.let { a ->
                 (a.like + a.unlike + a.save + a.unsave).forEach { check(it.isNotBlank() && it.length <= 60) { "explore.actions: bad label" } }
+            }
+        }
+
+        // The Instagram app (when connected): its screens decide what a pass allows.
+        rules.appSettings?.let { a ->
+            check(a.link.startsWith("instagram://")) { "appSettings.link must be an instagram:// link" }
+            checkScreens(a.screens, "appSettings.screens", errors)
+            check(a.otherScreenMinutes in 0..30) { "appSettings.otherScreenMinutes out of range" }
+            checkPackages(a.flowPackages, "appSettings.flowPackages", errors)
+        }
+        rules.appCreate?.let { a ->
+            check(a.link.startsWith("instagram://")) { "appCreate.link must be an instagram:// link" }
+            checkScreens(a.screens, "appCreate.screens", errors)
+            check(a.triggers.size <= 10) { "appCreate.triggers: too many" }
+            checkPackages(a.flowPackages, "appCreate.flowPackages", errors)
+            a.story?.let { st ->
+                check(st.link.startsWith("instagram://")) { "appCreate.story.link must be an instagram:// link" }
+                check(st.editMinutes in 1..15) { "appCreate.story.editMinutes out of range" }
+                check(st.openSeconds in 3..30) { "appCreate.story.openSeconds out of range" }
+                check(st.cooldownMinutes in 0..240) { "appCreate.story.cooldownMinutes out of range" }
+                check(st.perDay in 0..20) { "appCreate.story.perDay out of range" }
+                pattern(st.postingChannels, "appCreate.story.postingChannels")
             }
         }
         rules.nav?.let { n ->
@@ -164,14 +183,14 @@ object RulesValidator {
             check(rv.cooldownMinutes in 0..1440) { "reelViewer.cooldownMinutes out of range" }
         }
         rules.settingsSection?.let { ss ->
-            checkPattern(ss.path, "settingsSection.path", errors)
+            pattern(ss.path, "settingsSection.path")
             checkTexts(ss.after, "settingsSection.after", errors)
         }
 
         // Entry points must be Instagram pages that their own mode actually shows.
         // Skipped when the patterns above are broken (the router would throw).
-        if (errors.isEmpty()) {
-            val router = UrlRouter(rules)
+        val router = if (errors.isEmpty()) UrlRouter(rules) else null
+        router?.let {
             listOf(rules.homeUrl to WebMode.FULL, rules.messagesUrl to WebMode.MESSAGES_ONLY).forEach { (url, mode) ->
                 val parts = UrlParts.parse(url)
                 check(parts != null && parts.scheme == "https" && router.isInstagramHost(parts.host)) {
@@ -182,20 +201,55 @@ object RulesValidator {
                 }
             }
         }
-        NotificationRulesValidator.validate(rules, errors)
+        NotificationRulesValidator.validate(rules, errors, router)
         return errors
     }
 
-    private fun checkPattern(pattern: String, where: String, errors: MutableList<String>) {
-        if (pattern.isEmpty() || pattern.length > MAX_PATTERN) {
-            errors += "$where: pattern length"
-            return
+    /** One of [META_DOMAINS] or a subdomain ("*.facebook.com" counts as facebook.com). */
+    private fun isMetaHost(host: String): Boolean {
+        val bare = host.removePrefix("*.")
+        return META_DOMAINS.any { bare == it || bare.endsWith(".$it") }
+    }
+
+    /**
+     * Instagram app screens a pass allows (regex on the activity class). One that matches the empty
+     * string (blank, ".*", "x?") matches every screen, so the pass would never hold anything back.
+     */
+    private fun checkScreens(screens: String, where: String, errors: MutableList<String>) {
+        val regex = RulePatterns.check(screens, where, errors) ?: return
+        if (regex.containsMatchIn("")) errors += "$where: matches every screen"
+    }
+
+    /** Apps a pass may pass through: package names, never Instagram's own (a pass can't extend itself). */
+    private fun checkPackages(packages: List<String>, where: String, errors: MutableList<String>) {
+        if (packages.size > MAX_PACKAGES) errors += "$where: too many"
+        packages.forEach {
+            if (!PACKAGE.matches(it)) {
+                errors += "$where: bad package name '$it'"
+            } else if (it == "com.instagram" || it.startsWith("com.instagram.")) {
+                errors += "$where: '$it' is Instagram itself"
+            }
         }
-        try {
-            Regex(pattern)
-        } catch (e: IllegalArgumentException) {
-            errors += "$where: invalid pattern '$pattern'"
+    }
+
+    /** A comma outside brackets, parentheses and quotes: a selector list, not one selector. */
+    internal fun hasTopLevelComma(selector: String): Boolean {
+        var depth = 0
+        var quote: Char? = null
+        var i = 0
+        while (i < selector.length) {
+            val c = selector[i]
+            when {
+                c == '\\' -> i++ // the escaped character is plain text
+                quote != null -> if (c == quote) quote = null
+                c == '"' || c == '\'' -> quote = c
+                c == '(' || c == '[' -> depth++
+                c == ')' || c == ']' -> depth = (depth - 1).coerceAtLeast(0)
+                c == ',' && depth == 0 -> return true
+            }
+            i++
         }
+        return false
     }
 
     /**
@@ -212,6 +266,6 @@ object RulesValidator {
 
     private fun checkTexts(texts: List<String>, where: String, errors: MutableList<String>) {
         if (texts.isEmpty() || texts.size > MAX_LIST) errors += "$where: text list size"
-        texts.forEach { if (it.isBlank() || it.length > MAX_TEXT) errors += "$where: bad text '$it'" }
+        texts.forEach { if (it.isBlank() || it.length > RulePatterns.MAX_TEXT) errors += "$where: bad text '$it'" }
     }
 }

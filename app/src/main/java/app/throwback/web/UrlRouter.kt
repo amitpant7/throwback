@@ -25,7 +25,7 @@ class UrlRouter(private val rules: FilterRules) {
         /** Not Instagram: open in the user's browser or the right app. */
         data class External(val url: String) : Decision
 
-        /** Do nothing ("open in app" intents, app store pages, unparseable links). */
+        /** Do nothing ("open in app" intents, app store pages, unparseable or ambiguous links). */
         data object Ignore : Decision
     }
 
@@ -58,11 +58,20 @@ class UrlRouter(private val rules: FilterRules) {
     /**
      * @param currentUrl the page the navigation starts from; it decides whether a Facebook URL is
      *        part of a login flow (stays in the WebView) or a link someone shared (opens outside).
+     * @param userGesture false when a page navigates on its own (no tap, and not a server redirect of
+     *        one): it may not send the user to another app, so an outside link is then ignored.
      */
-    fun decide(url: String, mode: WebMode, currentUrl: String?): Decision {
+    fun decide(url: String, mode: WebMode, currentUrl: String?, userGesture: Boolean = true): Decision {
+        val decision = decideUrl(url, mode, currentUrl)
+        return if (decision is Decision.External && !userGesture) Decision.Ignore else decision
+    }
+
+    private fun decideUrl(url: String, mode: WebMode, currentUrl: String?): Decision {
         if (UrlParts.hasAmbiguousChars(url)) return Decision.Ignore
-        if (blockedUrls.any { it.containsMatchIn(url) }) return Decision.Ignore
         val parts = UrlParts.parse(url) ?: return Decision.Ignore
+        // Links into the Instagram app or an app store do nothing, whatever the rules say.
+        if (parts.scheme in BLOCKED_SCHEMES) return Decision.Ignore
+        if (blockedUrls.any { it.containsMatchIn(url.capped()) }) return Decision.Ignore
         return when (parts.scheme) {
             "http", "https" -> decideWeb(url, parts, mode, currentUrl)
             "about", "data", "blob", "javascript" -> Decision.Load
@@ -97,7 +106,7 @@ class UrlRouter(private val rules: FilterRules) {
 
     fun allowsPullToRefresh(url: String?): Boolean {
         val parts = url?.let(UrlParts::parse) ?: return false
-        return parts.isWeb() && instagram.matches(parts.host) && pullToRefresh.any { it.containsMatchIn(parts.path) }
+        return parts.isWeb() && instagram.matches(parts.host) && pullToRefresh.any { it.containsMatchIn(parts.path.capped()) }
     }
 
     private fun decideWeb(url: String, parts: UrlParts, mode: WebMode, currentUrl: String?): Decision {
@@ -126,10 +135,11 @@ class UrlRouter(private val rules: FilterRules) {
             val query = if (parts.query.isEmpty()) "" else "?${parts.query}"
             return Decision.Redirect("https://${parts.host}$path$query", null)
         }
-        if (alwaysAllowed.any { it.containsMatchIn(path) }) return Decision.Load
+        val matched = path.capped()
+        if (alwaysAllowed.any { it.containsMatchIn(matched) }) return Decision.Load
 
         if (mode == WebMode.MESSAGES_ONLY) {
-            return if (messagesOnly.any { it.containsMatchIn(path) }) {
+            return if (messagesOnly.any { it.containsMatchIn(matched) }) {
                 Decision.Load
             } else {
                 Decision.Redirect(rules.messagesUrl, KIND_MESSAGES_ONLY)
@@ -137,7 +147,7 @@ class UrlRouter(private val rules: FilterRules) {
         }
 
         for ((regex, rule) in blocked) {
-            val match = regex.find(path) ?: continue
+            val match = regex.find(matched) ?: continue
             val origin = canonicalOrigin ?: "https://${parts.host}"
             val target = rule.redirect?.let { origin + expandTemplate(it, match) } ?: rules.homeUrl
             return Decision.Redirect(target, rule.kind)
@@ -154,14 +164,21 @@ class UrlRouter(private val rules: FilterRules) {
         val current = currentUrl?.let(UrlParts::parse)
         if (current == null || !current.isWeb()) return true // nothing loaded yet
         if (login.matches(current.host) || internal.matches(current.host)) return true
-        return instagram.matches(current.host) && auth.any { it.containsMatchIn(current.path) }
+        return instagram.matches(current.host) && auth.any { it.containsMatchIn(current.path.capped()) }
     }
 
     private fun UrlParts.isWeb() = scheme == "https" || scheme == "http"
 
+    /** Patterns only ever see the start of a URL or path, so a page can't make them run long. */
+    private fun String.capped() = if (length <= MAX_MATCH_CHARS) this else substring(0, MAX_MATCH_CHARS)
+
     companion object {
         const val KIND_MESSAGES_ONLY = "messagesOnly"
         private const val MAX_REDIRECT_HOPS = 4
+        private const val MAX_MATCH_CHARS = 2048
+
+        /** Schemes that open the Instagram app or an app store: never followed, whatever the rules say. */
+        private val BLOCKED_SCHEMES = setOf("intent", "instagram", "market")
 
         /** Fills $1..$9 from [match]; always returns a single-slash path (never "//host"). */
         internal fun expandTemplate(template: String, match: MatchResult): String {

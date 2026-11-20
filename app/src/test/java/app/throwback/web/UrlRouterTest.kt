@@ -4,6 +4,7 @@ import app.throwback.core.WebMode
 import app.throwback.core.WebMode.FULL
 import app.throwback.core.WebMode.MESSAGES_ONLY
 import app.throwback.web.UrlRouter.Decision
+import app.throwback.web.rules.FallbackRules
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -49,6 +50,14 @@ class UrlRouterTest {
             "$ig/explore/", "$ig/explore/search/", "$ig/explore/tags/cats/", "$ig/accounts/activity/",
             "$ig/direct/inbox/", "$ig/direct/t/1234/", "$ig/accounts/edit/",
         ).forEach { assertEquals(it, Decision.Load, decide(it)) }
+    }
+
+    @Test
+    fun `a profile's tagged tab goes to the profile`() {
+        assertEquals(Decision.Redirect("$ig/some.user_1/", "hidden"), decide("$ig/some.user_1/tagged/"))
+        assertEquals(Decision.Redirect("$ig/some.user_1/", "hidden"), decide("$ig/some.user_1/tagged"))
+        assertEquals(Decision.Load, decide("$ig/some.user_1/"))
+        assertEquals(Decision.Load, decide("$ig/explore/tags/tagged/"))
     }
 
     @Test
@@ -147,6 +156,34 @@ class UrlRouterTest {
             "https://apps.apple.com/app/instagram/id389801252",
         ).forEach { assertEquals(it, Decision.Ignore, decide(it)) }
         assertEquals(Decision.Ignore, decide("not a url"))
+    }
+
+    @Test
+    fun `app and store schemes do nothing even when the rules don't list them`() {
+        val bare = UrlRouter(FallbackRules.rules)
+        assertTrue(FallbackRules.rules.hosts.blockedUrls.isEmpty())
+        listOf("intent://instagram.com/#Intent;scheme=https;end", "INTENT:#Intent;end", "instagram://user?username=x", "market://details?id=x")
+            .forEach { assertEquals(it, Decision.Ignore, bare.decide(it, FULL, "$ig/")) }
+        assertEquals(Decision.External("mailto:a@b.c"), bare.decide("mailto:a@b.c", FULL, "$ig/"))
+    }
+
+    @Test
+    fun `a page can't open another app without a tap`() {
+        assertEquals(Decision.Ignore, router.decide("https://example.com/a", FULL, "$ig/", userGesture = false))
+        assertEquals(Decision.Ignore, router.decide("mailto:a@b.c", FULL, "$ig/", userGesture = false))
+        assertEquals(Decision.Ignore, router.decide("https://l.instagram.com/?u=https%3A%2F%2Fexample.com%2F", FULL, "$ig/", userGesture = false))
+        assertEquals(Decision.External("https://example.com/a"), router.decide("https://example.com/a", FULL, "$ig/", userGesture = true))
+        // Only leaving is held back: Instagram pages and redirects work as before.
+        assertEquals(Decision.Load, router.decide("$ig/p/X/", FULL, "$ig/", userGesture = false))
+        assertEquals(Decision.Redirect(home, "reels"), router.decide("$ig/reels/", FULL, "$ig/", userGesture = false))
+    }
+
+    @Test
+    fun `patterns only see the first 2 KB of a long URL`() {
+        val long = "$ig/p/X/" + "a".repeat(200_000)
+        assertEquals(Decision.Load, decide(long))
+        assertEquals(Decision.Redirect(home, "reels"), decide("$ig/reels/x/" + "a".repeat(200_000)))
+        assertFalse(router.allowsPullToRefresh("$ig/direct/inbox/" + "a".repeat(200_000)))
     }
 
     @Test

@@ -398,7 +398,9 @@
     out.push('html[' + ATTR_FEED_GAP + '] [' + ATTR_FEED_LIST + '],html[' + ATTR_FEED_END + '] [' + ATTR_FEED_LIST +
       ']{padding-bottom:0!important}');
     out.push('html.tb-messages-only [' + ATTR_NAV + ']' + HIDE);
-    if (c.explore) out.push(scopeFor(c.explore.on) + ' [' + ATTR_EXPLORE + ']' + HIDE);
+    // Explore grid blocks stay hidden even while leaving the Explore page (the page marker goes away
+    // a moment before Instagram removes the page, which flashed the grid on the way to Home).
+    if (c.explore) out.push('html:not(.' + CLASS_EXPLORE_OPEN + ') [' + ATTR_EXPLORE + ']' + HIDE);
     out.push('html.' + CLASS_BLANK + ' body{visibility:hidden!important}');
     return out.join('\n');
   }
@@ -971,6 +973,7 @@
       return;
     }
     applyClasses();
+    updateExploreCard(); // remove "Enough for today" at once when leaving Explore
     send({ t: 'loc', url: href });
     perfStart(state.path);
     if (!pageActive('stories')) {

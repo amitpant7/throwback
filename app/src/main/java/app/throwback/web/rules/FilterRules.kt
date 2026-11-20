@@ -309,6 +309,8 @@ data class AppCreateRules(
     val screens: String,
     /** The website's buttons that open the app's create screen instead. */
     val triggers: List<AppCreateTrigger> = emptyList(),
+    /** More system packages Instagram opens on the way (pickers on some phones); they don't end a pass. */
+    val flowPackages: List<String> = emptyList(),
 )
 
 @Serializable

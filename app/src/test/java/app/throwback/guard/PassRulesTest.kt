@@ -23,4 +23,12 @@ class PassRulesTest {
         assertTrue(PassRules.callAllowed(listOf(now - h - 1, now - 2000, now - 3000), now)) // oldest is over an hour old
         assertEquals(2, PassRules.recentTaps(listOf(now - h - 1, now - 2000, now - 3000), now).size)
     }
+
+    @Test
+    fun `Android's photo picker and permission dialog are part of posting`() {
+        assertTrue(PassRules.partOfInstagramFlow("com.google.android.providers.media.module"))
+        assertTrue(PassRules.partOfInstagramFlow("com.google.android.permissioncontroller"))
+        assertTrue(PassRules.partOfInstagramFlow("com.example.picker", setOf("com.example.picker")))
+        assertFalse(PassRules.partOfInstagramFlow("com.whatsapp"))
+    }
 }

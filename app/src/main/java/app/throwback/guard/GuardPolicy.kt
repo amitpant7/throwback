@@ -132,6 +132,21 @@ internal object PassRules {
 
     fun recentTaps(taps: List<Long>, now: Long): List<Long> = taps.filter { now - it in 0 until HOUR_MS }
 
+    /**
+     * Android's own screens that Instagram opens along the way: the permission dialog, the photo
+     * picker ("Select photos" / "Select more photos" with limited access), the file picker. Going
+     * there is not leaving Instagram, so a pass isn't ended (it was: the picker bounced the user
+     * back to Throwback on the owner's phone).
+     */
+    val FLOW_PACKAGES = setOf(
+        "com.google.android.permissioncontroller", "com.android.permissioncontroller",
+        "com.google.android.providers.media.module", "com.android.providers.media.module",
+        "com.google.android.photopicker", "com.android.photopicker",
+        "com.google.android.documentsui", "com.android.documentsui",
+    )
+
+    fun partOfInstagramFlow(pkg: String, extra: Set<String> = emptySet()): Boolean = pkg in FLOW_PACKAGES || pkg in extra
+
     /** Instagram's own redirects while the create screen opens. */
     const val CREATE_GRACE_MS = 3_000L
 

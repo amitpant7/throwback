@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112025,
+  "version": 2026112026,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -134,6 +134,7 @@
   "appCreate": {
     "link": "instagram://share",
     "screens": "^instagram\\.features\\.creation\\.",
+    "flowPackages": ["com.samsung.android.permissioncontroller", "com.miui.securitycenter", "com.coloros.securitypermission"],
     "triggers": [
       { "selector": "svg[aria-label='Plus icon'], svg[aria-label='New post']" },
       { "text": ["Your story", "Deine Story", "Votre story", "Tu historia", "Seu story", "La tua storia"], "fileInput": true }

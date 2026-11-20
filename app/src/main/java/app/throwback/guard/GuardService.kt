@@ -200,7 +200,7 @@ class GuardService : Service() {
                 val watched = RelayDebug.watchedPackages()
                 if (fg != null && fg in watched) {
                     GuardPass.sawInstagram = true
-                } else if (GuardPass.sawInstagram && fg != null) {
+                } else if (GuardPass.sawInstagram && fg != null && !PassRules.partOfInstagramFlow(fg, flowPackages())) {
                     GuardPass.end() // left Instagram: the rest of the pass isn't kept for later
                 }
                 if (GuardPass.kind == GuardPass.Kind.CREATE && fg != null && fg in watched &&
@@ -313,5 +313,10 @@ class GuardService : Service() {
     /** Instagram's creation screens (rules `appCreate.screens`). */
     private fun createScreens(): Regex? = app.throwback.web.rules.RulesRepository.get(this).rules.value?.appCreate?.screens
         ?.let { runCatching { Regex(it) }.getOrNull() }
+
+
+    /** Android screens Instagram opens on the way (rules `appCreate.flowPackages`, plus built-in ones). */
+    private fun flowPackages(): Set<String> =
+        app.throwback.web.rules.RulesRepository.get(this).rules.value?.appCreate?.flowPackages?.toSet().orEmpty()
 
 }

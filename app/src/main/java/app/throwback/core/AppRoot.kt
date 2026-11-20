@@ -38,7 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
@@ -258,11 +258,11 @@ private fun MainScreen(
     }
     val pauseShowing = mindfulPause == true && !pauseSkipped && !(pauseDone && (pageShown || pauseOverdue)) && deepLink == null
     val onInstagram = mindfulPause != null && !pauseShowing && !settingsOpen
-    var resumed by remember { mutableStateOf(false) }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { resumed = true }
-    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { resumed = false }
-    LaunchedEffect(resumed, onInstagram, mode) {
-        if (resumed && onInstagram) timeLimit.onForeground(mode) else timeLimit.onBackground()
+    // Straight from ON_RESUME / ON_PAUSE: a "resumed" state read in an effect only re-ran if a frame
+    // came between ON_PAUSE and ON_STOP, so after the power button counting might not restart.
+    LifecycleResumeEffect(onInstagram, mode) {
+        if (onInstagram) timeLimit.onForeground(mode) else timeLimit.onBackground()
+        onPauseOrDispose { timeLimit.onBackground() }
     }
 
     // Hold the system splash only until preferences are loaded. It must not wait for the WebView:
@@ -306,11 +306,12 @@ private fun MainScreen(
                     val msg = when (result) {
                         CallInApp.StoryResult.OPENED -> R.string.story_in_app_hint
                         CallInApp.StoryResult.USED_UP -> R.string.story_in_app_used_up
+                        CallInApp.StoryResult.LOCKED -> R.string.app_pass_locked
                         CallInApp.StoryResult.NO_APP -> R.string.create_in_app_failed
                     }
                     Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                } else if (!CallInApp.create(context)) {
-                    Toast.makeText(context, R.string.create_in_app_failed, Toast.LENGTH_LONG).show()
+                } else {
+                    CallInApp.create(context).message?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
                 }
             },
             onSupportAskShown = {
@@ -325,9 +326,7 @@ private fun MainScreen(
                 Toast.makeText(context, text, Toast.LENGTH_LONG).show()
             },
             onSettingsInApp = {
-                if (!CallInApp.settings(context)) {
-                    Toast.makeText(context, R.string.create_in_app_failed, Toast.LENGTH_LONG).show()
-                }
+                CallInApp.settings(context).message?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
             },
             // While locked, paused or showing the reel poster, screen readers must not reach the feed underneath.
             modifier = if (lockShowing || pauseShowing || reelPoster) Modifier.clearAndSetSemantics {} else Modifier,

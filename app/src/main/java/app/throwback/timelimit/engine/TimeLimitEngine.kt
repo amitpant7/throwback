@@ -13,12 +13,16 @@ import kotlin.math.min
  * The daily time limit as a pure state machine: every function takes the current state and a
  * clock reading and returns a new state. No Android, no I/O, no hidden clock.
  *
- * Time model (anti-cheat, DECISIONS.md #21):
+ * Time model (anti-cheat, DECISIONS.md #21, #13j):
  * - Durations (usage, the 5-minute wait, the 3-day PIN reset, PIN blocks) are measured with the
  *   monotonic clock within a boot. Across a reboot the trusted wall clock is the only option.
- * - The engine keeps a "trusted" wall time: within a boot it is the last reading advanced by
- *   monotonic time, so moving the phone's clock (either way) changes nothing until a reboot.
- *   Small differences (network time corrections) are followed.
+ * - The engine keeps a "trusted" wall time. Android's network time (13+) is used whenever the
+ *   phone has it: the user can't set it. Otherwise, within a boot it is the last reading advanced
+ *   by monotonic time, so moving the phone's clock (either way) changes nothing; small differences
+ *   (time sync corrections) are followed. Right after a reboot without network time, Android 13+
+ *   counts only the time since boot on top of the last trusted time (the downtime is added once
+ *   network time is back), so "clock forward + reboot" gains nothing; older Androids have to
+ *   believe the phone's clock there.
  * - The current day is the local date of the trusted time, but never earlier than the latest day
  *   seen, so moving the clock back can't reset usage.
  * - Usage only counts while a FULL-mode session is open, and any single counted interval is capped.
@@ -42,7 +46,13 @@ class TimeLimitEngine {
 
     /** The wall time Throwback believes, given the last [anchor]. */
     internal fun trustedWall(anchor: Moment?, r: ClockReading): Long {
-        if (anchor == null || !sameBoot(anchor, r)) return r.wallMillis
+        r.networkMillis?.let { return it }
+        if (anchor == null) return r.wallMillis
+        if (!sameBoot(anchor, r)) {
+            // Rebooted, so the stopwatch restarted: the last trusted time plus the time since boot
+            // until network time arrives (Android 13+), else the phone's clock.
+            return if (r.networkTimeSupported) anchor.wallMillis + r.elapsedMillis else r.wallMillis
+        }
         val projected = anchor.wallMillis + (r.elapsedMillis - anchor.elapsedMillis)
         return if (abs(r.wallMillis - projected) <= Rules.CLOCK_RESYNC_TOLERANCE_MILLIS) r.wallMillis else projected
     }
@@ -175,6 +185,17 @@ class TimeLimitEngine {
     fun background(s: TimeLimitState, r: ClockReading): TimeLimitState {
         val (st, _) = sync(s, r)
         return st.copy(session = null, grantShowing = false)
+    }
+
+    /**
+     * [millis] of the real Instagram app, used today while the guard wasn't running (its
+     * permissions were revoked, or Android or the user stopped it; DECISIONS.md #27b), count
+     * against today's limit. Capped at today's allowance, so it can lock. Nothing without a limit.
+     */
+    fun addOutsideUsage(s: TimeLimitState, r: ClockReading, millis: Long): TimeLimitState {
+        val (st, at) = sync(s, r)
+        if (!st.enabled || millis <= 0) return st
+        return settleLock(st.copy(usedMillis = min(st.usedMillis + millis, st.budgetMillis)), at)
     }
 
     // ---- Setup and settings ----------------------------------------------------------------

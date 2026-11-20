@@ -12,6 +12,7 @@ import app.throwback.timelimit.engine.PinHasher
 import app.throwback.timelimit.engine.TimeLimitEngine
 import app.throwback.timelimit.engine.TimeLimitState
 import app.throwback.timelimit.engine.TimeLimitView
+import app.throwback.timelimit.engine.TrustedTime
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -45,6 +46,7 @@ internal class DefaultTimeLimitController(
     private val engine: TimeLimitEngine = TimeLimitEngine(),
     private val tickMillis: Long = 1_000,
     private val saveEveryMillis: Long = 10_000,
+    private val anchorSaveEveryMillis: Long = 15 * 60_000,
 ) : TimeLimitController {
 
     private val lock = Any()
@@ -100,6 +102,16 @@ internal class DefaultTimeLimitController(
     /** Re-reads the clock (countdowns, midnight). Cheap; the screens call it every second. */
     fun refresh() = update(Save.Periodic) { s, r -> engine.refresh(s, r) }
 
+    /**
+     * The lock state right now. [state] is only recomputed when something updates the controller,
+     * so in the background (the relay, the passes) it could still say Locked the next morning:
+     * this refreshes first.
+     */
+    fun currentLockState(): LockState {
+        refresh()
+        return state.value
+    }
+
     suspend fun setup(minutes: Int, pin: String): ActionResult {
         if (!loaded) return NOT_READY
         if (!PinHasher.isValidPin(pin)) return BAD_PIN
@@ -140,6 +152,16 @@ internal class DefaultTimeLimitController(
 
     /** See [pageClock]: [offsetMs] trusted minus phone clock; [day] epoch day; [nextDayAt] trusted ms. */
     data class PageClockInfo(val offsetMs: Long, val zoneOffsetMin: Int, val day: Long, val nextDayAt: Long)
+
+    /** [millis] of the Instagram app used today while the guard was off count against the limit (if one is on). */
+    fun addOutsideUsage(millis: Long) = update(Save.Now) { s, r -> engine.addOutsideUsage(s, r, millis) }
+
+    /** The trusted clock for the passes' counters; null until the saved state is loaded. Changes nothing. */
+    fun trustedTime(): TrustedTime? = synchronized(lock) {
+        if (!loaded) return null
+        val r = clock.now()
+        TrustedTime(engine.trustedWall(current.anchor, r), engine.pageDay(current, r).first.toEpochDay(), engine.savedZone(current, r))
+    }
 
     /** Checks [pin] (counts towards the wrong-PIN block) without changing anything. */
     suspend fun verifyPin(pin: String): ActionResult = withPinCheck(pin) { s, r, ok -> engine.verifyPin(s, r, ok) }
@@ -218,16 +240,30 @@ internal class DefaultTimeLimitController(
         }
     }
 
-    /** Saves after real changes at once, and usage-only changes at most every [saveEveryMillis]. */
+    /**
+     * Saves real changes at once, and usage at most every [saveEveryMillis]. The anchor alone (the
+     * last clock reading, new on every call) is saved only for a new boot, on leaving Throwback
+     * ([Save.Now]) or every [anchorSaveEveryMillis]: within a boot any anchor of that boot gives the
+     * same trusted time, and after a reboot it is where Android 13+ counts on from until network
+     * time is back, so it should not be much older than the last use. (Before, it was written
+     * every 10 s while Throwback was open, with or without a limit.)
+     */
     private fun persist(s: TimeLimitState, r: ClockReading, save: Save) {
         if (!loaded) return // Never overwrite the stored state with the blank pre-load one.
         val p = s.persistent()
         val previous = lastSaved
         if (p == previous) return
-        val usageOnly = previous != null && p.copy(usedMillis = previous.usedMillis, anchor = previous.anchor) == previous
         val last = lastSaveElapsed
-        val due = last == null || r.elapsedMillis < last || r.elapsedMillis - last >= saveEveryMillis
-        if (save == Save.Now || !usageOnly || due) {
+        val sinceSave = if (last == null || r.elapsedMillis < last) Long.MAX_VALUE else r.elapsedMillis - last
+        val due = when {
+            previous == null -> true
+            p.copy(anchor = previous.anchor) == previous -> // only the anchor moved
+                save == Save.Now || p.anchor?.bootCount != previous.anchor?.bootCount || sinceSave >= anchorSaveEveryMillis
+            p.copy(usedMillis = previous.usedMillis, anchor = previous.anchor) == previous -> // usage
+                save == Save.Now || sinceSave >= saveEveryMillis
+            else -> true
+        }
+        if (due) {
             lastSaved = p
             lastSaveElapsed = r.elapsedMillis
             saves.trySend(p)

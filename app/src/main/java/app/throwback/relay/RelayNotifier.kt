@@ -19,9 +19,13 @@ internal object RelayNotifier {
     const val CHANNEL_MESSAGES = "messages"
     const val CHANNEL_ACTIVITY = "instagram_activity"
     const val CHANNEL_GUARD = "guard"
+    const val CHANNEL_GUARD_OFF = "guard_off"
 
     /** Fixed id of the guard's foreground-service notification. Relayed ones use other ids. */
     const val GUARD_NOTIFICATION_ID = 0x7b0001
+
+    /** Fixed id of "Instagram guard is off" (Android refused to restart it). */
+    private const val GUARD_OFF_NOTIFICATION_ID = 0x7b0002
 
     /** Intent action: opened from a relayed message (messages-only mode if the time limit is locked). */
     const val ACTION_OPEN_MESSAGES = "app.throwback.action.OPEN_MESSAGES"
@@ -42,8 +46,47 @@ internal object RelayNotifier {
                         description = context.getString(R.string.relay_channel_guard_description)
                         setShowBadge(false)
                     },
+                NotificationChannel(CHANNEL_GUARD_OFF, context.getString(R.string.relay_channel_guard_off), NotificationManager.IMPORTANCE_LOW)
+                    .apply { description = context.getString(R.string.relay_channel_guard_off_description) },
             ),
         )
+    }
+
+    /**
+     * Android refused to (re)start the guard from the background (Android 12+ may): say so, instead
+     * of leaving the Instagram app open without a word. The tap opens Throwback, which starts it.
+     */
+    fun showGuardOff(context: Context) {
+        ensureChannels(context)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        val open = PendingIntent.getActivity(
+            context,
+            GUARD_OFF_NOTIFICATION_ID,
+            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = NotificationCompat.Builder(context, CHANNEL_GUARD_OFF)
+            .setSmallIcon(R.drawable.ic_stat_throwback)
+            .setContentTitle(context.getString(R.string.guard_off_title))
+            .setContentText(context.getString(R.string.guard_off_text))
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .build()
+        try {
+            NotificationManagerCompat.from(context).notify(GUARD_OFF_NOTIFICATION_ID, notification)
+        } catch (e: SecurityException) {
+            // Revoked between the check and now; nothing else to do.
+        }
+    }
+
+    /** The guard runs again. */
+    fun cancelGuardOff(context: Context) {
+        NotificationManagerCompat.from(context).cancel(GUARD_OFF_NOTIFICATION_ID)
     }
 
     /** Whether a notification on [target]'s channel would actually show (app and channel not blocked). */

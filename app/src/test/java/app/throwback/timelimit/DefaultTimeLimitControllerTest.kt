@@ -115,6 +115,27 @@ class DefaultTimeLimitControllerTest {
     }
 
     @Test
+    fun `the clock reading alone is saved only now and then, not every 10 s`() = runTest {
+        val store = MemoryStore()
+        val c = controller(store) // no limit: nothing but the clock reading changes while open
+        val loaded = store.saves
+        c.onForeground(WebMode.FULL)
+        advanceTimeBy(14 * MIN)
+        runCurrent()
+        assertEquals(loaded, store.saves) // before: a write every 10 s
+        advanceTimeBy(MIN + 1)
+        runCurrent()
+        assertEquals(loaded + 1, store.saves) // every 15 minutes
+        c.onBackground()
+        runCurrent()
+        assertEquals(loaded + 2, store.saves) // and on leaving (a reboot counts on from it)
+        // Real changes still go at once.
+        c.setup(15, "1234")
+        runCurrent()
+        assertEquals(loaded + 3, store.saves)
+    }
+
+    @Test
     fun `no counting once no activity is visible, even without onBackground`() = runTest {
         val c = controller(MemoryStore())
         c.setup(30, "1234")
@@ -199,6 +220,40 @@ class DefaultTimeLimitControllerTest {
         assertEquals(LockState.Running(15 * MIN), c.state.value)
         assertEquals(ActionResult.PinRequired, c.setLimit(45))
         assertEquals(ActionResult.WrongPin(4), c.setLimit(45, "1111"))
+    }
+
+    @Test
+    fun `the passes' trusted clock - none before loading, then today and trusted time`() = runTest {
+        val d = StandardTestDispatcher(testScheduler)
+        val clock = TestClock(this)
+        val c = DefaultTimeLimitController(clock, MemoryStore(), backgroundScope, d, d, PinHasher(1_000))
+        assertNull(c.trustedTime()) // no passes before the stored state is known
+        runCurrent()
+        val day = LocalDateTime.of(2026, 11, 20, 0, 0).toLocalDate().toEpochDay()
+        val t = c.trustedTime()!!
+        assertEquals(day, t.epochDay)
+        assertEquals(clock.now().wallMillis, t.wallMillis)
+        assertEquals(BERLIN, t.zone)
+        // Moving the phone's clock a day ahead changes neither (no app restart needed: it's the same boot).
+        clock.wallOffset += DAY
+        advanceTimeBy(MIN)
+        assertEquals(day, c.trustedTime()!!.epochDay)
+        assertEquals(t.wallMillis + MIN, c.trustedTime()!!.wallMillis)
+    }
+
+    @Test
+    fun `in the background the lock state is current once asked for, past midnight too`() = runTest {
+        val c = controller(MemoryStore())
+        c.setup(15, "1234")
+        c.onForeground(WebMode.FULL)
+        advanceTimeBy(15 * MIN + 1)
+        c.onBackground()
+        assertEquals(LockState.Locked, c.state.value)
+        advanceTimeBy(DAY) // no ticks in the background: nothing recomputes the state...
+        assertEquals(LockState.Locked, c.state.value)
+        // ...until someone (the relay, a pass) asks for it.
+        assertEquals(LockState.Running(15 * MIN), c.currentLockState())
+        assertEquals(LockState.Running(15 * MIN), c.state.value)
     }
 
     @Test

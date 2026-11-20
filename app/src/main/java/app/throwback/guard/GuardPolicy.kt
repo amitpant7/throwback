@@ -3,10 +3,18 @@ package app.throwback.guard
 import app.throwback.relay.CallSnapshot
 
 /**
- * Follows which app is in the foreground from usage events (UsageStatsManager), in order.
- * Pure Kotlin: the service feeds it (type, package) pairs.
+ * Follows the apps on screen from usage events (UsageStatsManager), in order. Pure Kotlin: the
+ * service feeds it (type, package, class).
+ *
+ * [current] is the app last brought to the front (for the passes' bookkeeping). Being on screen is
+ * followed per app, the way Android's own usage tracking does it (Android 10+): an activity is
+ * visible from its RESUMED, or a PAUSED (one can come back paused, e.g. a picture-in-picture window
+ * after the screen was off), until its STOPPED or DESTROYED. So an app in split screen, a pop-up
+ * window or picture-in-picture still counts: there it stays resumed, or only pauses, and switching
+ * between windows logs nothing. Without STOPPED events (below Android 10, [stopEvents] false)
+ * PAUSED ends it.
  */
-internal class ForegroundTracker {
+internal class ForegroundTracker(private val stopEvents: Boolean = true) {
     var current: String? = null
         private set
 
@@ -14,18 +22,55 @@ internal class ForegroundTracker {
     var currentClass: String? = null
         private set
 
+    /**
+     * The visible activities (classes) of each app; true while that screen was resumed after its
+     * last pause. Events don't say which instance of a screen they are about, and a screen opened
+     * from the same screen (A1 paused, A2 resumed, then A1 stopped) must stay visible.
+     */
+    private val visible = HashMap<String, HashMap<String, Boolean>>()
+
     fun onEvent(type: Int, packageName: String?, className: String? = null) {
         packageName ?: return
+        val screen = className.orEmpty()
         when (type) {
             ACTIVITY_RESUMED -> {
                 current = packageName
                 currentClass = className
+                visible.getOrPut(packageName) { HashMap() }[screen] = true
             }
-            ACTIVITY_PAUSED, ACTIVITY_STOPPED -> if (current == packageName && (className == null || className == currentClass)) {
-                current = null
-                currentClass = null
+            ACTIVITY_PAUSED -> {
+                leftFront(packageName, className)
+                if (stopEvents) visible.getOrPut(packageName) { HashMap() }[screen] = false else hidden(packageName, screen)
+            }
+            ACTIVITY_STOPPED, ACTIVITY_DESTROYED -> {
+                if (visible[packageName]?.get(screen) == true) return // an older instance of a screen resumed since
+                leftFront(packageName, className)
+                hidden(packageName, screen)
             }
         }
+    }
+
+    /** Whether any of [packages] is on screen, in front or not. */
+    fun onScreen(packages: Set<String>): Boolean = packages.any { !visible[it].isNullOrEmpty() }
+
+    /** Start over (the screen went off, or a check from scratch): the events replayed next rebuild it. */
+    fun clear() {
+        visible.clear()
+        current = null
+        currentClass = null
+    }
+
+    private fun leftFront(packageName: String, className: String?) {
+        if (current == packageName && (className == null || className == currentClass)) {
+            current = null
+            currentClass = null
+        }
+    }
+
+    private fun hidden(packageName: String, screen: String) {
+        val screens = visible[packageName] ?: return
+        screens.remove(screen)
+        if (screens.isEmpty()) visible.remove(packageName)
     }
 
     companion object {
@@ -33,65 +78,129 @@ internal class ForegroundTracker {
         const val ACTIVITY_RESUMED = 1
         const val ACTIVITY_PAUSED = 2
         const val ACTIVITY_STOPPED = 23
+        const val ACTIVITY_DESTROYED = 24
     }
 }
 
-internal enum class GuardAction { NONE, COVER }
+internal enum class GuardAction {
+    NONE,
+
+    /** Cover the Instagram app ("Use Throwback instead") and bring Throwback to the front. */
+    COVER,
+
+    /** Take the cover away: Instagram left the screen, or a call or a pass allows it now. */
+    UNCOVER,
+
+    /**
+     * Instagram stays on screen under the cover (split screen, a pop-up window, picture-in-picture):
+     * take the cover away for [GuardPolicy.STEP_ASIDE_MS], so its window can be closed. A cover that
+     * never went away would leave the phone unusable.
+     */
+    STEP_ASIDE,
+}
 
 /**
  * The guard's decision (DECISIONS.md #27), pure so it is unit-tested with a fake clock.
  * All times are elapsed-realtime millis.
  */
 internal object GuardPolicy {
-    /** Don't cover again while the previous cover is still taking the user back. */
-    const val COVER_COOLDOWN_MS = 2_500L
+    /** The cover stays at least this long, so it doesn't flash while Throwback comes to the front. */
+    const val COVER_MIN_MS = 900L
+
+    /** The longest one cover stays while Instagram stays on screen. */
+    const val COVER_HOLD_MAX_MS = 8_000L
+
+    /** How long the cover steps aside after [COVER_HOLD_MAX_MS]. */
+    const val STEP_ASIDE_MS = 2_500L
 
     /**
-     * @param foreground the app on screen, or null if unknown.
-     * @param watched the Instagram packages.
+     * @param instagramOnScreen an Instagram app is on screen, in front or not (see ForegroundTracker).
      * @param calls the relay's call state. If the relay isn't connected, calls can't be seen, so the
-     *        guard does nothing at all: a call must never be blocked (DECISIONS.md #20).
-     * @param allowUntil Throwback itself opened the Instagram app (setup) and allows it until then.
-     * @param lastCoverAt when the guard last covered the app, or null.
-     * @param callAudioAt the last time the phone's audio was in call mode (a voice/video call is
-     *        running), or null. Instagram shows no notification once a call is answered (seen on the
-     *        owner's phone), so the call notification alone ended the call too early.
+     *        guard allows everything: a call must never be blocked (DECISIONS.md #20).
+     * @param allowUntil a pass (Throwback itself opened the Instagram app) runs until then.
+     * @param coverShownAt when the cover went up, or null while it is down.
+     * @param noCoverUntil the cover stepped aside (or couldn't be shown) until then.
+     * @param callAudioAt the last time the phone's audio was in call mode for an Instagram call, or
+     *        null. Instagram shows no notification once a call is answered (seen on the owner's
+     *        phone), so the call notification alone ended the call too early.
      */
     fun decide(
-        foreground: String?,
-        watched: Set<String>,
+        instagramOnScreen: Boolean,
         now: Long,
         calls: CallSnapshot,
         graceMillis: Long,
         allowUntil: Long = 0L,
-        lastCoverAt: Long? = null,
+        coverShownAt: Long? = null,
+        noCoverUntil: Long = 0L,
         callAudioAt: Long? = null,
-    ): GuardAction = when {
-        foreground == null || foreground !in watched -> GuardAction.NONE
-        !calls.listenerConnected -> GuardAction.NONE
-        calls.inCallOrGrace(now, graceMillis) -> GuardAction.NONE
-        callAudioAt != null && now - callAudioAt in 0..graceMillis -> GuardAction.NONE
-        now < allowUntil -> GuardAction.NONE
-        lastCoverAt != null && now - lastCoverAt in 0 until COVER_COOLDOWN_MS -> GuardAction.NONE
-        else -> GuardAction.COVER
+    ): GuardAction {
+        val blocked = instagramOnScreen && !allowed(now, calls, graceMillis, allowUntil, callAudioAt)
+        if (coverShownAt == null) return if (blocked && now >= noCoverUntil) GuardAction.COVER else GuardAction.NONE
+        val shownFor = now - coverShownAt
+        return when {
+            blocked -> if (shownFor >= COVER_HOLD_MAX_MS) GuardAction.STEP_ASIDE else GuardAction.NONE
+            instagramOnScreen -> GuardAction.UNCOVER // a call or a pass allows it now: at once
+            shownFor >= COVER_MIN_MS -> GuardAction.UNCOVER
+            else -> GuardAction.NONE
+        }
+    }
+
+    /** Instagram may be on screen now: a call (or just after one), Instagram call audio, or a pass. */
+    private fun allowed(now: Long, calls: CallSnapshot, graceMillis: Long, allowUntil: Long, callAudioAt: Long?): Boolean =
+        !calls.listenerConnected ||
+            calls.inCallOrGrace(now, graceMillis) ||
+            (callAudioAt != null && now - callAudioAt in 0..graceMillis) ||
+            now < allowUntil
+}
+
+/**
+ * Whether the phone's call audio (MODE_IN_CALL / MODE_IN_COMMUNICATION) is an Instagram call. An
+ * answered Instagram call removes its notification but keeps the audio in call mode, and calls are
+ * never blocked (DECISIONS.md #20), so that audio keeps Instagram allowed. Only audio linked to
+ * Instagram does, though: a call notification from Instagram shortly before (ringing, then
+ * answered), or the audio switching into call mode while Instagram is in front (a call started
+ * there: the chat's call button, or during a visit or story pass). A phone or WhatsApp call, even
+ * during the call button's pass, doesn't unlock Instagram.
+ */
+internal class CallAudioLink {
+    private var wasInCall = false
+    private var linked = false
+
+    /** @return whether the call audio, if any, is an Instagram call. Called once per check. */
+    fun update(inCallAudio: Boolean, instagramInFront: Boolean, instagramCallSeenRecently: Boolean): Boolean {
+        linked = inCallAudio && (linked || instagramCallSeenRecently || (!wasInCall && instagramInFront))
+        wasInCall = inCallAudio
+        return linked
     }
 }
 
 /**
- * A short pass for when Throwback itself opens the Instagram app: the chat's call button ([Kind.CALL])
- * or "Open Instagram for 5 minutes" ([Kind.VISIT]). Ends early once the user has been in Instagram
- * and left it, so time can't be saved up; a call pass also ends once the call is running (the call
- * itself keeps Instagram allowed).
+ * A short pass for when Throwback itself opens the Instagram app (see CallInApp; how often: PassBook).
+ * Ends early once the user has been in Instagram and left it, so time can't be saved up; each kind
+ * has its own rules on top (GuardService).
  */
 internal object GuardPass {
-    /** CREATE: posting from the Instagram app ("+" / "Your story"), only its creation screens. */
-    enum class Kind { CALL, VISIT, CREATE, SETTINGS, STORY }
+    enum class Kind {
+        /** The chat's call button: ends once the call runs (the call itself keeps Instagram allowed). */
+        CALL,
 
-    /** STORY: since when the camera has been off (editing), or null while it's on. */
-    @Volatile
-    var cameraOffSince: Long? = null
+        /** "Open Instagram for 5 minutes". */
+        VISIT,
 
-    /** SETTINGS: time spent on the app's screens other than its settings (capped, see GuardService). */
+        /** "+": posting from the Instagram app, only its creation screens. */
+        CREATE,
+
+        /** "Open settings in the Instagram app": its settings screens. */
+        SETTINGS,
+
+        /** "Your story": a few minutes of Instagram, not counting time with the camera on. */
+        STORY,
+    }
+
+    /**
+     * Time that uses the pass up: SETTINGS, time on the app's screens other than its settings;
+     * STORY, time with the camera off (see GuardService).
+     */
     @Volatile
     var outsideMillis: Long = 0L
 
@@ -100,6 +209,7 @@ internal object GuardPass {
     var grantedAt: Long = 0L
         private set
 
+    /** The pass allows Instagram until then (elapsed millis); 0 when no pass runs. */
     @Volatile
     var allowUntil: Long = 0L
         private set
@@ -112,10 +222,10 @@ internal object GuardPass {
     @Volatile
     var sawInstagram: Boolean = false
 
+    @Synchronized
     fun grant(now: Long, durationMs: Long, kind: Kind) {
         grantedAt = now
         outsideMillis = 0L
-        cameraOffSince = null
         allowUntil = now + durationMs
         this.kind = kind
         sawInstagram = false
@@ -123,24 +233,25 @@ internal object GuardPass {
 
     fun active(now: Long): Boolean = now < allowUntil
 
+    @Synchronized
     fun end() {
         allowUntil = 0L
     }
+
+    /**
+     * Ends the pass if it still runs; true only for the one caller that ended it. The guard (left
+     * early) and the relay (posted) can both see a story pass end: only one may forgive it.
+     */
+    @Synchronized
+    fun endIfActive(now: Long): Boolean {
+        if (!active(now)) return false
+        allowUntil = 0L
+        return true
+    }
 }
 
-/** How often the passes can be used (pure, for tests). */
+/** What a running pass allows inside the Instagram app (pure, for tests). How often: see [PassBook]. */
 internal object PassRules {
-    const val CALL_TAPS_PER_HOUR = 3
-    private const val HOUR_MS = 3_600_000L
-
-    fun visitAllowed(lastVisitDay: Long?, today: Long, locked: Boolean): Boolean =
-        !locked && lastVisitDay != today
-
-    /** [taps]: wall times of earlier call-button passes. */
-    fun callAllowed(taps: List<Long>, now: Long): Boolean = taps.count { now - it in 0 until HOUR_MS } < CALL_TAPS_PER_HOUR
-
-    fun recentTaps(taps: List<Long>, now: Long): List<Long> = taps.filter { now - it in 0 until HOUR_MS }
-
     /**
      * Android's own screens that Instagram opens along the way: the permission dialog, the photo
      * picker ("Select photos" / "Select more photos" with limited access), the file picker. Going
@@ -163,24 +274,39 @@ internal object PassRules {
      */
     fun storyPassHolds(cameraOffMillis: Long, limitMillis: Long): Boolean = cameraOffMillis <= limitMillis
 
+    /** Camera-off time (the feed, Reels…) a story pass left early may have used and still be a change of mind. */
+    const val FREE_LEAVE_CAMERA_OFF_MS = 30_000L
+
+    /** Even a story pass left early is followed by this wait, so leaving early can't be repeated back to back. */
+    const val FREE_LEAVE_WAIT_MS = 10 * 60_000L
+
     /**
-     * A story pass is available: fewer than [perDay] today, and [cooldownMillis] since the last one
-     * started ([lastStartWall], wall ms; a clock moved back counts as "just now").
+     * A story pass left within [freeLeaveMillis] of its start was a change of mind (owner): it doesn't
+     * count. Only if it showed almost nothing but the camera, though, since the story link opens on
+     * Instagram's feed: otherwise "Your story", ~3 minutes of feed, Home, again… would never count.
      */
-    fun storyAllowed(lastDay: Long?, countThatDay: Int, today: Long, lastStartWall: Long?, nowWall: Long, cooldownMillis: Long, perDay: Int): Boolean {
-        if (lastDay == today && countThatDay >= perDay) return false
-        if (lastStartWall == null) return true
-        val since = nowWall - lastStartWall
-        return since >= cooldownMillis
-    }
+    fun storyLeftEarly(sinceGrant: Long, cameraOffMillis: Long, freeLeaveMillis: Long): Boolean =
+        sinceGrant < freeLeaveMillis && cameraOffMillis <= FREE_LEAVE_CAMERA_OFF_MS
 
     /** Instagram's own redirects while the create screen opens. */
     const val CREATE_GRACE_MS = 3_000L
 
     /**
      * A create pass stays only while Instagram shows a creation screen ([screens], from the rules);
-     * any other screen (the feed after posting, Reels) ends it. Unknown screen: kept.
+     * any other screen (the feed after posting, Reels) ends it. Fails closed: without a usable
+     * pattern or a known screen, only the grace while the editor opens.
      */
     fun createPassHolds(className: String?, screens: Regex?, sinceGrant: Long): Boolean =
-        sinceGrant < CREATE_GRACE_MS || className == null || screens == null || screens.containsMatchIn(className)
+        sinceGrant < CREATE_GRACE_MS || onScreens(className, screens)
+
+    /** [className] is one of [screens] (a creation or settings screen). Unknown screen or no pattern: no. */
+    fun onScreens(className: String?, screens: Regex?): Boolean =
+        className != null && screens != null && screens.containsMatchIn(className)
+
+    /**
+     * A screens pattern from the rules (`appCreate.screens`, `appSettings.screens`); null if it is
+     * invalid or matches every screen (e.g. empty), so a bad rule can't open the whole app.
+     */
+    fun screensPattern(pattern: String?): Regex? =
+        pattern?.let { runCatching { Regex(it) }.getOrNull() }?.takeUnless { it.containsMatchIn("") }
 }

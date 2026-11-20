@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import app.throwback.guard.GuardHeartbeat
 import app.throwback.guard.GuardService
 import app.throwback.ui.UiPrefs
 import app.throwback.ui.messages.Permissions
@@ -15,6 +16,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * On/off switch for Messages & calls (relay + guard). Nothing runs until the wizard is finished
@@ -35,9 +37,14 @@ internal object MessagesFeature {
             UiPrefs.from(app).messagesSetupDone.distinctUntilChanged().collect { syncGuard(app, it) }
         }
         // Permissions may have been granted or revoked in Android's settings while Throwback was away.
+        // If that (or Android) stopped the guard, the Instagram app's time since counts first.
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
-                scope.launch { syncGuard(app, isSetUp(app)) }
+                scope.launch {
+                    val setUp = isSetUp(app)
+                    if (setUp) withContext(Dispatchers.IO) { GuardHeartbeat.catchUp(app) }
+                    syncGuard(app, setUp)
+                }
             }
         })
     }
@@ -57,6 +64,8 @@ internal object MessagesFeature {
         } else {
             Log.d(TAG, "guard off (set up: $setUp)")
             GuardService.stop(context)
+            // Turned off on purpose: the Instagram app is free from now, nothing to count later.
+            if (!setUp) GuardHeartbeat.clear(context)
         }
     }
 }

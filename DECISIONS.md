@@ -64,12 +64,14 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     player; photo stories ahead go to the browser's disk cache. The current story comes from the
     address (/stories/<user>/<id>/). Memory stays under ~3 MB and is cleared on leaving stories;
     off with Data Saver; no extra logged-in requests; nothing is marked seen (rules `stories`).
-13h. **Feed loading** (decided 2026-11-20): Instagram's own feed request asks for 24 entries instead
-    of 12 (its `first`; measured: 12 asked, ~10 returned, ~2 real posts after filtering, 4.5 s per
-    request). Owner chose 24. If Instagram refuses the bigger batch, back to 12 for the session.
-    Look-ahead: photos/thumbnails of the next 7 posts into the disk cache, start of the next 3
-    videos (400 KB + 64 KB audio) in memory, cleared off the feed. A 7-post buffer nudge is pending
-    measurement of how many real posts stay loaded ahead (`__throwback.feedStats()`).
+13h. **Feed loading** (decided 2026-11-20): Instagram's feed request asks for 12 entries (`first`);
+    after filtering ~2-4 real posts remain per batch, ~3 s per batch, and Instagram already requests
+    the next batch the moment one arrives (measured), so supply is set by its server, not by
+    Throwback. Tried `first: 24`: accepted, but the server still returns 10 entries, so it's off
+    again (rules feedData.pageSize = 0; the mechanism stays, unused). Not taken: switching the
+    request's `variant` to "following" (3x real posts, but chronological instead of Instagram's
+    ranking; owner keeps the ranking). Look-ahead: photos/thumbnails of the next 7 posts into the
+    disk cache, start of the next 3 videos (400 KB + 64 KB audio) in memory, cleared off the feed.
 14. **No toggles.** Throwback is minimal; there is no setting to bring distractions back.
     Settings shows a read-only "Throwback removes" list.
 15. Video captions and descriptions must never be hidden (a known complaint about a competitor).

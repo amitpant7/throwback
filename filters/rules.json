@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112015,
+  "version": 2026112016,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -161,7 +161,7 @@
     "endMarkerFields": ["end_of_feed_demarcator"],
     "endAtMarker": false,
     "endAfterEmptyPages": 3,
-    "pageSize": 24,
+    "pageSize": 0,
     "paginationQueries": ["PolarisFeedRootPaginationCachedQuery_subscribe", "PolarisFeedRootPaginationCachedQuery"],
     "lookAheadPosts": 7,
     "lookAheadVideos": 3,

@@ -86,11 +86,11 @@ class RulesParserTest {
     @Test
     fun `feed batch size and look-ahead are bundled and range-checked`() {
         val fd = TestRules.bundled.feedData!!
-        assertEquals(24, fd.pageSize)
+        assertEquals(0, fd.pageSize) // measured: Instagram returns 10 entries whatever `first` asks
         assertTrue(fd.paginationQueries.any { it.startsWith("PolarisFeedRootPaginationCachedQuery") })
         assertEquals(7, fd.lookAheadPosts)
         assertEquals(3, fd.lookAheadVideos)
-        assertRejected(TestRules.bundledWith { it.replace("\"pageSize\": 24", "\"pageSize\": 500") }, "pageSize")
+        assertRejected(TestRules.bundledWith { it.replace("\"pageSize\": 0", "\"pageSize\": 500") }, "pageSize")
     }
 
     @Test

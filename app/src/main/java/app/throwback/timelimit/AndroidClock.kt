@@ -1,6 +1,7 @@
 package app.throwback.timelimit
 
 import android.content.Context
+import android.os.Build
 import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
@@ -12,7 +13,11 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 
-/** The real clocks: monotonic elapsedRealtime, the wall clock, the time zone and the boot number. */
+/**
+ * The real clocks: monotonic elapsedRealtime, the wall clock, the time zone, the boot number and,
+ * on Android 13+, network time. Network time is Android's own last time sync (no request is made
+ * for Throwback), so reading it costs no data and sends nothing.
+ */
 internal open class AndroidClock(context: Context) : Clock {
 
     // A reboot ends the process, so the boot number can't change while this object exists.
@@ -25,7 +30,19 @@ internal open class AndroidClock(context: Context) : Clock {
         wallMillis = System.currentTimeMillis(),
         zone = ZoneId.systemDefault(),
         bootCount = bootCount,
+        networkMillis = networkTime(),
+        networkTimeSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU,
     )
+
+    /** Null below Android 13, or before the phone has synced its time since boot. */
+    private fun networkTime(): Long? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return null
+        return try {
+            SystemClock.currentNetworkTimeClock().millis()
+        } catch (e: Exception) {
+            null // DateTimeException: no time sync yet since boot
+        }
+    }
 
     companion object {
         /**
@@ -75,6 +92,10 @@ private class FastClock(
     override fun now(): ClockReading {
         val r = real.now()
         val fastWall = anchorFast + (r.wallMillis - anchorReal) * speed
-        return r.copy(elapsedMillis = r.elapsedMillis + (fastWall - r.wallMillis), wallMillis = fastWall)
+        return r.copy(
+            elapsedMillis = r.elapsedMillis + (fastWall - r.wallMillis),
+            wallMillis = fastWall,
+            networkMillis = r.networkMillis?.let { anchorFast + (it - anchorReal) * speed },
+        )
     }
 }

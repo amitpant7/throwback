@@ -344,8 +344,119 @@ class TimeLimitEngineTest {
         assertEquals(h.wall, h.s.anchor!!.wallMillis)
     }
 
+    // ---- Clock forward + reboot, Android 13+ (network time) -------------------------------
+
+    /** The review's steps: Forgot PIN, date +3 days, reboot, set a new PIN. */
+    private fun pinResetAfterClockForwardReboot(networkAfterBoot: Boolean): EngineHarness {
+        val e = EngineHarness().apply { networkTimeSupported = true; networkUp = true }
+        e.setup(15)
+        e.act { s, r -> e.engine.requestPinReset(s, r) }
+        e.moveClock(3 * DAY)
+        e.refresh()
+        e.reboot()
+        e.networkUp = networkAfterBoot
+        e.refresh()
+        assertFalse(e.view().pinReset!!.ready)
+        assertTrue(e.act { s, r -> e.engine.completePinReset(s, r, PIN_B) } is ActionResult.NotAllowed)
+        assertEquals(PIN_A, e.s.pin)
+        return e
+    }
+
     @Test
-    fun `clock forward plus a reboot only borrows from tomorrow`() {
+    fun `clock forward plus a reboot doesn't shorten the forgot-PIN wait, with network time`() {
+        val e = pinResetAfterClockForwardReboot(networkAfterBoot = true)
+        e.advance(3 * DAY) // The real three days still work.
+        e.refresh()
+        assertTrue(e.view().pinReset!!.ready)
+    }
+
+    @Test
+    fun `clock forward plus a reboot doesn't shorten the forgot-PIN wait, before network time is back`() {
+        val e = pinResetAfterClockForwardReboot(networkAfterBoot = false)
+        e.advance(3 * DAY - MIN) // Over 3 real days since the request, but the reboot's downtime isn't counted yet...
+        e.refresh()
+        assertFalse(e.view().pinReset!!.ready)
+        e.networkUp = true // ...until network time is back.
+        e.refresh()
+        assertTrue(e.view().pinReset!!.ready)
+    }
+
+    @Test
+    fun `clock forward plus a reboot doesn't bring a turn-off forward`() {
+        for (networkAfterBoot in listOf(true, false)) {
+            val e = EngineHarness().apply { networkTimeSupported = true; networkUp = true }
+            e.setup(30)
+            e.use(30 * MIN)
+            e.act { s, r -> e.engine.turnOff(s, r, pinOk = true) } // "tomorrow"
+            e.moveClock(DAY + HOUR)
+            e.refresh()
+            e.reboot()
+            e.networkUp = networkAfterBoot
+            e.refresh()
+            assertEquals("network after boot: $networkAfterBoot", LockState.Locked, e.view().lockState)
+            assertEquals(30, e.s.limitMinutes)
+            assertEquals(LocalDateTime.of(2026, 11, 20, 0, 0).toLocalDate(), e.today)
+        }
+    }
+
+    @Test
+    fun `a scheduled turn-off happens at the real midnight`() {
+        val e = EngineHarness().apply { networkTimeSupported = true; networkUp = true }
+        e.setup(30)
+        e.act { s, r -> e.engine.turnOff(s, r, pinOk = true) }
+        e.moveClock(-2 * HOUR) // the phone's clock is wrong; network time isn't
+        e.advanceToRealMidnight()
+        e.refresh()
+        assertEquals(LockState.Disabled, e.view().lockState)
+    }
+
+    @Test
+    fun `a phone switched off overnight gets its new day once network time is back`() {
+        val e = EngineHarness(start = LocalDateTime.of(2026, 11, 20, 22, 0)).apply { networkTimeSupported = true; networkUp = true }
+        e.setup(15)
+        e.useUntilLocked() // 22:15
+        e.reboot(downtime = 9 * HOUR) // switched on at 07:15; no network time yet
+        e.refresh()
+        assertEquals(LocalDateTime.of(2026, 11, 20, 0, 0).toLocalDate(), e.today)
+        e.networkUp = true
+        e.refresh()
+        assertEquals(LocalDateTime.of(2026, 11, 21, 0, 0).toLocalDate(), e.today)
+        assertEquals(LockState.Running(15 * MIN), e.view().lockState)
+    }
+
+    @Test
+    fun `a wrong clock at boot, set right later, doesn't hold the day up`() {
+        // Drained battery: the phone starts in 2016, then the network sets its clock right.
+        val e = EngineHarness(start = LocalDateTime.of(2026, 11, 20, 20, 0)).apply { networkTimeSupported = true; networkUp = true }
+        e.setup(15)
+        e.useUntilLocked() // 20:15
+        val tenYears = 3_652 * DAY
+        e.reboot(downtime = 3 * HOUR, clockChange = -tenYears)
+        e.refresh() // the first reading of this boot (BOOT_COMPLETED)
+        assertEquals(LocalDateTime.of(2026, 11, 20, 0, 0).toLocalDate(), e.today)
+        assertEquals(LockState.Locked, e.view().lockState)
+        e.moveClock(tenYears) // the phone's clock is right again; too big a jump to follow within a boot
+        e.refresh()
+        e.networkUp = true // network time is
+        e.advanceToRealMidnight()
+        e.refresh()
+        assertEquals(LocalDateTime.of(2026, 11, 21, 0, 0).toLocalDate(), e.today)
+        assertEquals(LockState.Running(15 * MIN), e.view().lockState)
+    }
+
+    @Test
+    fun `network time wins over a phone clock moved within a boot`() {
+        val e = EngineHarness().apply { networkTimeSupported = true; networkUp = true }
+        e.setup(15)
+        e.useUntilLocked()
+        e.moveClock(DAY)
+        e.refresh()
+        assertEquals(LockState.Locked, e.view().lockState)
+        assertEquals(e.real, e.engine.trustedWall(e.s.anchor, e.reading()))
+    }
+
+    @Test
+    fun `below Android 13, clock forward plus a reboot only borrows from tomorrow`() {
         h.setup(30)
         h.use(30 * MIN) // 09:30, locked.
         h.reboot(clockChange = DAY) // Clock set to tomorrow, then rebooted: the engine has to believe it.

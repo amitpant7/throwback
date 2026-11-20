@@ -27,7 +27,8 @@ val PIN_B = PinHash(salt = "c2FsdEI=", hash = "aGFzaEI=", iterations = 1)
 /**
  * Drives [TimeLimitEngine] the way the controller does, with a fake phone clock:
  * [advance] is real time passing, [moveClock] is the user changing the clock, [reboot] restarts
- * the monotonic clock.
+ * the monotonic clock. With [networkTimeSupported] (Android 13+) the reading carries network time
+ * (the real time) while [networkUp]; a reboot loses it until the test sets [networkUp] again.
  */
 class EngineHarness(
     start: LocalDateTime = LocalDateTime.of(2026, 11, 20, 9, 0),
@@ -36,14 +37,24 @@ class EngineHarness(
     val engine = TimeLimitEngine()
     var elapsed = 3 * HOUR // Phone booted three hours ago.
     var wall = start.atZone(zone).toInstant().toEpochMilli()
+
+    /** The true time; [moveClock] only changes the phone's clock ([wall]). */
+    var real = wall
+    var networkTimeSupported = false
+    var networkUp = false
     var boot = 41
     var s = TimeLimitState()
 
-    fun reading() = ClockReading(elapsed, wall, zone, boot)
+    fun reading() = ClockReading(
+        elapsed, wall, zone, boot,
+        networkMillis = real.takeIf { networkTimeSupported && networkUp },
+        networkTimeSupported = networkTimeSupported,
+    )
 
     fun advance(ms: Long) {
         elapsed += ms
         wall += ms
+        real += ms
     }
 
     fun moveClock(ms: Long) {
@@ -54,6 +65,8 @@ class EngineHarness(
         boot++
         elapsed = 30 * SEC
         wall += downtime + 30 * SEC + clockChange
+        real += downtime + 30 * SEC
+        networkUp = false
     }
 
     fun refresh() {
@@ -107,11 +120,18 @@ class EngineHarness(
         use(s.budgetMillis - s.usedMillis)
     }
 
-    /** Advances real time to the next local midnight (plus [extra]). */
+    /** Advances real time to the next local midnight of the phone's clock (plus [extra]). */
     fun advanceToMidnight(extra: Long = SEC) {
         val now = java.time.Instant.ofEpochMilli(wall).atZone(zone)
         val midnight = now.toLocalDate().plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
         advance(midnight - wall + extra)
+    }
+
+    /** Advances real time to the next real local midnight (plus [extra]), whatever the phone's clock says. */
+    fun advanceToRealMidnight(extra: Long = SEC) {
+        val now = java.time.Instant.ofEpochMilli(real).atZone(zone)
+        val midnight = now.toLocalDate().plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        advance(midnight - real + extra)
     }
 
     val today: LocalDate get() = s.day!!

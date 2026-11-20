@@ -20,6 +20,13 @@ data class ClockReading(
     val zone: ZoneId,
     /** Identifies the current boot (Settings.Global.BOOT_COUNT); -1 when unknown. */
     val bootCount: Int,
+    /**
+     * Android's network time (SystemClock.currentNetworkTimeClock, Android 13+): the last time sync
+     * plus the stopwatch since, so the user can't set it. Null when the phone has none (yet).
+     */
+    val networkMillis: Long? = null,
+    /** The phone can report network time (Android 13+), so after a reboot it is worth waiting for. */
+    val networkTimeSupported: Boolean = false,
 )
 
 /** Source of [ClockReading]s; Android implementation in AndroidClock, a fake one in tests. */

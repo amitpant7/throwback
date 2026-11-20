@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import app.throwback.R
@@ -35,11 +36,14 @@ import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.timelimit.TimeLimitOverlay
 import app.throwback.timelimit.TimeLimitSettingsScreen
 import app.throwback.timelimit.TimeRemainingChip
+import app.throwback.ui.InstagramAppPrompt
 import app.throwback.ui.MindfulPauseScreen
 import app.throwback.ui.OnboardingFlow
 import app.throwback.ui.SettingsRoot
 import app.throwback.ui.SettingsStart
+import app.throwback.ui.shouldOfferInstagramPrompt
 import app.throwback.web.InstagramScreen
+import app.throwback.web.InstagramSession
 import app.throwback.web.WebReadiness
 import kotlinx.coroutines.launch
 
@@ -62,13 +66,7 @@ fun AppRoot(app: ThrowbackApp, deepLink: String?, onCloseApp: () -> Unit, onSpla
             null -> SideEffect { onSplashHold(true) } // DataStore still loading.
             false -> {
                 SideEffect { onSplashHold(false) }
-                OnboardingFlow(
-                onFinished = { scope.launch { prefs.setOnboardingDone() } },
-                onOpenMessagesSetup = {
-                    scope.launch { prefs.setOnboardingDone() }
-                    settingsOpen = SettingsStart.MessagesAndCalls
-                },
-                )
+                OnboardingFlow(onFinished = { scope.launch { prefs.setOnboardingDone() } })
             }
             true -> MainScreen(
                 app = app,
@@ -77,6 +75,7 @@ fun AppRoot(app: ThrowbackApp, deepLink: String?, onCloseApp: () -> Unit, onSpla
                 onSplashHold = onSplashHold,
                 onCloseApp = onCloseApp,
                 onOpenSettings = { settingsOpen = SettingsStart.Home },
+                onOpenMessagesSetup = { settingsOpen = SettingsStart.MessagesAndCalls },
             )
         }
 
@@ -99,6 +98,7 @@ private fun MainScreen(
     onSplashHold: (Boolean) -> Unit,
     onCloseApp: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenMessagesSetup: () -> Unit,
 ) {
     val timeLimit = app.timeLimit
     val lockState by timeLimit.state.collectAsStateWithLifecycle()
@@ -107,6 +107,14 @@ private fun MainScreen(
     var pauseDone by rememberSaveable { mutableStateOf(false) }
     var mode by rememberSaveable { mutableStateOf(WebMode.FULL) }
     var path by remember { mutableStateOf("/") }
+    val loggedIn by InstagramSession.loggedIn.collectAsStateWithLifecycle()
+
+    // After the first login, offer the "Instagram app found" choice once (if the app is installed).
+    val context = LocalContext.current
+    var offerInstagramPrompt by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(loggedIn) {
+        if (loggedIn && shouldOfferInstagramPrompt(context)) offerInstagramPrompt = true
+    }
 
     // Leaving the lock (extension granted, or a new day) returns to the full app.
     LaunchedEffect(lockState) {
@@ -146,8 +154,9 @@ private fun MainScreen(
             modifier = if (lockShowing) Modifier.clearAndSetSemantics {} else Modifier,
         )
 
+        // Throwback's own controls only on the logged-in home feed (never over Instagram's login page).
         val onHomeFeed = path == "/" || path.isEmpty()
-        if (onHomeFeed && mode == WebMode.FULL) {
+        if (loggedIn && onHomeFeed && mode == WebMode.FULL) {
             Row(
                 Modifier.align(Alignment.TopStart).statusBarsPadding().padding(start = 12.dp, top = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -161,6 +170,16 @@ private fun MainScreen(
             MessagesOnlyBar(
                 onAskForMoreTime = { mode = WebMode.FULL },
                 modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
+
+        if (offerInstagramPrompt && !lockShowing) {
+            InstagramAppPrompt(
+                onOpenMessagesSetup = {
+                    offerInstagramPrompt = false
+                    onOpenMessagesSetup()
+                },
+                onDone = { offerInstagramPrompt = false },
             )
         }
 

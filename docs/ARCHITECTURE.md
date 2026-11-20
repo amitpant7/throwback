@@ -56,18 +56,22 @@ Composable entry points used by `core/AppRoot.kt`:
 | `timelimit.TimeRemainingChip(controller, modifier)` | timelimit | "18 min left" chip |
 | `timelimit.TimeLimitSettingsScreen(controller, onClose)` | timelimit | Set up or manage the limit |
 | `ui.UiModule.create(context)` | ui | `UiPreferences` |
-| `ui.OnboardingFlow(onFinished, onOpenMessagesSetup)` | ui | First launch and "Instagram app found" |
+| `ui.OnboardingFlow(onFinished)` | ui | First launch ("Log in to Instagram" finishes it) |
+| `ui.shouldOfferInstagramPrompt(context)` / `ui.InstagramAppPrompt(onOpenMessagesSetup, onDone)` | ui | "Instagram app found", shown once after the first login |
+| `web.InstagramSession.loggedIn` | web | Logged in to Instagram (session cookie), refreshed on every page change |
 | `ui.SettingsRoot(onClose, timeLimitScreen, startAt)` | ui | Settings and everything under it |
 | `ui.MindfulPauseScreen(onContinue, onNotNow)` | ui | Optional pause before Instagram |
 
 ## How AppRoot puts it together
 
 1. DataStore loading: blank (the splash screen covers it).
-2. Onboarding not done: `OnboardingFlow`.
+2. Onboarding not done: `OnboardingFlow`. Its "Log in to Instagram" finishes onboarding; the web layer
+   then opens Instagram's login form directly whenever the user is logged out.
 3. Otherwise `MainScreen`: optional `MindfulPauseScreen` once per launch, then
    `InstagramScreen` with, on top: the Throwback mark (opens Settings) and `TimeRemainingChip` at
-   top-start on the home feed only (the web layer hides Instagram's wordmark there), and
+   top-start on the logged-in home feed only (the web layer hides Instagram's wordmark there), and
    `TimeLimitOverlay` when the state is `Locked` and the mode is `FULL`.
+   After the first login, if the Instagram app is installed, `InstagramAppPrompt` is shown once.
 4. "Open messages only" on the lock screen switches the WebView to `MESSAGES_ONLY`. When the state
    leaves `Locked`, AppRoot switches back to `FULL`.
 5. Settings opens as a full-screen layer over everything; the WebView stays alive underneath.

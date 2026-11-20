@@ -144,7 +144,10 @@ internal class InstagramWebController(
             started = true
             val freshLink = startUrl?.takeIf { it != handledStartUrl }
             markStartHandled(startUrl)
-            load(router.startUrl(freshLink ?: restoreUrl, mode))
+            // Logged out: go straight to Instagram's login form instead of its "Log in or sign up"
+            // landing page, which would need a second tap. A deep link still opens as asked.
+            val loggedIn = InstagramSession.refresh()
+            load(if (!loggedIn && freshLink == null) InstagramSession.LOGIN_URL else router.startUrl(freshLink ?: restoreUrl, mode))
             handler.postDelayed(revealRunnable, REVEAL_TIMEOUT_MS)
         } else if (startUrl != null && startUrl != handledStartUrl) {
             markStartHandled(startUrl)
@@ -323,10 +326,20 @@ internal class InstagramWebController(
         val router = router ?: return
         if (url.isNullOrEmpty() || url == "about:blank" || url.startsWith("data:")) return
         val location = router.locationFor(url)
+        val loggedIn = InstagramSession.refresh()
+        // Logged out on the landing page (e.g. after logging out): show the login form directly.
+        // Capped, so a cookie we can't read can never cause a redirect loop.
+        if (!loggedIn && location == "/" && loginRedirects < MAX_LOGIN_REDIRECTS) {
+            loginRedirects++
+            load(InstagramSession.LOGIN_URL)
+            return
+        }
         if (location == lastLocation) return
         lastLocation = location
         host?.onLocationChanged(location, url)
     }
+
+    private var loginRedirects = 0
 
     // ------------------------------------------------------------------ readiness, errors, notices
 
@@ -523,6 +536,7 @@ internal class InstagramWebController(
     }
 
     companion object {
+        private const val MAX_LOGIN_REDIRECTS = 2
         private const val TAG = "ThrowbackWeb"
         private const val BRIDGE_OBJECT = "throwbackNative"
         private const val LEGACY_BRIDGE_OBJECT = "throwbackBridge"

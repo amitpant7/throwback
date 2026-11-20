@@ -90,7 +90,7 @@ internal class UiPrefs(private val store: DataStore<Preferences>) : UiPreference
 
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         val MINDFUL_PAUSE = booleanPreferencesKey("mindful_pause")
-        val INSTAGRAM_PROMPT_SHOWN = booleanPreferencesKey("instagram_prompt_shown")
+        val INSTAGRAM_PROMPT_SHOWN = booleanPreferencesKey("instagram_prompt_shown_after_login")
         val MESSAGES_SETUP_DONE = booleanPreferencesKey("messages_setup_done")
 
         /** Cheap wrapper around the process-wide DataStore; safe to call from any screen. */

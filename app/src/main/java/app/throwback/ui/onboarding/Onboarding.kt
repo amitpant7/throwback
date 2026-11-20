@@ -1,5 +1,6 @@
 package app.throwback.ui.onboarding
 
+import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
@@ -59,43 +60,39 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
- * First launch, then (once, if the Instagram app or Lite is installed) "Instagram app found".
+ * First launch. The "Instagram app found" choice is shown after login (InstagramAppPromptContent).
  * See UiApi.OnboardingFlow for the contract.
  */
 @Composable
-internal fun OnboardingFlowContent(onFinished: () -> Unit, onOpenMessagesSetup: () -> Unit) {
+internal fun OnboardingFlowContent(onFinished: () -> Unit) {
+    // "Log in to Instagram" ends onboarding; the login itself happens on Instagram's own page.
+    // The "Instagram app found" choice comes after login (see InstagramAppPromptContent).
+    WelcomeScreen(onLogIn = onFinished)
+}
+
+/**
+ * True when the "Instagram app found" choice should be offered: Instagram (or Lite) is installed
+ * and the user hasn't seen the choice yet.
+ */
+internal suspend fun shouldOfferInstagramPrompt(context: Context): Boolean =
+    InstagramApp.installedPackage(context) != null && !UiPrefs.from(context).instagramPromptShown.first()
+
+/** The "You still have the Instagram app" choice, shown once after the first login. */
+@Composable
+internal fun InstagramAppPromptContent(onOpenMessagesSetup: () -> Unit, onDone: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { UiPrefs.from(context) }
-    val scope = rememberCoroutineScope()
-    // Package of the installed Instagram app while the "found" screen is showing.
-    var foundPackage by rememberSaveable { mutableStateOf<String?>(null) }
-    // Lets "back" from the found screen and "Log in" again show it again in this session.
-    var promptSeenHere by rememberSaveable { mutableStateOf(false) }
-
-    val found = foundPackage
-    if (found == null) {
-        WelcomeScreen(onLogIn = {
-            scope.launch {
-                val pkg = InstagramApp.installedPackage(context)
-                val showPrompt = pkg != null && (promptSeenHere || !prefs.instagramPromptShown.first())
-                if (showPrompt) foundPackage = pkg else onFinished()
-            }
-        })
-    } else {
-        BackHandler { foundPackage = null }
-        LaunchedEffect(Unit) {
-            promptSeenHere = true
-            prefs.write { setInstagramPromptShown() }
-        }
-        InstagramFoundScreen(
-            onKeep = onOpenMessagesSetup,
-            onRemove = {
-                SystemScreens.openAppDetails(context, found)
-                onFinished()
-            },
-            onLater = onFinished,
-        )
-    }
+    val found = remember { InstagramApp.installedPackage(context) }
+    LaunchedEffect(Unit) { prefs.write { setInstagramPromptShown() } }
+    BackHandler(onBack = onDone)
+    InstagramFoundScreen(
+        onKeep = onOpenMessagesSetup,
+        onRemove = {
+            if (found != null) SystemScreens.openAppDetails(context, found)
+            onDone()
+        },
+        onLater = onDone,
+    )
 }
 
 @Composable

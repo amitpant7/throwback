@@ -3,6 +3,7 @@ package app.throwback.ui
 import android.content.Context
 import androidx.compose.runtime.Composable
 import app.throwback.core.UiPreferences
+import app.throwback.ui.onboarding.InstagramAppPromptContent
 import app.throwback.ui.onboarding.OnboardingFlowContent
 import app.throwback.ui.pause.MindfulPauseContent
 import app.throwback.ui.settings.SettingsRootContent
@@ -17,10 +18,20 @@ object UiModule {
     fun create(context: Context): UiPreferences = UiPrefs.from(context)
 }
 
-/** First launch, then (if the Instagram app is installed) the "Instagram app found" choice. */
+/** First launch. "Log in to Instagram" calls [onFinished]; the login happens on Instagram's page. */
 @Composable
-fun OnboardingFlow(onFinished: () -> Unit, onOpenMessagesSetup: () -> Unit) {
-    OnboardingFlowContent(onFinished = onFinished, onOpenMessagesSetup = onOpenMessagesSetup)
+fun OnboardingFlow(onFinished: () -> Unit) {
+    OnboardingFlowContent(onFinished = onFinished)
+}
+
+/** Whether to offer the "Instagram app found" choice (app installed, choice not seen yet). */
+suspend fun shouldOfferInstagramPrompt(context: Context): Boolean =
+    app.throwback.ui.onboarding.shouldOfferInstagramPrompt(context)
+
+/** "You still have the Instagram app": keep it for calls & messages, remove it, or decide later. Shown after login. */
+@Composable
+fun InstagramAppPrompt(onOpenMessagesSetup: () -> Unit, onDone: () -> Unit) {
+    InstagramAppPromptContent(onOpenMessagesSetup = onOpenMessagesSetup, onDone = onDone)
 }
 
 enum class SettingsStart { Home, MessagesAndCalls }

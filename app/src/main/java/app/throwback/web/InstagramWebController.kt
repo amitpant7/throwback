@@ -162,12 +162,6 @@ internal class InstagramWebController(
         }
     }
 
-    /** Closes Instagram's stopped reel viewer ("Back to chat" on the poster). */
-    fun closeReels() {
-        if (destroyed) return
-        webView.evaluateJavascript("window.__throwback && window.__throwback.closeReels && window.__throwback.closeReels()", null)
-    }
-
     private var covered = false
 
     /** Tells the page whether a Throwback screen covers it (its feed-time clock pauses). */

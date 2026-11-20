@@ -1261,52 +1261,12 @@
     saveReelLog(log);
   }
 
-  /**
-   * Stops the viewer and closes it right away (its own Close button), so the poster appears over the
-   * chat and "Back to chat" only has to dismiss the poster. If the button can't be found, the viewer
-   * stays stopped (no more swiping) and its own close button still works.
-   */
+  /** Stops the viewer (no more swiping, videos paused); the app shows its poster. */
   function stopReels(viewer) {
     viewer.setAttribute(ATTR_REEL_STOP, '1');
     var vids = viewer.querySelectorAll('video');
     for (var i = 0; i < vids.length; i++) vids[i].pause();
     send({ t: 'reelLimit' });
-    setTimeout(function () {
-      perf.log.push({ page: 'reel-poster', viewerClosed: closeReels() });
-    }, 50);
-  }
-
-  // Instagram's label on the viewer's close button (top left), in the languages the rules cover.
-  var CLOSE_LABELS = ['Close', 'Schließen', 'Fermer', 'Cerrar', 'Fechar', 'Chiudi'];
-
-  /**
-   * "Back to chat" on the poster: tap Instagram's own close button of the viewer. Only a visible one
-   * that is really on top counts (the chat underneath has hidden "Close" buttons too). If none is
-   * found, nothing else happens: the viewer stays stopped and its own close button still works.
-   */
-  function closeReels() {
-    var best = null;
-    var bestScore = Infinity;
-    CLOSE_LABELS.forEach(function (label) {
-      var els = document.querySelectorAll('[aria-label="' + label + '"]');
-      for (var i = 0; i < els.length; i++) {
-        var b = els[i].closest('[role="button"], button, a') || els[i];
-        var r = b.getBoundingClientRect();
-        if (r.width <= 0 || r.height <= 0 || r.bottom <= 0 || r.top >= window.innerHeight) continue;
-        var hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-        if (!hit || !(hit === b || b.contains(hit))) continue; // covered by something else
-        var score = r.top + r.left; // the viewer's close button sits at the top left
-        if (score < bestScore) {
-          bestScore = score;
-          best = b;
-        }
-      }
-    });
-    var viewer = document.querySelector('[' + ATTR_REEL_STOP + ']');
-    if (!viewer || !best) return false;
-    viewer.removeAttribute(ATTR_REEL_STOP);
-    clickElement(best);
-    return true;
   }
 
   // ---------------------------------------------------------------- messages and stories warm-up
@@ -2137,8 +2097,7 @@
     /** The app tells the page when one of its own screens (Settings, lock, pause) covers it. */
     setCovered: function (covered) {
       state.covered = !!covered;
-    },
-    closeReels: closeReels
+    }
   };
   try {
     Object.defineProperty(window, '__throwback', { value: api, enumerable: false, configurable: false, writable: false });

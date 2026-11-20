@@ -1,0 +1,184 @@
+package app.throwback.web
+
+import app.throwback.core.WebMode
+import app.throwback.web.rules.FilterRules
+
+/**
+ * Decides what happens to a top-level navigation: load it in the WebView, redirect it (blocked
+ * pages, messages-only mode, the Following feed), hand it to another app, or ignore it.
+ *
+ * Pure Kotlin so it can be unit tested. throwback.js mirrors the Instagram-path part of this logic
+ * for in-page (pushState) navigation, which never reaches the WebViewClient.
+ */
+class UrlRouter(private val rules: FilterRules) {
+
+    sealed interface Decision {
+        /** Let the WebView load it. */
+        data object Load : Decision
+
+        /**
+         * Load [url] instead. [kind] is set when content was blocked ("reels", "messagesOnly", ...)
+         * and is null for plain normalisation (https, the Following feed).
+         */
+        data class Redirect(val url: String, val kind: String?) : Decision
+
+        /** Not Instagram: open in the user's browser or the right app. */
+        data class External(val url: String) : Decision
+
+        /** Do nothing ("open in app" intents, app store pages, unparseable links). */
+        data object Ignore : Decision
+    }
+
+    private val instagram = HostMatcher(rules.hosts.instagram)
+    private val internal = HostMatcher(rules.hosts.internal)
+    private val login = HostMatcher(rules.hosts.login)
+    private val shims = rules.hosts.linkShims.associate { it.host.lowercase() to it.param }
+    private val blockedUrls = rules.hosts.blockedUrls.map(::Regex)
+    private val blocked = rules.paths.blocked.map { Regex(it.pattern) to it }
+    private val alwaysAllowed = rules.paths.alwaysAllowed.map(::Regex)
+    private val auth = rules.paths.auth.map(::Regex)
+    private val messagesOnly = rules.paths.messagesOnly.map(::Regex)
+    private val pullToRefresh = rules.paths.pullToRefresh.map(::Regex)
+    private val home = UrlParts.parse(rules.homeUrl)
+    private val homeVariants: Set<String?> = rules.homeVariants.toSet() + home?.queryParam("variant")
+
+    fun isInstagramHost(host: String): Boolean = instagram.matches(host)
+
+    fun isInstagram(url: String?): Boolean {
+        val parts = url?.let(UrlParts::parse) ?: return false
+        return parts.isWeb() && instagram.matches(parts.host)
+    }
+
+    /** Where a mode starts: the Following feed, or the inbox in messages-only mode. */
+    fun homeUrl(mode: WebMode): String = if (mode == WebMode.MESSAGES_ONLY) rules.messagesUrl else rules.homeUrl
+
+    /**
+     * @param currentUrl the page the navigation starts from; it decides whether a Facebook URL is
+     *        part of a login flow (stays in the WebView) or a link someone shared (opens outside).
+     */
+    fun decide(url: String, mode: WebMode, currentUrl: String?): Decision {
+        if (blockedUrls.any { it.containsMatchIn(url) }) return Decision.Ignore
+        val parts = UrlParts.parse(url) ?: return Decision.Ignore
+        return when (parts.scheme) {
+            "http", "https" -> decideWeb(url, parts, mode, currentUrl)
+            "about", "data", "blob", "javascript" -> Decision.Load
+            // mailto:, tel:, sms:, whatsapp:, ... belong to other apps.
+            else -> Decision.External(url)
+        }
+    }
+
+    /** The URL to load for a deep link (or null for the mode's home), after all redirects. */
+    fun startUrl(requested: String?, mode: WebMode): String {
+        var url = requested ?: return homeUrl(mode)
+        repeat(MAX_REDIRECT_HOPS) {
+            when (val d = decide(url, mode, currentUrl = null)) {
+                Decision.Load -> return url
+                is Decision.Redirect -> url = d.url
+                else -> return homeUrl(mode)
+            }
+        }
+        return homeUrl(mode)
+    }
+
+    /** The path reported to integration: the path on Instagram, the full URL anywhere else. */
+    fun locationFor(url: String): String {
+        val parts = UrlParts.parse(url) ?: return url
+        return if (parts.isWeb() && instagram.matches(parts.host)) parts.path else url
+    }
+
+    fun allowsPullToRefresh(url: String?): Boolean {
+        val parts = url?.let(UrlParts::parse) ?: return false
+        return parts.isWeb() && instagram.matches(parts.host) && pullToRefresh.any { it.containsMatchIn(parts.path) }
+    }
+
+    private fun decideWeb(url: String, parts: UrlParts, mode: WebMode, currentUrl: String?): Decision {
+        shims[parts.host]?.let { param ->
+            val target = parts.queryParam(param)
+            val targetParts = target?.let(UrlParts::parse)
+            return when {
+                target == null || targetParts == null || !targetParts.isWeb() -> Decision.External(url)
+                instagram.matches(targetParts.host) -> Decision.Redirect(target, null)
+                else -> Decision.External(target)
+            }
+        }
+        return when {
+            instagram.matches(parts.host) -> decideInstagram(parts, mode)
+            internal.matches(parts.host) -> Decision.Load
+            login.matches(parts.host) -> if (inLoginFlow(currentUrl)) Decision.Load else Decision.External(url)
+            else -> Decision.External(url)
+        }
+    }
+
+    private fun decideInstagram(parts: UrlParts, mode: WebMode): Decision {
+        val path = parts.path
+        if (parts.scheme == "http") {
+            val query = if (parts.query.isEmpty()) "" else "?${parts.query}"
+            return Decision.Redirect("https://${parts.host}$path$query", null)
+        }
+        if (alwaysAllowed.any { it.containsMatchIn(path) }) return Decision.Load
+
+        if (mode == WebMode.MESSAGES_ONLY) {
+            return if (messagesOnly.any { it.containsMatchIn(path) }) {
+                Decision.Load
+            } else {
+                Decision.Redirect(rules.messagesUrl, KIND_MESSAGES_ONLY)
+            }
+        }
+
+        for ((regex, rule) in blocked) {
+            val match = regex.find(path) ?: continue
+            val target = rule.redirect?.let { "https://${parts.host}" + expandTemplate(it, match) } ?: rules.homeUrl
+            return Decision.Redirect(target, rule.kind)
+        }
+
+        if (home != null && path == home.path && parts.queryParam("variant") !in homeVariants) {
+            return Decision.Redirect(rules.homeUrl, null)
+        }
+        return Decision.Load
+    }
+
+    /** True when the user is logging in, so Facebook/Meta login pages should stay in the WebView. */
+    private fun inLoginFlow(currentUrl: String?): Boolean {
+        val current = currentUrl?.let(UrlParts::parse)
+        if (current == null || !current.isWeb()) return true // nothing loaded yet
+        if (login.matches(current.host) || internal.matches(current.host)) return true
+        return instagram.matches(current.host) && auth.any { it.containsMatchIn(current.path) }
+    }
+
+    private fun UrlParts.isWeb() = scheme == "https" || scheme == "http"
+
+    companion object {
+        const val KIND_MESSAGES_ONLY = "messagesOnly"
+        private const val MAX_REDIRECT_HOPS = 4
+
+        /** Fills $1..$9 from [match]; always returns a single-slash path (never "//host"). */
+        internal fun expandTemplate(template: String, match: MatchResult): String {
+            val filled = Regex("\\$(\\d)").replace(template) { g ->
+                match.groupValues.getOrElse(g.groupValues[1].toInt()) { "" }
+            }
+            return "/" + filled.trimStart('/')
+        }
+    }
+}
+
+/**
+ * Stops redirect ping-pong (for example if Instagram ever sends /p/<code>/ back to /reel/<code>/):
+ * the same target may be redirected to at most [maxRepeats] times within [windowMillis].
+ */
+internal class RedirectLoopGuard(
+    private val now: () -> Long,
+    private val windowMillis: Long = 15_000,
+    private val maxRepeats: Int = 3,
+) {
+    private val recent = ArrayDeque<Pair<String, Long>>()
+
+    /** Records and allows the redirect, or returns false if it would loop. */
+    fun allow(target: String): Boolean {
+        val t = now()
+        while (recent.isNotEmpty() && t - recent.first().second > windowMillis) recent.removeFirst()
+        if (recent.count { it.first == target } >= maxRepeats) return false
+        recent.addLast(target to t)
+        if (recent.size > 50) recent.removeFirst()
+        return true
+    }
+}

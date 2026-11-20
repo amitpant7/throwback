@@ -1,11 +1,150 @@
 {
   "schema": 1,
-  "version": 1,
+  "version": 2026112001,
   "updated": "2026-11-20",
-  "note": "Starter file. The web agent owns this schema and fills in the real rules. Installed apps fetch this file from GitHub at most once a day.",
+  "about": [
+    "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
+    "schema: bump ONLY for breaking changes (older apps then ignore the file). version: must increase on every edit (yyyymmddNN); apps keep the copy with the highest version.",
+    "Path patterns are regular expressions matched against the URL path only (no query). Use the common subset of Java and JavaScript regex.",
+    "Selectors are matched against Instagram's mobile web DOM. Use stable signals only (href, aria-label, role, visible text), never Instagram's generated class names. Captions and video descriptions must never be hidden (DECISIONS.md #15).",
+    "Fields named 'note' and 'about' are documentation only; the app ignores them."
+  ],
+
   "homeUrl": "https://www.instagram.com/?variant=following",
-  "blockedPathPrefixes": ["/reels/", "/reel/", "/explore/"],
-  "messagesOnlyAllowedPathPrefixes": ["/direct/"],
-  "hideSelectors": [],
-  "hideIfContainsText": []
+  "homeVariants": ["following", "favorites"],
+  "messagesUrl": "https://www.instagram.com/direct/inbox/",
+
+  "hosts": {
+    "note": "instagram: filtered and kept in Throwback. internal: Instagram/Meta account pages kept in Throwback without filters. login: Facebook/Meta login, kept in Throwback only while a login flow is in progress, otherwise opened in another app. linkShims: outbound link redirectors; the target in 'param' is opened directly in another app. blockedUrls: links that would open the Instagram app or an app store; they do nothing.",
+    "instagram": ["instagram.com", "www.instagram.com", "m.instagram.com"],
+    "internal": ["accountscenter.instagram.com", "accountscenter.facebook.com", "accountscenter.meta.com"],
+    "login": ["facebook.com", "*.facebook.com", "meta.com", "*.meta.com"],
+    "linkShims": [
+      { "host": "l.instagram.com", "param": "u" },
+      { "host": "l.facebook.com", "param": "u" },
+      { "host": "lm.facebook.com", "param": "u" }
+    ],
+    "blockedUrls": [
+      "^intent:",
+      "^instagram:",
+      "^market:",
+      "^https?://play\\.google\\.com/store/apps/details\\?id=com\\.(instagram|facebook)\\.",
+      "^https?://(apps|itunes)\\.apple\\.com/"
+    ]
+  },
+
+  "paths": {
+    "blocked": [
+      { "pattern": "^/reels?/([A-Za-z0-9_-]{9,})/?$", "redirect": "/p/$1/", "kind": "reels",
+        "note": "A single reel (shared in a DM, or from a link) opens as a plain post: one video, no endless Reels feed." },
+      { "pattern": "^/[A-Za-z0-9._]+/reels?/([A-Za-z0-9_-]{9,})/?$", "redirect": "/p/$1/", "kind": "reels",
+        "note": "Newer share links of the form /<user>/reel/<code>/." },
+      { "pattern": "^/([A-Za-z0-9._]+)/reels/?$", "redirect": "/$1/", "kind": "reels",
+        "note": "The Reels tab on a profile goes to the profile's posts instead." },
+      { "pattern": "^/reels?(/|$)", "kind": "reels",
+        "note": "The Reels tab and anything else under /reels/ or /reel/." },
+      { "pattern": "^/explore/people(/|$)", "kind": "suggested",
+        "note": "'Discover people' is a page of suggested accounts." }
+    ],
+    "alwaysAllowed": [
+      "^/accounts/(login|onetap|emailsignup|signup|password|suspended|disabled|logout|confirm_email)(/|$)",
+      "^/challenge(/|$)",
+      "^/auth_platform(/|$)",
+      "^/call(/|$)"
+    ],
+    "auth": ["^/accounts/", "^/challenge(/|$)", "^/auth_platform(/|$)"],
+    "messagesOnly": ["^/direct(/|$)"],
+    "pullToRefresh": ["^/$", "^/accounts/activity/?$", "^/direct/inbox/?$"]
+  },
+
+  "pages": {
+    "home": "^/$",
+    "explore": "^/explore/(search/)?$",
+    "inbox": "^/direct/inbox/?$",
+    "direct": "^/direct(/|$)"
+  },
+
+  "readySelector": "main, nav, article, form, [role='main'], [role='dialog']",
+
+  "hide": [
+    { "id": "reels-links", "selector": "a[href^='/reels/'], a[href$='/reels/']", "on": "always", "style": "remove",
+      "note": "Reels tab in the bottom bar, the Reels tab on profiles, and 'Original audio' links that open the Reels feed. Links to a single /reel/ are kept; tapping them opens the post." },
+    { "id": "reels-icon", "selector": "svg[aria-label='Reels']", "closest": "a, [role='link'], [role='tab'], [role='button']", "closestDepth": 5, "on": "always", "style": "remove",
+      "note": "Reels tab found by its icon label, in case its link changes." },
+    { "id": "people-links", "selector": "a[href^='/explore/people']", "on": "always", "style": "remove",
+      "note": "'See all' suggested accounts." },
+    { "id": "app-links", "selector": "a[href^='intent:'], a[href^='instagram:'], a[href*='play.google.com/store/apps'], a[href*='apps.apple.com'], a[href*='itunes.apple.com']", "on": "always", "style": "remove",
+      "note": "'Get the app' / 'Open in app' links and store badges." },
+    { "id": "wordmark", "selector": "[aria-label='Instagram']", "closest": "a, [role='link'], [role='button'], h1", "closestDepth": 4, "on": "home", "style": "invisible",
+      "note": "Instagram wordmark in the home feed's top bar (it also opens the For you / Following switcher). Invisible rather than removed so the bar keeps its layout; Throwback's own button sits in that spot." },
+    { "id": "wordmark-chevron", "selector": "svg[aria-label='Down chevron icon' i]", "closest": "a, [role='link'], [role='button']", "closestDepth": 3, "on": "home", "style": "invisible",
+      "note": "Dropdown arrow next to the wordmark (feed switcher)." },
+    { "id": "explore-tiles", "selector": "main a[href^='/p/'], main a[href^='/reel/']", "on": "explore", "style": "remove",
+      "note": "Fallback for the Explore grid: hides every tile. The script also hides the grid's container (see 'explore')." },
+    { "id": "mo-home", "selector": "a[href='/'], a[href^='/?']", "on": "messagesOnly", "style": "remove",
+      "note": "Messages-only mode: Home links and the inbox's back arrow." },
+    { "id": "mo-nav-links", "selector": "a[href^='/explore'], a[href='/accounts/activity/'], a[href^='/stories/']", "on": "messagesOnly", "style": "remove",
+      "note": "Messages-only mode: search, notifications, stories." },
+    { "id": "mo-icons", "selector": "svg[aria-label='Home'], svg[aria-label='Search'], svg[aria-label='Explore'], svg[aria-label='Search & Explore' i], svg[aria-label='New post'], svg[aria-label='Notifications']", "closest": "a, [role='link'], [role='button']", "closestDepth": 5, "on": "messagesOnly", "style": "remove",
+      "note": "Messages-only mode: navigation buttons found by their icon labels." }
+  ],
+
+  "hideText": [
+    { "id": "open-app", "elements": "a, button, [role='button'], [role='link']", "on": "always",
+      "text": ["Open app", "Open in app", "Use the app", "Get the app", "Open Instagram", "Use app", "Switch to the app"],
+      "note": "'Open in app' buttons in banners and headers." }
+  ],
+
+  "posts": {
+    "note": "A feed post (container) is hidden when one of these labels is in its header: at most 'maxMediaBefore' images/videos (the avatar) come before the label, so a caption that happens to say the same words is never matched.",
+    "container": "article",
+    "maxMediaBefore": 2,
+    "labels": [
+      { "id": "sponsored",
+        "text": ["Sponsored", "Gesponsert", "Sponsorisé", "Sponsorisée", "Patrocinado", "Patrocinada", "Sponsorizzato", "Gesponsord", "Sponsorowane", "Sponsrad", "Sponset", "Sponsoreret", "Sponsoroitu", "Sponzorováno", "Szponzorált", "Sponsorlu", "Реклама", "Χορηγούμενη", "ממומן", "ممول", "प्रायोजित", "Bersponsor", "Được tài trợ", "広告", "광고", "赞助内容", "贊助"],
+        "note": "Ads. The English wording is Instagram's; the translations are best effort." },
+      { "id": "suggested",
+        "text": ["Suggested for you", "Suggested post", "Suggested posts", "Vorschläge für dich", "Suggestions pour vous", "Sugerencias para ti", "Sugestões para você", "Suggeriti per te", "Voorgesteld voor jou", "Proponowane dla Ciebie", "Рекомендации для вас", "あなたへのおすすめ", "회원님을 위한 추천", "为你推荐", "為你推薦"],
+        "note": "Posts from accounts you don't follow." }
+    ]
+  },
+
+  "modules": [
+    { "id": "suggested-module", "on": "home",
+      "text": ["Suggested for you", "Suggested reels", "Suggested threads", "Suggestions for you", "Discover people", "Vorschläge für dich", "Suggestions pour vous", "Sugerencias para ti", "Sugestões para você", "Suggeriti per te"],
+      "note": "Feed blocks headed by these words (account carousels, suggested reels) are removed as a whole." }
+  ],
+
+  "sectionMarkers": [
+    { "id": "suggested-section", "on": "home",
+      "text": ["Suggested posts", "Vorgeschlagene Beiträge", "Publications suggérées", "Publicaciones sugeridas", "Publicações sugeridas", "Post suggeriti"],
+      "note": "After 'You're all caught up', Instagram can continue with suggested posts under this heading. The heading and everything after it in the feed is removed." }
+  ],
+
+  "dialogs": [
+    { "id": "cookies",
+      "whenText": ["cookies"],
+      "click": ["Decline optional cookies", "Only allow essential cookies", "Reject optional cookies", "Optionale Cookies ablehnen", "Refuser les cookies optionnels", "Rechazar cookies opcionales", "Recusar cookies opcionais", "Rifiuta cookie facoltativi"],
+      "note": "Cookie consent: picks the most private option automatically." },
+    { "id": "app-nag",
+      "whenText": ["Open app", "Open in app", "Use the app", "Get the app", "Open Instagram", "See this post in the app", "Add Instagram to your Home screen", "Turn on notifications"],
+      "click": ["Not now", "Cancel", "Close"],
+      "clickSelector": "svg[aria-label='Close'], [role='button'][aria-label='Close']",
+      "note": "'Use the app' sheets and the web push prompt (a WebView can't receive web push anyway)." }
+  ],
+
+  "explore": {
+    "on": "explore",
+    "keep": "input[type='search'], input[aria-label*='Search' i], input[placeholder*='Search' i]",
+    "items": "a[href^='/p/'], a[href^='/reel/'], a[href*='/p/'], a[href*='/reel/']",
+    "note": "On Explore the search box stays; every block that holds post tiles (and not the search box) is hidden."
+  },
+
+  "nav": {
+    "links": "a[href='/'], a[href^='/explore'], a[href$='/reels/'], a[href^='/direct/inbox'], a[href='/accounts/activity/'], svg[aria-label='New post']",
+    "minLinks": 3,
+    "note": "The bottom bar is the smallest block that holds at least minLinks of these and no post content. It is hidden in messages-only mode, and slots whose only link is hidden collapse so the remaining icons spread out."
+  },
+
+  "dismissMaxAttempts": 40
 }

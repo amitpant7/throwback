@@ -1,0 +1,52 @@
+/*
+ * Throwback base styles for instagram.com. Injected by throwback.js together with the CSS it
+ * generates from filters/rules.json. These remove "web page" behaviour so Instagram feels like an
+ * app (DECISIONS.md #11). Content text (captions, comments, messages) stays selectable.
+ */
+
+/* No grey flash on tap. */
+html,
+*,
+*::before,
+*::after {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Buttons, links, icons and images: no text selection or long-press callout. */
+a,
+button,
+[role="button"],
+[role="link"],
+[role="tab"],
+[role="menuitem"],
+nav,
+svg,
+img,
+video {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* No dragging images or links around. */
+a,
+img,
+video {
+  -webkit-user-drag: none;
+}
+
+/* Typing and copying still work everywhere. */
+input,
+textarea,
+[contenteditable="true"],
+[contenteditable=""] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+/* Keep the text size Throwback sets (it follows the system font size). */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}

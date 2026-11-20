@@ -48,12 +48,14 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     Instagram's loading spinner; "You're all caught up" only when only suggestions are left (20 hidden
     in a row, or nothing new for 10 s at the bottom). The next posts are loaded ahead for smooth scrolling.
 13f. **Reels sent in chats** (decided 2026-11-20): a reel opened from a chat plays in Instagram's
-    full-screen swipe viewer (same address). The opened reel is free; the poster shows on a random 1st to 4th
-    swipe (so no number of swipes is safe) to other reels (counted per 10 minutes, rules `reelViewer`), counted across viewers so reopening doesn't reset it. After the
-    poster has shown, no free swipes for an hour (each new trigger restarts the hour); stored on the
-    device, so restarting doesn't reset it. Then the videos stop and a full-screen poster shows ("Thought you could cheat…? Nahhh…"). No button
-    (Instagram's reel viewer has none either): the page closes the viewer behind the poster, and
-    Back / the back swipe removes the poster, leaving you in the chat. The poster's final design and an animated version with licensed music are in design.
+    full-screen swipe viewer (same address, no history entry). The opened reel is free. Swipes to
+    other reels are counted (per 10 minutes, across viewers, rules `reelViewer`); the poster shows on
+    a random 1st to 4th swipe, so no number of swipes is safe. Then the videos stop, the page closes
+    the viewer with its own Close button, and a full-screen poster shows over the chat ("Thought
+    you could cheat…? Nahhh…"). No button (Instagram's reel viewer has none either): Back or the back
+    swipe removes the poster, leaving you in the chat. After a poster, no free swipes for an hour
+    (each new poster restarts the hour), stored on the device so a restart doesn't reset it. The
+    poster's final design and an animated version with licensed music are in design.
 14. **No toggles.** Throwback is minimal; there is no setting to bring distractions back.
     Settings shows a read-only "Throwback removes" list.
 15. Video captions and descriptions must never be hidden (a known complaint about a competitor).

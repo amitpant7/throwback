@@ -27,7 +27,7 @@ class NotificationRulesTest {
         assertNotNull(n)
         // Filled from the owner's phone (Instagram's channel list), calls first and never guessed.
         assertEquals("call", n!!.classify.first().kind)
-        assertEquals("^ig_direct_video_chat$", n.classify.first().channel)
+        assertEquals("(call|rtc|video_chat)", n.classify.first().channel)
         assertEquals(UNKNOWN_CANCEL, n.unknown)
         assertNull(n.threadId)
         assertEquals("https://www.instagram.com/accounts/activity/", n.activityUrl)

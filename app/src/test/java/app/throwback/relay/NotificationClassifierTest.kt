@@ -139,4 +139,16 @@ class NotificationClassifierTest {
         )
         expected.forEach { (channel, kind) -> assertEquals(channel, kind, bundled.classify(facts(channel = channel))) }
     }
+
+    @Test
+    fun `calls in progress are calls, even on a channel Instagram creates only during a call`() {
+        val bundled = NotificationClassifier(app.throwback.web.TestRules.bundled.notifications)
+        // An ongoing notification on an unlisted Instagram channel: never "other" (that let the guard
+        // send the owner out of a running video call).
+        assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_some_new_channel", ongoing = true)))
+        assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_rtc_ongoing")))
+        assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_ongoing_call")))
+        assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_direct_video_chat")))
+        assertEquals(NotificationKind.OTHER, bundled.classify(facts(channel = "ig_some_new_channel")))
+    }
 }

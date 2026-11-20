@@ -85,7 +85,11 @@ internal object GuardPolicy {
  */
 internal object GuardPass {
     /** CREATE: posting from the Instagram app ("+" / "Your story"), only its creation screens. */
-    enum class Kind { CALL, VISIT, CREATE }
+    enum class Kind { CALL, VISIT, CREATE, SETTINGS }
+
+    /** SETTINGS: time spent on the app's screens other than its settings (capped, see GuardService). */
+    @Volatile
+    var outsideMillis: Long = 0L
 
     /** When the current pass began (elapsed millis). */
     @Volatile
@@ -106,6 +110,7 @@ internal object GuardPass {
 
     fun grant(now: Long, durationMs: Long, kind: Kind) {
         grantedAt = now
+        outsideMillis = 0L
         allowUntil = now + durationMs
         this.kind = kind
         sawInstagram = false

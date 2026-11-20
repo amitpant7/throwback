@@ -89,6 +89,8 @@ fun InstagramScreen(
     onCaughtUp: () -> Unit = {},
     /** "+" / "Your story" with the Instagram app connected. */
     onCreateInApp: () -> Unit = {},
+    /** "Open settings in the Instagram app". */
+    onSettingsInApp: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val repository = remember { RulesRepository.get(context) }
@@ -141,6 +143,7 @@ fun InstagramScreen(
             onReelLimit = onReelLimit,
             onCaughtUp = onCaughtUp,
             onCreateInApp = onCreateInApp,
+            onSettingsInApp = onSettingsInApp,
             modifier = modifier,
         )
     }
@@ -166,6 +169,7 @@ private fun InstagramWebHost(
     onReelLimit: () -> Unit,
     onCaughtUp: () -> Unit,
     onCreateInApp: () -> Unit,
+    onSettingsInApp: () -> Unit,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
@@ -208,6 +212,7 @@ private fun InstagramWebHost(
     val latestOnReelLimit by rememberUpdatedState(onReelLimit)
     val latestOnCaughtUp by rememberUpdatedState(onCaughtUp)
     val latestOnCreateInApp by rememberUpdatedState(onCreateInApp)
+    val latestOnSettingsInApp by rememberUpdatedState(onSettingsInApp)
 
     // Photos and videos go through Android's photo picker; anything else through the file chooser.
     val pickOne = rememberLauncherForActivityResult(PickVisualMedia()) { uri ->
@@ -238,6 +243,8 @@ private fun InstagramWebHost(
             override fun onCaughtUp() = latestOnCaughtUp()
 
             override fun onCreateInApp() = latestOnCreateInApp()
+
+            override fun onSettingsInApp() = latestOnSettingsInApp()
 
             override fun pickFiles(kind: PickKind, multiple: Boolean, documentIntent: Intent?): Boolean {
                 val media = when (kind) {

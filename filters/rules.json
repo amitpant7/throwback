@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112028,
+  "version": 2026112029,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -130,6 +130,14 @@
       "clickSelector": "svg[aria-label='Close'], [role='button'][aria-label='Close']",
       "note": "'Use the app' sheets and the web push prompt (a WebView can't receive web push anyway)." }
   ],
+
+  "appSettings": {
+    "link": "instagram://settings",
+    "screens": "^com\\.instagram\\.urlhandlers\\.settings\\.",
+    "otherScreenMinutes": 5,
+    "flowPackages": ["com.android.chrome", "com.chrome.beta", "com.sec.android.app.sbrowser"],
+    "note": "With the Instagram app connected, a row at the end of Instagram's settings page opens the app's 'Settings and activity' (instagram://settings -> SettingsUrlHandlerActivity, checked on the emulator 2026-11-20). Its sub-pages mostly stay in that screen (no time limit); some (Meta Accounts Center) open in the app's main screen, which also holds the feed: those get otherScreenMinutes in total."
+  },
 
   "appCreate": {
     "link": "instagram://share",

@@ -105,6 +105,11 @@ object RulesValidator {
             checkSelector(e.items, "explore.items", errors)
             checkOn(e.on, "explore")
             check(e.dailySeconds in 0..3600) { "explore.dailySeconds out of range" }
+            rules.appSettings?.let { a ->
+                check(a.link.startsWith("instagram://")) { "appSettings.link must be an instagram:// link" }
+                check(runCatching { Regex(a.screens) }.isSuccess) { "appSettings.screens is not a valid pattern" }
+                check(a.otherScreenMinutes in 0..30) { "appSettings.otherScreenMinutes out of range" }
+            }
             rules.appCreate?.let { a ->
                 check(a.link.startsWith("instagram://")) { "appCreate.link must be an instagram:// link" }
                 check(runCatching { Regex(a.screens) }.isSuccess) { "appCreate.screens is not a valid pattern" }

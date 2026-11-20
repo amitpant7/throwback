@@ -39,6 +39,9 @@ internal sealed interface BridgeMessage {
     /** "+" or "Your story" tapped while the Instagram app is connected: open its create screen. */
     data object CreateInApp : BridgeMessage
 
+    /** "Open settings in the Instagram app" at the end of Instagram's settings page. */
+    data object SettingsInApp : BridgeMessage
+
     /** Share a reel's link (Explore reel player) through Android's share sheet. */
     data class Share(val url: String) : BridgeMessage
 
@@ -70,6 +73,7 @@ internal sealed interface BridgeMessage {
                 "reelLimit" -> ReelLimit
                 "caughtUp" -> CaughtUp
                 "createInApp" -> CreateInApp
+                "settingsInApp" -> SettingsInApp
                 "share" -> str("url")?.takeIf { SHARE_URL.matches(it) }?.let(::Share)
                 else -> null
             }

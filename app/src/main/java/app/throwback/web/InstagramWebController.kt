@@ -76,6 +76,9 @@ internal class InstagramWebController(
         /** "+" / "Your story" with the Instagram app connected. */
         fun onCreateInApp() {}
 
+        /** "Open settings in the Instagram app". */
+        fun onSettingsInApp() {}
+
         /** Opens a picker; must eventually call [deliverFiles]. False if no picker could be opened. */
         fun pickFiles(kind: PickKind, multiple: Boolean, documentIntent: Intent?): Boolean
     }
@@ -495,6 +498,7 @@ internal class InstagramWebController(
             BridgeMessage.CaughtUp -> host?.onCaughtUp()
             is BridgeMessage.Share -> share(m.url)
             BridgeMessage.CreateInApp -> host?.onCreateInApp()
+            BridgeMessage.SettingsInApp -> host?.onSettingsInApp()
             null -> Unit
         }
     }

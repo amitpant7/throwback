@@ -170,6 +170,11 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 27d. **Name and place** (owner, 2026-11-20): Settings section **"Connect"** (first, above Focus), row
     **"Instagram · Calls, message alerts, posting · Connected"**; screen title "Instagram", setup
     "Connect Instagram", turn-off "Disconnect Instagram".
+27e. **Instagram app settings** (owner, 2026-11-20): with Instagram connected, a row at the very end
+    of Instagram's settings page, "Open settings in the Instagram app", opens the app's Settings and
+    activity (`instagram://settings`). Settings screens (`com.instagram.urlhandlers.settings.*`): no
+    time limit. Other app screens (Accounts Center shares the feed's screen): 5 minutes in total.
+    Leaving Instagram ends the pass (pickers and Chrome's in-app pages excepted). Rules `appSettings`.
 29. **Instagram app found:** after first login, if the Instagram app is installed, Throwback offers
     "Keep it for calls & messages", "Remove it" (opens Android Settings) or "Decide later".
 

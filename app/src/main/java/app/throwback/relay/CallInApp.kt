@@ -103,6 +103,27 @@ internal object CallInApp {
         }
     }
 
+    /** Longest a settings pass lasts. */
+    const val SETTINGS_PASS_MS = 60 * 60_000L
+
+    /**
+     * "Open settings in the Instagram app" (end of Instagram's settings page): its Settings and
+     * activity, with a pass for its settings screens (see GuardService). False if it couldn't open.
+     */
+    fun settings(context: Context): Boolean {
+        val pkg = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) } ?: return false
+        val link = app.throwback.web.rules.RulesRepository.get(context).rules.value?.appSettings?.link ?: "instagram://settings"
+        return try {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(pkg).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            GuardPass.grant(SystemClock.elapsedRealtime(), SETTINGS_PASS_MS, GuardPass.Kind.SETTINGS)
+            true
+        } catch (e: ActivityNotFoundException) {
+            false
+        } catch (e: SecurityException) {
+            false
+        }
+    }
+
     private fun isInstalled(context: Context, pkg: String): Boolean = try {
         context.packageManager.getPackageInfo(pkg, 0)
         true

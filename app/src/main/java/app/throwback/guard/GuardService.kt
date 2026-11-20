@@ -200,7 +200,7 @@ class GuardService : Service() {
                 val watched = RelayDebug.watchedPackages()
                 if (fg != null && fg in watched) {
                     GuardPass.sawInstagram = true
-                } else if (GuardPass.sawInstagram && fg != null && !PassRules.partOfInstagramFlow(fg, flowPackages())) {
+                } else if (GuardPass.sawInstagram && fg != null && !PassRules.partOfInstagramFlow(fg, flowPackages() + settingsRules()?.flowPackages.orEmpty().takeIf { GuardPass.kind == GuardPass.Kind.SETTINGS }.orEmpty())) {
                     GuardPass.end() // left Instagram: the rest of the pass isn't kept for later
                 }
                 if (GuardPass.kind == GuardPass.Kind.CREATE && fg != null && fg in watched &&
@@ -208,6 +208,20 @@ class GuardService : Service() {
                 ) {
                     Log.i(TAG, "left Instagram's create screens: pass ends")
                     GuardPass.end()
+                }
+                if (GuardPass.kind == GuardPass.Kind.SETTINGS && fg != null && fg in watched &&
+                    now - GuardPass.grantedAt >= PassRules.CREATE_GRACE_MS
+                ) {
+                    val rules = settingsRules()
+                    val screens = rules?.screens?.let { runCatching { Regex(it) }.getOrNull() }
+                    val cls = tracker.currentClass
+                    if (cls != null && (screens == null || !screens.containsMatchIn(cls))) {
+                        GuardPass.outsideMillis += POLL_MS
+                        if (GuardPass.outsideMillis > (rules?.otherScreenMinutes ?: 5) * 60_000L) {
+                            Log.i(TAG, "settings pass: time outside the settings screens is up")
+                            GuardPass.end()
+                        }
+                    }
                 }
                 if (GuardPass.kind == GuardPass.Kind.CALL && (inCallAudio || calls.inCall)) {
                     if (inCallAudio) lastInstagramCallAt = now
@@ -318,5 +332,8 @@ class GuardService : Service() {
     /** Android screens Instagram opens on the way (rules `appCreate.flowPackages`, plus built-in ones). */
     private fun flowPackages(): Set<String> =
         app.throwback.web.rules.RulesRepository.get(this).rules.value?.appCreate?.flowPackages?.toSet().orEmpty()
+
+
+    private fun settingsRules() = app.throwback.web.rules.RulesRepository.get(this).rules.value?.appSettings
 
 }

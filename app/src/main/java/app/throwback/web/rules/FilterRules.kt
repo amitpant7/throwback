@@ -47,6 +47,8 @@ data class FilterRules(
     val explore: ExploreRules? = null,
     /** Posting through the Instagram app (when it's connected): link, its creation screens, the web buttons. */
     val appCreate: AppCreateRules? = null,
+    /** Instagram app settings from Instagram's settings page (when the app is connected). */
+    val appSettings: AppSettingsRules? = null,
     val nav: NavRules? = null,
     val dismissMaxAttempts: Int = 40,
     /** Where Throwback adds its own section to Instagram's settings page (null: no section). */
@@ -321,4 +323,16 @@ data class AppCreateTrigger(
     val text: List<String> = emptyList(),
     /** ...and that holds a file input (the web's own "add to story" picker). */
     val fileInput: Boolean = false,
+)
+
+@Serializable
+data class AppSettingsRules(
+    /** Opens the Instagram app's "Settings and activity". */
+    val link: String,
+    /** Regex on the activity class: Instagram's settings screens (no time limit there). */
+    val screens: String,
+    /** Minutes in total the app's other screens (e.g. Accounts Center, which shares the feed's screen) may show. */
+    val otherScreenMinutes: Int = 5,
+    /** Apps that settings open on the way (e.g. Chrome's in-app pages); they don't end the pass. */
+    val flowPackages: List<String> = emptyList(),
 )

@@ -270,6 +270,11 @@ private fun MainScreen(
                     Toast.makeText(context, R.string.create_in_app_failed, Toast.LENGTH_LONG).show()
                 }
             },
+            onSettingsInApp = {
+                if (!CallInApp.settings(context)) {
+                    Toast.makeText(context, R.string.create_in_app_failed, Toast.LENGTH_LONG).show()
+                }
+            },
             // While locked or paused, screen readers must not reach the feed underneath.
             modifier = if (lockShowing || pauseShowing) Modifier.clearAndSetSemantics {} else Modifier,
         )

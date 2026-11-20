@@ -266,7 +266,14 @@ private fun MainScreen(
             // A calm, positive moment: after a week of use, Google Play's rating card (asked once).
             onCaughtUp = { (context as? android.app.Activity)?.let { RateAsk.onGoodMoment(it) } },
             onCreateInApp = { story ->
-                if (!(if (story) CallInApp.story(context) else CallInApp.create(context))) {
+                if (story) {
+                    val msg = when (CallInApp.story(context)) {
+                        CallInApp.StoryResult.OPENED -> R.string.story_in_app_hint
+                        CallInApp.StoryResult.USED_UP -> R.string.story_in_app_used_up
+                        CallInApp.StoryResult.NO_APP -> R.string.create_in_app_failed
+                    }
+                    Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                } else if (!CallInApp.create(context)) {
                     Toast.makeText(context, R.string.create_in_app_failed, Toast.LENGTH_LONG).show()
                 }
             },

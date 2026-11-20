@@ -212,19 +212,10 @@ class GuardService : Service() {
                     GuardPass.end()
                 }
                 if (GuardPass.kind == GuardPass.Kind.STORY && fg != null && fg in watched) {
-                    val st = storyRules()
-                    val cameraOn = camerasInUse.isNotEmpty()
-                    if (cameraOn) {
-                        GuardPass.cameraOffSince = null
-                    } else if (GuardPass.cameraOffSince == null && now - GuardPass.grantedAt >= (st?.openSeconds ?: 10) * 1000L) {
-                        GuardPass.cameraOffSince = now
-                    }
-                    if (!PassRules.storyPassHolds(
-                            cameraOn, now, GuardPass.grantedAt, GuardPass.cameraOffSince,
-                            (st?.openSeconds ?: 10) * 1000L, (st?.editMinutes ?: 5) * 60_000L,
-                        )
-                    ) {
-                        Log.i(TAG, "story pass: editing time is up")
+                    // Minutes of Instagram for a story; time with the camera on doesn't count.
+                    if (camerasInUse.isEmpty()) GuardPass.outsideMillis += POLL_MS
+                    if (!PassRules.storyPassHolds(GuardPass.outsideMillis, (storyRules()?.editMinutes ?: 5) * 60_000L)) {
+                        Log.i(TAG, "story pass: time is up")
                         GuardPass.end()
                     }
                 }

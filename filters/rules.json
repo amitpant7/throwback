@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112031,
+  "version": 2026112032,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -153,7 +153,7 @@
       "editMinutes": 5,
       "openSeconds": 10,
       "postingChannels": "^(uploads|ig_posting_status)$",
-      "note": "Instagram's story camera and editor live in its main screen (with the feed). The guard allows that screen while the phone's camera is on, then editMinutes once it's off (editing); Instagram's posting notification ends the pass at once (owner, 2026-11-20: 5 minutes)."
+      "note": "Instagram's story camera, gallery and editor live in its main screen (with the feed); the link lands on the feed (owner's phone), so the user swipes right for the camera. The pass gives editMinutes of Instagram, not counting time with the camera on (Android reports camera use to every app; seen on the owner's phone); Instagram's posting notification ends it; 3 a day (owner, 2026-11-20)."
     },
     "note": "The top bar's '+' (opens Post/Story) is an a[href='#'] whose icon Instagram labels 'Home' (2026-11-20); the story bubble's '+' badge is 'Plus icon'. With the Instagram app connected, '+' and 'Your story' open the app's create screen (better editor). The guard allows only its creation screens (activity class pattern); the feed after posting ends the pass. The link opened MediaCaptureActivity on the emulator (2026-11-20)."
   },

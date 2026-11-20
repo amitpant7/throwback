@@ -103,18 +103,29 @@ internal object CallInApp {
         }
     }
 
-    /** "Your story": the app's story camera, with a STORY pass (camera on, then editMinutes; see GuardService). */
-    fun story(context: Context): Boolean {
-        val pkg = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) } ?: return false
+    enum class StoryResult { OPENED, NO_APP, USED_UP }
+
+    /**
+     * "Your story": the Instagram app with a STORY pass: a few minutes (camera time not counted),
+     * ended by posting or leaving; [PassRules.STORIES_PER_DAY] a day.
+     */
+    fun story(context: Context, today: LocalDate = LocalDate.now()): StoryResult {
+        val pkg = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) } ?: return StoryResult.NO_APP
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val day = today.toEpochDay()
+        val lastDay = prefs.getLong("storyDay", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }
+        val count = if (lastDay == day) prefs.getInt("storyCount", 0) else 0
+        if (!PassRules.storyAllowed(lastDay, count, day)) return StoryResult.USED_UP
         val link = app.throwback.web.rules.RulesRepository.get(context).rules.value?.appCreate?.story?.link ?: "instagram://story-camera"
         return try {
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(pkg).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             GuardPass.grant(SystemClock.elapsedRealtime(), CREATE_PASS_MS, GuardPass.Kind.STORY)
-            true
+            prefs.edit().putLong("storyDay", day).putInt("storyCount", count + 1).apply()
+            StoryResult.OPENED
         } catch (e: ActivityNotFoundException) {
-            false
+            StoryResult.NO_APP
         } catch (e: SecurityException) {
-            false
+            StoryResult.NO_APP
         }
     }
 

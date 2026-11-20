@@ -33,12 +33,11 @@ class PassRulesTest {
     }
 
     @Test
-    fun `story pass holds while the camera is on, then 5 minutes of editing`() {
-        val open = 10_000L
-        val edit = 5 * 60_000L
-        assertTrue(PassRules.storyPassHolds(cameraOn = false, now = 5_000, grantedAt = 0, cameraOffSince = null, openMillis = open, editMillis = edit))
-        assertTrue(PassRules.storyPassHolds(cameraOn = true, now = 600_000, grantedAt = 0, cameraOffSince = null, openMillis = open, editMillis = edit))
-        assertTrue(PassRules.storyPassHolds(cameraOn = false, now = 100_000 + edit, grantedAt = 0, cameraOffSince = 100_000, openMillis = open, editMillis = edit))
-        assertFalse(PassRules.storyPassHolds(cameraOn = false, now = 100_001 + edit, grantedAt = 0, cameraOffSince = 100_000, openMillis = open, editMillis = edit))
+    fun `story pass gives 5 minutes not counting camera time, 3 a day`() {
+        assertTrue(PassRules.storyPassHolds(cameraOffMillis = 5 * 60_000L, limitMillis = 5 * 60_000L))
+        assertFalse(PassRules.storyPassHolds(cameraOffMillis = 5 * 60_000L + 1, limitMillis = 5 * 60_000L))
+        assertTrue(PassRules.storyAllowed(lastDay = 9, countThatDay = 3, today = 10))
+        assertTrue(PassRules.storyAllowed(lastDay = 10, countThatDay = 2, today = 10))
+        assertFalse(PassRules.storyAllowed(lastDay = 10, countThatDay = 3, today = 10))
     }
 }

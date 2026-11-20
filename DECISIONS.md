@@ -175,11 +175,14 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     activity (`instagram://settings`). Settings screens (`com.instagram.urlhandlers.settings.*`): no
     time limit. Instagram's main screen (the feed; Back out of settings lands there, and Accounts Center opens there too) is never allowed during this pass (owner, 2026-11-20: Back to the feed was a loophole); Accounts Center is on Instagram's website.
     Leaving Instagram ends the pass (pickers and Chrome's in-app pages excepted). Rules `appSettings`.
-27f. **"Your story" through the Instagram app** (owner, 2026-11-20): Instagram's story camera and
-    editor share the app's main screen with the feed, so the guard uses the phone's camera to tell
-    them apart: allowed while the camera is on; once it's off (editing), 5 more minutes (rules
-    `appCreate.story.editMinutes`); Instagram's posting notification ends the pass at once. The top
-    bar's "+" keeps opening the post/reel editor (its own screen). Camera signal to confirm on a phone.
+27f. **"Your story" through the Instagram app** (owner, 2026-11-20): Instagram's story camera, gallery
+    and editor share the app's main screen with the feed, and its story link lands on the feed. So
+    "Your story" opens the app with a hint ("Swipe right for the story camera") and gives **5 minutes**
+    of Instagram (rules `appCreate.story.editMinutes`), not counting time while the phone's camera is
+    on (Android reports camera use to every app: confirmed on the owner's phone). Instagram's posting
+    notification or leaving the app ends it; at most 3 a day. Throwback can't swipe for the user
+    (that would need the accessibility permission, avoided). The top bar's "+" opens the post/reel
+    editor (its own screen, no time window).
 29. **Instagram app found:** after first login, if the Instagram app is installed, Throwback offers
     "Keep it for calls & messages", "Remove it" (opens Android Settings) or "Decide later".
 

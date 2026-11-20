@@ -158,17 +158,15 @@ internal object PassRules {
     fun partOfInstagramFlow(pkg: String, extra: Set<String> = emptySet()): Boolean = pkg in FLOW_PACKAGES || pkg in extra
 
     /**
-     * Story pass (owner, 2026-11-20): Instagram's story camera and editor share its main screen with
-     * the feed, so the phone's camera tells them apart. While the camera is on: allowed. Once it is
-     * off (editing a photo, or the feed): [editMillis] more. The first [openMillis] after the tap
-     * count as opening. Returns false when the pass should end.
+     * Story pass (owner, 2026-11-20): Instagram's story camera, gallery and editor share the app's main
+     * screen with the feed, so the user gets a few minutes of Instagram ([limitMillis], counted only
+     * while the phone's camera is off: taking photos never uses it up). False when it should end.
      */
-    fun storyPassHolds(cameraOn: Boolean, now: Long, grantedAt: Long, cameraOffSince: Long?, openMillis: Long, editMillis: Long): Boolean = when {
-        cameraOn -> true
-        now - grantedAt < openMillis -> true
-        cameraOffSince == null -> true
-        else -> now - cameraOffSince <= editMillis
-    }
+    fun storyPassHolds(cameraOffMillis: Long, limitMillis: Long): Boolean = cameraOffMillis <= limitMillis
+
+    const val STORIES_PER_DAY = 3
+
+    fun storyAllowed(lastDay: Long?, countThatDay: Int, today: Long): Boolean = lastDay != today || countThatDay < STORIES_PER_DAY
 
     /** Instagram's own redirects while the create screen opens. */
     const val CREATE_GRACE_MS = 3_000L

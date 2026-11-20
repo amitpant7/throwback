@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tip icon: GTA 6 (sunset, skyline and palm). Original artwork from the About mockup; swap this file to change it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="42dp" android:height="42dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <group>
+        <clip-path android:pathData="M13 3h22a10 10 0 0 1 10 10v22a10 10 0 0 1 -10 10h-22a10 10 0 0 1 -10 -10v-22a10 10 0 0 1 10 -10z" />
+        <path android:pathData="M3 3h42v42h-42z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear" android:startX="3" android:startY="3"
+                    android:endX="3" android:endY="45">
+                    <item android:offset="0" android:color="#6C4FA3" />
+                    <item android:offset="0.55" android:color="#D8719D" />
+                    <item android:offset="0.82" android:color="#F7A86B" />
+                    <item android:offset="1" android:color="#F7A86B" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <path android:fillColor="#FFD36E"
+            android:pathData="M11.5 31a9.5 9.5 0 1 0 19 0a9.5 9.5 0 1 0 -19 0z" />
+        <path android:fillColor="#F19A7A"
+            android:pathData="M10 29.6h22v1.1h-22z" />
+        <path android:fillColor="#F19A7A"
+            android:pathData="M10 32.2h22v1.5h-22z" />
+        <path android:fillColor="#F19A7A"
+            android:pathData="M10 34.8h22v1.9h-22z" />
+        <path android:fillColor="#5B3F8C"
+            android:pathData="M4 26h4v11h-4z" />
+        <path android:fillColor="#5B3F8C"
+            android:pathData="M8.6 22.5h3.2v14.5h-3.2z" />
+        <path android:fillColor="#5B3F8C"
+            android:pathData="M29.5 24.5h3.6v12.5h-3.6z" />
+        <path android:fillColor="#5B3F8C"
+            android:pathData="M33.6 28h3v9h-3z" />
+        <path android:fillColor="#4B3A8C"
+            android:pathData="M3 36.5h42v9h-42z" />
+        <path android:fillColor="#FFD36E" android:fillAlpha="0.65"
+            android:pathData="M14.5 38.6h13a0.5 0.5 0 0 1 0.5 0.5v0a0.5 0.5 0 0 1 -0.5 0.5h-13a0.5 0.5 0 0 1 -0.5 -0.5v0a0.5 0.5 0 0 1 0.5 -0.5z" />
+        <path android:fillColor="#FFD36E" android:fillAlpha="0.5"
+            android:pathData="M17 41h8a0.5 0.5 0 0 1 0.5 0.5v0a0.5 0.5 0 0 1 -0.5 0.5h-8a0.5 0.5 0 0 1 -0.5 -0.5v0a0.5 0.5 0 0 1 0.5 -0.5z" />
+        <path android:fillColor="#FFD36E" android:fillAlpha="0.35"
+            android:pathData="M19 43.2h4a0.5 0.5 0 0 1 0.5 0.5v0a0.5 0.5 0 0 1 -0.5 0.5h-4a0.5 0.5 0 0 1 -0.5 -0.5v0a0.5 0.5 0 0 1 0.5 -0.5z" />
+        <path android:pathData="M40 46C39.2 38 38.6 30 36.8 21.5"
+            android:strokeColor="#2B1F4D" android:strokeWidth="2.4"
+            android:strokeLineCap="round" />
+        <path android:fillColor="#2B1F4D"
+            android:pathData="M36.8 21.5C33 17.6 28.4 17.3 25 19.4 29 18.8 32.8 19.8 36.8 21.5ZM36.8 21.5C39.6 16.4 44.4 15.4 47.5 17.4 43.6 17.4 40.2 19 36.8 21.5ZM36.8 21.5C34.8 16.4 35.2 12.2 37.8 9 36.9 13.2 37.2 17.4 36.8 21.5ZM36.8 21.5C41.8 20.4 46 22.4 47 26.4 44 23.9 40.4 22.4 36.8 21.5ZM36.8 21.5C31.8 21.6 28.6 24 27.6 27.6 30.2 24.6 33.2 22.6 36.8 21.5Z" />
+    </group>
+</vector>

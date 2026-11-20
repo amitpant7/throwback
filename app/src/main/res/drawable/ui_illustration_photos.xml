@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- First-launch illustration: a small stack of instant photos. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="342dp" android:height="210dp"
+    android:viewportWidth="342" android:viewportHeight="210">
+    <group android:pivotX="102" android:pivotY="102" android:rotation="-8">
+        <path android:fillColor="#000000" android:fillAlpha="0.12"
+            android:pathData="M38 24h128a4 4 0 0 1 4 4v152a4 4 0 0 1 -4 4h-128a4 4 0 0 1 -4 -4v-152a4 4 0 0 1 4 -4z" />
+        <path android:fillColor="#F4EFE6"
+            android:pathData="M38 22h128a4 4 0 0 1 4 4v152a4 4 0 0 1 -4 4h-128a4 4 0 0 1 -4 -4v-152a4 4 0 0 1 4 -4z" />
+        <path android:fillColor="#9FC3A8"
+            android:pathData="M42 30h120v122h-120z" />
+    </group>
+    <group android:pivotX="254" android:pivotY="94" android:rotation="7">
+        <path android:fillColor="#000000" android:fillAlpha="0.12"
+            android:pathData="M190 16h128a4 4 0 0 1 4 4v152a4 4 0 0 1 -4 4h-128a4 4 0 0 1 -4 -4v-152a4 4 0 0 1 4 -4z" />
+        <path android:fillColor="#F4EFE6"
+            android:pathData="M190 14h128a4 4 0 0 1 4 4v152a4 4 0 0 1 -4 4h-128a4 4 0 0 1 -4 -4v-152a4 4 0 0 1 4 -4z" />
+        <path android:fillColor="#E0A7A0"
+            android:pathData="M194 22h120v122h-120z" />
+    </group>
+    <group android:pivotX="178" android:pivotY="114" android:rotation="-1">
+        <path android:fillColor="#000000" android:fillAlpha="0.12"
+            android:pathData="M114 36h128a4 4 0 0 1 4 4v152a4 4 0 0 1 -4 4h-128a4 4 0 0 1 -4 -4v-152a4 4 0 0 1 4 -4z" />
+        <path android:fillColor="#F4EFE6"
+            android:pathData="M114 34h128a4 4 0 0 1 4 4v152a4 4 0 0 1 -4 4h-128a4 4 0 0 1 -4 -4v-152a4 4 0 0 1 4 -4z" />
+        <path android:fillColor="#D9B38C"
+            android:pathData="M118 42h120v122h-120z" />
+    </group>
+</vector>

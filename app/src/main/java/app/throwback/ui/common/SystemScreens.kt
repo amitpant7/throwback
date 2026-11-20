@@ -1,0 +1,81 @@
+package app.throwback.ui.common
+
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+
+/**
+ * Opens Android and Play Store screens. Every function returns false instead of crashing when
+ * the phone has no app for the intent (some OEM builds strip settings screens).
+ */
+internal object SystemScreens {
+
+    fun openPlayStore(context: Context, packageName: String): Boolean =
+        context.tryStart(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName"))) ||
+            openUrl(context, "https://play.google.com/store/apps/details?id=$packageName")
+
+    fun openAppDetails(context: Context, packageName: String): Boolean =
+        context.tryStart(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+
+    fun launchApp(context: Context, packageName: String): Boolean {
+        val intent = context.packageManager.getLaunchIntentForPackage(packageName) ?: return false
+        return context.tryStart(intent)
+    }
+
+    fun openUrl(context: Context, url: String): Boolean =
+        context.tryStart(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE))
+
+    fun openNotificationAccess(context: Context): Boolean =
+        context.tryStart(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) || openOwnDetails(context)
+
+    fun openUsageAccess(context: Context): Boolean =
+        context.tryStart(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) || openOwnDetails(context)
+
+    fun openOverlaySettings(context: Context): Boolean =
+        context.tryStart(
+            Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}")),
+        ) || context.tryStart(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)) || openOwnDetails(context)
+
+    private fun openOwnDetails(context: Context): Boolean = openAppDetails(context, context.packageName)
+
+    private fun Context.tryStart(intent: Intent): Boolean {
+        if (findActivity() == null) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return try {
+            startActivity(intent)
+            true
+        } catch (_: ActivityNotFoundException) {
+            false
+        } catch (_: SecurityException) {
+            false
+        }
+    }
+
+    private tailrec fun Context.findActivity(): Activity? = when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
+    }
+}
+
+/**
+ * Runs [check] now and again every time the screen resumes, e.g. when the user comes back
+ * from an Android settings screen or the Play Store.
+ */
+@Composable
+internal fun <T> rememberCheckedOnResume(check: (Context) -> T): State<T> {
+    val context = LocalContext.current
+    val state = remember { mutableStateOf(check(context)) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { state.value = check(context) }
+    return state
+}

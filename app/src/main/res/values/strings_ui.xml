@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings owned by the ui area (onboarding, settings, Messages & calls, shortcut, About, mindful pause). -->
+<resources>
+
+    <!-- Common -->
+    <string name="ui_back">Back</string>
+    <string name="ui_next">Next</string>
+    <string name="ui_not_now">Not now</string>
+    <string name="ui_finish">Finish</string>
+    <string name="ui_done_next">Done, next</string>
+    <string name="ui_allow">Allow</string>
+    <string name="ui_granted">Done</string>
+    <string name="ui_preview_note">Preview: message and call alerts arrive in a later version.</string>
+    <string name="ui_settings_failed">Couldn\'t open Android settings.</string>
+    <string name="ui_link_failed">Couldn\'t open the link.</string>
+    <string name="ui_play_store_failed">Couldn\'t open the Play Store.</string>
+    <string name="ui_instagram_not_installed_message">Install the Instagram app first.</string>
+    <string name="ui_instagram_open_failed">Couldn\'t open the Instagram app.</string>
+
+    <!-- 1 · First launch -->
+    <string name="ui_onb_title">Instagram, the way it used to be.</string>
+    <string name="ui_onb_subtitle">Only the people you follow and care about.</string>
+    <string name="ui_onb_no_reels">No Reels</string>
+    <string name="ui_onb_no_explore">No Explore grid</string>
+    <string name="ui_onb_no_suggested">No suggested posts</string>
+    <string name="ui_onb_no_ads">No ads</string>
+    <string name="ui_onb_stories">Stories</string>
+    <string name="ui_onb_messages">Messages</string>
+    <!-- TalkBack for the ticked items, e.g. "Stories, still here". -->
+    <string name="ui_onb_kept_description">%1$s, still here</string>
+    <string name="ui_onb_login">Log in to Instagram</string>
+    <string name="ui_onb_note">You log in on Instagram\'s own page. Throwback never sees your password.\nNot affiliated with Instagram or Meta.</string>
+
+    <!-- 1b · Instagram app found -->
+    <string name="ui_found_icon_description">Instagram app installed</string>
+    <string name="ui_found_title">You still have the Instagram app</string>
+    <string name="ui_found_body">It\'s the quickest way back to Reels. What do you want to do with it?</string>
+    <string name="ui_found_keep_title">Keep it for calls &amp; messages</string>
+    <string name="ui_found_keep_body">Hide it, get message and call alerts, and Throwback keeps you out of it.</string>
+    <string name="ui_found_remove_title">Remove it</string>
+    <string name="ui_found_remove_body">Opens the app\'s page in Android Settings. Tap Uninstall there.</string>
+    <string name="ui_found_later">Decide later</string>
+    <string name="ui_found_footer">You can change this anytime in Settings → Messages &amp; calls.</string>
+
+    <!-- 4 · Settings -->
+    <string name="ui_settings_title">Settings</string>
+    <string name="ui_removes_title">Throwback removes</string>
+    <string name="ui_removes_reels">Reels</string>
+    <string name="ui_removes_explore">Explore grid</string>
+    <string name="ui_removes_suggested">Suggested posts</string>
+    <string name="ui_removes_ads">Ads</string>
+    <string name="ui_removes_note">Your feed opens at Following, newest first. These are always on. That\'s the point.</string>
+    <string name="ui_section_focus">Focus</string>
+    <string name="ui_time_limit_title">Daily time limit</string>
+    <string name="ui_time_limit_sub">Lock Throwback after a set time each day</string>
+    <string name="ui_pause_title">Mindful pause</string>
+    <string name="ui_pause_sub">A short pause before Instagram opens</string>
+    <string name="ui_section_notifications">Notifications</string>
+    <string name="ui_messages_title">Messages &amp; calls</string>
+    <string name="ui_messages_sub">Get message and call alerts</string>
+    <string name="ui_messages_value_setup">Set up</string>
+    <string name="ui_messages_value_on">On</string>
+    <string name="ui_section_app">App</string>
+    <string name="ui_shortcut_title">Add to home screen</string>
+    <string name="ui_about_title">About &amp; support</string>
+
+    <!-- 13–16 · Messages & calls wizard -->
+    <string name="ui_wizard_step_optional">Step %1$d of %2$d · Optional</string>
+    <string name="ui_wizard_step">Step %1$d of %2$d</string>
+
+    <string name="ui_install_title">Get message and call alerts</string>
+    <string name="ui_install_body">Instagram only sends notifications to its own app. So the real app stays on your phone, hidden, and Throwback keeps you out of it.</string>
+    <string name="ui_install_point_messages">Message alerts open in Throwback</string>
+    <string name="ui_install_point_calls">Calls ring and you answer normally</string>
+    <string name="ui_install_point_guard">Open the Instagram app outside a call and Throwback brings you back</string>
+    <string name="ui_install_app_name">Instagram app</string>
+    <string name="ui_install_not_installed">Not installed</string>
+    <string name="ui_install_installed">Installed</string>
+    <string name="ui_install_button">Install</string>
+    <string name="ui_install_button_description">Install the Instagram app from the Play Store</string>
+
+    <string name="ui_quiet_title">Quiet the Instagram app</string>
+    <!-- %1$s is ui_quiet_path, shown in bold. -->
+    <string name="ui_quiet_body">Log in to the Instagram app once, then go to %1$s and set:</string>
+    <string name="ui_quiet_path">Profile → Menu → Notifications</string>
+    <string name="ui_quiet_row_messages">Messages</string>
+    <string name="ui_quiet_row_calls">Calls</string>
+    <string name="ui_quiet_row_posts">Posts, stories and comments</string>
+    <string name="ui_quiet_row_following">Following and followers</string>
+    <string name="ui_quiet_row_live">Live and reels</string>
+    <string name="ui_quiet_row_fundraisers">Fundraisers</string>
+    <string name="ui_quiet_row_from_instagram">From Instagram</string>
+    <string name="ui_quiet_keep_on">Keep on</string>
+    <string name="ui_quiet_turn_off">Turn off</string>
+    <string name="ui_quiet_footer">Throwback also removes anything that slips through, so this just keeps your phone extra quiet.</string>
+    <string name="ui_quiet_open_instagram">Open Instagram\'s settings</string>
+
+    <string name="ui_perm_title">Three permissions</string>
+    <string name="ui_perm_body">Each opens an Android settings screen. Turn Throwback on there, then come back.</string>
+    <string name="ui_perm_notifications_title">Notification access</string>
+    <string name="ui_perm_notifications_body">To pass on messages and calls, and drop the rest</string>
+    <string name="ui_perm_usage_title">Usage access</string>
+    <string name="ui_perm_usage_body">To notice when the Instagram app opens</string>
+    <string name="ui_perm_overlay_title">Display over other apps</string>
+    <string name="ui_perm_overlay_body">To cover the Instagram app and bring you back</string>
+    <!-- TalkBack for the Allow button, e.g. "Allow Usage access". -->
+    <string name="ui_perm_allow_description">Allow %1$s</string>
+    <string name="ui_perm_privacy">Throwback only looks at Instagram. Nothing is stored or sent anywhere.</string>
+    <string name="ui_perm_preview_note">Preview: message and call alerts arrive in a later version. Until then, Throwback won\'t appear in the notification access list.</string>
+
+    <string name="ui_hide_title">Hide the Instagram icon</string>
+    <string name="ui_hide_body">Out of sight, out of mind. On your phone:</string>
+    <string name="ui_hide_your_phone">Your phone</string>
+    <string name="ui_hide_brand_samsung">Samsung</string>
+    <string name="ui_hide_steps_samsung">Home screen settings → Hide apps</string>
+    <string name="ui_hide_brand_oneplus">OnePlus / Oppo</string>
+    <string name="ui_hide_steps_oneplus">App drawer → swipe right → Hidden space</string>
+    <string name="ui_hide_brand_xiaomi">Xiaomi</string>
+    <string name="ui_hide_steps_xiaomi">Settings → Apps → Hide apps</string>
+    <string name="ui_hide_brand_other">Other phones</string>
+    <string name="ui_hide_steps_other">Move it into a folder on your last home page</string>
+    <string name="ui_hide_check_title">Check it works</string>
+    <string name="ui_hide_check_notification">Test notification</string>
+    <string name="ui_hide_check_guard">Open Instagram, get sent back</string>
+    <string name="ui_hide_check_later">Later version</string>
+
+    <!-- 17 · Messages & calls settings -->
+    <string name="ui_status_ready_title">Ready</string>
+    <string name="ui_status_ready_body">Instagram app installed and all permissions granted</string>
+    <string name="ui_status_no_app_title">Instagram app not installed</string>
+    <string name="ui_status_no_app_body">Install it to get message and call alerts</string>
+    <string name="ui_status_incomplete_title">Setup not finished</string>
+    <plurals name="ui_status_permissions_off">
+        <item quantity="one">%d permission is still off</item>
+        <item quantity="other">%d permissions are still off</item>
+    </plurals>
+    <string name="ui_status_finish">Finish setup</string>
+    <string name="ui_always_on">Always on</string>
+    <string name="ui_always_messages">Messages</string>
+    <string name="ui_always_calls">Calls</string>
+    <string name="ui_always_on_description">On</string>
+    <string name="ui_also_notify">Also notify me about</string>
+    <string name="ui_notify_likes">Likes</string>
+    <string name="ui_notify_comments">Comments</string>
+    <string name="ui_notify_new_followers">New followers</string>
+    <string name="ui_notify_story_mentions">Story mentions and tags</string>
+    <string name="ui_notify_live_videos">Live videos</string>
+    <string name="ui_notify_footer">Everything you leave off is removed before you see it.</string>
+    <string name="ui_turn_off_messages">Turn off Messages &amp; calls</string>
+
+    <!-- 5 · Add to home screen -->
+    <string name="ui_shortcut_default_name">Throwback</string>
+    <string name="ui_shortcut_preview">Preview</string>
+    <string name="ui_shortcut_name_label">Name</string>
+    <string name="ui_shortcut_icon_label">Icon</string>
+    <string name="ui_shortcut_icon_sage">Sage icon</string>
+    <string name="ui_shortcut_icon_dark">Dark icon</string>
+    <string name="ui_shortcut_icon_light">Light icon</string>
+    <string name="ui_shortcut_icon_photo">Photo frame icon</string>
+    <string name="ui_shortcut_note">Call it whatever you like. Throwback doesn\'t use Instagram\'s name or logo, but your shortcut is yours to name.</string>
+    <string name="ui_shortcut_add">Add to home screen</string>
+    <string name="ui_shortcut_requested">Sent to your home screen. Your phone may ask you to confirm.</string>
+    <string name="ui_shortcut_unsupported">Your home screen app can\'t add shortcuts. Try long-pressing Throwback in your app list instead.</string>
+
+    <!-- 6 · About & support -->
+    <string name="ui_about_version">v%1$s</string>
+    <string name="ui_support_title">Support Throwback</string>
+    <string name="ui_support_body">Throwback is free and stays free. If it gave you some time back, you can say thanks. Nothing unlocks; it just keeps the filters working. (And yes, the rock show and GTA 6 are for all the free time I now have.)</string>
+    <string name="ui_tip_beer">Beer</string>
+    <string name="ui_tip_rock">Rock show</string>
+    <string name="ui_tip_gta">GTA 6</string>
+    <string name="ui_tips_soon">Tips arrive with the Play Store release.</string>
+    <string name="ui_link_source">Source code on GitHub</string>
+    <string name="ui_link_privacy">Privacy policy</string>
+    <string name="ui_filters_updated">Filters updated</string>
+    <string name="ui_filters_updated_unknown">—</string>
+    <string name="ui_filters_updated_unknown_description">%1$s: not known yet</string>
+    <string name="ui_link_report">Report something Throwback missed</string>
+    <string name="ui_disclaimer">Not affiliated with, endorsed or sponsored by Instagram or Meta. Instagram is a trademark of Meta Platforms, Inc.</string>
+
+    <!-- 3 · Mindful pause -->
+    <string name="ui_pause_opening_in">Opening in %1$d</string>
+    <string name="ui_pause_not_now">Not now</string>
+    <string name="ui_pause_continue">Continue</string>
+    <!-- Short original lines, one picked at random per pause. Not quotes from anyone. -->
+    <string-array name="ui_pause_lines">
+        <item>Take a breath. The people you follow will still be here in three seconds.</item>
+        <item>You opened this on purpose. What did you come to see?</item>
+        <item>Catch up with your people, then get back to your day.</item>
+        <item>A short visit is still a good visit.</item>
+        <item>Look up for a moment. Then decide.</item>
+        <item>Check in on your friends, not on the feed.</item>
+        <item>Say hello, see what\'s new, and leave while it still feels good.</item>
+    </string-array>
+</resources>

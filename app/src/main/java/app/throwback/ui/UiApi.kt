@@ -1,37 +1,26 @@
 package app.throwback.ui
 
 import android.content.Context
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import app.throwback.core.UiPreferences
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
+import app.throwback.ui.onboarding.OnboardingFlowContent
+import app.throwback.ui.pause.MindfulPauseContent
+import app.throwback.ui.settings.SettingsRootContent
 
 /*
- * STUBS owned by the ui agent: replace the bodies, keep the signatures.
+ * Public entry points of the ui area, used by core/AppRoot.kt. Signatures are part of the
+ * contract in docs/ARCHITECTURE.md; the implementations live in the sub-packages.
  */
 
 object UiModule {
-    /** Called once by ThrowbackApp. */
-    fun create(context: Context): UiPreferences = object : UiPreferences {
-        private val done = MutableStateFlow(false)
-        override val onboardingDone: Flow<Boolean> = done
-        override val mindfulPause: Flow<Boolean> = MutableStateFlow(false)
-        override suspend fun setOnboardingDone() { done.value = true }
-    }
+    /** Called once by ThrowbackApp. DataStore-backed (file `ui_prefs`). */
+    fun create(context: Context): UiPreferences = UiPrefs.from(context)
 }
 
 /** First launch, then (if the Instagram app is installed) the "Instagram app found" choice. */
 @Composable
 fun OnboardingFlow(onFinished: () -> Unit, onOpenMessagesSetup: () -> Unit) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Button(onClick = onFinished) { Text("Log in to Instagram") }
-    }
+    OnboardingFlowContent(onFinished = onFinished, onOpenMessagesSetup = onOpenMessagesSetup)
 }
 
 enum class SettingsStart { Home, MessagesAndCalls }
@@ -39,6 +28,7 @@ enum class SettingsStart { Home, MessagesAndCalls }
 /**
  * Settings and everything reachable from it: Messages & calls wizard and settings, home-screen shortcut,
  * About & support. The time-limit screens come from the timelimit package via [timeLimitScreen].
+ * System back pops one level; at the root it calls [onClose].
  */
 @Composable
 fun SettingsRoot(
@@ -46,15 +36,11 @@ fun SettingsRoot(
     timeLimitScreen: @Composable (onClose: () -> Unit) -> Unit,
     startAt: SettingsStart = SettingsStart.Home,
 ) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Button(onClick = onClose) { Text("Settings (stub) – close") }
-    }
+    SettingsRootContent(onClose = onClose, timeLimitScreen = timeLimitScreen, startAt = startAt)
 }
 
-/** Optional mindful pause before Instagram loads. */
+/** Optional mindful pause before Instagram loads: a short line and a 3-second countdown. */
 @Composable
 fun MindfulPauseScreen(onContinue: () -> Unit, onNotNow: () -> Unit) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Button(onClick = onContinue) { Text("Continue") }
-    }
+    MindfulPauseContent(onContinue = onContinue, onNotNow = onNotNow)
 }

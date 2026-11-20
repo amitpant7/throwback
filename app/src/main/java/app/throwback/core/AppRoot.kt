@@ -4,6 +4,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import app.throwback.R
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
@@ -56,7 +65,13 @@ fun AppRoot(app: ThrowbackApp, deepLink: String?, onCloseApp: () -> Unit) {
                     settingsOpen = SettingsStart.MessagesAndCalls
                 },
             )
-            true -> MainScreen(app, deepLink, onCloseApp, onOpenSettings = { settingsOpen = SettingsStart.Home })
+            true -> MainScreen(
+                app = app,
+                deepLink = deepLink,
+                settingsOpen = settingsOpen != null,
+                onCloseApp = onCloseApp,
+                onOpenSettings = { settingsOpen = SettingsStart.Home },
+            )
         }
 
         settingsOpen?.let { start ->
@@ -71,7 +86,13 @@ fun AppRoot(app: ThrowbackApp, deepLink: String?, onCloseApp: () -> Unit) {
 }
 
 @Composable
-private fun MainScreen(app: ThrowbackApp, deepLink: String?, onCloseApp: () -> Unit, onOpenSettings: () -> Unit) {
+private fun MainScreen(
+    app: ThrowbackApp,
+    deepLink: String?,
+    settingsOpen: Boolean,
+    onCloseApp: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
     val timeLimit = app.timeLimit
     val lockState by timeLimit.state.collectAsStateWithLifecycle()
     // null while loading, so the feed never flashes for a frame before the pause screen.
@@ -84,15 +105,24 @@ private fun MainScreen(app: ThrowbackApp, deepLink: String?, onCloseApp: () -> U
     LaunchedEffect(lockState) {
         if (lockState !is LockState.Locked && mode == WebMode.MESSAGES_ONLY) mode = WebMode.FULL
     }
-    LaunchedEffect(mode) { timeLimit.onForeground(mode) }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { timeLimit.onForeground(mode) }
-    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { timeLimit.onBackground() }
+    // Only time actually spent on Instagram counts: not while Throwback's own settings or the
+    // mindful pause cover it, and not while the activity is paused.
+    val pauseShowing = mindfulPause == true && !pauseDone && deepLink == null
+    val onInstagram = mindfulPause != null && !pauseShowing && !settingsOpen
+    var resumed by remember { mutableStateOf(false) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { resumed = true }
+    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { resumed = false }
+    LaunchedEffect(resumed, onInstagram, mode) {
+        if (resumed && onInstagram) timeLimit.onForeground(mode) else timeLimit.onBackground()
+    }
 
     if (mindfulPause == null) return
-    if (mindfulPause == true && !pauseDone && deepLink == null) {
+    if (pauseShowing) {
         MindfulPauseScreen(onContinue = { pauseDone = true }, onNotNow = onCloseApp)
         return
     }
+
+    val lockShowing = mode == WebMode.FULL && lockState is LockState.Locked
 
     Box(Modifier.fillMaxSize()) {
         InstagramScreen(
@@ -100,6 +130,8 @@ private fun MainScreen(app: ThrowbackApp, deepLink: String?, onCloseApp: () -> U
             startUrl = deepLink,
             onLocationChanged = { path = it },
             onExitRequest = onCloseApp,
+            // While locked, screen readers must not reach the feed under the lock screen.
+            modifier = if (lockShowing) Modifier.clearAndSetSemantics {} else Modifier,
         )
 
         val onHomeFeed = path == "/" || path.isEmpty()
@@ -113,12 +145,40 @@ private fun MainScreen(app: ThrowbackApp, deepLink: String?, onCloseApp: () -> U
             }
         }
 
-        if (mode == WebMode.FULL && lockState is LockState.Locked) {
+        if (mode == WebMode.MESSAGES_ONLY) {
+            MessagesOnlyBar(
+                onAskForMoreTime = { mode = WebMode.FULL },
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
+
+        if (lockShowing) {
             TimeLimitOverlay(
                 controller = timeLimit,
                 onOpenMessagesOnly = { mode = WebMode.MESSAGES_ONLY },
                 onCloseApp = onCloseApp,
             )
+        }
+    }
+}
+
+/** Shown at the bottom in messages-only mode, so the user can go back to the lock screen and ask for more time. */
+@Composable
+private fun MessagesOnlyBar(onAskForMoreTime: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(color = ThrowbackTheme.colors.surface, modifier = modifier.fillMaxWidth()) {
+        Row(
+            Modifier.navigationBarsPadding().padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.messages_only_bar),
+                style = MaterialTheme.typography.bodySmall,
+                color = ThrowbackTheme.colors.muted,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onAskForMoreTime) {
+                Text(stringResource(R.string.messages_only_ask_more), color = ThrowbackTheme.colors.accentText)
+            }
         }
     }
 }

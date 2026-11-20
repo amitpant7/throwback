@@ -3,4 +3,6 @@
 <resources>
     <string name="app_name">Throwback</string>
     <string name="open_settings">Open Throwback settings</string>
+    <string name="messages_only_bar">Messages only. The feed is locked, and time here doesn\'t count.</string>
+    <string name="messages_only_ask_more">Ask for more time</string>
 </resources>

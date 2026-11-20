@@ -1648,7 +1648,7 @@
    *  - look-ahead: while a story plays, the first prefetchKB of the next prefetchAhead videos (and a
    *    little of their audio) are downloaded and kept in memory; when the player asks for a piece
    *    inside that range it is handed over from memory, otherwise it goes to the network as usual.
-   * Memory stays small (about 1.5 MB with the defaults): entries behind the current story or past the
+   * Memory stays small (under about 3 MB with the defaults: the current story plus 5 ahead): entries behind the current story or past the
    * look-ahead are dropped, and everything is dropped when leaving stories. Off with Data Saver.
    */
   var nativeFetch = null;

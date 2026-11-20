@@ -56,7 +56,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 13i. **Explore, 5 minutes a day** (decided 2026-11-20): the Explore grid on the Search tab shows for
     5 minutes a day of time actually on that tab (rules `explore.dailySeconds`), then it is hidden
     as before and "Enough for today… Your time is yours. Keep it. Go have an argument with your sibling instead." shows in its
-    place until midnight. Search keeps working. Stored on the device per day.
+    place until midnight. Search keeps working. Stored on the device per day. **Design B** (owner,
+    2026-11-20): a calm scene above the lines, one picked at random each time from five drawn scenes
+    (sunset hills, misty lake, moonlit sea, aurora, dunes) plus photos listed in rules
+    `explore.images`, which must be served from Throwback's own GitHub repo (CC0 or own art).
     **Reels there play as reels** (owner, 2026-11-20): Instagram's mobile site has no single-reel
     player (a reel tile opens as a static post, even with Throwback off). So while the minutes last,
     tapping a reel tile on Explore or in search opens Throwback's own full-screen swipe player with

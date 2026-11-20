@@ -165,6 +165,8 @@ data class ExploreRules(
      * reel player presses for its like and save buttons.
      */
     val actions: ExploreActions? = null,
+    /** Calm photos for "Enough for today" (Throwback's own repo only), picked at random with the drawn scenes. */
+    val images: List<String> = emptyList(),
 )
 
 @Serializable

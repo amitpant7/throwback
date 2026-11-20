@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112034,
+  "version": 2026112035,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -166,6 +166,7 @@
     "keep": "input[type='search'], input[aria-label*='Search' i], input[placeholder*='Search' i]",
     "items": "a[href^='/p/'], a[href^='/reel/'], a[href*='/p/'], a[href*='/reel/']",
     "dailySeconds": 300,
+    "images": [],
     "actions": {
       "like": ["Like", "Gefällt mir", "J’aime", "Me gusta", "Curtir", "Mi piace"],
       "unlike": ["Unlike", "Gefällt mir nicht mehr", "Je n’aime plus", "Ya no me gusta", "Descurtir", "Non mi piace più"],

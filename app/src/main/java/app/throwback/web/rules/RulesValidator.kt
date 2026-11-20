@@ -105,6 +105,10 @@ object RulesValidator {
             checkSelector(e.items, "explore.items", errors)
             checkOn(e.on, "explore")
             check(e.dailySeconds in 0..3600) { "explore.dailySeconds out of range" }
+            check(e.images.size <= 50) { "explore.images: too many" }
+            e.images.forEach {
+                check(it.startsWith("https://raw.githubusercontent.com/amitpant7/throwback/")) { "explore.images must be in Throwback's repo" }
+            }
             rules.appSettings?.let { a ->
                 check(a.link.startsWith("instagram://")) { "appSettings.link must be an instagram:// link" }
                 check(runCatching { Regex(a.screens) }.isSuccess) { "appSettings.screens is not a valid pattern" }

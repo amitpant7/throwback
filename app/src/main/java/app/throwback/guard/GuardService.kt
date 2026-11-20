@@ -223,6 +223,7 @@ class GuardService : Service() {
                     if (camerasInUse.isEmpty()) GuardPass.outsideMillis += POLL_MS
                     if (!PassRules.storyPassHolds(GuardPass.outsideMillis, (storyRules()?.editMinutes ?: 5) * 60_000L)) {
                         Log.i(TAG, "story pass: time is up")
+                        storyTimeUp = true
                         GuardPass.end()
                     }
                 }
@@ -288,7 +289,8 @@ class GuardService : Service() {
     private fun cover(now: Long) {
         Log.i(TAG, "Instagram app opened outside a call: back to Throwback")
         lastCoverAt = now
-        if (overlay.show()) coverShownAt = now
+        if (overlay.show(storyTimeUp)) coverShownAt = now
+        storyTimeUp = false
         // Allowed from the background: the user granted "display over other apps".
         try {
             startActivity(
@@ -382,5 +384,9 @@ class GuardService : Service() {
             Log.w(TAG, "camera watch unavailable: ${e.javaClass.simpleName}")
         }
     }
+
+
+    /** The story pass just ran out without a post: the next cover says so. */
+    private var storyTimeUp = false
 
 }

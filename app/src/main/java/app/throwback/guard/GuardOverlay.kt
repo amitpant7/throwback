@@ -47,13 +47,14 @@ internal class GuardOverlay(private val context: Context) {
 
     val showing: Boolean get() = view != null
 
-    fun show(): Boolean {
+    /** @param storyTimeUp the story pass ran out without a post: the cover says so, with a wink. */
+    fun show(storyTimeUp: Boolean = false): Boolean {
         if (view != null) return true
         val owner = OverlayOwner().also { it.start() }
         val v = ComposeView(context).apply {
             setViewTreeLifecycleOwner(owner)
             setViewTreeSavedStateRegistryOwner(owner)
-            setContent { ThrowbackTheme { Cover() } }
+            setContent { ThrowbackTheme { Cover(storyTimeUp) } }
         }
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -113,7 +114,7 @@ internal class GuardOverlay(private val context: Context) {
 }
 
 @androidx.compose.runtime.Composable
-private fun Cover() {
+private fun Cover(storyTimeUp: Boolean) {
     val colors = ThrowbackTheme.colors
     Column(
         Modifier.fillMaxSize().background(colors.bg).padding(32.dp),
@@ -127,14 +128,14 @@ private fun Cover() {
         )
         Spacer(Modifier.height(20.dp))
         Text(
-            stringResource(R.string.guard_cover_title),
+            stringResource(if (storyTimeUp) R.string.guard_cover_story_title else R.string.guard_cover_title),
             style = MaterialTheme.typography.headlineSmall,
             color = colors.text,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            stringResource(R.string.guard_cover_body),
+            stringResource(if (storyTimeUp) R.string.guard_cover_story_body else R.string.guard_cover_body),
             style = MaterialTheme.typography.bodyMedium,
             color = colors.muted,
             textAlign = TextAlign.Center,

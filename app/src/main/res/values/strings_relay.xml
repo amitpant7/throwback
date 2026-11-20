@@ -19,7 +19,9 @@
     <string name="guard_notification_text">Opening the Instagram app brings you back to Throwback, except for calls and posting.</string>
     <string name="guard_cover_title">Use Throwback instead</string>
     <string name="guard_cover_body">The Instagram app is only for calls and posting. Taking you back…</string>
-    <string name="story_in_app_hint">Swipe right for the story camera. 5 minutes; posting ends it.</string>
+    <string name="story_in_app_hint">Swipe right for the story camera. 5 minutes, and no sneaky scrolling 😉</string>
+    <string name="guard_cover_story_title">Story time\'s up</string>
+    <string name="guard_cover_story_body">Thought you could sneak a scroll…? Nahhh.</string>
     <string name="story_in_app_used_up">That\'s 3 stories through the Instagram app today. Back tomorrow.</string>
     <string name="create_in_app_failed">Couldn\'t open the Instagram app.</string>
     <string name="call_too_many">That\'s 3 tries this hour. Incoming calls still ring as usual.</string>

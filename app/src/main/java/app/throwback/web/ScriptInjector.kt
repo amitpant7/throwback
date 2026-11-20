@@ -1,5 +1,8 @@
 package app.throwback.web
 
+import java.io.File
+import android.util.Log
+import app.throwback.BuildConfig
 import android.content.Context
 import android.webkit.WebView
 import androidx.webkit.ScriptHandler
@@ -35,8 +38,19 @@ internal class ScriptInjector(private val webView: WebView) {
     private var handler: ScriptHandler? = null
     private var script: String? = null
 
+    /**
+     * TEST BUILDS ONLY: with a file `files/debug_noscript`, no page script is injected, so a plain
+     * Instagram page can be measured in the same WebView and session (Throwback's own cost = the
+     * difference). Release builds always inject.
+     */
+    private val noScript: Boolean = BuildConfig.DEBUG && File(webView.context.filesDir, "debug_noscript").exists()
+
     /** Uses [script] for every Instagram page loaded from now on. */
     fun install(script: String) {
+        if (noScript) {
+            Log.w("ThrowbackWeb", "DEBUG: page script disabled (files/debug_noscript)")
+            return
+        }
         if (script == this.script) return
         this.script = script
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {

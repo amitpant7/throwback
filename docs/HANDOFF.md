@@ -158,6 +158,9 @@ Highlights:
 - [ ] Owner decisions: wizard step 2 ("Quiet the Instagram app": keep, optional tip, or remove);
       single reel from a link; /explore/people; hashtags/search; cookie auto-decline; "Copy page
       info" debug action; a one-time hint about where Throwback's settings are.
+- [ ] Design (later, owner): the reel poster (directions in the design canvas, recommended
+      "A · Postcard") and the Explore "Enough for today…" card. Give both "stop" screens one visual
+      style; today both are plain text versions.
 - [ ] M5 (relay + guard), M6 (release).
 
 ## 5a. Ways into Throwback's settings (no button on the feed)

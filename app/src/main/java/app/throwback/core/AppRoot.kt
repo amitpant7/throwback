@@ -1,6 +1,5 @@
 package app.throwback.core
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -61,7 +60,7 @@ fun AppRoot(app: ThrowbackApp, deepLink: String?, onCloseApp: () -> Unit) {
         }
 
         settingsOpen?.let { start ->
-            BackHandler { settingsOpen = null }
+            // SettingsRoot handles system back itself and calls onClose at its root.
             SettingsRoot(
                 onClose = { settingsOpen = null },
                 startAt = start,
@@ -75,7 +74,8 @@ fun AppRoot(app: ThrowbackApp, deepLink: String?, onCloseApp: () -> Unit) {
 private fun MainScreen(app: ThrowbackApp, deepLink: String?, onCloseApp: () -> Unit, onOpenSettings: () -> Unit) {
     val timeLimit = app.timeLimit
     val lockState by timeLimit.state.collectAsStateWithLifecycle()
-    val mindfulPause by app.uiPreferences.mindfulPause.collectAsStateWithLifecycle(initialValue = false)
+    // null while loading, so the feed never flashes for a frame before the pause screen.
+    val mindfulPause by app.uiPreferences.mindfulPause.collectAsStateWithLifecycle(initialValue = null)
     var pauseDone by rememberSaveable { mutableStateOf(false) }
     var mode by rememberSaveable { mutableStateOf(WebMode.FULL) }
     var path by remember { mutableStateOf("/") }
@@ -88,7 +88,8 @@ private fun MainScreen(app: ThrowbackApp, deepLink: String?, onCloseApp: () -> U
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { timeLimit.onForeground(mode) }
     LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { timeLimit.onBackground() }
 
-    if (mindfulPause && !pauseDone && deepLink == null) {
+    if (mindfulPause == null) return
+    if (mindfulPause == true && !pauseDone && deepLink == null) {
         MindfulPauseScreen(onContinue = { pauseDone = true }, onNotNow = onCloseApp)
         return
     }

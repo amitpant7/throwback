@@ -101,6 +101,16 @@ internal class DefaultTimeLimitController(
     /** Re-reads the clock (countdowns, midnight). Cheap; the screens call it every second. */
     fun refresh() = update(Save.Periodic) { s, r -> engine.refresh(s, r) }
 
+    /**
+     * The lock state right now. [state] is only recomputed when something updates the controller,
+     * so in the background (the relay, the passes) it could still say Locked the next morning:
+     * this refreshes first.
+     */
+    fun currentLockState(): LockState {
+        refresh()
+        return state.value
+    }
+
     suspend fun setup(minutes: Int, pin: String): ActionResult {
         if (!loaded) return NOT_READY
         if (!PinHasher.isValidPin(pin)) return BAD_PIN

@@ -1,14 +1,17 @@
 package app.throwback.relay
 
-import app.throwback.BuildConfig
 import android.app.Notification
 import android.os.SystemClock
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import app.throwback.BuildConfig
 import app.throwback.ThrowbackApp
 import app.throwback.core.LockState
+import app.throwback.guard.GuardPass
+import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.ui.UiPrefs
+import app.throwback.web.rules.DEFAULT_ACTIVITY_URL
 import app.throwback.web.rules.NotificationRules
 import app.throwback.web.rules.RulesRepository
 import app.throwback.web.rules.UNKNOWN_KEEP
@@ -19,6 +22,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * The Messages & calls relay (DECISIONS.md #26). Android binds it while the user has granted
@@ -101,7 +105,7 @@ class RelayListenerService : NotificationListenerService() {
 
         val target = if (kind == NotificationKind.MESSAGE || kind == NotificationKind.MISSED_CALL) RelayTarget.MESSAGES else RelayTarget.ACTIVITY
         val ctx = RelayContext(
-            locked = (application as ThrowbackApp).timeLimit.state.value is LockState.Locked,
+            locked = lockedNow(),
             extras = UiPrefs.from(this).extraNotifications.first(),
             canPost = RelayNotifier.canPost(this, target),
             keepUnknown = rules?.unknown == UNKNOWN_KEEP,
@@ -120,12 +124,23 @@ class RelayListenerService : NotificationListenerService() {
             is RelayAction.Relay -> {
                 val url = when (action.target) {
                     RelayTarget.MESSAGES -> RelayLinks.threadUrl(facts, rules?.threadId) ?: messagesUrl()
-                    RelayTarget.ACTIVITY -> rules?.activityUrl ?: app.throwback.web.rules.DEFAULT_ACTIVITY_URL
+                    RelayTarget.ACTIVITY -> rules?.activityUrl ?: DEFAULT_ACTIVITY_URL
                 }
                 RelayNotifier.post(this, facts, kind, action.target, url)
                 cancel(facts.key)
             }
         }
+    }
+
+    /**
+     * The daily limit is reached right now. Refreshed first (in the background nothing else moves it
+     * past midnight), and once the saved state is loaded (a notification can start the process).
+     */
+    private suspend fun lockedNow(): Boolean {
+        val limit = (application as ThrowbackApp).timeLimit
+        val impl = limit as? DefaultTimeLimitController ?: return limit.state.value is LockState.Locked
+        withTimeoutOrNull(LOAD_WAIT_MS) { impl.ready.first { it } }
+        return impl.currentLockState() is LockState.Locked
     }
 
     private fun groupHasCall(summary: NotificationFacts): Boolean {
@@ -172,6 +187,7 @@ class RelayListenerService : NotificationListenerService() {
     companion object {
         private const val TAG = "ThrowbackRelay"
         private const val LABELS_TAG = "ThrowbackRelayLabels"
+        private const val LOAD_WAIT_MS = 2_000L
 
         /** Copies the fields the classifier and the relayed notification need; nothing is kept afterwards. */
         internal fun factsOf(sbn: StatusBarNotification): NotificationFacts {
@@ -195,18 +211,17 @@ class RelayListenerService : NotificationListenerService() {
         }
     }
 
+    /** Instagram started posting (a story or post made through a pass): the pass has done its job. */
     private fun endPassWhenPosting(facts: NotificationFacts) {
-        val now = android.os.SystemClock.elapsedRealtime()
-        if (!app.throwback.guard.GuardPass.active(now)) return
-        val kind = app.throwback.guard.GuardPass.kind
-        if (kind != app.throwback.guard.GuardPass.Kind.STORY && kind != app.throwback.guard.GuardPass.Kind.CREATE) return
-        val pattern = app.throwback.web.rules.RulesRepository.get(this).rules.value?.appCreate?.story?.postingChannels ?: return
+        if (!GuardPass.active(SystemClock.elapsedRealtime())) return
+        val kind = GuardPass.kind
+        if (kind != GuardPass.Kind.STORY && kind != GuardPass.Kind.CREATE) return
+        val pattern = RulesRepository.get(this).rules.value?.appCreate?.story?.postingChannels ?: return
         val channel = facts.channelId ?: return
         if (facts.packageName in InstagramPackages.ALL && runCatching { Regex(pattern).containsMatchIn(channel) }.getOrDefault(false)) {
             Log.i(TAG, "Instagram is posting: pass ends")
-            app.throwback.guard.GuardPass.end()
-            if (kind == app.throwback.guard.GuardPass.Kind.STORY) CallInApp.storyPosted(this)
+            GuardPass.end()
+            if (kind == GuardPass.Kind.STORY) CallInApp.storyPosted(this)
         }
     }
-
 }

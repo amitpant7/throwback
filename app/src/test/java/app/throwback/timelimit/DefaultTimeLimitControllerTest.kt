@@ -221,6 +221,21 @@ class DefaultTimeLimitControllerTest {
     }
 
     @Test
+    fun `in the background the lock state is current once asked for, past midnight too`() = runTest {
+        val c = controller(MemoryStore())
+        c.setup(15, "1234")
+        c.onForeground(WebMode.FULL)
+        advanceTimeBy(15 * MIN + 1)
+        c.onBackground()
+        assertEquals(LockState.Locked, c.state.value)
+        advanceTimeBy(DAY) // no ticks in the background: nothing recomputes the state...
+        assertEquals(LockState.Locked, c.state.value)
+        // ...until someone (the relay, a pass) asks for it.
+        assertEquals(LockState.Running(15 * MIN), c.currentLockState())
+        assertEquals(LockState.Running(15 * MIN), c.state.value)
+    }
+
+    @Test
     fun `forgot PIN, then set a new one after three days`() = runTest {
         val c = controller(MemoryStore())
         c.setup(30, "1234")

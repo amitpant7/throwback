@@ -12,6 +12,7 @@ import app.throwback.R
 import app.throwback.core.LockState
 import app.throwback.guard.GuardPass
 import app.throwback.guard.PassLedger
+import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.TimeLimitModule
 import app.throwback.web.InstagramWebController
 import app.throwback.web.PageFeatures
@@ -213,7 +214,10 @@ internal object CallInApp {
     }
 
     /** The daily limit is reached: no pass into the app but calls (DECISIONS.md #20, #27a). */
-    private fun locked(context: Context): Boolean = TimeLimitModule.create(context).state.value is LockState.Locked
+    private fun locked(context: Context): Boolean {
+        val limit = TimeLimitModule.create(context)
+        return ((limit as? DefaultTimeLimitController)?.currentLockState() ?: limit.state.value) is LockState.Locked
+    }
 
     private fun installedInstagram(context: Context): String? = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) }
 

@@ -1,5 +1,7 @@
 package app.throwback.guard
 
+import android.Manifest
+import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
 import android.app.usage.UsageEvents
@@ -9,6 +11,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.hardware.camera2.CameraManager
 import android.media.AudioManager
@@ -21,6 +24,7 @@ import android.os.SystemClock
 import android.service.notification.NotificationListenerService
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import app.throwback.BuildConfig
@@ -97,6 +101,12 @@ class GuardService : Service() {
     /** Pass time in the Instagram app not yet saved for "Your day". */
     private var unsavedAppMillis = 0L
 
+    /** The ongoing notification says nothing is blocked (the listener is disconnected). */
+    private var statusPaused = false
+
+    /** When the guard last noted that it runs (see GuardHeartbeat). */
+    private var lastBeatAt: Long? = null
+
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             screenOn.value = intent?.action != Intent.ACTION_SCREEN_OFF
@@ -121,8 +131,7 @@ class GuardService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // A restart by Android after the process was killed also lands here: call startForeground again.
-        goForeground()
-        if (loop?.isActive != true) loop = scope.launch { run() }
+        if (goForeground() && loop?.isActive != true) loop = scope.launch { run() }
         return START_STICKY
     }
 
@@ -139,7 +148,31 @@ class GuardService : Service() {
         super.onDestroy()
     }
 
-    private fun goForeground() {
+    /** Runs in the foreground with the ongoing notification; false if Android refused (then it stops). */
+    private fun goForeground(): Boolean {
+        val paused = !CallState.tracker.state.value.listenerConnected
+        // specialUse: none of the specific types fits "watch which app is in front" (see the manifest).
+        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
+        try {
+            ServiceCompat.startForeground(this, RelayNotifier.GUARD_NOTIFICATION_ID, statusNotification(paused), type)
+        } catch (e: RuntimeException) {
+            // Android 12+ may refuse a foreground start (e.g. a restart after a low-memory kill).
+            Log.w(TAG, "guard could not start in the foreground: ${e.javaClass.simpleName}")
+            RelayNotifier.showGuardOff(this)
+            stopSelf()
+            return false
+        }
+        statusPaused = paused
+        running = true
+        RelayNotifier.cancelGuardOff(this)
+        return true
+    }
+
+    /**
+     * The ongoing notification. It says what is true: while the notification listener is
+     * disconnected ([paused]) calls can't be seen, so the guard lets the Instagram app open.
+     */
+    private fun statusNotification(paused: Boolean): Notification {
         val open = PendingIntent.getActivity(
             this,
             0,
@@ -147,34 +180,43 @@ class GuardService : Service() {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_IMMUTABLE,
         )
-        val notification = NotificationCompat.Builder(this, RelayNotifier.CHANNEL_GUARD)
+        val text = getString(if (paused) R.string.guard_notification_paused_text else R.string.guard_notification_text)
+        return NotificationCompat.Builder(this, RelayNotifier.CHANNEL_GUARD)
             .setSmallIcon(R.drawable.ic_stat_throwback)
-            .setContentTitle(getString(R.string.guard_notification_title))
-            .setContentText(getString(R.string.guard_notification_text))
-            .setStyle(NotificationCompat.BigTextStyle().bigText(getString(R.string.guard_notification_text)))
+            .setContentTitle(getString(if (paused) R.string.guard_notification_paused_title else R.string.guard_notification_title))
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
             .setShowWhen(false)
             .setContentIntent(open)
             .build()
-        // specialUse: none of the specific types fits "watch which app is in front" (see the manifest).
-        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
-        try {
-            ServiceCompat.startForeground(this, RelayNotifier.GUARD_NOTIFICATION_ID, notification, type)
-        } catch (e: RuntimeException) {
-            // Android 12+ may refuse a foreground start (e.g. a restart after a low-memory kill).
-            Log.w(TAG, "guard could not start in the foreground: ${e.javaClass.simpleName}")
-            stopSelf()
+    }
+
+    /** The listener connected or disconnected: the ongoing notification follows. */
+    private fun updateStatus(paused: Boolean) {
+        if (paused == statusPaused) return
+        statusPaused = paused
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
             return
         }
-        running = true
+        try {
+            NotificationManagerCompat.from(this).notify(RelayNotifier.GUARD_NOTIFICATION_ID, statusNotification(paused))
+        } catch (e: SecurityException) {
+            // Revoked between the check and now.
+        }
     }
 
     private suspend fun run() {
         val usm = getSystemService(UsageStatsManager::class.java) ?: return
         val graceMillis = graceSeconds() * 1000L
         var lastPermissionCheck = 0L
+        // Back after being stopped (or killed): the Instagram app's time meanwhile counts first.
+        withContext(Dispatchers.IO) { GuardHeartbeat.catchUp(this@GuardService) }
         while (scope.isActive) {
             if (!screenOn.value) {
                 overlay.hide()
@@ -193,25 +235,15 @@ class GuardService : Service() {
             }
             // Reading usage events off the main thread (the WebView shares it).
             withContext(Dispatchers.Default) { poll(usm) }
+            if (lastBeatAt.let { it == null || now - it >= GuardHeartbeat.BEAT_MS }) {
+                lastBeatAt = now
+                GuardHeartbeat.beat(this)
+            }
             val watched = RelayDebug.watchedPackages()
             val instagramOnScreen = tracker.onScreen(watched)
             val calls = CallState.tracker.state.value
             if (calls.inCall) lastInstagramCallAt = now
-            // Without the listener the guard can't see calls and allows everything (on purpose). Some
-            // phones don't reconnect it after a crash or update: ask Android to, every 30 s.
-            if (calls.listenerConnected) {
-                listenerDownSince = null
-            } else {
-                val since = listenerDownSince ?: now.also { listenerDownSince = it }
-                if (now - since > REBIND_AFTER_MS && now - lastRebindAt > REBIND_AFTER_MS) {
-                    lastRebindAt = now
-                    try {
-                        NotificationListenerService.requestRebind(ComponentName(this, RelayListenerService::class.java))
-                    } catch (e: RuntimeException) {
-                        // Notification access was revoked; the permission check stops the guard.
-                    }
-                }
-            }
+            followListener(calls, now)
             val audioMode = getSystemService(AudioManager::class.java)?.mode
             val inCallAudio = audioMode == AudioManager.MODE_IN_CALL || audioMode == AudioManager.MODE_IN_COMMUNICATION
             // Call audio keeps Instagram allowed only if it is an Instagram call (see CallAudioLink):
@@ -262,6 +294,28 @@ class GuardService : Service() {
             tracker.onEvent(event.eventType, event.packageName, event.className)
         }
         lastQueryEnd = end
+    }
+
+    /**
+     * Without the notification listener the guard can't see calls and allows everything (on purpose),
+     * and its notification says so. Some phones don't reconnect it after a crash or update: ask
+     * Android to, every 30 s.
+     */
+    private fun followListener(calls: CallSnapshot, now: Long) {
+        updateStatus(paused = !calls.listenerConnected)
+        if (calls.listenerConnected) {
+            listenerDownSince = null
+            return
+        }
+        val since = listenerDownSince ?: now.also { listenerDownSince = it }
+        if (now - since > REBIND_AFTER_MS && now - lastRebindAt > REBIND_AFTER_MS) {
+            lastRebindAt = now
+            try {
+                NotificationListenerService.requestRebind(ComponentName(this, RelayListenerService::class.java))
+            } catch (e: RuntimeException) {
+                // Notification access was revoked; the permission check stops the guard.
+            }
+        }
     }
 
     /** A pass is running: "Your day" time, leaving Instagram ends it, and each kind's own rules. */
@@ -394,10 +448,13 @@ class GuardService : Service() {
             } catch (e: IllegalStateException) {
                 // Android 12+ refuses foreground-service starts from the background in some cases
                 // (e.g. Android 15 without a visible window). The next time Throwback opens, at boot,
-                // or when Android restarts the sticky service, it starts again.
+                // or when Android restarts the sticky service, it starts again; meanwhile a
+                // notification says the guard is off (tap: Throwback opens and starts it).
                 Log.w(TAG, "guard could not start now: ${e.message}")
+                RelayNotifier.showGuardOff(context)
             } catch (e: SecurityException) {
                 Log.w(TAG, "guard could not start: ${e.message}")
+                RelayNotifier.showGuardOff(context)
             }
         }
 

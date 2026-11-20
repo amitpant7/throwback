@@ -152,6 +152,9 @@ internal class DefaultTimeLimitController(
     /** See [pageClock]: [offsetMs] trusted minus phone clock; [day] epoch day; [nextDayAt] trusted ms. */
     data class PageClockInfo(val offsetMs: Long, val zoneOffsetMin: Int, val day: Long, val nextDayAt: Long)
 
+    /** [millis] of the Instagram app used today while the guard was off count against the limit (if one is on). */
+    fun addOutsideUsage(millis: Long) = update(Save.Now) { s, r -> engine.addOutsideUsage(s, r, millis) }
+
     /** The trusted clock for the passes' counters; null until the saved state is loaded. Changes nothing. */
     fun trustedTime(): TrustedTime? = synchronized(lock) {
         if (!loaded) return null

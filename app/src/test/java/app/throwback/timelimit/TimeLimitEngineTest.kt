@@ -102,6 +102,29 @@ class TimeLimitEngineTest {
         assertEquals(29 * MIN, remaining())
     }
 
+    @Test
+    fun `Instagram app time while the guard was off counts, capped at the allowance`() {
+        h.setup(30)
+        h.use(10 * MIN)
+        h.s = h.engine.addOutsideUsage(h.s, h.reading(), 12 * MIN)
+        assertEquals(8 * MIN, remaining())
+        h.s = h.engine.addOutsideUsage(h.s, h.reading(), 2 * HOUR)
+        assertEquals(LockState.Locked, h.view().lockState) // it can lock, and the 5-minute wait starts
+        assertEquals(30 * MIN, h.s.usedMillis)
+        assertEquals(LockPhase.Waiting(Rules.WAIT_MILLIS, Rules.WAIT_MILLIS), h.view().lock)
+        h.tick(5 * MIN)
+        assertEquals(ActionResult.Done, h.extend(pinOk = true)) // and an extension still gives 5 minutes
+        h.acknowledge()
+        assertEquals(LockState.Running(5 * MIN), h.view().lockState)
+    }
+
+    @Test
+    fun `Instagram app time outside counts for nothing without a limit`() {
+        h.s = h.engine.addOutsideUsage(h.s, h.reading(), HOUR)
+        assertEquals(0L, h.s.usedMillis)
+        assertEquals(LockState.Disabled, h.view().lockState)
+    }
+
     // ---- Locking and the 5-minute wait -----------------------------------------------------
 
     @Test

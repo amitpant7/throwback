@@ -187,6 +187,17 @@ class TimeLimitEngine {
         return st.copy(session = null, grantShowing = false)
     }
 
+    /**
+     * [millis] of the real Instagram app, used today while the guard wasn't running (its
+     * permissions were revoked, or Android or the user stopped it; DECISIONS.md #27b), count
+     * against today's limit. Capped at today's allowance, so it can lock. Nothing without a limit.
+     */
+    fun addOutsideUsage(s: TimeLimitState, r: ClockReading, millis: Long): TimeLimitState {
+        val (st, at) = sync(s, r)
+        if (!st.enabled || millis <= 0) return st
+        return settleLock(st.copy(usedMillis = min(st.usedMillis + millis, st.budgetMillis)), at)
+    }
+
     // ---- Setup and settings ----------------------------------------------------------------
 
     /** Turns the limit on. Only possible when no limit exists. */

@@ -1162,7 +1162,7 @@
       var idle = performance.now() - perf.lastChange;
       if (idle < PERF_SETTLE_MS) return perfCheck();
       rec.tapToSettled = Math.round(perf.lastChange - rec.tap);
-      if (rec.page === 'inbox' || rec.page === 'direct') learnDmAssets(rec.tap - 50, perf.lastChange, rec);
+      if (WARM_PAGES.indexOf(rec.page) !== -1) learnDmAssets(rec.tap - 50, perf.lastChange, rec);
       delete rec.tap;
       perf.log.push(rec);
       if (perf.log.length > 30) perf.log.shift();
@@ -1170,17 +1170,19 @@
     }, PERF_SETTLE_MS);
   }
 
-  // ---------------------------------------------------------------- messages warm-up
+  // ---------------------------------------------------------------- messages and stories warm-up
 
   /*
-   * Opening messages from the feed makes Instagram load a whole new page with its own code (~1.8 s
-   * measured). The first time messages load, Throwback notes which static code files (Instagram's
-   * public CDN, the same for every user) that page used. On later starts, once the feed is ready and
+   * Messages and the story viewer are separate parts of Instagram's code, loaded the first time they
+   * open (messages measured at 16 of 22 code files downloaded). The first time they load, Throwback
+   * notes which static code files (Instagram's public CDN, the same for every user) were used. On later starts, once the feed is ready and
    * the phone is idle, it prefetches just those files into the browser cache. No logged-in requests,
    * no inbox data, no change to "active" status; skipped with Data Saver on.
    */
   var WARM_KEY = '__tb_dm_assets';
-  var WARM_MAX = 80;
+  var WARM_MAX = 120;
+  // Sections whose code is loaded on first use: messages and the story viewer.
+  var WARM_PAGES = ['inbox', 'direct', 'stories'];
   var WARM_MAX_AGE_MS = 7 * 24 * 3600 * 1000;
   var warmDone = false;
 

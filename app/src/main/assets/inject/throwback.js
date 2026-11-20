@@ -1145,6 +1145,7 @@
     var now = performance.now();
     var tap = now - perf.lastTap < 2000 ? perf.lastTap : now;
     perf.rec = { page: pageKind(path), tapToUrl: Math.round(now - tap), tap: tap };
+    if (!state.readySent) perf.rec.tap = 0; // the page's own first load: count everything since it began
     perf.lastChange = now;
     perfCheck();
   }
@@ -1161,11 +1162,115 @@
       var idle = performance.now() - perf.lastChange;
       if (idle < PERF_SETTLE_MS) return perfCheck();
       rec.tapToSettled = Math.round(perf.lastChange - rec.tap);
+      if (rec.page === 'inbox' || rec.page === 'direct') learnDmAssets(rec.tap - 50, perf.lastChange, rec);
       delete rec.tap;
       perf.log.push(rec);
       if (perf.log.length > 30) perf.log.shift();
       perf.rec = null;
     }, PERF_SETTLE_MS);
+  }
+
+  // ---------------------------------------------------------------- messages warm-up
+
+  /*
+   * Opening messages from the feed makes Instagram load a whole new page with its own code (~1.8 s
+   * measured). The first time messages load, Throwback notes which static code files (Instagram's
+   * public CDN, the same for every user) that page used. On later starts, once the feed is ready and
+   * the phone is idle, it prefetches just those files into the browser cache. No logged-in requests,
+   * no inbox data, no change to "active" status; skipped with Data Saver on.
+   */
+  var WARM_KEY = '__tb_dm_assets';
+  var WARM_MAX = 80;
+  var WARM_MAX_AGE_MS = 7 * 24 * 3600 * 1000;
+  var warmDone = false;
+
+  function staticAsset(url) {
+    var u = parseUrl(url);
+    if (!u || u.protocol !== 'https:') return false;
+    if (!/(^|\.)(cdninstagram\.com|fbcdn\.net)$/.test(u.hostname)) return false;
+    return /\.(js|css)$/.test(u.pathname) || u.pathname.indexOf('/rsrc.php/') !== -1;
+  }
+
+  /**
+   * After opening messages (a full load, or Instagram's in-page switch): remember the code files loaded
+   * since `since` (performance time) and record how many came from the network into `rec`.
+   */
+  function learnDmAssets(since, until, rec) {
+    if (!performance.getEntriesByType) return;
+    var res = performance.getEntriesByType('resource').filter(function (r) {
+      return r.startTime >= since && r.startTime <= until &&
+        (r.initiatorType === 'script' || r.initiatorType === 'link' || r.initiatorType === 'css') && staticAsset(r.name);
+    });
+    if (!res.length) {
+      rec.codeFiles = 0;
+      return;
+    }
+    var fromNetwork = 0, bytes = 0;
+    res.forEach(function (r) {
+      if (r.transferSize > 0) {
+        fromNetwork++;
+        bytes += r.transferSize;
+      }
+    });
+    rec.codeFiles = res.length;
+    rec.codeFromNetwork = fromNetwork;
+    rec.codeNetworkKB = Math.round(bytes / 1024);
+    var saved = null;
+    try {
+      saved = JSON.parse(localStorage.getItem(WARM_KEY) || 'null');
+    } catch (e) {
+      saved = null;
+    }
+    var urls = (saved && saved.urls) || [];
+    res.forEach(function (r) {
+      if (urls.indexOf(r.name) === -1) urls.push(r.name);
+    });
+    try {
+      localStorage.setItem(WARM_KEY, JSON.stringify({ t: Date.now(), urls: urls.slice(-WARM_MAX) }));
+    } catch (e) {
+      // No storage: nothing to warm next time.
+    }
+  }
+
+  /** On the feed, when idle: prefetch the remembered messages code files (once per page). */
+  function warmDmAssets() {
+    if (warmDone || !pageActive('home') || state.mode === MODE_MESSAGES) return;
+    warmDone = true;
+    var conn = navigator.connection;
+    if (conn && conn.saveData) return;
+    var saved = null;
+    try {
+      saved = JSON.parse(localStorage.getItem(WARM_KEY) || 'null');
+    } catch (e) {
+      saved = null;
+    }
+    if (!saved || !saved.urls || Date.now() - saved.t > WARM_MAX_AGE_MS) return;
+    var have = {};
+    performance.getEntriesByType('resource').forEach(function (r) {
+      have[r.name] = 1;
+    });
+    var n = 0;
+    saved.urls.forEach(function (url) {
+      if (have[url] || !staticAsset(url)) return;
+      var link = document.createElement('link');
+      link.rel = 'prefetch';
+      link.href = url;
+      (document.head || document.documentElement).appendChild(link);
+      n++;
+    });
+    perf.log.push({ page: 'messages-warmup', prefetched: n });
+  }
+
+  function scheduleWarmups() {
+    var idle = window.requestIdleCallback || function (fn) {
+      return setTimeout(fn, 1);
+    };
+    // Late enough not to compete with the feed's own loading.
+    setTimeout(function () {
+      idle(function () {
+        if (!pageActive('direct')) warmDmAssets();
+      }, { timeout: 5000 });
+    }, 5000);
   }
 
   // ---------------------------------------------------------------- feed data filter (option 1)
@@ -1628,6 +1733,7 @@
     if (state.readySent || state.leaving) return;
     state.readySent = true;
     perf.log.push({ page: pageKind(location.pathname), fullLoadToReady: Math.round(performance.now()) });
+    scheduleWarmups();
     // Two frames: the filtered DOM is styled and laid out before the app reveals the WebView.
     raf(function () {
       raf(function () {

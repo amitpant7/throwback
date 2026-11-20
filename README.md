@@ -1,6 +1,6 @@
 # Throwback
 
-Instagram, the way it used to be: just the people you follow, newest first. No Reels, no Explore
+Instagram, the way it used to be: just the people you follow, with their stories. No Reels, no Explore
 grid, no suggested posts, no ads. When you've seen it all, you're done.
 
 Free and open source (GPL-3.0). No accounts, no tracking. Not affiliated with Instagram or Meta.
@@ -9,7 +9,7 @@ Free and open source (GPL-3.0). No accounts, no tracking. Not affiliated with In
 
 ## Features
 
-- Following feed, stories and messages, with the distractions removed (always on, no toggles)
+- Your home feed, stories and messages, with the distractions removed (always on, no toggles)
 - Optional daily time limit with a PIN, two 5-minute extensions a day, and a messages-only mode when locked
 - Optional message and call alerts through a hidden copy of the Instagram app
 - Optional mindful pause before opening

@@ -11,7 +11,7 @@ _Last updated 2026-11-20, at version 0.1.1 (versionCode 2)._
 ## 1. What Throwback is
 
 A free, open-source (GPL-3.0) Android app that shows Instagram "the way it used to be": only people
-you follow, newest first, with no Reels, no Explore grid, no suggested posts and no ads. It is a
+you follow (with stories), with no Reels, no Explore grid, no suggested posts and no ads. It is a
 **WebView wrapper around instagram.com**, with filters injected as CSS/JS. There is no private API
 and no modded app. Everything else is native Jetpack Compose:
 - onboarding and settings
@@ -86,7 +86,7 @@ Highlights:
 - **web** (`web/`, `assets/inject/`, `filters/`):
   - A long-lived WebView.
   - Document-start script injection; user agent without `; wv`.
-  - Following feed via `/?variant=following`.
+  - Instagram's regular home feed (stories + ranking), filtered; `/?variant=following` stays allowed.
   - Reels blocked, and a single shared reel opens as a `/p/` post.
   - Ads and "Suggested" hidden by header-only label matching, so captions are never hidden.
   - Explore grid hidden, search kept.
@@ -179,9 +179,9 @@ paid tip product names should be rechecked before the Play release.
 - [ ] **First launch:** Welcome → "Log in to Instagram" → **straight to Instagram's login form** (no
       "Log in or sign up" landing page) → after login, "You still have the Instagram app" (only if it's
       installed) → the feed.
-- [ ] **Splash:** goes straight to the filtered Following feed, with no white flash and no unfiltered posts.
-- [ ] **Following feed:** `?variant=following` gives the chronological feed. Tapping Home keeps it,
-      with no reload loop.
+- [ ] **Splash:** goes straight to the filtered home feed, with no white flash and no unfiltered posts.
+- [ ] **Home feed:** stories row shows; suggested posts and everything after "You're all caught up"
+      are hidden; tapping Home causes no reload loop.
 - [ ] **Hidden:** no Reels tab and no gap in the bottom bar; no Explore grid (search still works);
       no "Suggested for you"; no ads.
 - [ ] **Captions:** captions and video descriptions are always visible.

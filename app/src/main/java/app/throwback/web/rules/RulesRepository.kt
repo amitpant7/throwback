@@ -172,15 +172,15 @@ class RulesRepository internal constructor(
 
 /**
  * Last-resort rules if both the bundled and the cached file are unusable (should never happen: a
- * unit test validates the bundled file). Keeps the essentials: Following feed, no Reels pages,
+ * unit test validates the bundled file). Keeps the essentials: the home feed, no Reels pages,
  * messages-only mode.
  */
 internal object FallbackRules {
     val rules = FilterRules(
         schema = SUPPORTED_RULES_SCHEMA,
         version = 1,
-        homeUrl = "https://www.instagram.com/?variant=following",
-        homeVariants = listOf("following"),
+        homeUrl = "https://www.instagram.com/",
+        homeVariants = listOf("home", "following", "favorites"),
         messagesUrl = "https://www.instagram.com/direct/inbox/",
         hosts = Hosts(
             instagram = listOf("instagram.com", "www.instagram.com"),

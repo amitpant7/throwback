@@ -5,7 +5,7 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 ## Product
 
 1. **What it is:** a free Android app that shows Instagram "the way it used to be": only people you
-   follow, newest first, no Reels, no Explore grid, no suggested posts, no ads.
+   follow (with stories), no Reels, no Explore grid, no suggested posts, no ads.
 2. **Codename:** Throwback. The public app name and logo are chosen later; the current logo is a placeholder.
 3. **Repository:** public on GitHub, licensed GPL-3.0, so nobody can repackage it as a closed paid app.
 4. **Money:** free, with optional tips through Google Play Billing (no paid features). The tip tiers in
@@ -30,7 +30,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 
 ## Filters (always on)
 
-13. Open at the Following feed, hide Reels (tab and pages), hide the Explore grid (search stays),
+13. Open at Instagram's regular home feed (stories included, Instagram's own ranking; decided
+    2026-11-20, replacing the Following feed, which has no stories), then filter it: hide Reels (tab and pages), hide the Explore grid (search stays),
     hide suggested posts, hide sponsored posts.
 14. **No toggles.** Throwback is minimal; there is no setting to bring distractions back.
     Settings shows a read-only "Throwback removes" list.

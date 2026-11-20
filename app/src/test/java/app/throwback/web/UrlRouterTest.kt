@@ -14,7 +14,7 @@ import org.junit.Test
 class UrlRouterTest {
 
     private val router = UrlRouter(TestRules.bundled)
-    private val home = "https://www.instagram.com/?variant=following"
+    private val home = "https://www.instagram.com/"
     private val inbox = "https://www.instagram.com/direct/inbox/"
     private val ig = "https://www.instagram.com"
 
@@ -59,12 +59,13 @@ class UrlRouterTest {
     // ---- Home feed
 
     @Test
-    fun `home always means the Following feed`() {
-        assertEquals(Decision.Redirect(home, null), decide("$ig/"))
-        assertEquals(Decision.Redirect(home, null), decide("https://instagram.com"))
-        assertEquals(Decision.Redirect(home, null), decide("$ig/?variant=home"))
-        assertEquals(Decision.Load, decide(home))
+    fun `home is Instagram's regular feed, and the feed variants are allowed`() {
+        assertEquals(Decision.Load, decide("$ig/"))
+        assertEquals(Decision.Load, decide("https://instagram.com/"))
+        assertEquals(Decision.Load, decide("$ig/?variant=home"))
+        assertEquals(Decision.Load, decide("$ig/?variant=following"))
         assertEquals(Decision.Load, decide("$ig/?variant=favorites"))
+        assertEquals(Decision.Redirect(home, null), decide("$ig/?variant=something_new"))
     }
 
     @Test
@@ -169,7 +170,7 @@ class UrlRouterTest {
         assertEquals("$ig/p/X/", router.startUrl("$ig/p/X/", FULL))
         assertEquals(inbox, router.startUrl("$ig/p/X/", MESSAGES_ONLY))
         assertEquals(home, router.startUrl("https://example.com/", FULL))
-        assertEquals(home, router.startUrl("http://instagram.com/", FULL))
+        assertEquals("https://instagram.com/", router.startUrl("http://instagram.com/", FULL)) // upgraded to https
     }
 
     @Test

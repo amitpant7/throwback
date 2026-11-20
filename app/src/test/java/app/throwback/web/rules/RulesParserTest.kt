@@ -21,7 +21,7 @@ class RulesParserTest {
         assertTrue("filters/rules.json: $result", result is RulesParseResult.Valid)
         val rules = TestRules.bundled
         assertEquals(SUPPORTED_RULES_SCHEMA, rules.schema)
-        assertEquals("https://www.instagram.com/?variant=following", rules.homeUrl)
+        assertEquals("https://www.instagram.com/", rules.homeUrl)
         assertTrue(rules.hide.isNotEmpty())
         assertTrue(rules.posts.labels.any { it.id == "sponsored" })
     }
@@ -100,11 +100,11 @@ class RulesParserTest {
     @Test
     fun `home must be an https Instagram URL`() {
         assertRejected(
-            TestRules.bundledWith { it.replace("\"homeUrl\": \"https://www.instagram.com/?variant=following\"", "\"homeUrl\": \"https://example.com/\"") },
+            TestRules.bundledWith { it.replace("\"homeUrl\": \"https://www.instagram.com/\"", "\"homeUrl\": \"https://example.com/\"") },
             "not an https Instagram URL",
         )
         assertRejected(
-            TestRules.bundledWith { it.replace("\"homeUrl\": \"https://www.instagram.com/?variant=following\"", "\"homeUrl\": \"http://www.instagram.com/?variant=following\"") },
+            TestRules.bundledWith { it.replace("\"homeUrl\": \"https://www.instagram.com/\"", "\"homeUrl\": \"http://www.instagram.com/\"") },
             "not an https Instagram URL",
         )
     }

@@ -9,7 +9,7 @@
  * What it does:
  *  - Routing for in-page navigation (pushState/replaceState/popstate and link taps), mirroring
  *    UrlRouter.kt: Reels pages blocked (a single reel opens as a post), the home feed is always the
- *    Following feed, messages-only mode keeps to /direct/.
+ *    home feed, messages-only mode keeps to /direct/.
  *  - Hides Reels links, the Explore grid, ads, suggestions, app nags, and Instagram's wordmark on
  *    the home feed, using stable signals only (hrefs, aria-labels, visible text). Everything runs in
  *    a MutationObserver callback, before the browser paints, so filtered content never flashes.
@@ -545,7 +545,7 @@
     if (!r) return;
     e.preventDefault();
     e.stopImmediatePropagation();
-    if (r.kind === null) goHome(); // the Home tab: always the Following feed
+    if (r.kind === null) goHome(); // the Home tab: the (filtered) home feed
     else if (r.rewrite) {
       if (loopGuard(r.to)) location.assign(r.to); // a single reel opens as a post
     } else send({ t: 'blocked', kind: r.kind });

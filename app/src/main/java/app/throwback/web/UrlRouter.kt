@@ -5,7 +5,7 @@ import app.throwback.web.rules.FilterRules
 
 /**
  * Decides what happens to a top-level navigation: load it in the WebView, redirect it (blocked
- * pages, messages-only mode, the Following feed), hand it to another app, or ignore it.
+ * pages, messages-only mode, the home feed), hand it to another app, or ignore it.
  *
  * Pure Kotlin so it can be unit tested. throwback.js mirrors the Instagram-path part of this logic
  * for in-page (pushState) navigation, which never reaches the WebViewClient.
@@ -18,7 +18,7 @@ class UrlRouter(private val rules: FilterRules) {
 
         /**
          * Load [url] instead. [kind] is set when content was blocked ("reels", "messagesOnly", ...)
-         * and is null for plain normalisation (https, the Following feed).
+         * and is null for plain normalisation (https, the home feed).
          */
         data class Redirect(val url: String, val kind: String?) : Decision
 
@@ -52,7 +52,7 @@ class UrlRouter(private val rules: FilterRules) {
         return parts.isWeb() && instagram.matches(parts.host)
     }
 
-    /** Where a mode starts: the Following feed, or the inbox in messages-only mode. */
+    /** Where a mode starts: the home feed, or the inbox in messages-only mode. */
     fun homeUrl(mode: WebMode): String = if (mode == WebMode.MESSAGES_ONLY) rules.messagesUrl else rules.homeUrl
 
     /**

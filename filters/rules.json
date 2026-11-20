@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112002,
+  "version": 2026112003,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -10,8 +10,8 @@
     "Fields named 'note' and 'about' are documentation only; the app ignores them."
   ],
 
-  "homeUrl": "https://www.instagram.com/?variant=following",
-  "homeVariants": ["following", "favorites"],
+  "homeUrl": "https://www.instagram.com/",
+  "homeVariants": ["home", "following", "favorites"],
   "messagesUrl": "https://www.instagram.com/direct/inbox/",
 
   "hosts": {

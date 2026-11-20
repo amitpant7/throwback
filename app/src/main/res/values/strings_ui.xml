@@ -49,7 +49,7 @@
     <string name="ui_removes_explore">Explore grid</string>
     <string name="ui_removes_suggested">Suggested posts</string>
     <string name="ui_removes_ads">Ads</string>
-    <string name="ui_removes_note">Your feed opens at Following, newest first. These are always on. That\'s the point.</string>
+    <string name="ui_removes_note">Your feed and stories, from the people you follow. These are always on. That\'s the point.</string>
     <string name="ui_section_focus">Focus</string>
     <string name="ui_time_limit_title">Daily time limit</string>
     <string name="ui_time_limit_sub">Lock Throwback after a set time each day</string>

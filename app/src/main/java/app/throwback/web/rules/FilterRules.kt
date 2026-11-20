@@ -26,7 +26,7 @@ data class FilterRules(
     /** Increases on every edit (yyyymmddNN). The app keeps whichever valid copy has the highest version. */
     val version: Long,
     val updated: String = "",
-    /** Where "home" goes: the Following feed. */
+    /** Where "home" goes: Instagram's regular home feed (with stories); Throwback filters it. */
     val homeUrl: String,
     /** `variant` query values that count as the home feed (anything else on "/" redirects to [homeUrl]). */
     val homeVariants: List<String> = emptyList(),

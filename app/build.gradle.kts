@@ -42,23 +42,67 @@ android {
     }
 }
 
-// filters/rules.json at the repo root is the single source of truth for the filter rules.
-// It is bundled into the APK as a fallback; installed apps also fetch the latest copy from GitHub.
-val copyFilterRules by tasks.registering(Copy::class) {
-    // A broken rules file (e.g. merge-conflict markers) must fail the build, never ship: the app would
-    // silently fall back to its minimal built-in rules.
-    doFirst {
-        val text = rootProject.file("filters/rules.json").readText()
+/*
+ * Generated assets (both added to every variant below):
+ *  - inject/throwback.js: the page script, written as parts in src/main/pagescript/ (one area per
+ *    file, all inside one function) and joined here in file-name order. See its README.md.
+ *  - filters/rules.json: the filter rules. filters/rules.json at the repo root is the single source of
+ *    truth; installed apps also fetch the latest copy from GitHub, and the bundled one is the fallback.
+ */
+abstract class JoinPageScript : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    abstract val parts: ConfigurableFileCollection
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun join() {
+        val files = parts.files.sortedBy { it.name }
+        check(files.isNotEmpty()) { "no page script parts in src/main/pagescript" }
+        val out = outputDir.file("inject/throwback.js").get().asFile
+        out.parentFile.mkdirs()
+        out.writeText(files.joinToString("") { it.readText() })
+    }
+}
+
+abstract class BundleFilterRules : DefaultTask() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val rules: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun bundle() {
+        val text = rules.get().asFile.readText()
+        // A broken rules file must fail the build, never ship: the app would silently fall back to
+        // its minimal built-in rules.
         require(!Regex("^(<<<<<<<|=======|>>>>>>>)", RegexOption.MULTILINE).containsMatchIn(text)) {
             "filters/rules.json contains merge-conflict markers"
         }
         groovy.json.JsonSlurper().parseText(text)
+        val out = outputDir.file("filters/rules.json").get().asFile
+        out.parentFile.mkdirs()
+        out.writeText(text)
     }
-    from(rootProject.file("filters/rules.json"))
-    into(layout.buildDirectory.dir("generated/filterAssets/filters"))
 }
-android.sourceSets["main"].assets.srcDir(layout.buildDirectory.dir("generated/filterAssets"))
-tasks.named("preBuild") { dependsOn(copyFilterRules) }
+
+androidComponents {
+    onVariants { variant ->
+        val name = variant.name.replaceFirstChar { it.uppercase() }
+        val pageScript = tasks.register<JoinPageScript>("join${name}PageScript") {
+            parts.from(fileTree("src/main/pagescript") { include("*.js") })
+        }
+        val filterRules = tasks.register<BundleFilterRules>("bundle${name}FilterRules") {
+            rules.set(rootProject.layout.projectDirectory.file("filters/rules.json"))
+        }
+        variant.sources.assets?.addGeneratedSourceDirectory(pageScript, JoinPageScript::outputDir)
+        variant.sources.assets?.addGeneratedSourceDirectory(filterRules, BundleFilterRules::outputDir)
+    }
+}
 
 dependencies {
     implementation(libs.androidx.core.ktx)
@@ -73,7 +117,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
-    // Google Play's in-app review card (asked once, after a week of use; see core/RateAsk.kt).
+    // Google Play's in-app review card (asked once, after a month of use; see core/RateAsk.kt).
     implementation(libs.play.review.ktx)
 
     implementation(platform(libs.androidx.compose.bom))

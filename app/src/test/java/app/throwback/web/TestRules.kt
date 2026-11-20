@@ -28,4 +28,10 @@ object TestRules {
 
     fun mainAsset(path: String): File =
         listOf(File("src/main/assets/$path"), File("app/src/main/assets/$path")).first { it.isFile }
+
+    /** The page script as the build joins it (app/build.gradle.kts): the parts in file-name order. */
+    val pageScript: String by lazy {
+        val dir = listOf(File("src/main/pagescript"), File("app/src/main/pagescript")).first { it.isDirectory }
+        dir.listFiles { f -> f.extension == "js" }!!.sortedBy { it.name }.joinToString("") { it.readText() }
+    }
 }

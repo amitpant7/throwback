@@ -1,0 +1,136 @@
+  // ---------------------------------------------------------------- helpers
+
+  function norm(s) {
+    return String(s || '')
+      .replace(/[​-‍⁠﻿]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function toRegex(pattern) {
+    try {
+      return new RegExp(pattern);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function regexList(list) {
+    var out = [];
+    (list || []).forEach(function (p) {
+      var r = toRegex(p);
+      if (r) out.push(r);
+    });
+    return out;
+  }
+
+  function anyMatch(list, s) {
+    for (var i = 0; i < list.length; i++) if (list[i].test(s)) return true;
+    return false;
+  }
+
+  function textSet(list) {
+    var set = new Set();
+    (list || []).forEach(function (t) {
+      var n = norm(t);
+      if (n) set.add(n);
+    });
+    return set;
+  }
+
+  var probe = null;
+  /** A selector the browser accepts that cannot break out of a CSS rule. */
+  function validSelector(sel) {
+    if (typeof sel !== 'string' || !sel || /[{}<;]|\/\*/.test(sel)) return false;
+    try {
+      probe = probe || document.createDocumentFragment();
+      probe.querySelector(sel);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function validId(id) {
+    return typeof id === 'string' && /^[a-z0-9][a-z0-9-]{0,40}$/.test(id);
+  }
+
+  /** Splits "a, b:not(c, d)" at top-level commas. */
+  function splitSelectors(sel) {
+    var out = [], depth = 0, quote = null, start = 0;
+    for (var i = 0; i < sel.length; i++) {
+      var ch = sel[i];
+      if (quote) {
+        if (ch === '\\') i++;
+        else if (ch === quote) quote = null;
+      } else if (ch === '"' || ch === "'") quote = ch;
+      else if (ch === '(' || ch === '[') depth++;
+      else if (ch === ')' || ch === ']') depth--;
+      else if (ch === ',' && depth === 0) {
+        out.push(sel.slice(start, i).trim());
+        start = i + 1;
+      }
+    }
+    out.push(sel.slice(start).trim());
+    return out.filter(Boolean);
+  }
+
+  function parseUrl(href) {
+    try {
+      return new URL(href, location.href);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function hostMatches(patterns, host) {
+    host = String(host || '').toLowerCase();
+    for (var i = 0; i < patterns.length; i++) {
+      var p = String(patterns[i]).toLowerCase();
+      if (p.indexOf('*.') === 0) {
+        var suffix = p.slice(1);
+        if (host.length > suffix.length && host.slice(-suffix.length) === suffix) return true;
+      } else if (host === p) return true;
+    }
+    return false;
+  }
+
+  function closestWithin(el, sel, depth) {
+    for (var n = el, i = 0; n && n.nodeType === 1 && i <= depth; n = n.parentElement, i++) {
+      try {
+        if (n.matches(sel)) return n;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  function eachMatch(root, sel, fn) {
+    try {
+      if (root.matches && root.matches(sel)) fn(root);
+      var list = root.querySelectorAll(sel);
+      for (var i = 0; i < list.length; i++) fn(list[i]);
+    } catch (e) {
+      // A selector the engine doesn't support: skip this rule.
+    }
+  }
+
+  function addToken(el, attr, token) {
+    if (!el || el.nodeType !== 1) return;
+    var cur = el.getAttribute(attr);
+    if (!cur) el.setAttribute(attr, token);
+    else if ((' ' + cur + ' ').indexOf(' ' + token + ' ') < 0) el.setAttribute(attr, cur + ' ' + token);
+  }
+
+  function clickElement(el) {
+    if (typeof el.click === 'function') el.click();
+    else el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+  }
+
+  function raf(fn) {
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(fn);
+    else setTimeout(fn, 16);
+  }
+

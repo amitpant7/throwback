@@ -15,7 +15,7 @@ class PageScriptTest {
 
     @Test
     fun `the real page script has the config token exactly once`() {
-        val js = TestRules.mainAsset("inject/throwback.js").readText()
+        val js = TestRules.pageScript
         assertEquals(1, Regex(PageScript.CONFIG_TOKEN).findAll(js).count())
         assertTrue(TestRules.mainAsset("inject/throwback.css").isFile)
     }

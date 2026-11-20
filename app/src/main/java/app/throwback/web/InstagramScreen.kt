@@ -77,6 +77,8 @@ fun InstagramScreen(
     modifier: Modifier = Modifier,
     startUrl: String? = null,
     onOpenSettings: () -> Unit = {},
+    /** The chat's call button was tapped (chat id, or null). */
+    onCallInApp: (String?) -> Unit = {},
     /** False while a Throwback screen covers the page (Settings): system back must not reach the page. */
     backEnabled: Boolean = true,
     /** True while Throwback's own screens (Settings, lock, pause) cover the page. */
@@ -125,6 +127,7 @@ fun InstagramScreen(
             onLocationChanged = onLocationChanged,
             onExitRequest = onExitRequest,
             onOpenSettings = onOpenSettings,
+            onCallInApp = onCallInApp,
             onRecreate = { generation++ },
             backEnabled = backEnabled,
             covered = covered,
@@ -147,6 +150,7 @@ private fun InstagramWebHost(
     onLocationChanged: (String) -> Unit,
     onExitRequest: () -> Unit,
     onOpenSettings: () -> Unit,
+    onCallInApp: (String?) -> Unit,
     onRecreate: () -> Unit,
     backEnabled: Boolean,
     covered: Boolean,
@@ -179,6 +183,7 @@ private fun InstagramWebHost(
     val latestOnStartUrlHandled by rememberUpdatedState(onStartUrlHandled)
     val latestOnExitRequest by rememberUpdatedState(onExitRequest)
     val latestOnOpenSettings by rememberUpdatedState(onOpenSettings)
+    val latestOnCallInApp by rememberUpdatedState(onCallInApp)
     val latestOnReelLimit by rememberUpdatedState(onReelLimit)
 
     // Photos and videos go through Android's photo picker; anything else through the file chooser.
@@ -202,6 +207,8 @@ private fun InstagramWebHost(
             override fun onStartUrlHandled(url: String?) = latestOnStartUrlHandled(url)
 
             override fun onOpenSettings() = latestOnOpenSettings()
+
+            override fun onCallInApp(thread: String?) = latestOnCallInApp(thread)
 
             override fun onReelLimit() = latestOnReelLimit()
 

@@ -1,5 +1,7 @@
 package app.throwback.core
 
+import app.throwback.relay.CallInApp
+import android.widget.Toast
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -206,6 +208,13 @@ private fun MainScreen(
             onLocationChanged = { path = it },
             onExitRequest = onCloseApp,
             onOpenSettings = onOpenSettings,
+            onCallInApp = { thread ->
+                // No Instagram app: explain, and offer the Messages & calls setup (it installs it).
+                if (!CallInApp.open(context, thread)) {
+                    Toast.makeText(context, R.string.call_needs_instagram_app, Toast.LENGTH_LONG).show()
+                    onOpenMessagesSetup()
+                }
+            },
             backEnabled = !settingsOpen && !pauseShowing && !reelPoster,
             covered = settingsOpen || pauseShowing || lockShowing || reelPoster,
             onReelLimit = {

@@ -49,4 +49,11 @@ class BridgeMessageTest {
     fun `reel limit message parses`() {
         assertEquals(BridgeMessage.ReelLimit, BridgeMessage.parse("""{"t":"reelLimit"}"""))
     }
+
+    @Test
+    fun `call button message parses, with a safe chat id only`() {
+        assertEquals(BridgeMessage.CallInApp("340282366841710300949128"), BridgeMessage.parse("""{"t":"callInApp","thread":"340282366841710300949128"}"""))
+        assertEquals(BridgeMessage.CallInApp(null), BridgeMessage.parse("""{"t":"callInApp","thread":"../evil"}"""))
+        assertEquals(BridgeMessage.CallInApp(null), BridgeMessage.parse("""{"t":"callInApp"}"""))
+    }
 }

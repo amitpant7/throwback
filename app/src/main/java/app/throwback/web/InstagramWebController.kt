@@ -64,6 +64,9 @@ internal class InstagramWebController(
         /** Throwback's settings icon in the page was tapped. */
         fun onOpenSettings()
 
+        /** The chat's call button: open chat [thread] in the Instagram app. */
+        fun onCallInApp(thread: String?) {}
+
         /** The reel allowance in Instagram's swipe viewer is used up. */
         fun onReelLimit()
 
@@ -438,6 +441,7 @@ internal class InstagramWebController(
             }
             is BridgeMessage.Background -> pageBackground = m.argb
             BridgeMessage.OpenSettings -> host?.onOpenSettings()
+            is BridgeMessage.CallInApp -> host?.onCallInApp(m.thread)
             BridgeMessage.ReelLimit -> {
                 Log.d(TAG, "reel poster requested by the page")
                 host?.onReelLimit()

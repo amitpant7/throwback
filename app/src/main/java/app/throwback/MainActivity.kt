@@ -2,6 +2,7 @@ package app.throwback
 
 import app.throwback.core.StartTrace
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,6 +14,7 @@ import app.throwback.core.AppRoot
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.relay.RelayLinks
 import app.throwback.relay.RelayNotifier
+import app.throwback.web.UrlParts
 
 /** Owned by integration. */
 class MainActivity : ComponentActivity() {
@@ -68,11 +70,20 @@ class MainActivity : ComponentActivity() {
         if (intent.action == RelayNotifier.ACTION_OPEN_MESSAGES) messagesRequests.intValue++
     }
 
-    private fun Intent.instagramUrl(): String? =
-        dataString?.takeIf { it.startsWith("https://www.instagram.com") || it.startsWith("https://instagram.com") }
+    /**
+     * The intent's https instagram.com link, by its parsed host (any app can start this activity).
+     * Backslashes and control characters are refused: Chromium reads such a URL's host differently.
+     */
+    private fun Intent.instagramUrl(): String? = dataString?.takeIf { url ->
+        !UrlParts.hasAmbiguousChars(url) &&
+            Uri.parse(url).let { it.scheme.equals("https", ignoreCase = true) && it.host?.lowercase() in DEEP_LINK_HOSTS }
+    }
 
     companion object {
         /** Intent action of the "Throwback settings" app-icon shortcut (res/xml/shortcuts.xml). */
         const val ACTION_OPEN_SETTINGS = "app.throwback.action.OPEN_SETTINGS"
+
+        /** The hosts of the manifest's VIEW intent filter. */
+        private val DEEP_LINK_HOSTS = setOf("www.instagram.com", "instagram.com")
     }
 }

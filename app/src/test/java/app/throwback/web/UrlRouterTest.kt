@@ -160,6 +160,50 @@ class UrlRouterTest {
         assertEquals(Decision.Load, decide("about:blank"))
     }
 
+    // ---- URLs Chromium reads differently
+
+    @Test
+    fun `a backslash ends the host, as in Chromium`() {
+        val trick = "https://instagram.computer\\@instagram.com/accounts/login/"
+        assertEquals("instagram.computer", UrlParts.parse(trick)!!.host)
+        assertEquals(Decision.Ignore, decide(trick))
+        assertEquals(Decision.Ignore, decide(trick, current = null))
+        assertEquals(home, router.startUrl(trick, FULL))
+        assertEquals(Decision.Ignore, decide("https://www.instagram.com\\p\\X\\"))
+    }
+
+    @Test
+    fun `link shim targets with an encoded backslash do nothing`() {
+        val shim = "https://l.instagram.com/?u=https%3A%2F%2Finstagram.computer%5C%40instagram.com%2Faccounts%2Flogin%2F&e=1"
+        assertEquals(Decision.Ignore, decide(shim))
+        assertEquals(Decision.Ignore, decide("https://l.instagram.com/?u=https%3A%2F%2Fwww.instagram.com%5Cp%2FX%2F"))
+        assertEquals(home, router.startUrl(shim, FULL))
+    }
+
+    @Test
+    fun `control characters make a URL do nothing`() {
+        listOf(
+            "https://www.instagram.com/p/X/\n", "https://evil.example\t@www.instagram.com/", "https://www.instagram.com/\u0000",
+            "https://www.instagram.com/\u007f", "https://l.instagram.com/?u=https%3A%2F%2Fwww.instagram.com%2F%0A",
+        ).forEach { assertEquals(it, Decision.Ignore, decide(it)) }
+        assertEquals(home, router.startUrl("https://www.instagram.com/p/X/\r", FULL))
+    }
+
+    @Test
+    fun `start urls and shim targets are rebuilt from their parts`() {
+        assertEquals("$ig/p/X/?a=1", router.startUrl("https://user:pw@www.instagram.com:443/p/X/?a=1#frag", FULL))
+        assertEquals("$ig/direct/inbox/", router.startUrl("$ig/direct/inbox/#", FULL))
+        assertEquals(
+            Decision.Redirect("$ig/p/X/?a=1", null),
+            decide("https://l.instagram.com/?u=https%3A%2F%2Fuser%40www.instagram.com%3A8443%2Fp%2FX%2F%3Fa%3D1%23f"),
+        )
+        // Only https Instagram pages start; anything else that would load goes home.
+        assertEquals(home, router.startUrl("javascript:alert(1)", FULL))
+        assertEquals(home, router.startUrl("about:blank", FULL))
+        assertEquals(home, router.startUrl("https://accountscenter.instagram.com/", FULL))
+        assertEquals(home, router.startUrl("https://www.facebook.com/login.php", FULL))
+    }
+
     // ---- Start URLs, locations, pull to refresh
 
     @Test

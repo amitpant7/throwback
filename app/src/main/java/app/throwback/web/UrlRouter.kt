@@ -60,6 +60,7 @@ class UrlRouter(private val rules: FilterRules) {
      *        part of a login flow (stays in the WebView) or a link someone shared (opens outside).
      */
     fun decide(url: String, mode: WebMode, currentUrl: String?): Decision {
+        if (UrlParts.hasAmbiguousChars(url)) return Decision.Ignore
         if (blockedUrls.any { it.containsMatchIn(url) }) return Decision.Ignore
         val parts = UrlParts.parse(url) ?: return Decision.Ignore
         return when (parts.scheme) {
@@ -70,12 +71,17 @@ class UrlRouter(private val rules: FilterRules) {
         }
     }
 
-    /** The URL to load for a deep link (or null for the mode's home), after all redirects. */
+    /**
+     * The URL to load for a deep link (or null for the mode's home), after all redirects: an https
+     * Instagram page, rebuilt from its parsed parts (never the raw string), else the mode's home.
+     */
     fun startUrl(requested: String?, mode: WebMode): String {
         var url = requested ?: return homeUrl(mode)
         repeat(MAX_REDIRECT_HOPS) {
             when (val d = decide(url, mode, currentUrl = null)) {
-                Decision.Load -> return url
+                Decision.Load -> return UrlParts.parse(url)
+                    ?.takeIf { it.scheme == "https" && instagram.matches(it.host) }
+                    ?.toHttps() ?: homeUrl(mode)
                 is Decision.Redirect -> url = d.url
                 else -> return homeUrl(mode)
             }
@@ -96,11 +102,13 @@ class UrlRouter(private val rules: FilterRules) {
 
     private fun decideWeb(url: String, parts: UrlParts, mode: WebMode, currentUrl: String?): Decision {
         shims[parts.host]?.let { param ->
+            // The target is percent-decoded here, so it can hold what the outer URL could not.
             val target = parts.queryParam(param)
+            if (target != null && UrlParts.hasAmbiguousChars(target)) return Decision.Ignore
             val targetParts = target?.let(UrlParts::parse)
             return when {
                 target == null || targetParts == null || !targetParts.isWeb() -> Decision.External(url)
-                instagram.matches(targetParts.host) -> Decision.Redirect(target, null)
+                instagram.matches(targetParts.host) -> Decision.Redirect(targetParts.toHttps(), null)
                 else -> Decision.External(target)
             }
         }

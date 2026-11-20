@@ -3,11 +3,8 @@ package app.throwback.core.ui
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,18 +14,13 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchColors
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -37,7 +29,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -48,8 +39,12 @@ import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 
-/** Card radius used across settings screens. */
-internal val CardShape = RoundedCornerShape(18.dp)
+/*
+ * Throwback's UI kit, shared by the ui and timelimit screens: icons, the top bar, buttons and labels
+ * here; layout pieces (scaffold, cards) in Layout.kt; settings rows in Rows.kt. Colours come from
+ * ThrowbackTheme.colors, type from UiText.
+ */
+
 private val ButtonShape = RoundedCornerShape(14.dp)
 
 /** The Throwback logo: the rewind mark on an accent-coloured rounded square (placeholder art). */
@@ -83,7 +78,7 @@ internal fun TbIcon(
 @Composable
 internal fun TbBackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
     IconButton(onClick = onBack, modifier = modifier.size(48.dp)) {
-        TbIcon(R.drawable.ic_back, contentDescription = stringResource(R.string.ui_back))
+        TbIcon(R.drawable.ic_back, contentDescription = stringResource(R.string.back))
     }
 }
 
@@ -102,34 +97,6 @@ internal fun TbTopBar(title: String, onBack: () -> Unit, modifier: Modifier = Mo
             modifier = Modifier.semantics { heading() },
         )
     }
-}
-
-/** Rounded surface card (18dp radius) holding rows or free content. */
-@Composable
-internal fun TbCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        modifier.fillMaxWidth().clip(CardShape).background(ThrowbackTheme.colors.surface),
-        content = content,
-    )
-}
-
-/** Hairline between rows inside a card. */
-@Composable
-internal fun CardDivider() {
-    HorizontalDivider(thickness = 1.dp, color = ThrowbackTheme.colors.line)
-}
-
-/** Small muted label above a card ("Focus", "App", ...). */
-@Composable
-internal fun SectionLabel(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text = text,
-        style = UiText.section,
-        color = ThrowbackTheme.colors.muted,
-        modifier = modifier
-            .padding(start = 6.dp, end = 6.dp, top = 22.dp, bottom = 8.dp)
-            .semantics { heading() },
-    )
 }
 
 internal enum class TbButtonStyle {
@@ -231,83 +198,6 @@ internal fun DoneLabel(text: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** Settings row that opens another screen: icon, title, optional subtitle and value, chevron. */
-@Composable
-internal fun NavRow(
-    title: String,
-    onClick: () -> Unit,
-    @DrawableRes icon: Int? = null,
-    subtitle: String? = null,
-    value: String? = null,
-    minHeight: Dp = 56.dp,
-) {
-    val colors = ThrowbackTheme.colors
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = minHeight)
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        if (icon != null) TbIcon(icon)
-        Column(Modifier.weight(1f)) {
-            Text(title, style = UiText.row, color = colors.text)
-            if (subtitle != null) {
-                Text(subtitle, style = UiText.sub, color = colors.muted, modifier = Modifier.padding(top = 2.dp))
-            }
-        }
-        if (value != null) Text(value, style = UiText.body14, color = colors.muted)
-        TbIcon(R.drawable.ic_chevron, size = 18.dp, tint = colors.muted)
-    }
-}
-
-/** Settings row with a switch; the whole row toggles and reads as one switch to TalkBack. */
-@Composable
-internal fun SwitchRow(
-    title: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    @DrawableRes icon: Int? = null,
-    subtitle: String? = null,
-    minHeight: Dp = 56.dp,
-    titleStyle: TextStyle = UiText.row,
-) {
-    val colors = ThrowbackTheme.colors
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = minHeight)
-            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
-            .padding(horizontal = 18.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        if (icon != null) TbIcon(icon)
-        Column(Modifier.weight(1f)) {
-            Text(title, style = titleStyle, color = colors.text)
-            if (subtitle != null) {
-                Text(subtitle, style = UiText.sub, color = colors.muted, modifier = Modifier.padding(top = 2.dp))
-            }
-        }
-        Switch(checked = checked, onCheckedChange = null, colors = throwbackSwitchColors())
-    }
-}
-
-@Composable
-internal fun throwbackSwitchColors(): SwitchColors {
-    val colors = ThrowbackTheme.colors
-    return SwitchDefaults.colors(
-        checkedThumbColor = colors.onAccent,
-        checkedTrackColor = colors.accent,
-        checkedBorderColor = colors.accent,
-        uncheckedThumbColor = colors.muted,
-        uncheckedTrackColor = colors.surface2,
-        uncheckedBorderColor = colors.surface2,
-    )
-}
-
 /** Four-segment progress indicator used at the top of each wizard step. */
 @Composable
 internal fun StepBars(current: Int, total: Int, modifier: Modifier = Modifier) {
@@ -322,5 +212,15 @@ internal fun StepBars(current: Int, total: Int, modifier: Modifier = Modifier) {
                     .background(if (index < current) colors.accent else colors.surface2),
             )
         }
+    }
+}
+
+/** A line of text after a small accent icon (the rules of the time limit, what connecting does). */
+@Composable
+internal fun IconBullet(@DrawableRes icon: Int, text: String) {
+    val colors = ThrowbackTheme.colors
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        TbIcon(icon, size = 20.dp, tint = colors.accentText)
+        Text(text, style = UiText.body14, color = colors.text)
     }
 }

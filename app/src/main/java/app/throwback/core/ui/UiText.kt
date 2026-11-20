@@ -8,8 +8,8 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
 /**
- * Text styles used by the ui screens, derived from the theme's typography (Nunito) so sizes
- * match the mockups. Colours are applied at the call site from ThrowbackTheme.colors.
+ * Text styles used by the ui and timelimit screens, derived from the theme's typography (Nunito) so
+ * sizes match the mockups. Colours are applied at the call site from ThrowbackTheme.colors.
  */
 internal object UiText {
     /** First-launch headline: 32sp bold, tight. */
@@ -91,4 +91,19 @@ internal object UiText {
         @Composable get() = MaterialTheme.typography.headlineMedium.copy(
             fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.Normal, letterSpacing = (-0.01).em,
         )
+
+    /** Big titles on the lock screens ("Time's up for today"): 30sp extra bold. */
+    val lockTitle: TextStyle
+        @Composable get() = MaterialTheme.typography.headlineMedium.copy(
+            fontSize = 30.sp, lineHeight = 34.sp, letterSpacing = (-0.02).em,
+        )
+
+    /** Large countdown numbers ("3:28") at [size] sp, with tabular figures so they don't jiggle as they tick. */
+    @Composable
+    fun countdown(size: Int): TextStyle = MaterialTheme.typography.displaySmall.copy(
+        fontSize = size.sp,
+        lineHeight = (size + 6).sp,
+        fontWeight = FontWeight.SemiBold,
+        fontFeatureSettings = "tnum",
+    )
 }

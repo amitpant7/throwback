@@ -2,35 +2,26 @@ package app.throwback.ui.reels
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.throwback.R
-import app.throwback.core.theme.Nunito
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.core.ui.ScreenColumn
 import app.throwback.core.ui.UiText
+import app.throwback.core.ui.blockTouches
 
 /**
  * Full-screen poster after the reel allowance in Instagram's swipe viewer. A first, plain version;
@@ -43,28 +34,14 @@ import app.throwback.core.ui.UiText
 internal fun ReelPosterContent(onBack: () -> Unit, backEnabled: Boolean = true) {
     val colors = ThrowbackTheme.colors
     BackHandler(enabled = backEnabled, onBack = onBack)
-    BoxWithConstraints(
-        Modifier
-            .fillMaxSize()
-            .background(colors.bg)
-            // Takes the touches so they don't reach the page underneath. A plain click handler, not a
-            // consume-everything pointer filter: that cancelled taps on children (a finger always moves).
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
-            .safeDrawingPadding(),
+    // Centred, and scrolls when it doesn't fit (large font sizes): the last line is the only way-out hint.
+    ScreenColumn(
+        PaddingValues(horizontal = 28.dp, vertical = 24.dp),
+        Modifier.background(colors.bg).blockTouches().safeDrawingPadding(),
+        horizontalAlignment = Alignment.Start,
     ) {
-        // Centred, and scrolls when it doesn't fit (large font sizes): the last line is the only way-out hint.
-        PosterText(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = maxHeight))
-    }
-}
-
-@Composable
-private fun PosterText(modifier: Modifier) {
-    val colors = ThrowbackTheme.colors
-    Column(
-        modifier.padding(horizontal = 28.dp, vertical = 24.dp),
-        verticalArrangement = Arrangement.Center,
-    ) {
-        val big = TextStyle(fontFamily = Nunito, fontWeight = FontWeight.ExtraBold, fontSize = 32.sp, lineHeight = 38.sp)
+        val big = MaterialTheme.typography.displaySmall.copy(lineHeight = 38.sp)
+        Spacer(Modifier.weight(1f))
         Text(
             stringResource(R.string.ui_reel_poster_title),
             style = big,
@@ -91,5 +68,6 @@ private fun PosterText(modifier: Modifier) {
         Text(stringResource(R.string.ui_reel_poster_rule), style = UiText.body14, color = colors.muted)
         Spacer(Modifier.height(6.dp))
         Text(stringResource(R.string.ui_reel_poster_hint), style = UiText.body14Strong, color = colors.muted)
+        Spacer(Modifier.weight(1f))
     }
 }

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings of the shared UI kit (core/ui), used by the ui and timelimit screens. -->
+<resources>
+    <string name="back">Back</string>
+
+    <!-- A value that isn't known yet, and how TalkBack reads it. -->
+    <string name="value_unknown">—</string>
+    <string name="value_unknown_description">not known yet</string>
+    <!-- TalkBack for a row with a title and a value, e.g. "Filters updated: 20 Nov 2026". -->
+    <string name="label_value">%1$s: %2$s</string>
+
+    <!-- A row that shows or hides more below it: what a tap does, and its state, for TalkBack. -->
+    <string name="expand">Expand</string>
+    <string name="collapse">Collapse</string>
+    <string name="expanded">Expanded</string>
+    <string name="collapsed">Collapsed</string>
+</resources>

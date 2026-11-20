@@ -3,7 +3,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Common -->
-    <string name="ui_back">Back</string>
     <string name="ui_next">Next</string>
     <string name="ui_not_now">Not now</string>
     <string name="ui_finish">Finish</string>
@@ -128,8 +127,6 @@
     <string name="ui_also_notify">Other alerts</string>
     <string name="ui_extras_off">Off: likes, comments, followers and more</string>
     <string name="ui_extras_count">%1$d on</string>
-    <string name="ui_extras_show">Show other alerts</string>
-    <string name="ui_extras_hide">Hide other alerts</string>
     <string name="ui_notify_likes">Likes</string>
     <string name="ui_notify_comments">Comments</string>
     <string name="ui_notify_new_followers">New followers</string>
@@ -182,8 +179,6 @@
     <string name="ui_link_source">Source code on GitHub</string>
     <string name="ui_link_privacy">Privacy policy</string>
     <string name="ui_filters_updated">Filters updated</string>
-    <string name="ui_filters_updated_unknown">—</string>
-    <string name="ui_filters_updated_unknown_description">%1$s: not known yet</string>
     <string name="ui_link_report">Report something Throwback missed</string>
     <string name="ui_disclaimer">Not affiliated with, endorsed or sponsored by Instagram or Meta. Instagram is a trademark of Meta Platforms, Inc.</string>
 

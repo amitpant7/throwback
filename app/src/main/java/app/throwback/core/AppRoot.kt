@@ -12,8 +12,6 @@ import app.throwback.relay.CallInApp
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -322,8 +320,8 @@ private fun MainScreen(
                     Toast.makeText(context, R.string.create_in_app_failed, Toast.LENGTH_LONG).show()
                 }
             },
-            // While locked or paused, screen readers must not reach the feed underneath.
-            modifier = if (lockShowing || pauseShowing) Modifier.clearAndSetSemantics {} else Modifier,
+            // While locked, paused or showing the reel poster, screen readers must not reach the feed underneath.
+            modifier = if (lockShowing || pauseShowing || reelPoster) Modifier.clearAndSetSemantics {} else Modifier,
         )
 
         // No Throwback button on the feed (owner's decision): Settings opens from the app icon's
@@ -381,17 +379,8 @@ private fun MainScreen(
 
         // On top of Instagram, which already loads underneath: the feed is ready when the pause ends.
         if (pauseShowing) {
-            // Taps on the pause's empty areas must not reach the page loading underneath.
-            Box(
-                // A plain click handler takes the touches; a consume-everything filter cancelled taps
-                // on the pause's own buttons (a finger always moves a little).
-                Modifier.fillMaxSize().clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) {},
-            ) {
-                MindfulPauseScreen(onContinue = { pauseDone = true }, onBack = onCloseApp, backEnabled = !settingsOpen)
-            }
+            // The pause keeps its touches from reaching the page loading underneath.
+            MindfulPauseScreen(onContinue = { pauseDone = true }, onBack = onCloseApp, backEnabled = !settingsOpen)
         }
     }
 }

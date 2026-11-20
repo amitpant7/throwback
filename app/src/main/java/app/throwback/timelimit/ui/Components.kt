@@ -1,10 +1,8 @@
 package app.throwback.timelimit.ui
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -17,10 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,6 +56,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.core.ui.ScreenColumn
 import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.TbTopBar
 import app.throwback.timelimit.DefaultTimeLimitController
@@ -94,27 +91,6 @@ internal fun rememberLiveView(controller: DefaultTimeLimitController): State<Tim
     return controller.view.collectAsStateWithLifecycle()
 }
 
-// ---- Text styles derived from the theme's typography ----------------------------------------
-
-/** Big screen titles ("Time's up for today"): 30sp in the mockups. */
-@Composable
-internal fun screenTitleStyle(): TextStyle =
-    MaterialTheme.typography.headlineMedium.copy(fontSize = 30.sp, lineHeight = 34.sp, letterSpacing = (-0.02).em)
-
-/** Large countdown numbers ("3:28"). Tabular figures so they don't jiggle as they tick. */
-@Composable
-internal fun countdownStyle(size: Int): TextStyle =
-    MaterialTheme.typography.displaySmall.copy(
-        fontSize = size.sp,
-        lineHeight = (size + 6).sp,
-        fontWeight = FontWeight.SemiBold,
-        fontFeatureSettings = "tnum",
-    )
-
-/** Muted body copy under titles: 15sp in the mockups. */
-@Composable
-internal fun leadStyle(): TextStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, lineHeight = 22.sp)
-
 // ---- Durations as text ----------------------------------------------------------------------
 
 @Composable
@@ -136,32 +112,7 @@ internal fun longDurationText(millis: Long): String =
     Durations.daysHours(millis)?.let { stringResource(R.string.tl_dur_days_hours, it.days, it.hours) }
         ?: hoursMinutesText(millis)
 
-// ---- Layout ---------------------------------------------------------------------------------
-
-/**
- * A full-height column that scrolls on small screens. Children can use `Spacer(Modifier.weight(1f))`
- * to push content to the bottom, as in the mockups.
- */
-@Composable
-internal fun ScreenColumn(
-    contentPadding: PaddingValues,
-    modifier: Modifier = Modifier,
-    horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    BoxWithConstraints(modifier.fillMaxSize()) {
-        val viewport = maxHeight
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .heightIn(min = viewport)
-                .padding(contentPadding),
-            horizontalAlignment = horizontalAlignment,
-            content = content,
-        )
-    }
-}
+// ---- Text ---------------------------------------------------------------------------------
 
 /** Small capitals label ("EXTENSION 1 OF 2", "RESET REQUESTED"). */
 @Composable
@@ -172,45 +123,6 @@ internal fun Eyebrow(text: String, modifier: Modifier = Modifier) {
         color = ThrowbackTheme.colors.accentText,
         modifier = modifier,
     )
-}
-
-/** Muted section title ("1 · How long per day?", "PIN"). */
-@Composable
-internal fun SectionLabel(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.02.em),
-        color = ThrowbackTheme.colors.muted,
-        modifier = modifier.padding(horizontal = 4.dp).padding(bottom = 10.dp).semantics { heading() },
-    )
-}
-
-@Composable
-internal fun TlCard(
-    modifier: Modifier = Modifier,
-    padding: PaddingValues = PaddingValues(horizontal = 18.dp, vertical = 16.dp),
-    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Column(
-        modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(ThrowbackTheme.colors.surface)
-            .padding(padding),
-        verticalArrangement = verticalArrangement,
-        content = content,
-    )
-}
-
-/** Icon + text line used for the rules on the setup screen and the steps on the reset screen. */
-@Composable
-internal fun IconLine(@DrawableRes icon: Int, text: String) {
-    val c = ThrowbackTheme.colors
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        TbIcon(icon, size = 20.dp, tint = c.accentText)
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = c.text)
-    }
 }
 
 /** A line that screen readers announce when it changes (errors, confirmations). */

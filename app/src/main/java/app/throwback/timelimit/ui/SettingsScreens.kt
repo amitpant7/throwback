@@ -2,7 +2,6 @@ package app.throwback.timelimit.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +20,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -49,8 +47,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.R
 import app.throwback.core.LockState
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.core.ui.CardDivider
+import app.throwback.core.ui.IconBullet
+import app.throwback.core.ui.NavRow
+import app.throwback.core.ui.SectionLabel
+import app.throwback.core.ui.SettingsScaffold
 import app.throwback.core.ui.TbButton
-import app.throwback.core.ui.TbIcon
+import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.TbTopBar
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.engine.ActionResult
@@ -118,41 +121,40 @@ private fun SetupScreen(controller: DefaultTimeLimitController, onClose: () -> U
         return
     }
 
-    Column(Modifier.fillMaxSize()) {
-        TbTopBar(stringResource(R.string.tl_title), onClose)
-        ScreenColumn(
-            PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 28.dp),
-            horizontalAlignment = Alignment.Start,
-        ) {
-            SectionLabel(stringResource(R.string.tl_setup_step_minutes))
-            LimitChoices(selected = minutes, onPick = { minutes = it })
+    SettingsScaffold(
+        stringResource(R.string.tl_title),
+        onBack = onClose,
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 28.dp),
+        fillViewport = true,
+    ) {
+        SectionLabel(stringResource(R.string.tl_setup_step_minutes), topPadding = 0.dp)
+        LimitChoices(selected = minutes, onPick = { minutes = it })
 
-            Spacer(Modifier.height(18.dp))
-            TlCard(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                IconLine(R.drawable.ic_lock, pluralStringResource(R.plurals.tl_rule_locks, minutes, minutes))
-                IconLine(R.drawable.ic_clock, stringResource(R.string.tl_rule_extend))
-                IconLine(R.drawable.ic_chat, stringResource(R.string.tl_rule_messages))
-                IconLine(R.drawable.ic_shield, stringResource(R.string.tl_setup_pin_next))
-            }
-
-            Spacer(Modifier.weight(1f))
-            Spacer(Modifier.height(24.dp))
-            if (failed) {
-                AnnouncedText(stringResource(R.string.tl_error_generic), Modifier.fillMaxWidth().padding(bottom = 12.dp))
-            }
-            Text(
-                stringResource(R.string.tl_speed_bump),
-                style = MaterialTheme.typography.bodyLarge,
-                color = c.text,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
-            )
-            TbButton(
-                stringResource(R.string.tl_turn_on, minutes),
-                enabled = !busy,
-                onClick = { creatingPin = true },
-            )
+        Spacer(Modifier.height(18.dp))
+        TbCard(contentPadding = CardPadding, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            IconBullet(R.drawable.ic_lock, pluralStringResource(R.plurals.tl_rule_locks, minutes, minutes))
+            IconBullet(R.drawable.ic_clock, stringResource(R.string.tl_rule_extend))
+            IconBullet(R.drawable.ic_chat, stringResource(R.string.tl_rule_messages))
+            IconBullet(R.drawable.ic_shield, stringResource(R.string.tl_setup_pin_next))
         }
+
+        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(24.dp))
+        if (failed) {
+            AnnouncedText(stringResource(R.string.tl_error_generic), Modifier.fillMaxWidth().padding(bottom = 12.dp))
+        }
+        Text(
+            stringResource(R.string.tl_speed_bump),
+            style = MaterialTheme.typography.bodyLarge,
+            color = c.text,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
+        )
+        TbButton(
+            stringResource(R.string.tl_turn_on, minutes),
+            enabled = !busy,
+            onClick = { creatingPin = true },
+        )
     }
 }
 
@@ -330,105 +332,107 @@ private fun ManageHome(
     val limit = view.limitMinutes ?: return
     val reset = view.pinReset
 
-    Column(Modifier.fillMaxSize()) {
-        TbTopBar(stringResource(R.string.tl_title), onClose)
-        ScreenColumn(
-            PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 28.dp),
-            horizontalAlignment = Alignment.Start,
-        ) {
-            if (notice != null) {
-                TlCard(Modifier.padding(bottom = 12.dp)) {
-                    AnnouncedText(noticeText(notice), Modifier.fillMaxWidth(), MaterialTheme.typography.bodyMedium)
-                }
+    SettingsScaffold(
+        stringResource(R.string.tl_title),
+        onBack = onClose,
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 28.dp),
+        fillViewport = true,
+    ) {
+        if (notice != null) {
+            TbCard(Modifier.padding(bottom = 12.dp), contentPadding = CardPadding) {
+                AnnouncedText(noticeText(notice), Modifier.fillMaxWidth(), MaterialTheme.typography.bodyMedium)
             }
+        }
 
-            TlCard {
-                Eyebrow(stringResource(R.string.tl_today_label))
-                Spacer(Modifier.height(6.dp))
-                Text(todayStatus(view), style = MaterialTheme.typography.headlineSmall, color = c.text)
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    pluralStringResource(
-                        R.plurals.tl_manage_summary,
-                        Rules.MAX_EXTENSIONS_PER_DAY,
-                        limit,
-                        view.extensionsUsed,
-                        Rules.MAX_EXTENSIONS_PER_DAY,
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = c.muted,
-                )
-            }
-
-            val pendingLimit = view.pendingLimit
-            val pendingPin = view.pendingPinEffective
-            if (pendingLimit != null || pendingPin != null) {
-                val effective = listOfNotNull(pendingLimit?.effective, pendingPin).min()
-                Spacer(Modifier.height(12.dp))
-                TlCard(padding = PaddingValues(start = 18.dp, end = 6.dp, top = 16.dp, bottom = 6.dp)) {
-                    Eyebrow(stringResource(R.string.tl_pending_label, whenText(effective, view.today).uppercase()))
-                    if (pendingLimit != null) {
-                        PendingRow(
-                            text = pendingLimit.minutes?.let { pluralStringResource(R.plurals.tl_pending_raise, it, it) }
-                                ?: stringResource(R.string.tl_pending_off),
-                            onCancel = onCancelPendingLimit,
-                        )
-                    }
-                    if (pendingPin != null) PendingRow(stringResource(R.string.tl_pending_pin), onCancelPendingPin)
-                }
-            }
-
-            ManageSection(stringResource(R.string.tl_section_limit))
-            LimitChoices(selected = limit, onPick = onPickLimit)
+        TbCard(contentPadding = CardPadding) {
+            Eyebrow(stringResource(R.string.tl_today_label))
+            Spacer(Modifier.height(6.dp))
+            Text(todayStatus(view), style = MaterialTheme.typography.headlineSmall, color = c.text)
+            Spacer(Modifier.height(4.dp))
             Text(
-                stringResource(R.string.tl_limit_help),
+                pluralStringResource(
+                    R.plurals.tl_manage_summary,
+                    Rules.MAX_EXTENSIONS_PER_DAY,
+                    limit,
+                    view.extensionsUsed,
+                    Rules.MAX_EXTENSIONS_PER_DAY,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = c.muted,
-                modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 10.dp),
-            )
-
-            ManageSection(stringResource(R.string.tl_section_pin))
-            val pinLocked = reset != null
-            TlCard(padding = PaddingValues(0.dp)) {
-                SettingsRow(
-                    title = stringResource(R.string.tl_change_pin),
-                    subtitle = stringResource(if (pinLocked) R.string.tl_unavailable_reset else R.string.tl_change_pin_sub),
-                    enabled = !pinLocked,
-                    onClick = onChangePin,
-                )
-                HorizontalDivider(color = c.line)
-                SettingsRow(
-                    title = stringResource(R.string.tl_forgot_pin),
-                    subtitle = when {
-                        reset == null -> stringResource(R.string.tl_forgot_pin_sub)
-                        reset.ready -> stringResource(R.string.tl_reset_ready_row_sub)
-                        else -> stringResource(R.string.tl_reset_running_sub, longDurationText(reset.remainingMillis))
-                    },
-                    onClick = onForgotPin,
-                )
-            }
-            Spacer(Modifier.height(12.dp))
-            TlCard(padding = PaddingValues(0.dp)) {
-                SettingsRow(
-                    title = stringResource(R.string.tl_turn_off),
-                    subtitle = stringResource(if (pinLocked) R.string.tl_unavailable_reset else R.string.tl_turn_off_sub),
-                    enabled = !pinLocked,
-                    onClick = onTurnOff,
-                )
-            }
-
-            Spacer(Modifier.weight(1f))
-            Spacer(Modifier.height(24.dp))
-            Text(
-                stringResource(R.string.tl_speed_bump),
-                style = MaterialTheme.typography.bodyLarge,
-                color = c.muted,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
             )
         }
+
+        val pendingLimit = view.pendingLimit
+        val pendingPin = view.pendingPinEffective
+        if (pendingLimit != null || pendingPin != null) {
+            val effective = listOfNotNull(pendingLimit?.effective, pendingPin).min()
+            Spacer(Modifier.height(12.dp))
+            TbCard(contentPadding = PaddingValues(start = 18.dp, end = 6.dp, top = 16.dp, bottom = 6.dp)) {
+                Eyebrow(stringResource(R.string.tl_pending_label, whenText(effective, view.today).uppercase()))
+                if (pendingLimit != null) {
+                    PendingRow(
+                        text = pendingLimit.minutes?.let { pluralStringResource(R.plurals.tl_pending_raise, it, it) }
+                            ?: stringResource(R.string.tl_pending_off),
+                        onCancel = onCancelPendingLimit,
+                    )
+                }
+                if (pendingPin != null) PendingRow(stringResource(R.string.tl_pending_pin), onCancelPendingPin)
+            }
+        }
+
+        SectionLabel(stringResource(R.string.tl_section_limit))
+        LimitChoices(selected = limit, onPick = onPickLimit)
+        Text(
+            stringResource(R.string.tl_limit_help),
+            style = MaterialTheme.typography.bodySmall,
+            color = c.muted,
+            modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 10.dp),
+        )
+
+        SectionLabel(stringResource(R.string.tl_section_pin))
+        val pinLocked = reset != null
+        TbCard {
+            NavRow(
+                title = stringResource(R.string.tl_change_pin),
+                subtitle = stringResource(if (pinLocked) R.string.tl_unavailable_reset else R.string.tl_change_pin_sub),
+                enabled = !pinLocked,
+                onClick = onChangePin,
+            )
+            CardDivider()
+            NavRow(
+                title = stringResource(R.string.tl_forgot_pin),
+                subtitle = when {
+                    reset == null -> stringResource(R.string.tl_forgot_pin_sub)
+                    reset.ready -> stringResource(R.string.tl_reset_ready_row_sub)
+                    else -> stringResource(R.string.tl_reset_running_sub, longDurationText(reset.remainingMillis))
+                },
+                onClick = onForgotPin,
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        TbCard {
+            NavRow(
+                title = stringResource(R.string.tl_turn_off),
+                subtitle = stringResource(if (pinLocked) R.string.tl_unavailable_reset else R.string.tl_turn_off_sub),
+                enabled = !pinLocked,
+                onClick = onTurnOff,
+            )
+        }
+
+        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(24.dp))
+        Text(
+            stringResource(R.string.tl_speed_bump),
+            style = MaterialTheme.typography.bodyLarge,
+            color = c.muted,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
+
+/** Padding of the cards with free content on the limit screens (mockup `.card`). */
+private val CardPadding = PaddingValues(horizontal = 18.dp, vertical = 16.dp)
 
 @Composable
 private fun todayStatus(view: TimeLimitView): String = when (val state = view.lockState) {
@@ -459,11 +463,6 @@ private fun whenText(date: LocalDate, today: LocalDate?): String =
     else date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
 
 @Composable
-private fun ManageSection(text: String) {
-    SectionLabel(text, Modifier.padding(start = 2.dp, top = 22.dp))
-}
-
-@Composable
 private fun PendingRow(text: String, onCancel: () -> Unit) {
     val c = ThrowbackTheme.colors
     val cancelLabel = stringResource(R.string.tl_cancel_pending_cd, text)
@@ -475,29 +474,6 @@ private fun PendingRow(text: String, onCancel: () -> Unit) {
         ) {
             Text(stringResource(R.string.tl_cancel), style = MaterialTheme.typography.labelLarge, color = c.accentText)
         }
-    }
-}
-
-/** Settings list row (mockup `.row`: 56dp minimum, title 16sp, subtitle 13sp muted, chevron). */
-@Composable
-private fun SettingsRow(title: String, subtitle: String?, onClick: () -> Unit, enabled: Boolean = true) {
-    val c = ThrowbackTheme.colors
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, color = if (enabled) c.text else c.muted)
-            if (subtitle != null) {
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 2.dp))
-            }
-        }
-        TbIcon(R.drawable.ic_chevron, size = 18.dp, tint = c.muted)
     }
 }
 

@@ -40,6 +40,7 @@ import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.UiText
+import app.throwback.core.ui.blockTouches
 import kotlin.math.ceil
 
 /** Timing of the pause, kept pure for tests. */
@@ -82,6 +83,7 @@ internal fun MindfulPauseContent(onContinue: () -> Unit, onBack: () -> Unit, bac
         Modifier
             .fillMaxSize()
             .background(colors.bg)
+            .blockTouches() // nothing reaches the page loading underneath
             .systemBarsPadding()
             .padding(start = 28.dp, end = 28.dp, top = 40.dp, bottom = 28.dp),
     ) {

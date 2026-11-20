@@ -1,7 +1,5 @@
 package app.throwback.timelimit.ui
 
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.clickable
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
@@ -9,6 +7,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,9 +19,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,10 +52,14 @@ import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.LockState
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.core.ui.ScreenColumn
 import app.throwback.core.ui.TbBackButton
 import app.throwback.core.ui.TbButton
 import app.throwback.core.ui.TbButtonStyle
+import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.TbIcon
+import app.throwback.core.ui.UiText
+import app.throwback.core.ui.blockTouches
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.LockPhase
@@ -109,13 +112,7 @@ internal fun LockOverlay(
         modifier
             .fillMaxSize()
             .background(ThrowbackTheme.colors.bg)
-            .clickable(
-                // Takes the touches that reach the overlay so nothing below it gets touched. A plain
-                // click handler: consuming every pointer event (as before) also consumed a finger's
-                // small movements and cancelled taps on the lock screen's own buttons.
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ) {}
+            .blockTouches()
             .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
         when {
@@ -167,7 +164,7 @@ private fun TimesUpScreen(
         Spacer(Modifier.height(16.dp))
         Text(
             stringResource(R.string.tl_times_up_title),
-            style = screenTitleStyle(),
+            style = UiText.lockTitle,
             color = c.text,
             textAlign = TextAlign.Center,
             modifier = Modifier.semantics { heading() },
@@ -175,7 +172,7 @@ private fun TimesUpScreen(
         Spacer(Modifier.height(8.dp))
         Text(
             pluralStringResource(R.plurals.tl_times_up_body, view.budgetMinutes, view.budgetMinutes),
-            style = leadStyle(),
+            style = UiText.lead,
             color = c.muted,
             textAlign = TextAlign.Center,
         )
@@ -185,7 +182,7 @@ private fun TimesUpScreen(
             fraction = waitLeft.toFloat() / Rules.WAIT_MILLIS,
             description = if (waitLeft > 0) stringResource(R.string.tl_wait_cd, waitText) else stringResource(R.string.tl_you_can_ask_now),
         ) {
-            Text(waitText, style = countdownStyle(44), color = c.text)
+            Text(waitText, style = UiText.countdown(44), color = c.text)
             Text(
                 stringResource(if (waitLeft > 0) R.string.tl_until_you_can_ask else R.string.tl_you_can_ask_now),
                 style = MaterialTheme.typography.bodySmall,
@@ -329,7 +326,7 @@ private fun GrantedScreen(view: TimeLimitView, onContinue: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         Text(
             stringResource(R.string.tl_granted_title),
-            style = screenTitleStyle(),
+            style = UiText.lockTitle,
             color = c.text,
             textAlign = TextAlign.Center,
             modifier = Modifier.semantics { heading() },
@@ -337,7 +334,7 @@ private fun GrantedScreen(view: TimeLimitView, onContinue: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         AnnouncedText(
             leftText + "\n" + stringResource(R.string.tl_granted_lock_again),
-            style = leadStyle(),
+            style = UiText.lead,
             color = c.muted,
         )
         Spacer(Modifier.weight(1f))
@@ -356,26 +353,24 @@ private fun DoneForTodayScreen(phase: LockPhase.DoneForToday, onOpenMessagesOnly
         Spacer(Modifier.height(20.dp))
         Text(
             stringResource(R.string.tl_done_title),
-            style = screenTitleStyle().copy(fontSize = MaterialTheme.typography.displaySmall.fontSize),
+            style = UiText.lockTitle.copy(fontSize = MaterialTheme.typography.displaySmall.fontSize),
             color = c.text,
             textAlign = TextAlign.Center,
             modifier = Modifier.semantics { heading() },
         )
         Spacer(Modifier.height(10.dp))
-        Text(stringResource(R.string.tl_done_body), style = leadStyle(), color = c.muted, textAlign = TextAlign.Center)
+        Text(stringResource(R.string.tl_done_body), style = UiText.lead, color = c.muted, textAlign = TextAlign.Center)
 
         Spacer(Modifier.height(40.dp))
         val until = hoursMinutesText(phase.untilMidnightMillis)
         val untilLabel = stringResource(R.string.tl_until_unlock)
-        Column(
-            Modifier
-                .clip(RoundedCornerShape(18.dp))
-                .background(c.surface)
-                .padding(horizontal = 28.dp, vertical = 18.dp)
-                .clearAndSetSemantics { contentDescription = "$until $untilLabel" },
+        // A card as wide as its text, not the full width.
+        TbCard(
+            Modifier.width(IntrinsicSize.Max).clearAndSetSemantics { contentDescription = "$until $untilLabel" },
+            contentPadding = PaddingValues(horizontal = 28.dp, vertical = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(until, style = countdownStyle(34), color = c.text)
+            Text(until, style = UiText.countdown(34), color = c.text)
             Text(untilLabel, style = MaterialTheme.typography.bodySmall, color = c.muted)
         }
         Spacer(Modifier.height(20.dp))

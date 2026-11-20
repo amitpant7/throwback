@@ -2,7 +2,6 @@ package app.throwback.ui.messages
 
 import android.Manifest
 import android.os.Build
-import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,12 +20,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -36,7 +35,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,25 +44,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.CardDivider
 import app.throwback.core.ui.DoneLabel
-import app.throwback.core.ui.TbIcon
+import app.throwback.core.ui.IconBullet
 import app.throwback.core.ui.PillButton
-import app.throwback.core.ui.SectionLabel
 import app.throwback.core.ui.StepBars
-import app.throwback.ui.common.SystemScreens
 import app.throwback.core.ui.TbButton
 import app.throwback.core.ui.TbButtonStyle
 import app.throwback.core.ui.TbCard
+import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.TbTopBar
 import app.throwback.core.ui.UiText
+import app.throwback.ui.common.SystemScreens
 import app.throwback.ui.common.rememberCheckedOnResume
 
 /**
@@ -169,13 +163,11 @@ private fun InstallStep(onNext: () -> Unit, onNotNow: () -> Unit, showMessage: (
     ) {
         Text(stringResource(R.string.ui_install_body), style = UiText.lead, color = colors.muted)
         Spacer(Modifier.height(20.dp))
-        TbCard {
-            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                BulletPoint(R.drawable.ic_chat, R.string.ui_install_point_messages)
-                BulletPoint(R.drawable.ic_phone, R.string.ui_install_point_calls)
-                BulletPoint(R.drawable.ic_camera_app, R.string.ui_install_point_post)
-                BulletPoint(R.drawable.ic_shield, R.string.ui_install_point_guard)
-            }
+        TbCard(contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            IconBullet(R.drawable.ic_chat, stringResource(R.string.ui_install_point_messages))
+            IconBullet(R.drawable.ic_phone, stringResource(R.string.ui_install_point_calls))
+            IconBullet(R.drawable.ic_camera_app, stringResource(R.string.ui_install_point_post))
+            IconBullet(R.drawable.ic_shield, stringResource(R.string.ui_install_point_guard))
         }
         Row(
             Modifier
@@ -210,14 +202,6 @@ private fun InstallStep(onNext: () -> Unit, onNotNow: () -> Unit, showMessage: (
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun BulletPoint(@DrawableRes icon: Int, @StringRes text: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        TbIcon(icon, size = 20.dp, tint = ThrowbackTheme.colors.accentText)
-        Text(stringResource(text), style = UiText.body14, color = ThrowbackTheme.colors.text)
     }
 }
 

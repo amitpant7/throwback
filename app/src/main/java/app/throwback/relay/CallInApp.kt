@@ -18,14 +18,17 @@ internal object CallInApp {
     const val PASS_MS = 90_000L
 
     /** False if the Instagram app isn't installed (the caller explains and offers the setup). */
-    fun open(context: Context, thread: String?): Boolean {
+    fun open(context: Context, thread: String?, user: String? = null): Boolean {
         val pkg = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) } ?: return false
         GuardPass.grant(SystemClock.elapsedRealtime(), PASS_MS)
-        val chat = thread?.let {
+        // ig.me/m/<username> opens a chat with that person from whichever account the Instagram app
+        // uses (a chat id only exists in one account); the chat id is for group chats.
+        val byUser = user?.let { Intent(Intent.ACTION_VIEW, Uri.parse("https://ig.me/m/$it")).setPackage(pkg) }
+        val byThread = thread?.let {
             Intent(Intent.ACTION_VIEW, Uri.parse("https://www.instagram.com/direct/t/$it/")).setPackage(pkg)
         }
         val launch = context.packageManager.getLaunchIntentForPackage(pkg)
-        for (intent in listOfNotNull(chat, launch)) {
+        for (intent in listOfNotNull(byUser, byThread, launch)) {
             try {
                 context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 return true

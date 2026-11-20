@@ -485,8 +485,19 @@
       if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
       return;
     }
+    // The other person's username (one-to-one chats): the profile link in the top bar.
+    var user = '';
+    var bar = infoBtn.parentNode;
+    for (var up = 0; bar && up < 4 && !user; up++, bar = bar.parentNode) {
+      var links = bar.querySelectorAll ? bar.querySelectorAll('a[href]') : [];
+      for (var i = 0; i < links.length && !user; i++) {
+        var um = /^\/([A-Za-z0-9._]{1,30})\/$/.exec(links[i].getAttribute('href') || '');
+        if (um && links[i].getBoundingClientRect().top < 120) user = um[1];
+      }
+    }
     if (existing && existing.isConnected && existing.nextSibling === infoBtn) {
       existing.setAttribute('data-thread', m[1]);
+      existing.setAttribute('data-user', user);
       return;
     }
     var size = Math.round(infoBtn.getBoundingClientRect().width) || 40;
@@ -496,6 +507,7 @@
     btn.setAttribute('tabindex', '0');
     btn.setAttribute('aria-label', 'Call in the Instagram app');
     btn.setAttribute('data-thread', m[1]);
+    btn.setAttribute('data-user', user);
     btn.innerHTML = CALL_ICON;
     btn.style.cssText = 'display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;' +
       'width:' + size + 'px;height:' + size + 'px;color:' + getComputedStyle(info).color +
@@ -504,7 +516,7 @@
       btn.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        send({ t: 'callInApp', thread: btn.getAttribute('data-thread') || '' });
+        send({ t: 'callInApp', thread: btn.getAttribute('data-thread') || '', user: btn.getAttribute('data-user') || '' });
       }, true);
     }
     infoBtn.parentNode.insertBefore(btn, infoBtn);

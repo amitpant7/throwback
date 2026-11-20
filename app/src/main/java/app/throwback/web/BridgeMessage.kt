@@ -24,8 +24,11 @@ internal sealed interface BridgeMessage {
     /** The user tapped Throwback's settings icon on their profile page. */
     data object OpenSettings : BridgeMessage
 
-    /** The chat's call button: open chat [thread] (digits, or null) in the Instagram app to call. */
-    data class CallInApp(val thread: String?) : BridgeMessage
+    /**
+     * The chat's call button: open the chat in the Instagram app to call. [user] (the other person's
+     * username, one-to-one chats) works whichever account the app uses; [thread] is the chat id.
+     */
+    data class CallInApp(val thread: String?, val user: String? = null) : BridgeMessage
 
     /** The user swiped past the reel allowance in Instagram's reel viewer; the app shows its poster. */
     data object ReelLimit : BridgeMessage
@@ -36,6 +39,7 @@ internal sealed interface BridgeMessage {
     companion object {
         private val json = Json { ignoreUnknownKeys = true }
         private val THREAD = Regex("^\\d{5,40}$")
+        private val USER = Regex("^[A-Za-z0-9._]{1,30}$")
 
         fun parse(text: String?): BridgeMessage? {
             if (text.isNullOrEmpty() || text.length > 8_192) return null
@@ -52,7 +56,7 @@ internal sealed interface BridgeMessage {
                 "touch" -> (obj["top"] as? JsonPrimitive)?.booleanOrNull?.let(::Touch)
                 "bg" -> str("c")?.let(::parseCssColor)?.let(::Background)
                 "settings" -> OpenSettings
-                "callInApp" -> CallInApp(str("thread")?.takeIf { THREAD.matches(it) })
+                "callInApp" -> CallInApp(str("thread")?.takeIf { THREAD.matches(it) }, str("user")?.takeIf { USER.matches(it) })
                 "reelLimit" -> ReelLimit
                 else -> null
             }

@@ -208,9 +208,9 @@ private fun MainScreen(
             onLocationChanged = { path = it },
             onExitRequest = onCloseApp,
             onOpenSettings = onOpenSettings,
-            onCallInApp = { thread ->
+            onCallInApp = { thread, user ->
                 // No Instagram app: explain, and offer the Messages & calls setup (it installs it).
-                if (!CallInApp.open(context, thread)) {
+                if (!CallInApp.open(context, thread, user)) {
                     Toast.makeText(context, R.string.call_needs_instagram_app, Toast.LENGTH_LONG).show()
                     onOpenMessagesSetup()
                 }

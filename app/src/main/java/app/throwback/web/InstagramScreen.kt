@@ -77,8 +77,8 @@ fun InstagramScreen(
     modifier: Modifier = Modifier,
     startUrl: String? = null,
     onOpenSettings: () -> Unit = {},
-    /** The chat's call button was tapped (chat id, or null). */
-    onCallInApp: (String?) -> Unit = {},
+    /** The chat's call button was tapped (chat id and the other person's username; either may be null). */
+    onCallInApp: (String?, String?) -> Unit = { _, _ -> },
     /** False while a Throwback screen covers the page (Settings): system back must not reach the page. */
     backEnabled: Boolean = true,
     /** True while Throwback's own screens (Settings, lock, pause) cover the page. */
@@ -150,7 +150,7 @@ private fun InstagramWebHost(
     onLocationChanged: (String) -> Unit,
     onExitRequest: () -> Unit,
     onOpenSettings: () -> Unit,
-    onCallInApp: (String?) -> Unit,
+    onCallInApp: (String?, String?) -> Unit,
     onRecreate: () -> Unit,
     backEnabled: Boolean,
     covered: Boolean,
@@ -208,7 +208,7 @@ private fun InstagramWebHost(
 
             override fun onOpenSettings() = latestOnOpenSettings()
 
-            override fun onCallInApp(thread: String?) = latestOnCallInApp(thread)
+            override fun onCallInApp(thread: String?, user: String?) = latestOnCallInApp(thread, user)
 
             override fun onReelLimit() = latestOnReelLimit()
 

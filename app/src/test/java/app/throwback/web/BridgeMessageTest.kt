@@ -55,5 +55,7 @@ class BridgeMessageTest {
         assertEquals(BridgeMessage.CallInApp("340282366841710300949128"), BridgeMessage.parse("""{"t":"callInApp","thread":"340282366841710300949128"}"""))
         assertEquals(BridgeMessage.CallInApp(null), BridgeMessage.parse("""{"t":"callInApp","thread":"../evil"}"""))
         assertEquals(BridgeMessage.CallInApp(null), BridgeMessage.parse("""{"t":"callInApp"}"""))
+        assertEquals(BridgeMessage.CallInApp("12345", "some.user_1"), BridgeMessage.parse("""{"t":"callInApp","thread":"12345","user":"some.user_1"}"""))
+        assertEquals(BridgeMessage.CallInApp("12345", null), BridgeMessage.parse("""{"t":"callInApp","thread":"12345","user":"x/../y"}"""))
     }
 }

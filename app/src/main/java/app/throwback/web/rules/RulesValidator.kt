@@ -157,6 +157,7 @@ object RulesValidator {
                 }
             }
         }
+        NotificationRulesValidator.validate(rules, errors)
         return errors
     }
 

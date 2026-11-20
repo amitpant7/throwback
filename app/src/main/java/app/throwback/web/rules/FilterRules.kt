@@ -55,6 +55,8 @@ data class FilterRules(
     val reelViewer: ReelViewerRules? = null,
     /** Stories: ads removed from Instagram's data, and a small look-ahead for the next videos (null: off). */
     val stories: StoryRules? = null,
+    /** Messages & calls relay: how the Instagram app's notifications are sorted (NotificationRules.kt; null: built-in defaults). */
+    val notifications: NotificationRules? = null,
 )
 
 @Serializable

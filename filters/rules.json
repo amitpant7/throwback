@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112017,
+  "version": 2026112018,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -181,6 +181,14 @@
     "adKeys": ["xdt_injected_story_units"],
     "prefetchAhead": 5,
     "prefetchKB": 400
+  },
+  "notifications": {
+    "note": "Messages & calls relay (DECISIONS 26): how the Instagram app's notifications are sorted. Calls are always recognised by Android's own signals (category 'call', CallStyle, a full-screen intent) before these rules and are never touched. 'classify' is checked in order, first match wins; every field set must match (channel, template, group, tag: regex; category: exact; ongoing: true/false). Kinds: call, message, missedCall, likes, comments, follows, mentions, live, other. Without a match: category 'missed_call' = missedCall, category 'msg' or MessagingStyle = message, ongoing = call (an ongoing Instagram notification is most likely a call in progress), anything else = unknown, handled by 'unknown' (cancel or keep). threadId: where a message notification carries the chat id (from: shortcut, tag or group; pattern's first group, 5-40 digits), null = open the inbox. callGraceSeconds: the guard keeps allowing the Instagram app this long after the last call notification goes away. Instagram's real channel ids are NOT known yet: fill 'classify' in from a test phone (adb shell dumpsys notification --noredact, pkg=com.instagram.android: channel, category, android.template, group, tag), never from anyone's real messages.",
+    "classify": [],
+    "unknown": "cancel",
+    "threadId": null,
+    "activityUrl": "https://www.instagram.com/accounts/activity/",
+    "callGraceSeconds": 5
   },
   "dismissMaxAttempts": 40
 }

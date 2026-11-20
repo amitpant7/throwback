@@ -9,3 +9,8 @@ captures/
 .cxx/
 *.keystore
 *.jks
+
+# Instagram app files copied for local testing; never committed.
+*.apk
+*.apkm
+*.xapk

@@ -1438,6 +1438,7 @@
         'text-align:center;color:inherit;font-family:inherit';
       card.innerHTML =
         '<div style="font-size:22px;font-weight:700">Enough for today\u2026</div>' +
+        '<div style="font-size:17px;font-weight:600">Don\u2019t give your freedom away!</div>' +
         '<div style="font-size:16px;line-height:1.4">Go have an argument with your sibling instead.</div>';
     }
     if (card.parentNode !== main) main.appendChild(card);

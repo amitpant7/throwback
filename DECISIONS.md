@@ -35,7 +35,7 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     hide suggested posts, hide sponsored posts.
 13i. **Explore, 5 minutes a day** (decided 2026-11-20): the Explore grid on the Search tab shows for
     5 minutes a day of time actually on that tab (rules `explore.dailySeconds`), then it is hidden
-    as before and "Enough for today… Go have an argument with your sibling instead." shows in its
+    as before and "Enough for today… Don't give your freedom away! Go have an argument with your sibling instead." shows in its
     place until midnight. Search keeps working. Stored on the device per day.
 13b. **A little discovery** (decided 2026-11-20): of Instagram's suggested posts (never ads), a few are
     shown, tagged "Discover · not someone you follow". Per 5 minutes of time actually spent on the feed:

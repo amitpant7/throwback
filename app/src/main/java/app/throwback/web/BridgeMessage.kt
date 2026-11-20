@@ -39,6 +39,9 @@ internal sealed interface BridgeMessage {
     /** "+" or "Your story" tapped while the Instagram app is connected: open its create screen. */
     data class CreateInApp(val story: Boolean = false) : BridgeMessage
 
+    /** "Your story" while the app route waits: the website's upload runs; the app explains why. */
+    data object StoryWeb : BridgeMessage
+
     /** "Open settings in the Instagram app" at the end of Instagram's settings page. */
     data object SettingsInApp : BridgeMessage
 
@@ -74,6 +77,7 @@ internal sealed interface BridgeMessage {
                 "caughtUp" -> CaughtUp
                 "createInApp" -> CreateInApp(story = str("kind") == "story")
                 "settingsInApp" -> SettingsInApp
+                "storyWeb" -> StoryWeb
                 "share" -> str("url")?.takeIf { SHARE_URL.matches(it) }?.let(::Share)
                 else -> null
             }

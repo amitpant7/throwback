@@ -79,6 +79,9 @@ internal class InstagramWebController(
         /** "Open settings in the Instagram app". */
         fun onSettingsInApp() {}
 
+        /** "Your story" went to the website's upload (the app route is waiting). */
+        fun onStoryWeb() {}
+
         /** Opens a picker; must eventually call [deliverFiles]. False if no picker could be opened. */
         fun pickFiles(kind: PickKind, multiple: Boolean, documentIntent: Intent?): Boolean
     }
@@ -499,6 +502,7 @@ internal class InstagramWebController(
             is BridgeMessage.Share -> share(m.url)
             is BridgeMessage.CreateInApp -> host?.onCreateInApp(m.story)
             BridgeMessage.SettingsInApp -> host?.onSettingsInApp()
+            BridgeMessage.StoryWeb -> host?.onStoryWeb()
             null -> Unit
         }
     }

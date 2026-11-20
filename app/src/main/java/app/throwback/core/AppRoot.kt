@@ -291,6 +291,12 @@ private fun MainScreen(
                     Toast.makeText(context, R.string.create_in_app_failed, Toast.LENGTH_LONG).show()
                 }
             },
+            onStoryWeb = {
+                val text = CallInApp.storyWaitMinutes(context)?.let { m ->
+                    context.resources.getQuantityString(R.plurals.story_web_wait, m, m)
+                } ?: context.getString(R.string.story_web_tomorrow)
+                Toast.makeText(context, text, Toast.LENGTH_LONG).show()
+            },
             onSettingsInApp = {
                 if (!CallInApp.settings(context)) {
                     Toast.makeText(context, R.string.create_in_app_failed, Toast.LENGTH_LONG).show()

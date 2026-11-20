@@ -1162,7 +1162,10 @@
     if (!hit) return false;
     // Story through the app only when a story pass is available (30 min apart, a few a day);
     // otherwise the website's own story upload runs as usual.
-    if (kind === 'story' && !state.storyInApp) return false;
+    if (kind === 'story' && !state.storyInApp) {
+      send({ t: 'storyWeb' }); // the app says why (the wait), then the website's own upload runs
+      return false;
+    }
     e.preventDefault();
     e.stopImmediatePropagation();
     send({ t: 'createInApp', kind: kind });

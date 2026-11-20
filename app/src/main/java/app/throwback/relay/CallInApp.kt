@@ -118,6 +118,19 @@ internal object CallInApp {
         return PassRules.storyAllowed(lastDay, count, day, last, nowWall, (st?.cooldownMinutes ?: 30) * 60_000L, st?.perDay ?: 3)
     }
 
+    /** Why "Your story" uses the website now: minutes until the next pass, or null = not today. */
+    fun storyWaitMinutes(context: Context, today: LocalDate = LocalDate.now(), nowWall: Long = System.currentTimeMillis()): Int? {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val st = storyRules(context)
+        val day = today.toEpochDay()
+        val lastDay = prefs.getLong("storyDay", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }
+        val count = if (lastDay == day) prefs.getInt("storyCount", 0) else 0
+        if (lastDay == day && count >= (st?.perDay ?: 3)) return null
+        val last = prefs.getLong("storyLastAt", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE } ?: return 0
+        val leftMs = (st?.cooldownMinutes ?: 30) * 60_000L - (nowWall - last).coerceAtLeast(0)
+        return ((leftMs + 59_999) / 60_000).toInt().coerceAtLeast(1)
+    }
+
     /**
      * "Your story": the Instagram app with a STORY pass: a few minutes (camera time not counted),
      * ended by posting or leaving; then a cooldown (see [storyAvailable]).

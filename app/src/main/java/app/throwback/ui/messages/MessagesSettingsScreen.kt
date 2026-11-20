@@ -7,7 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
-import app.throwback.ui.common.SecondaryButton
+import app.throwback.core.ui.SecondaryButton
 import app.throwback.relay.CallInApp
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -35,15 +35,15 @@ import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.ui.ExtraNotification
 import app.throwback.ui.UiPrefs
-import app.throwback.ui.common.CardDivider
-import app.throwback.ui.common.LineIcon
-import app.throwback.ui.common.PillButton
-import app.throwback.ui.common.QuietButton
-import app.throwback.ui.common.SectionLabel
-import app.throwback.ui.common.SwitchRow
-import app.throwback.ui.common.TbCard
-import app.throwback.ui.common.TopBar
-import app.throwback.ui.common.UiText
+import app.throwback.core.ui.CardDivider
+import app.throwback.core.ui.LineIcon
+import app.throwback.core.ui.PillButton
+import app.throwback.core.ui.QuietButton
+import app.throwback.core.ui.SectionLabel
+import app.throwback.core.ui.SwitchRow
+import app.throwback.core.ui.TbCard
+import app.throwback.core.ui.TopBar
+import app.throwback.core.ui.UiText
 import app.throwback.ui.common.rememberCheckedOnResume
 
 /** Labels for the "Also notify me about" toggles, in the order shown. */

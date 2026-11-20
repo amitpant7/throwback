@@ -38,8 +38,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.ui.common.LineIcon
-import app.throwback.ui.common.UiText
+import app.throwback.core.ui.LineIcon
+import app.throwback.core.ui.UiText
 import kotlin.math.ceil
 
 /** Timing of the pause, kept pure for tests. */

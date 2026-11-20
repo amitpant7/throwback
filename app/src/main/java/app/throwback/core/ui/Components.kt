@@ -1,4 +1,4 @@
-package app.throwback.ui.common
+package app.throwback.core.ui
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image

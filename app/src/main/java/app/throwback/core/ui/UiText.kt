@@ -1,4 +1,4 @@
-package app.throwback.ui.common
+package app.throwback.core.ui
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable

@@ -42,7 +42,7 @@ import app.throwback.ui.SettingsStart
 import app.throwback.ui.UiPrefs
 import app.throwback.ui.about.AboutScreen
 import app.throwback.ui.about.SupportScreen
-import app.throwback.ui.common.UiText
+import app.throwback.core.ui.UiText
 import app.throwback.ui.messages.MessagesSettingsScreen
 import app.throwback.ui.messages.MessagesWizard
 import app.throwback.ui.shortcut.ShortcutScreen

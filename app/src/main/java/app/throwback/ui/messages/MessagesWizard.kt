@@ -53,19 +53,19 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.ui.common.CardDivider
-import app.throwback.ui.common.DoneLabel
-import app.throwback.ui.common.LineIcon
-import app.throwback.ui.common.PillButton
-import app.throwback.ui.common.PrimaryButton
-import app.throwback.ui.common.QuietButton
-import app.throwback.ui.common.SecondaryButton
-import app.throwback.ui.common.SectionLabel
-import app.throwback.ui.common.StepBars
+import app.throwback.core.ui.CardDivider
+import app.throwback.core.ui.DoneLabel
+import app.throwback.core.ui.LineIcon
+import app.throwback.core.ui.PillButton
+import app.throwback.core.ui.PrimaryButton
+import app.throwback.core.ui.QuietButton
+import app.throwback.core.ui.SecondaryButton
+import app.throwback.core.ui.SectionLabel
+import app.throwback.core.ui.StepBars
 import app.throwback.ui.common.SystemScreens
-import app.throwback.ui.common.TbCard
-import app.throwback.ui.common.TopBar
-import app.throwback.ui.common.UiText
+import app.throwback.core.ui.TbCard
+import app.throwback.core.ui.TopBar
+import app.throwback.core.ui.UiText
 import app.throwback.ui.common.rememberCheckedOnResume
 
 /**

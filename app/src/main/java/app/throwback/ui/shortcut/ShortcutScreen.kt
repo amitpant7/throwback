@@ -57,9 +57,9 @@ import androidx.core.graphics.drawable.IconCompat
 import app.throwback.MainActivity
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.ui.common.PrimaryButton
-import app.throwback.ui.common.TopBar
-import app.throwback.ui.common.UiText
+import app.throwback.core.ui.PrimaryButton
+import app.throwback.core.ui.TopBar
+import app.throwback.core.ui.UiText
 
 /** Icon choices for the pinned shortcut (DECISIONS.md #31). */
 internal enum class ShortcutStyle(

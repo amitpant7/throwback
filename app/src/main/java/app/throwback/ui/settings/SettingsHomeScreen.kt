@@ -22,14 +22,14 @@ import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.ui.UiPrefs
-import app.throwback.ui.common.CardDivider
-import app.throwback.ui.common.LineIcon
-import app.throwback.ui.common.NavRow
-import app.throwback.ui.common.SectionLabel
-import app.throwback.ui.common.SwitchRow
-import app.throwback.ui.common.TbCard
-import app.throwback.ui.common.TopBar
-import app.throwback.ui.common.UiText
+import app.throwback.core.ui.CardDivider
+import app.throwback.core.ui.LineIcon
+import app.throwback.core.ui.NavRow
+import app.throwback.core.ui.SectionLabel
+import app.throwback.core.ui.SwitchRow
+import app.throwback.core.ui.TbCard
+import app.throwback.core.ui.TopBar
+import app.throwback.core.ui.UiText
 
 /** The saved settings Settings home shows: the pause switch and the Instagram row's value. */
 internal data class HomeValues(val mindfulPause: Boolean, val instagramConnected: Boolean)

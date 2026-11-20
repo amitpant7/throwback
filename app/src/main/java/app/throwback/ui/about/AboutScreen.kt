@@ -1,7 +1,7 @@
 package app.throwback.ui.about
 
-import app.throwback.ui.common.SectionLabel
-import app.throwback.ui.common.LineIcon
+import app.throwback.core.ui.SectionLabel
+import app.throwback.core.ui.LineIcon
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -59,13 +59,13 @@ import androidx.compose.ui.unit.sp
 import app.throwback.BuildConfig
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.ui.common.CardDivider
-import app.throwback.ui.common.NavRow
+import app.throwback.core.ui.CardDivider
+import app.throwback.core.ui.NavRow
 import app.throwback.ui.common.SystemScreens
-import app.throwback.ui.common.TbCard
-import app.throwback.ui.common.ThrowbackLogo
-import app.throwback.ui.common.TopBar
-import app.throwback.ui.common.UiText
+import app.throwback.core.ui.TbCard
+import app.throwback.core.ui.ThrowbackLogo
+import app.throwback.core.ui.TopBar
+import app.throwback.core.ui.UiText
 
 /**
  * Links shown on About & support.

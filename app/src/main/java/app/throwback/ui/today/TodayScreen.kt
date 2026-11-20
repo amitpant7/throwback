@@ -31,11 +31,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.ui.common.CardDivider
-import app.throwback.ui.common.SectionLabel
-import app.throwback.ui.common.TbCard
-import app.throwback.ui.common.TopBar
-import app.throwback.ui.common.UiText
+import app.throwback.core.ui.CardDivider
+import app.throwback.core.ui.SectionLabel
+import app.throwback.core.ui.TbCard
+import app.throwback.core.ui.TopBar
+import app.throwback.core.ui.UiText
 
 /** What "Your day" shows. Page counts are null until the feed has been open once. */
 data class TodayStats(

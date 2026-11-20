@@ -24,11 +24,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.ui.common.CardDivider
-import app.throwback.ui.common.SecondaryButton
+import app.throwback.core.ui.CardDivider
+import app.throwback.core.ui.SecondaryButton
 import app.throwback.ui.common.SystemScreens
-import app.throwback.ui.common.TbCard
-import app.throwback.ui.common.UiText
+import app.throwback.core.ui.TbCard
+import app.throwback.core.ui.UiText
 
 /*
  * Optional tip (owner, 2026-11-20: it was step 2 of the setup). Throwback's relay already removes

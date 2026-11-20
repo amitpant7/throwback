@@ -48,12 +48,12 @@ import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.ui.UiPrefs
-import app.throwback.ui.common.LineIcon
-import app.throwback.ui.common.PrimaryButton
-import app.throwback.ui.common.QuietButton
+import app.throwback.core.ui.LineIcon
+import app.throwback.core.ui.PrimaryButton
+import app.throwback.core.ui.QuietButton
 import app.throwback.ui.common.SystemScreens
-import app.throwback.ui.common.ThrowbackLogo
-import app.throwback.ui.common.UiText
+import app.throwback.core.ui.ThrowbackLogo
+import app.throwback.core.ui.UiText
 import app.throwback.ui.messages.InstagramApp
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch

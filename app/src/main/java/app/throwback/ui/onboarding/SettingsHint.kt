@@ -25,8 +25,8 @@ import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.ui.UiPrefs
-import app.throwback.ui.common.PillButton
-import app.throwback.ui.common.UiText
+import app.throwback.core.ui.PillButton
+import app.throwback.core.ui.UiText
 import kotlinx.coroutines.flow.first
 
 /** Whether the one-time settings hint is still to be shown. */

@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.sp
 import app.throwback.R
 import app.throwback.core.theme.Nunito
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.ui.common.UiText
+import app.throwback.core.ui.UiText
 
 /**
  * Full-screen poster after the reel allowance in Instagram's swipe viewer. A first, plain version;

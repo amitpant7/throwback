@@ -449,8 +449,12 @@ class GuardService : Service() {
         private const val POLL_MS = 500L
         private const val QUERY_OVERLAP_MS = 3_000L
         private const val REBIND_AFTER_MS = 30_000L
-        /** Call audio counts if an Instagram call notification was seen this recently (ringing, then answered). */
-        private const val IG_CALL_LINK_MS = 120_000L
+        /**
+         * Call audio that comes on within this long after an Instagram call notification goes away is
+         * that call (answering takes seconds). Short, so a phone or WhatsApp call started soon after
+         * an Instagram call isn't taken for one (was 120 s; 2026-11-20 review).
+         */
+        private const val IG_CALL_LINK_MS = 30_000L
         /** The first query after the guard starts looks back this far, to learn what is on screen. */
         private const val LOOK_BACK_MS = 60 * 60 * 1000L
 

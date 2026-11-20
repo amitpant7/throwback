@@ -1,5 +1,10 @@
 package app.throwback.ui.about
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import app.throwback.web.rules.RulesRepository
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
@@ -175,12 +180,18 @@ private fun TipButton(tip: Tip, onClick: () -> Unit, modifier: Modifier) {
     }
 }
 
-/** No filter-update mechanism exists yet (web area), so this shows a dash. */
+/** The date of the filter rules in use (bundled, or the latest fetched copy); a dash until known. */
 @Composable
 private fun FiltersUpdatedRow() {
     val colors = ThrowbackTheme.colors
+    val context = LocalContext.current
+    val repository = remember { RulesRepository.get(context) }
+    val rules by repository.rules.collectAsStateWithLifecycle()
+    LaunchedEffect(repository) { repository.load() }
+    val date = remember(rules?.updated) { rules?.updated?.let(::formatRulesDate) }
     val title = stringResource(R.string.ui_filters_updated)
-    val description = stringResource(R.string.ui_filters_updated_unknown_description, title)
+    val value = date ?: stringResource(R.string.ui_filters_updated_unknown)
+    val description = if (date != null) "$title: $date" else stringResource(R.string.ui_filters_updated_unknown_description, title)
     Row(
         Modifier
             .fillMaxWidth()
@@ -190,6 +201,15 @@ private fun FiltersUpdatedRow() {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(title, style = UiText.row, color = colors.text, modifier = Modifier.weight(1f))
-        Text(stringResource(R.string.ui_filters_updated_unknown), style = UiText.body14, color = colors.muted)
+        Text(value, style = UiText.body14, color = colors.muted)
     }
+}
+
+/** "2026-11-20" → the phone's medium date format, e.g. "20 Nov 2026"; null if it isn't a date. */
+private fun formatRulesDate(iso: String): String? = try {
+    java.time.LocalDate.parse(iso).format(
+        java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM),
+    )
+} catch (e: java.time.format.DateTimeParseException) {
+    null
 }

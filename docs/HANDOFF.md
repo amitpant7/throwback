@@ -144,6 +144,23 @@ Highlights:
    - GitHub Releases APK.
    - The owner's personal story in the README "Why" section, written with the owner.
 
+## 5d. Current to-do (2026-11-20)
+
+- [ ] **Phone test of the latest build** (needs the owner to approve the install on the phone):
+      feed (no flicker, discovery tags, exact end card), settings-page section, profile icon colour,
+      Home long-press.
+- [ ] **Measure stories and DMs** with `__throwback.perf()` over DevTools (tap → settled times; full
+      loads). The owner taps; Throwback never opens stories itself (that would mark them seen).
+      Then decide on: `Profile#preconnect` on resume (needs androidx.webkit ≥ 1.15), checking for
+      HTTP-cache eviction of the DM/story code, a warm second WebView only if in-page DM opening is
+      still > 1–2 s. Done already: no text scanning in DMs/stories, throttled dialog checks,
+      parallel startup loads.
+- [ ] Owner decisions: wizard step 2 ("Quiet the Instagram app": keep, optional tip, or remove);
+      single reel from a link; /explore/people; hashtags/search; cookie auto-decline; "Copy page
+      info" debug action; a one-time hint about where Throwback's settings are; whether "caught up"
+      should stop at Instagram's own marker (`feedData.endAtMarker`, now false).
+- [ ] M5 (relay + guard), M6 (release).
+
 ## 5a. Ways into Throwback's settings (no button on the feed)
 
 | Way | Where it's implemented |

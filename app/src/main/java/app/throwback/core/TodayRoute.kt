@@ -7,7 +7,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import app.throwback.relay.MessagesFeature
 import app.throwback.relay.RelayStats
 import app.throwback.ui.TodayScreen
@@ -27,15 +30,19 @@ internal fun TodayRoute(timeLimit: TimeLimitController, onClose: () -> Unit) {
     var page by remember { mutableStateOf<PageDayStats?>(null) }
     var alerts by remember { mutableStateOf<Int?>(null) }
     var appDay by remember { mutableStateOf<TodayStats.InstagramAppDay?>(null) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            page = readPage() ?: page
-            val connected = MessagesFeature.isSetUp(context)
-            alerts = if (connected) RelayStats.otherGroupLastDays(context, days = 1) else null
-            appDay = if (connected) app.throwback.relay.CallInApp.appDay(context).let {
-                TodayStats.InstagramAppDay(it.storiesUsed, it.storiesMax, it.storyWaitMinutes, it.visitUsed, it.appMinutes)
-            } else null
-            delay(2_000)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        // Only while the screen can be seen: the page (paused in the background) isn't asked.
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                page = readPage() ?: page
+                val connected = MessagesFeature.isSetUp(context)
+                alerts = if (connected) RelayStats.otherGroupLastDays(context, days = 1) else null
+                appDay = if (connected) app.throwback.relay.CallInApp.appDay(context).let {
+                    TodayStats.InstagramAppDay(it.storiesUsed, it.storiesMax, it.storyWaitMinutes, it.visitUsed, it.appMinutes)
+                } else null
+                delay(2_000)
+            }
         }
     }
     val p = page

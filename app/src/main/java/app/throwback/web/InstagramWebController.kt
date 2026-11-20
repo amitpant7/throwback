@@ -1,11 +1,9 @@
 package app.throwback.web
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Bitmap
@@ -37,9 +35,13 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+import app.throwback.core.StartTrace
 import app.throwback.core.WebMode
 import app.throwback.web.rules.FilterRules
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import java.lang.ref.WeakReference
 
 /** A short message shown over the page. */
 internal enum class WebNotice { REELS, SUGGESTED, MESSAGES_ONLY, HIDDEN, NO_APP }
@@ -62,44 +64,38 @@ internal class InstagramWebController(
     private val assets: PageAssets,
     initialMode: WebMode,
     initialHandledStartUrl: String?,
+    initialFeatures: PageFeatures,
 ) {
-    /** Callbacks into the composable (set on every composition). */
-    interface Host {
-        fun onLocationChanged(location: String, url: String)
-        fun onStartUrlHandled(url: String?)
-
-        /** Throwback's settings icon in the page was tapped. */
-        fun onOpenSettings()
-
-        /** The chat's call button: open the chat (with [user], else chat [thread]) in the Instagram app. */
-        fun onCallInApp(thread: String?, user: String?) {}
-
+    /** What the page asks of the app: InstagramScreen's callbacks, in one object. */
+    class Host(
+        /** The location changed: the path on Instagram, the full URL elsewhere; and the URL. */
+        val onLocationChanged: (location: String, url: String) -> Unit,
+        val onStartUrlHandled: (url: String?) -> Unit,
+        /** Throwback's settings were asked for (profile icon, Instagram's settings page, Home long-press). */
+        val onOpenSettings: () -> Unit,
+        /** The chat's call button: open the chat (with the user, else the chat thread) in the Instagram app. */
+        val onCallInApp: (thread: String?, user: String?) -> Unit,
         /** The reel allowance in Instagram's swipe viewer is used up. */
-        fun onReelLimit()
-
+        val onReelLimit: () -> Unit,
         /** The feed reached "You're all caught up". */
-        fun onCaughtUp() {}
-
+        val onCaughtUp: () -> Unit,
         /** "+" / "Your story" with the Instagram app connected. */
-        fun onCreateInApp(story: Boolean) {}
-
+        val onCreateInApp: (story: Boolean) -> Unit,
         /** "Open settings in the Instagram app". */
-        fun onSettingsInApp() {}
-
+        val onSettingsInApp: () -> Unit,
         /** "Your story" went to the website's upload (the app route is waiting). */
-        fun onStoryWeb() {}
-
+        val onStoryWeb: () -> Unit,
         /** The support line was shown at "You're all caught up". */
-        fun onSupportAskShown() {}
-
+        val onSupportAskShown: () -> Unit,
         /** "Say thanks" on the support line. */
-        fun onSupportThanks() {}
+        val onSupportThanks: () -> Unit,
+    )
 
-        /** Opens a picker; must eventually call [deliverFiles]. False if no picker could be opened. */
-        fun pickFiles(kind: PickKind, multiple: Boolean, documentIntent: Intent?): Boolean
-    }
-
+    /** The screen's latest callbacks (set on every composition). */
     var host: Host? = null
+
+    /** Opens a picker for a file input; must eventually call [deliverFiles]. False if none could open. */
+    var pickFiles: ((kind: PickKind, multiple: Boolean, documentIntent: Intent?) -> Boolean)? = null
 
     private val handler = Handler(Looper.getMainLooper())
     val webView: WebView = WebView(context)
@@ -124,10 +120,9 @@ internal class InstagramWebController(
     var rendererGone by mutableStateOf<RendererGone?>(null)
         private set
 
-    var mode: WebMode = initialMode
-        private set
-    var started = false
-        private set
+    private var mode: WebMode = initialMode
+    private var started = false
+    private var features: PageFeatures = initialFeatures
 
     private var rules: FilterRules? = null
     private var router: UrlRouter? = null
@@ -167,7 +162,7 @@ internal class InstagramWebController(
             addAction(Intent.ACTION_DATE_CHANGED)
         }
         ContextCompat.registerReceiver(context.applicationContext, timeChanges, timeActions, ContextCompat.RECEIVER_NOT_EXPORTED)
-        current = java.lang.ref.WeakReference(this)
+        current = WeakReference(this)
     }
 
     /** Today's counts from the page (JSON, see PageDayStats), or null when the page can't say. */
@@ -178,7 +173,7 @@ internal class InstagramWebController(
         ) { raw ->
             // The value comes back JSON-encoded: a quoted string, or null.
             val text = try {
-                (kotlinx.serialization.json.Json.parseToJsonElement(raw ?: "null") as? kotlinx.serialization.json.JsonPrimitive)
+                (Json.parseToJsonElement(raw ?: "null") as? JsonPrimitive)
                     ?.takeIf { it.isString }?.content
             } catch (e: IllegalArgumentException) {
                 null
@@ -256,7 +251,7 @@ internal class InstagramWebController(
      */
     private fun installScript(clock: JsonObject?) {
         val rules = rules ?: return
-        injector.install(PageScript.build(assets.template, assets.css, rules, mode, clock))
+        injector.install(PageScript.build(assets.template, assets.css, rules, mode, clock, features))
         scriptHasClock = clock != null
     }
 
@@ -350,21 +345,23 @@ internal class InstagramWebController(
     }
 
     /** The app's features changed (e.g. the Instagram app got connected): tell the page. */
-    fun pushFeatures() {
-        if (destroyed) return
+    fun setFeatures(value: PageFeatures) {
+        if (destroyed || value == features) return
+        features = value
         // Pages loaded from now on (the script was built before the app knew), and the page on screen.
         installScript(PageClock.json())
-        if (started) injector.configureLive(PageScript.config()) {}
+        if (started) injector.configureLive(PageScript.config(features = value)) {}
     }
 
+    /**
+     * Kept for relay.CallInApp (another area), which still calls it after changing [PageFeatures]:
+     * the change already reaches the page through [PageFeatures.current], while Throwback is in front.
+     */
+    fun pushFeatures() = Unit
+
     private fun share(url: String) {
-        val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
-            .putExtra(android.content.Intent.EXTRA_TEXT, url)
-        try {
-            context.startActivity(android.content.Intent.createChooser(send, null).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
-        } catch (e: android.content.ActivityNotFoundException) {
-            Log.w(TAG, "no app to share with")
-        }
+        val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, url)
+        if (!startOutside(Intent.createChooser(send, null))) Log.w(TAG, "no app to share with")
     }
 
     /** Detaches and destroys the WebView. Idempotent: also called when the renderer goes away. */
@@ -385,7 +382,7 @@ internal class InstagramWebController(
     // ------------------------------------------------------------------ navigation
 
     private fun load(url: String) {
-        app.throwback.core.StartTrace.mark("load")
+        StartTrace.mark("load")
         navigatingTo = url
         webView.loadUrl(url)
     }
@@ -445,23 +442,17 @@ internal class InstagramWebController(
 
     private fun openExternally(url: String) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)
-        if (!context.isActivity()) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        try {
-            context.startActivity(intent)
-        } catch (e: ActivityNotFoundException) {
-            showNotice(WebNotice.NO_APP)
-        } catch (e: SecurityException) {
-            showNotice(WebNotice.NO_APP)
-        }
+        if (!startOutside(intent)) showNotice(WebNotice.NO_APP)
     }
 
-    private fun Context.isActivity(): Boolean {
-        var c: Context? = this
-        while (c is ContextWrapper) {
-            if (c is Activity) return true
-            c = c.baseContext
-        }
-        return false
+    /** Starts another app's activity from the screen's activity. False when no app may take it. */
+    private fun startOutside(intent: Intent): Boolean = try {
+        context.startActivity(intent)
+        true
+    } catch (e: ActivityNotFoundException) {
+        false
+    } catch (e: SecurityException) {
+        false
     }
 
     /**
@@ -717,7 +708,7 @@ internal class InstagramWebController(
                 null
             }
             val opened = try {
-                host?.pickFiles(kind, multiple, documentIntent) == true
+                pickFiles?.invoke(kind, multiple, documentIntent) == true
             } catch (e: ActivityNotFoundException) {
                 false
             }
@@ -734,7 +725,7 @@ internal class InstagramWebController(
     companion object {
         /** The live page (one at a time), for screens that read from it, such as "Your day". */
         @Volatile
-        var current: java.lang.ref.WeakReference<InstagramWebController>? = null
+        var current: WeakReference<InstagramWebController>? = null
 
         private const val MAX_LOGIN_REDIRECTS = 2
         private const val TAG = "ThrowbackWeb"

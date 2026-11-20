@@ -1,7 +1,6 @@
 package app.throwback.web
 
 import android.app.Activity
-import android.content.Intent
 import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.Network
@@ -23,6 +22,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -31,7 +31,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,6 +45,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.throwback.core.StartTrace
 import app.throwback.core.WebMode
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.web.rules.FilterRules
@@ -68,7 +68,8 @@ import kotlinx.coroutines.launch
  *        including in-page (pushState) navigation. Integration shows the time-left chip only on the home feed.
  *        Outside instagram.com (Facebook login) the full URL is passed instead, so it never looks like "/".
  * @param onExitRequest back pressed with no web history left; integration decides (normally finishes the activity).
- * @param onOpenSettings Throwback's settings icon (on the user's own profile page) was tapped.
+ * @param onOpenSettings the page asked for Throwback's settings: the icon on the user's own profile,
+ *        Throwback's section on Instagram's settings page, or a long-press on Home.
  */
 @Composable
 fun InstagramScreen(
@@ -80,9 +81,9 @@ fun InstagramScreen(
     onOpenSettings: () -> Unit = {},
     /** The chat's call button was tapped (chat id and the other person's username; either may be null). */
     onCallInApp: (String?, String?) -> Unit = { _, _ -> },
-    /** False while a Throwback screen covers the page (Settings): system back must not reach the page. */
+    /** False while a Throwback screen covers the page (Settings, the pause, the reel poster): back must not reach the page. */
     backEnabled: Boolean = true,
-    /** True while Throwback's own screens (Settings, lock, pause) cover the page. */
+    /** True while Throwback's own screens (Settings, the lock, the pause, the reel poster) cover the page. */
     covered: Boolean = false,
     /** The reel allowance in Instagram's swipe viewer is used up: show the poster. */
     onReelLimit: () -> Unit = {},
@@ -105,11 +106,11 @@ fun InstagramScreen(
     // loading in this first composition instead of a frame later (~300 ms sooner on a cold start).
     var assets by remember { mutableStateOf(PageAssets.loadedOrNull()) }
     LaunchedEffect(Unit) {
-        app.throwback.core.StartTrace.mark("screen")
+        StartTrace.mark("screen")
         // Both read files from disk; in parallel, the first page starts sooner on a cold start.
         coroutineScope {
-            launch { assets = PageAssets.load(context).also { app.throwback.core.StartTrace.mark("assets") } }
-            launch { repository.load().also { app.throwback.core.StartTrace.mark("rules") } }
+            launch { assets = PageAssets.load(context).also { StartTrace.mark("assets") } }
+            launch { repository.load().also { StartTrace.mark("rules") } }
         }
     }
     val scope = rememberCoroutineScope()
@@ -145,6 +146,23 @@ fun InstagramScreen(
         )
         return
     }
+    // What the page asks of the app, to this composition's callbacks: one object for the controller.
+    val host = InstagramWebController.Host(
+        onLocationChanged = { location, url ->
+            onLocationChanged(location)
+            if (location.startsWith("/")) lastUrl = url // Instagram pages only
+        },
+        onStartUrlHandled = { handledStartUrl = it },
+        onOpenSettings = onOpenSettings,
+        onCallInApp = onCallInApp,
+        onReelLimit = onReelLimit,
+        onCaughtUp = onCaughtUp,
+        onCreateInApp = onCreateInApp,
+        onSettingsInApp = onSettingsInApp,
+        onStoryWeb = onStoryWeb,
+        onSupportAskShown = onSupportAskShown,
+        onSupportThanks = onSupportThanks,
+    )
     key(generation) {
         InstagramWebHost(
             rules = loadedRules,
@@ -153,12 +171,8 @@ fun InstagramScreen(
             startUrl = startUrl,
             restoreUrl = lastUrl,
             handledStartUrl = handledStartUrl,
-            onPageVisited = { lastUrl = it },
-            onStartUrlHandled = { handledStartUrl = it },
-            onLocationChanged = onLocationChanged,
+            host = host,
             onExitRequest = onExitRequest,
-            onOpenSettings = onOpenSettings,
-            onCallInApp = onCallInApp,
             onRecreate = { generation++ },
             onRendererGone = { crashed ->
                 when (crashes.onGone(crashed)) {
@@ -172,13 +186,6 @@ fun InstagramScreen(
             },
             backEnabled = backEnabled,
             covered = covered,
-            onReelLimit = onReelLimit,
-            onCaughtUp = onCaughtUp,
-            onCreateInApp = onCreateInApp,
-            onSettingsInApp = onSettingsInApp,
-            onStoryWeb = onStoryWeb,
-            onSupportAskShown = onSupportAskShown,
-            onSupportThanks = onSupportThanks,
             modifier = modifier,
         )
     }
@@ -192,36 +199,27 @@ private fun InstagramWebHost(
     startUrl: String?,
     restoreUrl: String?,
     handledStartUrl: String?,
-    onPageVisited: (String) -> Unit,
-    onStartUrlHandled: (String?) -> Unit,
-    onLocationChanged: (String) -> Unit,
+    host: InstagramWebController.Host,
     onExitRequest: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onCallInApp: (String?, String?) -> Unit,
     onRecreate: () -> Unit,
     onRendererGone: (crashed: Boolean) -> Unit,
     backEnabled: Boolean,
     covered: Boolean,
-    onReelLimit: () -> Unit,
-    onCaughtUp: () -> Unit,
-    onCreateInApp: (Boolean) -> Unit,
-    onSettingsInApp: () -> Unit,
-    onStoryWeb: () -> Unit,
-    onSupportAskShown: () -> Unit,
-    onSupportThanks: () -> Unit,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
     val colors = ThrowbackTheme.colors
+    // The app's features for the page; followed only while the activity is started.
+    val features by PageFeatures.current.collectAsStateWithLifecycle()
     val controller = remember {
         WebReadiness.reset()
         try {
-            app.throwback.core.StartTrace.mark("webview-create")
-            InstagramWebController(context, assets, mode, handledStartUrl).also {
-                app.throwback.core.StartTrace.mark("webview-ready")
+            StartTrace.mark("webview-create")
+            InstagramWebController(context, assets, mode, handledStartUrl, features).also {
+                StartTrace.mark("webview-ready")
                 // Cold start without a deep link: start loading now rather than after the first frame
-                // (the LaunchedEffect below then finds it started). A deep link waits for the host,
-                // which records it as handled.
+                // (the LaunchedEffect below then finds it started). A deep link waits for the host
+                // (set after this composition), which records it as handled.
                 if (startUrl == null) {
                     it.applyRules(rules)
                     it.openOrStart(null, restoreUrl)
@@ -241,20 +239,7 @@ private fun InstagramWebHost(
     DisposableEffect(controller) {
         onDispose { controller.destroy() }
     }
-
-    val latestOnLocationChanged by rememberUpdatedState(onLocationChanged)
-    val latestOnPageVisited by rememberUpdatedState(onPageVisited)
-    val latestOnStartUrlHandled by rememberUpdatedState(onStartUrlHandled)
-    val latestOnExitRequest by rememberUpdatedState(onExitRequest)
-    val latestOnOpenSettings by rememberUpdatedState(onOpenSettings)
-    val latestOnCallInApp by rememberUpdatedState(onCallInApp)
-    val latestOnReelLimit by rememberUpdatedState(onReelLimit)
-    val latestOnCaughtUp by rememberUpdatedState(onCaughtUp)
-    val latestOnCreateInApp by rememberUpdatedState(onCreateInApp)
-    val latestOnSettingsInApp by rememberUpdatedState(onSettingsInApp)
-    val latestOnStoryWeb by rememberUpdatedState(onStoryWeb)
-    val latestOnSupportAskShown by rememberUpdatedState(onSupportAskShown)
-    val latestOnSupportThanks by rememberUpdatedState(onSupportThanks)
+    SideEffect { controller.host = host } // the latest callbacks, after every composition
 
     // Photos and videos go through Android's photo picker; anything else through the file chooser.
     val pickOne = rememberLauncherForActivityResult(PickVisualMedia()) { uri ->
@@ -268,49 +253,21 @@ private fun InstagramWebHost(
     }
 
     DisposableEffect(controller) {
-        controller.host = object : InstagramWebController.Host {
-            override fun onLocationChanged(location: String, url: String) {
-                latestOnLocationChanged(location)
-                if (location.startsWith("/")) latestOnPageVisited(url) // Instagram pages only
+        controller.pickFiles = { kind, multiple, documentIntent ->
+            val media = when (kind) {
+                PickKind.IMAGES -> PickVisualMedia.ImageOnly
+                PickKind.VIDEOS -> PickVisualMedia.VideoOnly
+                PickKind.IMAGES_AND_VIDEOS -> PickVisualMedia.ImageAndVideo
+                PickKind.OTHER -> null
             }
-
-            override fun onStartUrlHandled(url: String?) = latestOnStartUrlHandled(url)
-
-            override fun onOpenSettings() = latestOnOpenSettings()
-
-            override fun onCallInApp(thread: String?, user: String?) = latestOnCallInApp(thread, user)
-
-            override fun onReelLimit() = latestOnReelLimit()
-
-            override fun onCaughtUp() = latestOnCaughtUp()
-
-            override fun onCreateInApp(story: Boolean) = latestOnCreateInApp(story)
-
-            override fun onSettingsInApp() = latestOnSettingsInApp()
-
-            override fun onStoryWeb() = latestOnStoryWeb()
-
-            override fun onSupportAskShown() = latestOnSupportAskShown()
-
-            override fun onSupportThanks() = latestOnSupportThanks()
-
-            override fun pickFiles(kind: PickKind, multiple: Boolean, documentIntent: Intent?): Boolean {
-                val media = when (kind) {
-                    PickKind.IMAGES -> PickVisualMedia.ImageOnly
-                    PickKind.VIDEOS -> PickVisualMedia.VideoOnly
-                    PickKind.IMAGES_AND_VIDEOS -> PickVisualMedia.ImageAndVideo
-                    PickKind.OTHER -> null
-                }
-                when {
-                    media != null && multiple -> pickMany.launch(PickVisualMediaRequest(media))
-                    media != null -> pickOne.launch(PickVisualMediaRequest(media))
-                    documentIntent != null -> pickDocument.launch(documentIntent)
-                    else -> return false
-                }
-                return true
+            when {
+                media != null && multiple -> pickMany.launch(PickVisualMediaRequest(media))
+                media != null -> pickOne.launch(PickVisualMediaRequest(media))
+                documentIntent != null -> pickDocument.launch(documentIntent)
             }
+            media != null || documentIntent != null
         }
-        onDispose { controller.host = null }
+        onDispose { controller.pickFiles = null }
     }
 
     LaunchedEffect(controller, rules, startUrl) {
@@ -323,6 +280,9 @@ private fun InstagramWebHost(
     LaunchedEffect(controller, covered) {
         controller.setCovered(covered)
     }
+    LaunchedEffect(controller, features) {
+        controller.setFeatures(features)
+    }
     val night = LocalConfiguration.current.uiMode and Configuration.UI_MODE_NIGHT_MASK
     LaunchedEffect(controller, night) {
         controller.onNightModeChanged(night)
@@ -333,7 +293,7 @@ private fun InstagramWebHost(
     // Disabled under covering screens: handlers registered later win, and this one is registered
     // again whenever the page loads after Settings opened, which then closed the app on back.
     BackHandler(enabled = backEnabled) {
-        if (!controller.goBack()) latestOnExitRequest()
+        if (!controller.goBack()) onExitRequest()
     }
 
     // The renderer went away and the controller destroyed its WebView: InstagramScreen replaces it.

@@ -29,7 +29,10 @@ internal sealed interface BridgeMessage {
     /** A touch started; [atTop] says the page and the touched element are scrolled to the top. */
     data class Touch(val atTop: Boolean) : BridgeMessage
 
-    /** The user tapped Throwback's settings icon on their profile page. */
+    /**
+     * Open Throwback's settings: the icon on the user's own profile, Throwback's section on
+     * Instagram's settings page, or a long-press on Home.
+     */
     data object OpenSettings : BridgeMessage
 
     /**

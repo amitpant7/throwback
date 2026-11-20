@@ -44,6 +44,9 @@ internal enum class NotificationKind(val ruleName: String) {
     LIVE("live"),
     OTHER("other"),
 
+    /** Left exactly as Instagram posted it (security and login alerts): never removed or relayed. */
+    KEEP("keep"),
+
     /** Nothing recognised it; the rules' "unknown" setting decides. */
     UNKNOWN("unknown"),
     ;

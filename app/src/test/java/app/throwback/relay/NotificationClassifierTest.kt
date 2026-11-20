@@ -118,7 +118,7 @@ class NotificationClassifierTest {
     fun `bundled rules sort Instagram's real channels (read from the owner's phone)`() {
         val bundled = NotificationClassifier(app.throwback.web.TestRules.bundled.notifications)
         val expected = mapOf(
-            "ig_direct_video_chat" to NotificationKind.CALL,
+            "ig_direct_video_chat" to NotificationKind.OTHER, // not ongoing: not a running call (ongoing case below)
             "ig_direct" to NotificationKind.MESSAGE,
             "ig_direct_requests" to NotificationKind.MESSAGE,
             "ig_likes" to NotificationKind.LIKES,
@@ -146,9 +146,21 @@ class NotificationClassifierTest {
         // An ongoing notification on an unlisted Instagram channel: never "other" (that let the guard
         // send the owner out of a running video call).
         assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_some_new_channel", ongoing = true)))
-        assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_rtc_ongoing")))
-        assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_ongoing_call")))
-        assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_direct_video_chat")))
+        assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_rtc_ongoing", ongoing = true)))
+        assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_ongoing_call", ongoing = true)))
+        assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_direct_video_chat", ongoing = true)))
+        // Android's own call signals still win without "ongoing" (a ringing call).
+        assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_direct_video_chat", category = "call")))
         assertEquals(NotificationKind.OTHER, bundled.classify(facts(channel = "ig_some_new_channel")))
+    }
+
+    @Test
+    fun `missed calls, security alerts and uploads never count as a running call`() {
+        val bundled = NotificationClassifier(app.throwback.web.TestRules.bundled.notifications)
+        assertEquals(NotificationKind.MISSED_CALL, bundled.classify(facts(channel = "ig_direct_video_chat", category = "missed_call")))
+        assertEquals(NotificationKind.KEEP, bundled.classify(facts(channel = "ig_alerts")))
+        assertEquals(NotificationKind.OTHER, bundled.classify(facts(channel = "uploads", ongoing = true)))
+        assertEquals(NotificationKind.OTHER, bundled.classify(facts(channel = "ig_direct_video_chat")))
+        assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_direct_video_chat", ongoing = true)))
     }
 }

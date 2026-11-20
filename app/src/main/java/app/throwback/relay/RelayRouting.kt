@@ -52,7 +52,7 @@ internal data class RelayContext(
 internal object RelayRouting {
 
     fun decide(kind: NotificationKind, ctx: RelayContext, groupSummary: Boolean = false, groupHasCall: Boolean = false): RelayAction {
-        if (kind == NotificationKind.CALL) return RelayAction.Keep
+        if (kind == NotificationKind.CALL || kind == NotificationKind.KEEP) return RelayAction.Keep
         if (groupSummary && groupHasCall) return RelayAction.Keep
         val action = decideSingle(kind, ctx)
         if (action is RelayAction.Relay) {
@@ -63,7 +63,7 @@ internal object RelayRouting {
     }
 
     private fun decideSingle(kind: NotificationKind, ctx: RelayContext): RelayAction = when (kind) {
-        NotificationKind.CALL -> RelayAction.Keep
+        NotificationKind.CALL, NotificationKind.KEEP -> RelayAction.Keep
         NotificationKind.MESSAGE, NotificationKind.MISSED_CALL -> RelayAction.Relay(RelayTarget.MESSAGES, kind)
         NotificationKind.LIKES, NotificationKind.COMMENTS, NotificationKind.FOLLOWS,
         NotificationKind.MENTIONS, NotificationKind.LIVE -> {

@@ -63,7 +63,7 @@ data class ThreadIdRule(
 )
 
 /** Values of [NotificationMatch.kind]. */
-val NOTIFICATION_KINDS = setOf("call", "message", "missedCall", "likes", "comments", "follows", "mentions", "live", "other")
+val NOTIFICATION_KINDS = setOf("call", "message", "missedCall", "likes", "comments", "follows", "mentions", "live", "other", "keep")
 const val UNKNOWN_CANCEL = "cancel"
 const val UNKNOWN_KEEP = "keep"
 val THREAD_ID_SOURCES = setOf("shortcut", "tag", "group")

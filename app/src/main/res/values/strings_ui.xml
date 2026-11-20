@@ -103,7 +103,7 @@
     <string name="ui_perm_overlay_body">To cover the Instagram app and bring you back</string>
     <!-- TalkBack for the Allow button, e.g. "Allow Usage access". -->
     <string name="ui_perm_allow_description">Allow %1$s</string>
-    <string name="ui_perm_privacy">Throwback only looks at Instagram. Nothing is stored or sent anywhere.</string>
+    <string name="ui_perm_privacy">Throwback only looks at the Instagram app. Nothing leaves your phone; only daily counts are kept on it.</string>
     <string name="ui_perm_restricted_hint">Android says \"Restricted setting\"? Open Throwback\'s App info, tap ⋮ at the top, then \"Allow restricted settings\", and try again.</string>
     <string name="ui_perm_app_info">Open App info</string>
     <string name="ui_perm_post_denied">Throwback can\'t show notifications, so Instagram\'s own message notifications stay as they are. You can allow it later in Android\'s settings.</string>

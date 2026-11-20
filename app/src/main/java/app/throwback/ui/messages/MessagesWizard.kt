@@ -53,7 +53,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.guard.GuardPass
 import app.throwback.ui.common.CardDivider
 import app.throwback.ui.common.DoneLabel
 import app.throwback.ui.common.LineIcon

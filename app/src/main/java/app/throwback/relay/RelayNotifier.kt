@@ -91,6 +91,7 @@ internal object RelayNotifier {
             .setPublicVersion(public)
             .setContentIntent(open)
             .setAutoCancel(true)
+            .setOnlyAlertOnce(true) // updates of the same chat don't ring again
             .build()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED

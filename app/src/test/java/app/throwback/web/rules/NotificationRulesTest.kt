@@ -26,8 +26,9 @@ class NotificationRulesTest {
         val n = TestRules.bundled.notifications
         assertNotNull(n)
         // Filled from the owner's phone (Instagram's channel list), calls first and never guessed.
-        assertEquals("call", n!!.classify.first().kind)
-        assertEquals("(call|rtc|video_chat)", n.classify.first().channel)
+        // Missed calls first, then kept security alerts, then calls (ongoing only).
+        assertEquals("missedCall", n!!.classify.first().kind)
+        assertTrue(n.classify.any { it.kind == "call" && it.ongoing == true })
         assertEquals(UNKNOWN_CANCEL, n.unknown)
         assertNull(n.threadId)
         assertEquals("https://www.instagram.com/accounts/activity/", n.activityUrl)

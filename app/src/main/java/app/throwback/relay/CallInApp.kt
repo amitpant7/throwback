@@ -20,7 +20,6 @@ internal object CallInApp {
     /** False if the Instagram app isn't installed (the caller explains and offers the setup). */
     fun open(context: Context, thread: String?, user: String? = null): Boolean {
         val pkg = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) } ?: return false
-        GuardPass.grant(SystemClock.elapsedRealtime(), PASS_MS)
         // ig.me/m/<username> opens a chat with that person from whichever account the Instagram app
         // uses (a chat id only exists in one account); the chat id is for group chats.
         val byUser = user?.let { Intent(Intent.ACTION_VIEW, Uri.parse("https://ig.me/m/$it")).setPackage(pkg) }
@@ -31,6 +30,7 @@ internal object CallInApp {
         for (intent in listOfNotNull(byUser, byThread, launch)) {
             try {
                 context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                GuardPass.grant(SystemClock.elapsedRealtime(), PASS_MS) // only once Instagram really opens
                 return true
             } catch (e: ActivityNotFoundException) {
                 // Try the next way in.
@@ -48,9 +48,9 @@ internal object CallInApp {
     fun visit(context: Context): Boolean {
         val pkg = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) } ?: return false
         val launch = context.packageManager.getLaunchIntentForPackage(pkg) ?: return false
-        GuardPass.grant(SystemClock.elapsedRealtime(), VISIT_PASS_MS)
         return try {
             context.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            GuardPass.grant(SystemClock.elapsedRealtime(), VISIT_PASS_MS)
             true
         } catch (e: ActivityNotFoundException) {
             false

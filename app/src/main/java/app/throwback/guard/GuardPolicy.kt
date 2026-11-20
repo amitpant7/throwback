@@ -67,7 +67,7 @@ internal object GuardPolicy {
     }
 }
 
-/** A short pass for when Throwback itself opens the Instagram app (wizard step 2). */
+/** A short pass for when Throwback itself opens the Instagram app (call button, "Open Instagram for 5 minutes", quieter-phone tip). */
 internal object GuardPass {
     const val SETUP_PASS_MS = 10 * 60 * 1000L
 

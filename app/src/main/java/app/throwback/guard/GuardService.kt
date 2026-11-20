@@ -1,5 +1,9 @@
 package app.throwback.guard
 
+import app.throwback.relay.RelayListenerService
+import android.service.notification.NotificationListenerService
+import android.content.ComponentName
+import kotlinx.coroutines.withContext
 import android.media.AudioManager
 import android.app.Service
 import android.app.usage.UsageEvents
@@ -60,6 +64,14 @@ class GuardService : Service() {
 
     /** Last time the phone's audio was in call mode (MODE_IN_CALL / MODE_IN_COMMUNICATION). */
     private var callAudioAt: Long? = null
+
+    /** When an Instagram call notification was last seen, and whether the current call audio is that call. */
+    private var lastInstagramCallAt: Long? = null
+    private var instagramCallAudio = false
+
+    /** Since when the notification listener is disconnected, and the last rebind request. */
+    private var listenerDownSince: Long? = null
+    private var lastRebindAt = 0L
     private var coverShownAt = 0L
     private lateinit var overlay: GuardOverlay
 
@@ -124,7 +136,14 @@ class GuardService : Service() {
             .build()
         // specialUse: none of the specific types fits "watch which app is in front" (see the manifest).
         val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
-        ServiceCompat.startForeground(this, RelayNotifier.GUARD_NOTIFICATION_ID, notification, type)
+        try {
+            ServiceCompat.startForeground(this, RelayNotifier.GUARD_NOTIFICATION_ID, notification, type)
+        } catch (e: RuntimeException) {
+            // Android 12+ may refuse a foreground start (e.g. a restart after a low-memory kill).
+            Log.w(TAG, "guard could not start in the foreground: ${e.javaClass.simpleName}")
+            stopSelf()
+            return
+        }
         running = true
     }
 
@@ -147,22 +166,45 @@ class GuardService : Service() {
                     return
                 }
             }
-            poll(usm)
+            // Reading usage events off the main thread (the WebView shares it).
+            withContext(Dispatchers.Default) { poll(usm) }
             val fg = tracker.current
             if (overlay.showing && (fg == packageName || now - coverShownAt > COVER_MAX_MS) && now - coverShownAt > COVER_MIN_MS) {
                 overlay.hide()
             }
-            // A running voice/video call (Instagram's included) puts the audio in call mode; the call
-            // notification goes away once the call is answered, so this keeps the call allowed.
+            // An answered Instagram call removes its notification, but keeps the audio in call mode.
+            // Call audio counts only for a call that began as an Instagram call notification (seen
+            // within IG_CALL_LINK_MS), so a WhatsApp or Meet call doesn't unlock Instagram.
+            val calls = CallState.tracker.state.value
+            if (calls.inCall) lastInstagramCallAt = now
+            // Without the listener the guard can't see calls and allows everything (on purpose). Some
+            // phones don't reconnect it after a crash or update: ask Android to, every 30 s.
+            if (calls.listenerConnected) {
+                listenerDownSince = null
+            } else {
+                val since = listenerDownSince ?: now.also { listenerDownSince = it }
+                if (now - since > REBIND_AFTER_MS && now - lastRebindAt > REBIND_AFTER_MS) {
+                    lastRebindAt = now
+                    try {
+                        NotificationListenerService.requestRebind(ComponentName(this, RelayListenerService::class.java))
+                    } catch (e: RuntimeException) {
+                        // Notification access was revoked; the permission check stops the guard.
+                    }
+                }
+            }
             val audioMode = (getSystemService(AUDIO_SERVICE) as AudioManager).mode
-            if (audioMode == AudioManager.MODE_IN_CALL || audioMode == AudioManager.MODE_IN_COMMUNICATION) {
+            val inCallAudio = audioMode == AudioManager.MODE_IN_CALL || audioMode == AudioManager.MODE_IN_COMMUNICATION
+            if (!inCallAudio) {
+                instagramCallAudio = false
+            } else if (instagramCallAudio || (lastInstagramCallAt != null && now - lastInstagramCallAt!! < IG_CALL_LINK_MS)) {
+                instagramCallAudio = true
                 callAudioAt = now
             }
             val action = GuardPolicy.decide(
                 foreground = fg,
                 watched = RelayDebug.watchedPackages(),
                 now = now,
-                calls = CallState.tracker.state.value,
+                calls = calls,
                 graceMillis = graceMillis,
                 allowUntil = GuardPass.allowUntil,
                 lastCoverAt = lastCoverAt,
@@ -176,7 +218,9 @@ class GuardService : Service() {
     private fun poll(usm: UsageStatsManager) {
         val end = System.currentTimeMillis()
         // First run, or the clock moved back: look back a little to learn what is in front now.
-        val begin = if (lastQueryEnd == 0L || lastQueryEnd > end) end - LOOK_BACK_MS else lastQueryEnd
+        // Overlap the previous window a little: events are recorded asynchronously and one stamped
+        // just before the last end could be missed. Replaying events in order is harmless.
+        val begin = if (lastQueryEnd == 0L || lastQueryEnd > end) end - LOOK_BACK_MS else lastQueryEnd - QUERY_OVERLAP_MS
         val events = try {
             usm.queryEvents(begin, end)
         } catch (e: RuntimeException) {
@@ -214,6 +258,10 @@ class GuardService : Service() {
     companion object {
         private const val TAG = "ThrowbackGuard"
         private const val POLL_MS = 500L
+        private const val QUERY_OVERLAP_MS = 3_000L
+        private const val REBIND_AFTER_MS = 30_000L
+        /** Call audio counts if an Instagram call notification was seen this recently (ringing, then answered). */
+        private const val IG_CALL_LINK_MS = 120_000L
         private const val LOOK_BACK_MS = 60 * 60 * 1000L
         private const val PERMISSION_CHECK_MS = 10_000L
         private const val COVER_MIN_MS = 900L

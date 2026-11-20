@@ -1261,11 +1261,19 @@
     saveReelLog(log);
   }
 
+  /**
+   * Stops the viewer and closes it right away (its own Close button), so the poster appears over the
+   * chat and "Back to chat" only has to dismiss the poster. If the button can't be found, the viewer
+   * stays stopped (no more swiping) and its own close button still works.
+   */
   function stopReels(viewer) {
     viewer.setAttribute(ATTR_REEL_STOP, '1');
     var vids = viewer.querySelectorAll('video');
     for (var i = 0; i < vids.length; i++) vids[i].pause();
     send({ t: 'reelLimit' });
+    setTimeout(function () {
+      perf.log.push({ page: 'reel-poster', viewerClosed: closeReels() });
+    }, 50);
   }
 
   // Instagram's label on the viewer's close button (top left), in the languages the rules cover.
@@ -1295,10 +1303,10 @@
       }
     });
     var viewer = document.querySelector('[' + ATTR_REEL_STOP + ']');
-    if (best) {
-      if (viewer) viewer.removeAttribute(ATTR_REEL_STOP);
-      clickElement(best);
-    }
+    if (!viewer || !best) return false;
+    viewer.removeAttribute(ATTR_REEL_STOP);
+    clickElement(best);
+    return true;
   }
 
   // ---------------------------------------------------------------- messages and stories warm-up

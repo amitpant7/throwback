@@ -77,21 +77,16 @@
     <string name="ui_install_button">Install</string>
     <string name="ui_install_button_description">Install the Instagram app from the Play Store</string>
 
-    <string name="ui_quiet_row_messages">Messages</string>
-    <string name="ui_quiet_row_calls">Calls</string>
-    <string name="ui_quiet_row_posts">Posts, stories and comments</string>
-    <string name="ui_quiet_row_following">Following and followers</string>
-    <string name="ui_quiet_row_live">Live and reels</string>
-    <string name="ui_quiet_row_fundraisers">Fundraisers</string>
-    <string name="ui_quiet_row_from_instagram">From Instagram</string>
     <string name="ui_quiet_keep_on">Keep on</string>
     <string name="ui_quiet_turn_off">Turn off</string>
     <string name="ui_quiet_open_instagram">Open notification settings for Instagram</string>
     <!-- Optional tip on the Messages & calls screen (was setup step 2). -->
     <string name="ui_quiet_tip_title">For a quieter phone (optional)</string>
-    <string name="ui_quiet_tip_body">Throwback already removes everything except messages and calls. You can also switch the rest off for the Instagram app in your phone\'s notification settings.</string>
-    <string name="ui_quiet_tip_show">Show what to turn off</string>
-    <string name="ui_quiet_tip_hide">Hide</string>
+    <string name="ui_quiet_tip_body">Throwback already removes everything except messages and calls. For an even quieter phone, open the Instagram app\'s notification settings: keep the group \'Instagram messages\' on, and turn off the group \'Instagram\' (on most phones one switch: All \'Instagram\' notifications).</string>
+    <string name="ui_quiet_group_messages">Instagram messages</string>
+    <string name="ui_quiet_group_messages_sub">Messages, message requests, video calls</string>
+    <string name="ui_quiet_group_other">Instagram</string>
+    <string name="ui_quiet_group_other_sub">Everything else: likes, comments, followers, first posts…</string>
 
     <string name="ui_perm_title">Three permissions</string>
     <string name="ui_perm_body">Each opens an Android settings screen. Turn Throwback on there, then come back.</string>

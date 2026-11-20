@@ -1,7 +1,6 @@
 package app.throwback.core
 
 import androidx.compose.foundation.background
-import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,10 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -144,16 +141,6 @@ private fun MainScreen(
 
     // Reel allowance in Instagram's swipe viewer used up: the poster, then back to the chat.
     var reelPoster by rememberSaveable { mutableStateOf(false) }
-    // "Back to chat" = the phone's Back, once the poster is gone and the page's back handler is
-    // enabled again: Instagram closes its reel viewer on Back.
-    var backAfterPoster by remember { mutableIntStateOf(0) }
-    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-    LaunchedEffect(backAfterPoster) {
-        if (backAfterPoster > 0) {
-            withFrameNanos { } // let the page's back handler re-enable first
-            backDispatcher?.onBackPressed()
-        }
-    }
 
     // Once, after setup: where Throwback's settings are (long-press Home). Opening settings any other
     // way also counts as found.
@@ -247,10 +234,8 @@ private fun MainScreen(
         }
 
         if (reelPoster && !lockShowing) {
-            ReelPoster(onBack = {
-                reelPoster = false
-                backAfterPoster++
-            })
+            // The page has already closed Instagram's reel viewer: the poster just goes away.
+            ReelPoster(onBack = { reelPoster = false })
         }
 
         if (lockShowing) {

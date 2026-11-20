@@ -29,9 +29,9 @@ import app.throwback.ui.common.UiText
 
 /**
  * Full-screen poster after the reel allowance in Instagram's swipe viewer. A first, plain version;
- * the designed poster (and its animated version) replaces this. Back and the button dismiss the
- * poster, then the app presses Back once more for the page, which closes Instagram's reel viewer.
- * Touches never reach the page underneath.
+ * the designed poster (and its animated version) replaces this. The page has already closed
+ * Instagram's reel viewer underneath, so Back and the button just dismiss the poster. Touches never
+ * reach the page underneath.
  */
 @Composable
 internal fun ReelPosterContent(onBack: () -> Unit) {

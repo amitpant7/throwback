@@ -1193,9 +1193,7 @@
    */
   var ATTR_REEL_STOP = 'data-tb-reelstop';
   var REELS_KEY = '__tb_reels';
-  // exiting: after the poster, while the app steps back out of the viewer (each reel swiped to is
-  // a history entry): reels passed on the way are paused and not counted.
-  var reels = { current: null, viewer: null, exiting: false };
+  var reels = { current: null, viewer: null };
 
   function reelLog() {
     var log = null;
@@ -1232,10 +1230,6 @@
     if (!rv || !v || v.tagName !== 'VIDEO' || pageActive('stories')) return;
     var viewer = reelViewerOf(v);
     if (!viewer) return;
-    if (reels.exiting) {
-      v.pause();
-      return;
-    }
     if (viewer.hasAttribute(ATTR_REEL_STOP)) {
       v.pause();
       return;
@@ -1267,27 +1261,62 @@
     saveReelLog(log);
   }
 
-  /** Stops the viewer (no more swiping, videos paused); the app shows its poster. */
+  // Instagram's label on the viewer's close button (top left), in the languages the rules cover.
+  var CLOSE_LABELS = ['Close', 'Schließen', 'Fermer', 'Cerrar', 'Fechar', 'Chiudi'];
+
+  /**
+   * Stops the viewer (no more swiping, videos paused), closes it with its own Close button so the
+   * poster appears over the chat, and asks the app for the poster. Closing is done here, by the page,
+   * at once: an app-to-page request after the poster's button proved unreliable on the phone, while
+   * clicking the viewer's Close closes it every time (Instagram adds no history entry for it).
+   */
   function stopReels(viewer) {
-    reels.exiting = true;
     viewer.setAttribute(ATTR_REEL_STOP, '1');
     var vids = viewer.querySelectorAll('video');
     for (var i = 0; i < vids.length; i++) vids[i].pause();
     send({ t: 'reelLimit' });
+    setTimeout(function () {
+      var closed = closeReelViewer();
+      if (!closed) {
+        setTimeout(function () {
+          perf.log.push({ page: 'reel-poster', viewerClosed: closeReelViewer(), retried: true });
+        }, 400);
+      } else {
+        perf.log.push({ page: 'reel-poster', viewerClosed: true });
+      }
+    }, 50);
   }
 
-  /** Whether Instagram's reel swipe viewer is open (the app steps back until it isn't). */
-  function reelViewerOpen() {
-    var vids = document.querySelectorAll('video');
-    for (var i = 0; i < vids.length && i < 30; i++) if (reelViewerOf(vids[i])) return true;
-    return false;
-  }
-
-  /** The app finished stepping back out of the viewer. */
-  function reelExitDone() {
-    reels.exiting = false;
+  /**
+   * Clicks the viewer's own Close: the visible, top-most element labelled Close (the chat underneath
+   * has hidden ones too). True when a stopped viewer was there and the button was found.
+   */
+  function closeReelViewer() {
+    var viewer = document.querySelector('[' + ATTR_REEL_STOP + ']');
+    if (!viewer || !viewer.isConnected) return false;
+    var best = null;
+    var bestScore = Infinity;
+    CLOSE_LABELS.forEach(function (label) {
+      var els = document.querySelectorAll('[aria-label="' + label + '"]');
+      for (var i = 0; i < els.length; i++) {
+        var b = els[i].closest('[role="button"], button, a') || els[i];
+        var r = b.getBoundingClientRect();
+        if (r.width <= 0 || r.height <= 0 || r.bottom <= 0 || r.top >= window.innerHeight) continue;
+        var hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        if (!hit || !(hit === b || b.contains(hit))) continue;
+        var score = r.top + r.left;
+        if (score < bestScore) {
+          bestScore = score;
+          best = b;
+        }
+      }
+    });
+    if (!best) return false;
+    viewer.removeAttribute(ATTR_REEL_STOP);
     reels.viewer = null;
     reels.current = null;
+    clickElement(best);
+    return true;
   }
 
   // ---------------------------------------------------------------- messages and stories warm-up
@@ -2118,9 +2147,9 @@
     /** The app tells the page when one of its own screens (Settings, lock, pause) covers it. */
     setCovered: function (covered) {
       state.covered = !!covered;
-    },
-    reelViewerOpen: reelViewerOpen,
-    reelExitDone: reelExitDone
+      // Backup: when the poster goes away, a stopped viewer that is somehow still open gets closed.
+      if (!covered) closeReelViewer();
+    }
   };
   try {
     Object.defineProperty(window, '__throwback', { value: api, enumerable: false, configurable: false, writable: false });

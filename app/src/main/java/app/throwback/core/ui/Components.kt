@@ -26,12 +26,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -213,6 +219,37 @@ internal fun StepBars(current: Int, total: Int, modifier: Modifier = Modifier) {
             )
         }
     }
+}
+
+/**
+ * Thin rounded progress bar, filled [fraction] of the way in the accent colour (at least [minFraction],
+ * so a wait that has just started still shows). [fraction] is read while drawing, so a running bar
+ * redraws without recomposing. TalkBack reads it as a progress bar, saying [description] when given.
+ */
+@Composable
+internal fun TbProgressBar(
+    fraction: () -> Float,
+    modifier: Modifier = Modifier,
+    height: Dp = 6.dp,
+    minFraction: Float = 0f,
+    description: String? = null,
+) {
+    val colors = ThrowbackTheme.colors
+    Box(
+        modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(percent = 50))
+            .background(colors.surface2)
+            .drawBehind {
+                val filled = size.width * fraction().coerceIn(minFraction, 1f)
+                drawRoundRect(colors.accent, size = Size(filled, size.height), cornerRadius = CornerRadius(size.height / 2))
+            }
+            .semantics {
+                progressBarRangeInfo = ProgressBarRangeInfo(fraction().coerceIn(0f, 1f), 0f..1f)
+                if (description != null) stateDescription = description
+            },
+    )
 }
 
 /** A line of text after a small accent icon (the rules of the time limit, what connecting does). */

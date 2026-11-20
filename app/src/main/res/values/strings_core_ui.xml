@@ -14,4 +14,13 @@
     <string name="collapse">Collapse</string>
     <string name="expanded">Expanded</string>
     <string name="collapsed">Collapsed</string>
+
+    <!-- Durations (core/ui/Durations.kt). Compact ones are for countdowns in large type. -->
+    <string name="duration_min_sec">%1$d:%2$02d</string>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="duration_under_a_minute">Under a minute</string>
+    <string name="duration_minutes_short">%1$dm</string>
+    <string name="duration_hours_minutes_short">%1$dh %2$dm</string>
+    <string name="duration_days_hours_short">%1$dd %2$dh</string>
 </resources>

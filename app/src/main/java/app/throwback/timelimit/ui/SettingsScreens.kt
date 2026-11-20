@@ -56,15 +56,17 @@ import app.throwback.core.ui.TbBackButton
 import app.throwback.core.ui.TbButton
 import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.TbTopBar
+import app.throwback.core.ui.longDurationText
+import app.throwback.core.ui.remainingText
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.LockPhase
 import app.throwback.timelimit.engine.Rules
 import app.throwback.timelimit.engine.TimeLimitView
-import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import kotlinx.coroutines.launch
 
 /** Settings → Daily time limit: first-time setup, or managing an existing limit. */
 @Composable
@@ -439,10 +441,7 @@ private val CardPadding = PaddingValues(horizontal = 18.dp, vertical = 16.dp)
 
 @Composable
 private fun todayStatus(view: TimeLimitView): String = when (val state = view.lockState) {
-    is LockState.Running -> when (val chip = Durations.chip(state.remainingMillis)) {
-        is Durations.Chip.Minutes -> stringResource(R.string.tl_min_left, chip.minutes)
-        is Durations.Chip.LastMinute -> stringResource(R.string.tl_chip_seconds_left, minSecText(state.remainingMillis))
-    }
+    is LockState.Running -> stringResource(R.string.tl_time_left, remainingText(state.remainingMillis))
     LockState.Locked -> stringResource(
         if (view.lock is LockPhase.DoneForToday) R.string.tl_locked_until_midnight else R.string.tl_locked_now,
     )

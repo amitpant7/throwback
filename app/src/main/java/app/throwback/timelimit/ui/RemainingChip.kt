@@ -23,7 +23,9 @@ import app.throwback.R
 import app.throwback.core.LockState
 import app.throwback.core.TimeLimitController
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.core.ui.Durations
 import app.throwback.core.ui.TbIcon
+import app.throwback.core.ui.remainingText
 
 /**
  * "18 min left" on the home feed (mockup 2). In the last minute it switches to "0:42 left" in the
@@ -34,17 +36,15 @@ internal fun RemainingChip(controller: TimeLimitController, modifier: Modifier =
     val state by controller.state.collectAsStateWithLifecycle()
     val running = state as? LockState.Running ?: return
     val c = ThrowbackTheme.colors
-    val text: String
+    val text = stringResource(R.string.tl_time_left, remainingText(running.remainingMillis))
     val description: String
     val warning: Boolean
     when (val chip = Durations.chip(running.remainingMillis)) {
         is Durations.Chip.Minutes -> {
-            text = stringResource(R.string.tl_min_left, chip.minutes)
             description = pluralStringResource(R.plurals.tl_chip_minutes_cd, chip.minutes, chip.minutes)
             warning = false
         }
         is Durations.Chip.LastMinute -> {
-            text = stringResource(R.string.tl_chip_seconds_left, minSecText(running.remainingMillis))
             description = pluralStringResource(R.plurals.tl_chip_seconds_cd, chip.seconds, chip.seconds)
             warning = true
         }

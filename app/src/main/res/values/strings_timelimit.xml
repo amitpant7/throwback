@@ -10,12 +10,6 @@
     <string name="tl_error_generic">That didn\'t work. Try again.</string>
     <string name="tl_tomorrow">tomorrow</string>
 
-    <!-- Durations -->
-    <string name="tl_dur_min_sec">%1$d:%2$02d</string>
-    <string name="tl_dur_hours_minutes">%1$dh %2$dm</string>
-    <string name="tl_dur_minutes">%1$dm</string>
-    <string name="tl_dur_days_hours">%1$dd %2$dh</string>
-
     <!-- Setup (mockup 7) -->
     <string name="tl_setup_step_minutes">How long per day?</string>
     <string name="tl_minutes_chip">%1$d min</string>
@@ -105,7 +99,6 @@
 
     <!-- Manage an existing limit -->
     <string name="tl_today_label">TODAY</string>
-    <string name="tl_min_left">%1$d min left</string>
     <string name="tl_locked_now">Locked for now</string>
     <string name="tl_locked_until_midnight">Locked until midnight</string>
     <plurals name="tl_manage_summary">
@@ -159,7 +152,7 @@
     <string name="tl_notice_cancelled">Cancelled.</string>
 
     <!-- Chip on the home feed (mockup 2) -->
-    <string name="tl_chip_seconds_left">%1$s left</string>
+    <string name="tl_time_left">%1$s left</string>
     <plurals name="tl_chip_minutes_cd">
         <item quantity="one">%d minute of Throwback left today</item>
         <item quantity="other">%d minutes of Throwback left today</item>

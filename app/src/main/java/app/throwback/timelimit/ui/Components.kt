@@ -59,6 +59,7 @@ import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.ScreenColumn
 import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.TbTopBar
+import app.throwback.core.ui.minSecText
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.Rules
@@ -90,27 +91,6 @@ internal fun rememberLiveView(controller: DefaultTimeLimitController): State<Tim
     }
     return controller.view.collectAsStateWithLifecycle()
 }
-
-// ---- Durations as text ----------------------------------------------------------------------
-
-@Composable
-internal fun minSecText(millis: Long): String {
-    val t = Durations.minSec(millis)
-    return stringResource(R.string.tl_dur_min_sec, t.minutes, t.seconds)
-}
-
-@Composable
-internal fun hoursMinutesText(millis: Long): String {
-    val t = Durations.hoursMinutes(millis)
-    return if (t.hours > 0) stringResource(R.string.tl_dur_hours_minutes, t.hours, t.minutes)
-    else stringResource(R.string.tl_dur_minutes, t.minutes)
-}
-
-/** "2d 23h" for a day or more, else "6h 42m" / "42m". */
-@Composable
-internal fun longDurationText(millis: Long): String =
-    Durations.daysHours(millis)?.let { stringResource(R.string.tl_dur_days_hours, it.days, it.hours) }
-        ?: hoursMinutesText(millis)
 
 // ---- Text ---------------------------------------------------------------------------------
 

@@ -55,6 +55,8 @@ import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.UiText
 import app.throwback.core.ui.blockTouches
+import app.throwback.core.ui.hoursMinutesText
+import app.throwback.core.ui.minSecText
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.engine.LockPhase
 import app.throwback.timelimit.engine.Rules

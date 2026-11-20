@@ -31,8 +31,12 @@ import app.throwback.core.ui.CardDivider
 import app.throwback.core.ui.SectionLabel
 import app.throwback.core.ui.SettingsScaffold
 import app.throwback.core.ui.TbCard
+import app.throwback.core.ui.TbProgressBar
 import app.throwback.core.ui.UiText
 import app.throwback.core.ui.ValueRow
+import app.throwback.core.ui.elapsedText
+import app.throwback.core.ui.minSecText
+import app.throwback.core.ui.remainingText
 
 /** What "Your day" shows. Page counts are null until the feed has been open once. */
 data class TodayStats(
@@ -78,7 +82,11 @@ internal fun TodayScreen(stats: TodayStats, onBack: () -> Unit) {
                 value = when {
                     exploreLeft == null -> null
                     exploreLeft <= 0 -> stringResource(R.string.ui_today_explore_done)
-                    else -> stringResource(R.string.ui_today_explore_value, clock(exploreLeft), clock(stats.exploreAllowanceSec))
+                    else -> stringResource(
+                        R.string.ui_today_explore_value,
+                        minSecText(exploreLeft * 1000L),
+                        minSecText(stats.exploreAllowanceSec * 1000L),
+                    )
                 },
                 fraction = if (exploreLeft != null && stats.exploreAllowanceSec > 0) {
                     exploreLeft.toFloat() / stats.exploreAllowanceSec
@@ -92,7 +100,7 @@ internal fun TodayScreen(stats: TodayStats, onBack: () -> Unit) {
                 title = stringResource(R.string.ui_today_reels),
                 value = when {
                     cool == null -> null
-                    cool > 0 -> stringResource(R.string.ui_today_reels_cooling, duration(cool / 1000))
+                    cool > 0 -> stringResource(R.string.ui_today_reels_cooling, remainingText(cool))
                     else -> stringResource(R.string.ui_today_reels_free)
                 },
             )
@@ -124,7 +132,7 @@ internal fun TodayScreen(stats: TodayStats, onBack: () -> Unit) {
                 CardDivider()
                 AllowanceRow(
                     title = stringResource(R.string.ui_today_app_time),
-                    value = duration(ig.appMinutes * 60L),
+                    value = elapsedText(ig.appMinutes * 60_000L),
                 )
             }
         }
@@ -154,14 +162,14 @@ private fun TimeCard(stats: TodayStats) {
     val areaColors = areaColors()
     TbCard(contentPadding = PaddingValues(18.dp)) {
         Text(
-            duration(stats.totalSec),
+            elapsedText(stats.totalSec * 1000),
             style = UiText.hero.copy(fontSize = 40.sp, lineHeight = 44.sp),
             color = c.text,
         )
         Text(stringResource(R.string.ui_today_on_instagram), style = UiText.body14, color = c.muted)
         val limitText = when (val l = stats.limit) {
             TodayStats.Limit.None -> stringResource(R.string.ui_today_no_limit)
-            is TodayStats.Limit.Left -> stringResource(R.string.ui_today_limit_left, duration(l.millis / 1000))
+            is TodayStats.Limit.Left -> stringResource(R.string.ui_today_limit_left, remainingText(l.millis))
             TodayStats.Limit.Reached -> stringResource(R.string.ui_today_limit_reached)
         }
         Text(
@@ -195,7 +203,7 @@ private fun TimeCard(stats: TodayStats) {
                     val sec = areas[a] ?: 0L
                     if (sec >= 1) {
                         val name = areaName(a)
-                        val value = duration(sec)
+                        val value = elapsedText(sec * 1000)
                         val description = stringResource(R.string.label_value, name, value)
                         Row(
                             Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description },
@@ -215,21 +223,8 @@ private fun TimeCard(stats: TodayStats) {
 /** A title and what's left; [value] is null until the page has counted it. The bar shows [fraction] left. */
 @Composable
 private fun AllowanceRow(title: String, value: String?, fraction: Float? = null) {
-    val c = ThrowbackTheme.colors
     ValueRow(title, value) {
-        if (fraction != null) {
-            Box(
-                Modifier
-                    .padding(top = 10.dp)
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(c.surface2)
-                    .clearAndSetSemantics {},
-            ) {
-                Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).fillMaxHeight().background(c.accent))
-            }
-        }
+        if (fraction != null) TbProgressBar({ fraction }, Modifier.padding(top = 10.dp))
     }
 }
 
@@ -255,14 +250,3 @@ private fun areaName(a: String): String = stringResource(
         else -> R.string.ui_today_area_other
     },
 )
-
-/** "45 min", "1 h 5 min"; under a minute shows "0 min". */
-@Composable
-internal fun duration(seconds: Long): String {
-    val min = (seconds / 60).toInt()
-    if (seconds in 1..59) return stringResource(R.string.ui_today_under_minute)
-    return if (min >= 60) stringResource(R.string.ui_today_hours, min / 60, min % 60) else stringResource(R.string.ui_today_minutes, min)
-}
-
-/** "3:05". */
-internal fun clock(seconds: Int): String = "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"

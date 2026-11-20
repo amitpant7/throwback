@@ -1,16 +1,13 @@
 package app.throwback.timelimit.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,7 +17,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -28,12 +24,14 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.core.ui.TbButton
-import app.throwback.core.ui.TbButtonStyle
 import app.throwback.core.ui.IconBullet
 import app.throwback.core.ui.SettingsScaffold
+import app.throwback.core.ui.TbButton
+import app.throwback.core.ui.TbButtonStyle
 import app.throwback.core.ui.TbCard
+import app.throwback.core.ui.TbProgressBar
 import app.throwback.core.ui.UiText
+import app.throwback.core.ui.longDurationText
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.TimeLimitView
@@ -121,23 +119,7 @@ internal fun ForgotPinScreen(
                 val done = 1f - reset.remainingMillis.toFloat() / reset.totalMillis
                 val percent = (done * 100).toInt()
                 val progressLabel = pluralStringResource(R.plurals.tl_reset_progress_cd, percent, percent)
-                Box(
-                    Modifier
-                        .padding(top = 16.dp)
-                        .fillMaxWidth()
-                        .height(6.dp)
-                        .clip(RoundedCornerShape(3.dp))
-                        .background(c.surface2)
-                        .clearAndSetSemantics { contentDescription = progressLabel },
-                ) {
-                    Box(
-                        Modifier
-                            .fillMaxWidth(done.coerceIn(0.02f, 1f))
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(c.accent),
-                    )
-                }
+                TbProgressBar({ done }, Modifier.padding(top = 16.dp), minFraction = 0.02f, description = progressLabel)
             }
         }
 

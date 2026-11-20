@@ -295,6 +295,7 @@ internal class InstagramWebController(
     // ------------------------------------------------------------------ navigation
 
     private fun load(url: String) {
+        app.throwback.core.StartTrace.mark("load")
         navigatingTo = url
         webView.loadUrl(url)
     }

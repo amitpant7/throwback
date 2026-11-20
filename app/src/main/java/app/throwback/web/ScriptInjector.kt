@@ -17,6 +17,9 @@ internal class PageAssets(val template: String, val css: String) {
         @Volatile
         private var cached: PageAssets? = null
 
+        /** Already loaded (warmed up at app start), or null. */
+        fun loadedOrNull(): PageAssets? = cached
+
         suspend fun load(context: Context): PageAssets = cached ?: withContext(Dispatchers.IO) {
             val assets = context.applicationContext.assets
             fun read(name: String) = assets.open(name).bufferedReader().use { it.readText() }

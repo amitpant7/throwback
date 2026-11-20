@@ -91,12 +91,15 @@ fun InstagramScreen(
     val context = LocalContext.current
     val repository = remember { RulesRepository.get(context) }
     val rules by repository.rules.collectAsStateWithLifecycle()
-    var assets by remember { mutableStateOf<PageAssets?>(null) }
+    // Usually already in memory (warmed up at app start): then the WebView is created and starts
+    // loading in this first composition instead of a frame later (~300 ms sooner on a cold start).
+    var assets by remember { mutableStateOf(PageAssets.loadedOrNull()) }
     LaunchedEffect(Unit) {
+        app.throwback.core.StartTrace.mark("screen")
         // Both read files from disk; in parallel, the first page starts sooner on a cold start.
         coroutineScope {
-            launch { assets = PageAssets.load(context) }
-            launch { repository.load() }
+            launch { assets = PageAssets.load(context).also { app.throwback.core.StartTrace.mark("assets") } }
+            launch { repository.load().also { app.throwback.core.StartTrace.mark("rules") } }
         }
     }
     val scope = rememberCoroutineScope()
@@ -166,7 +169,17 @@ private fun InstagramWebHost(
     val controller = remember {
         WebReadiness.reset()
         try {
-            InstagramWebController(context, assets, mode, handledStartUrl)
+            app.throwback.core.StartTrace.mark("webview-create")
+            InstagramWebController(context, assets, mode, handledStartUrl).also {
+                app.throwback.core.StartTrace.mark("webview-ready")
+                // Cold start without a deep link: start loading now rather than after the first frame
+                // (the LaunchedEffect below then finds it started). A deep link waits for the host,
+                // which records it as handled.
+                if (startUrl == null) {
+                    it.applyRules(rules)
+                    it.openOrStart(null, restoreUrl)
+                }
+            }
         } catch (e: RuntimeException) {
             // No usable WebView (it is being updated, or disabled on this device).
             Log.e("ThrowbackWeb", "Could not create the WebView", e)

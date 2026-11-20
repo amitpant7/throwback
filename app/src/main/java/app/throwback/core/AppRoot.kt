@@ -80,6 +80,7 @@ fun AppRoot(
     settingsRequests: Int = 0,
     messagesRequests: Int = 0,
 ) {
+    StartTrace.mark("approot")
     val prefs = app.uiPreferences
     val onboardingDone by prefs.onboardingDone.collectAsStateWithLifecycle(initialValue = null)
     val scope = rememberCoroutineScope()
@@ -159,6 +160,7 @@ private fun MainScreen(
     messagesRequests: Int = 0,
 ) {
     val timeLimit = app.timeLimit
+    StartTrace.mark("mainscreen")
     val lockState by timeLimit.state.collectAsStateWithLifecycle()
     // null while loading, so the feed never flashes for a frame before the pause screen.
     val mindfulPause by app.uiPreferences.mindfulPause.collectAsStateWithLifecycle(initialValue = null)
@@ -224,6 +226,7 @@ private fun MainScreen(
     SideEffect { onSplashHold(mindfulPause == null) }
 
     if (mindfulPause == null) return
+    StartTrace.mark("mainscreen-ready")
 
     val lockShowing = mode == WebMode.FULL && lockState is LockState.Locked
 

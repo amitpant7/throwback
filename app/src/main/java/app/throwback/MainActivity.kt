@@ -1,5 +1,6 @@
 package app.throwback
 
+import app.throwback.core.StartTrace
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -30,6 +31,7 @@ class MainActivity : ComponentActivity() {
     private var holdSplash = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        app.throwback.core.StartTrace.mark("activity")
         installSplashScreen().setKeepOnScreenCondition { holdSplash }
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -41,7 +43,9 @@ class MainActivity : ComponentActivity() {
         // (or messages) opens Settings directly, so screens can be checked without an Instagram login.
         val debugOpen = if (BuildConfig.DEBUG) intent.getStringExtra("debug_open") else null
         val app = application as ThrowbackApp
+        StartTrace.mark("setContent")
         setContent {
+            StartTrace.mark("compose")
             ThrowbackTheme {
                 AppRoot(
                     app = app,

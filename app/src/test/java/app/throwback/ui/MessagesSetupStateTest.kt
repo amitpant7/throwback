@@ -31,6 +31,13 @@ class MessagesSetupStateTest {
     }
 
     @Test
+    fun `Android 13's notification permission counts as missing`() {
+        val noPost = MessagesSetupState("com.instagram.android", true, true, true, postNotifications = false)
+        assertEquals(MessagesStatus.PermissionsMissing(1), noPost.status)
+        assertEquals(MessagesStatus.PermissionsMissing(2), noPost.copy(usageAccess = false).status)
+    }
+
+    @Test
     fun `wizard steps run in order`() {
         assertEquals(3, WizardStep.COUNT)
         assertEquals(WizardStep.Quiet, WizardStep.Install.next())

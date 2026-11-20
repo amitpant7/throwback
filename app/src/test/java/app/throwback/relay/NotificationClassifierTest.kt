@@ -1,0 +1,116 @@
+package app.throwback.relay
+
+import app.throwback.web.rules.NotificationMatch
+import app.throwback.web.rules.NotificationRules
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class NotificationClassifierTest {
+
+    private val defaults = NotificationClassifier(null)
+
+    private fun facts(
+        channel: String? = null,
+        category: String? = null,
+        template: String? = null,
+        group: String? = null,
+        tag: String? = null,
+        ongoing: Boolean = false,
+        fullScreen: Boolean = false,
+    ) = NotificationFacts(
+        key = "0|com.instagram.android|1|$tag|10123",
+        packageName = InstagramPackages.APP,
+        channelId = channel,
+        category = category,
+        template = template,
+        group = group,
+        tag = tag,
+        ongoing = ongoing,
+        fullScreenIntent = fullScreen,
+    )
+
+    @Test
+    fun `android's call signals always mean a call`() {
+        assertEquals(NotificationKind.CALL, defaults.classify(facts(category = "call")))
+        assertEquals(NotificationKind.CALL, defaults.classify(facts(template = "android.app.Notification\$CallStyle")))
+        assertEquals(NotificationKind.CALL, defaults.classify(facts(fullScreen = true)))
+    }
+
+    @Test
+    fun `no rule can turn a call into something else`() {
+        val rules = NotificationRules(
+            classify = listOf(
+                NotificationMatch(kind = "likes", category = "call"),
+                NotificationMatch(kind = "other", channel = ".*"),
+            ),
+        )
+        val c = NotificationClassifier(rules)
+        assertEquals(NotificationKind.CALL, c.classify(facts(category = "call", channel = "ig_calls")))
+        assertEquals(NotificationKind.CALL, c.classify(facts(channel = "x", fullScreen = true)))
+    }
+
+    @Test
+    fun `messages by category or MessagingStyle`() {
+        assertEquals(NotificationKind.MESSAGE, defaults.classify(facts(category = "msg")))
+        assertEquals(NotificationKind.MESSAGE, defaults.classify(facts(template = "android.app.Notification\$MessagingStyle")))
+        assertEquals(NotificationKind.MISSED_CALL, defaults.classify(facts(category = "missed_call")))
+    }
+
+    @Test
+    fun `ongoing without other signals is treated as a call`() {
+        assertEquals(NotificationKind.CALL, defaults.classify(facts(ongoing = true)))
+    }
+
+    @Test
+    fun `anything else is unknown`() {
+        assertEquals(NotificationKind.UNKNOWN, defaults.classify(facts(channel = "ig_other", category = "social")))
+        assertEquals(NotificationKind.UNKNOWN, defaults.classify(facts()))
+    }
+
+    @Test
+    fun `rules decide before the defaults, first match wins`() {
+        val rules = NotificationRules(
+            classify = listOf(
+                NotificationMatch(kind = "likes", channel = "^ig_likes$"),
+                NotificationMatch(kind = "comments", channel = "comment", category = "social"),
+                NotificationMatch(kind = "other", category = "msg", group = "promo"),
+                NotificationMatch(kind = "follows", tag = "follow"),
+                NotificationMatch(kind = "message", channel = "^ig_direct"),
+                NotificationMatch(kind = "live", ongoing = false, channel = "live"),
+            ),
+        )
+        val c = NotificationClassifier(rules)
+        assertEquals(NotificationKind.LIKES, c.classify(facts(channel = "ig_likes")))
+        assertEquals(NotificationKind.UNKNOWN, c.classify(facts(channel = "ig_likes_2")))
+        // Every set field must match.
+        assertEquals(NotificationKind.COMMENTS, c.classify(facts(channel = "ig_comments", category = "social")))
+        assertEquals(NotificationKind.UNKNOWN, c.classify(facts(channel = "ig_comments", category = "msg2")))
+        // A rule can mark a message-looking promo as other.
+        assertEquals(NotificationKind.OTHER, c.classify(facts(category = "msg", group = "promo_1")))
+        assertEquals(NotificationKind.MESSAGE, c.classify(facts(category = "msg", group = "thread_1")))
+        assertEquals(NotificationKind.FOLLOWS, c.classify(facts(tag = "new_follower")))
+        assertEquals(NotificationKind.MESSAGE, c.classify(facts(channel = "ig_direct_v2")))
+        assertEquals(NotificationKind.LIVE, c.classify(facts(channel = "live_videos")))
+        // A null field never matches a pattern.
+        assertEquals(NotificationKind.UNKNOWN, c.classify(facts(category = "social")))
+    }
+
+    @Test
+    fun `a broken or unknown rule is dropped, not fatal`() {
+        val rules = NotificationRules(
+            classify = listOf(
+                NotificationMatch(kind = "message", channel = "(broken"),
+                NotificationMatch(kind = "nonsense", channel = "x"),
+                NotificationMatch(kind = "unknown", channel = "x"),
+                NotificationMatch(kind = "likes", channel = "x"),
+            ),
+        )
+        assertEquals(NotificationKind.LIKES, NotificationClassifier(rules).classify(facts(channel = "x")))
+    }
+
+    @Test
+    fun `every rules kind maps to a classifier kind`() {
+        app.throwback.web.rules.NOTIFICATION_KINDS.forEach { assertTrue(it, NotificationKind.fromRule(it) != null) }
+    }
+}

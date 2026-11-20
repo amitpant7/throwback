@@ -30,7 +30,6 @@ internal object RelayNotifier {
     const val ACTION_OPEN_ACTIVITY = "app.throwback.action.OPEN_ACTIVITY"
 
     fun ensureChannels(context: Context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
         nm.createNotificationChannels(
             listOf(
@@ -51,7 +50,6 @@ internal object RelayNotifier {
     fun canPost(context: Context, target: RelayTarget): Boolean {
         val nmc = NotificationManagerCompat.from(context)
         if (!nmc.areNotificationsEnabled()) return false
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
         val channel = context.getSystemService(NotificationManager::class.java)?.getNotificationChannel(channelFor(target))
         return channel == null || channel.importance != NotificationManager.IMPORTANCE_NONE
     }

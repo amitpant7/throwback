@@ -279,6 +279,16 @@ internal class InstagramWebController(
         pendingFiles = null
     }
 
+    private fun share(url: String) {
+        val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
+            .putExtra(android.content.Intent.EXTRA_TEXT, url)
+        try {
+            context.startActivity(android.content.Intent.createChooser(send, null).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (e: android.content.ActivityNotFoundException) {
+            Log.w(TAG, "no app to share with")
+        }
+    }
+
     fun destroy() {
         if (destroyed) return
         destroyed = true
@@ -472,6 +482,7 @@ internal class InstagramWebController(
                 host?.onReelLimit()
             }
             BridgeMessage.CaughtUp -> host?.onCaughtUp()
+            is BridgeMessage.Share -> share(m.url)
             null -> Unit
         }
     }

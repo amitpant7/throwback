@@ -307,7 +307,8 @@
     var ex = rules.explore;
     c.explore = ex && validSelector(ex.keep) && validSelector(ex.items) ? {
       on: ex.on || 'explore', keep: ex.keep, items: ex.items,
-      dailySeconds: typeof ex.dailySeconds === 'number' ? ex.dailySeconds : 0
+      dailySeconds: typeof ex.dailySeconds === 'number' ? ex.dailySeconds : 0,
+      actions: ex.actions || null
     } : null;
     var nav = rules.nav;
     c.nav = nav && validSelector(nav.links) ? { links: nav.links, minLinks: nav.minLinks || 3 } : null;
@@ -1028,7 +1029,7 @@
     state.href = href;
     state.path = location.pathname;
     if (state.leaving) return;
-    if (clipPlayer && state.path !== previousPath) closeClipPlayer(false);
+    if (clipPlayer && !state.clipNav && state.path !== previousPath) closeClipPlayer(false);
     var u = parseUrl(href);
     var r = u && route(u);
     // Instagram tidying the address of the page already on screen (e.g. dropping ?variant=following)
@@ -1588,6 +1589,10 @@
       poster: poster,
       user: m.user && typeof m.user.username === 'string' ? m.user.username : '',
       caption: m.caption && typeof m.caption.text === 'string' ? m.caption.text.slice(0, 500) : '',
+      liked: !!m.has_liked,
+      likes: typeof m.like_count === 'number' ? m.like_count : null,
+      comments: typeof m.comment_count === 'number' ? m.comment_count : null,
+      saved: !!m.has_viewer_saved,
     };
     clips.order.push(m.code);
     if (clips.order.length > CLIP_MAX) delete clips.byCode[clips.order.shift()];
@@ -1644,9 +1649,6 @@
     '#' + CLIP_ID + ' .tbc-user{font-weight:600;font-size:15px}' +
     '#' + CLIP_ID + ' .tbc-cap{margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;' +
       'overflow:hidden;opacity:.92;white-space:pre-line}' +
-    '#' + CLIP_ID + ' .tbc-open{pointer-events:auto;display:inline-block;margin-top:10px;padding:6px 12px;' +
-      'border:1px solid rgba(255,255,255,.55);border-radius:8px;color:#fff;font-weight:600;font-size:13px;' +
-      'background:transparent}' +
     '#' + CLIP_ID + ' .tbc-top{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;' +
       'justify-content:space-between;padding:12px 8px 24px 4px;background:linear-gradient(rgba(0,0,0,.45),transparent);' +
       'pointer-events:none}' +
@@ -1657,7 +1659,21 @@
     '#' + CLIP_ID + ' .tbc-mute{position:absolute;top:50%;left:50%;width:64px;height:64px;margin:-32px 0 0 -32px;' +
       'border-radius:50%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;' +
       'opacity:0;transition:opacity .2s;pointer-events:none}' +
-    '#' + CLIP_ID + ' .tbc-mute.on{opacity:1}';
+    '#' + CLIP_ID + ' .tbc-mute.on{opacity:1}' +
+    '#' + CLIP_ID + ' .tbc-info{right:72px}' +
+    '#' + CLIP_ID + ' .tbc-user{pointer-events:auto;background:none;border:0;color:#fff;padding:6px 0;font:inherit;font-weight:600;font-size:15px}' +
+    '#' + CLIP_ID + ' .tbc-side{position:absolute;right:6px;bottom:28px;display:flex;flex-direction:column;align-items:center;gap:14px}' +
+    '#' + CLIP_ID + ' .tbc-act{width:52px;min-height:48px;border:0;background:none;color:#fff;display:flex;flex-direction:column;' +
+      'align-items:center;gap:2px;font:600 12px/1.2 -apple-system,system-ui,Roboto,sans-serif;text-shadow:0 1px 2px rgba(0,0,0,.5);padding:0}' +
+    '#' + CLIP_ID + ' .tbc-act svg{filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}' +
+    '#' + CLIP_ID + ' .tbc-act.on .tbc-like-ic{color:#ff3040}' +
+    '#' + CLIP_ID + ' .tbc-pop{position:absolute;top:50%;left:50%;width:96px;height:96px;margin:-48px 0 0 -48px;color:#fff;' +
+      'opacity:0;transform:scale(.6);transition:opacity .15s,transform .25s;pointer-events:none}' +
+    '#' + CLIP_ID + ' .tbc-pop.on{opacity:1;transform:scale(1)}' +
+    '#' + CLIP_ID + ' .tbc-toast{position:absolute;left:16px;right:16px;bottom:120px;text-align:center;font-size:14px;' +
+      'padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.7);opacity:0;transition:opacity .2s;pointer-events:none}' +
+    '#' + CLIP_ID + ' .tbc-toast.on{opacity:1}' +
+    '@media (prefers-reduced-motion: reduce){#' + CLIP_ID + ' .tbc-pop{transition:none}}';
 
   var ICON_CLOSE = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
     'stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg>';
@@ -1667,6 +1683,236 @@
   var ICON_SOUND = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" ' +
     'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4z"/>' +
     '<path d="M15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13"/></svg>';
+
+  // Plain line icons (drawn for Throwback).
+  var ICON_HEART = '<svg class="tbc-like-ic" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.2-9.3C1.7 8.1 3.6 4.5 7.1 4.5c2.1 0 ' +
+    '3.6 1.2 4.9 2.9 1.3-1.7 2.8-2.9 4.9-2.9 3.5 0 5.4 3.6 4.3 6.7-1.7 4.7-9.2 9.3-9.2 9.3z"/></svg>';
+  var ICON_HEART_FILLED = ICON_HEART.replace('fill="none" stroke="currentColor"', 'fill="currentColor" stroke="currentColor"')
+    .replace('width="30" height="30"', 'width="96" height="96"');
+  var ICON_HEART_ON = ICON_HEART.replace('fill="none"', 'fill="currentColor"');
+  var ICON_COMMENT = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linejoin="round" aria-hidden="true"><path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.5L3.5 20.5l1-4.4A8.5 8.5 0 1 1 20.5 12z"/></svg>';
+  var ICON_SHARE = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linejoin="round" aria-hidden="true"><path d="M21.5 3.5 2.5 10.6l7.3 2.9 2.9 7.4z"/><path d="M21.5 3.5 9.8 13.5"/></svg>';
+  var ICON_SAVE = '<svg class="tbc-save-ic" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M18.5 21 12 15.5 5.5 21V4.5a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1z"/></svg>';
+  var ICON_SAVE_ON = ICON_SAVE.replace('fill="none"', 'fill="currentColor"');
+
+  function countText(n) {
+    if (typeof n !== 'number') return '';
+    if (n >= 1e6) return (Math.round(n / 1e5) / 10) + 'M';
+    if (n >= 1e4) return Math.round(n / 1e3) + 'K';
+    if (n >= 1e3) return (Math.round(n / 100) / 10) + 'K';
+    return String(n);
+  }
+
+  function clipActButton(label, icon, count, onTap) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tbc-act';
+    b.setAttribute('aria-label', label);
+    b.innerHTML = icon + '<span>' + countText(count) + '</span>';
+    b.addEventListener('click', function (e) {
+      e.stopPropagation();
+      onTap(b);
+    });
+    return b;
+  }
+
+  /** The right-hand buttons: like, comments, share, save (Instagram's reel layout). */
+  function clipSide(code) {
+    var c = clips.byCode[code];
+    var side = document.createElement('div');
+    side.className = 'tbc-side';
+    var like = clipActButton('Like', c.liked ? ICON_HEART_ON : ICON_HEART, c.likes, function () {
+      setClipLiked(code, !clips.byCode[code].liked);
+    });
+    if (c.liked) like.classList.add('on');
+    like.setAttribute('data-tbc', 'like');
+    side.appendChild(like);
+    side.appendChild(clipActButton('Comments', ICON_COMMENT, c.comments, function () {
+      openClipPath('/p/' + code + '/comments/', code);
+    }));
+    side.appendChild(clipActButton('Share', ICON_SHARE, null, function () {
+      send({ t: 'share', url: 'https://www.instagram.com/reel/' + code + '/' });
+    }));
+    var save = clipActButton('Save', c.saved ? ICON_SAVE_ON : ICON_SAVE, null, function () {
+      setClipSaved(code, !clips.byCode[code].saved);
+    });
+    save.setAttribute('data-tbc', 'save');
+    side.appendChild(save);
+    return side;
+  }
+
+  function clipSlideOf(code) {
+    var p = clipPlayer;
+    return p ? p.slides[p.list.indexOf(code)] : null;
+  }
+
+  function showClipLiked(code) {
+    var c = clips.byCode[code];
+    var b = clipSlideOf(code) && clipSlideOf(code).querySelector('[data-tbc=like]');
+    if (!b) return;
+    b.classList.toggle('on', c.liked);
+    b.innerHTML = (c.liked ? ICON_HEART_ON : ICON_HEART) + '<span>' + countText(c.likes) + '</span>';
+  }
+
+  function showClipSaved(code) {
+    var c = clips.byCode[code];
+    var b = clipSlideOf(code) && clipSlideOf(code).querySelector('[data-tbc=save]');
+    if (b) b.innerHTML = (c.saved ? ICON_SAVE_ON : ICON_SAVE) + '<span></span>';
+  }
+
+  function setClipLiked(code, liked) {
+    var c = clips.byCode[code];
+    if (!c || c.liked === liked) return;
+    c.liked = liked;
+    if (typeof c.likes === 'number') c.likes += liked ? 1 : -1;
+    showClipLiked(code); // at once; undone if Instagram's own button can't be pressed
+    clipAct(code, liked ? 'like' : 'unlike', function (ok) {
+      if (ok) return;
+      c.liked = !liked;
+      if (typeof c.likes === 'number') c.likes += liked ? -1 : 1;
+      showClipLiked(code);
+      clipToast(liked ? 'Couldn’t like this one. Try “Comments” to open the post.' : 'Couldn’t undo the like.');
+    });
+  }
+
+  function setClipSaved(code, saved) {
+    var c = clips.byCode[code];
+    if (!c || c.saved === saved) return;
+    c.saved = saved;
+    showClipSaved(code);
+    clipAct(code, saved ? 'save' : 'unsave', function (ok) {
+      if (ok) {
+        clipToast(saved ? 'Saved' : 'Removed from saved');
+        return;
+      }
+      c.saved = !saved;
+      showClipSaved(code);
+      clipToast('Couldn’t save this one.');
+    });
+  }
+
+  function clipToast(text) {
+    var p = clipPlayer;
+    if (!p) return;
+    if (!p.toast) {
+      p.toast = document.createElement('div');
+      p.toast.className = 'tbc-toast';
+      p.toast.setAttribute('role', 'status');
+      p.root.appendChild(p.toast);
+    }
+    p.toast.textContent = text;
+    p.toast.className = 'tbc-toast on';
+    clearTimeout(p.toastTimer);
+    p.toastTimer = setTimeout(function () {
+      if (p.toast) p.toast.className = 'tbc-toast';
+    }, 1800);
+  }
+
+  /** Single tap: sound on/off. Double tap: like (with the big heart), as on Instagram. */
+  function onClipVideoTap(code) {
+    var p = clipPlayer;
+    if (!p) return;
+    if (p.tapTimer) {
+      clearTimeout(p.tapTimer);
+      p.tapTimer = 0;
+      var slide = clipSlideOf(code);
+      var pop = slide && slide.querySelector('.tbc-pop');
+      if (pop) {
+        pop.className = 'tbc-pop on';
+        setTimeout(function () {
+          pop.className = 'tbc-pop';
+        }, 600);
+      }
+      setClipLiked(code, true);
+      return;
+    }
+    p.tapTimer = setTimeout(function () {
+      p.tapTimer = 0;
+      toggleClipSound();
+    }, 260);
+  }
+
+  /** Switches Instagram's page (under the player, no reload) to [path]: its router renders it in place. */
+  function clipUnderneath(path) {
+    if (location.pathname === path) return;
+    state.clipNav = true;
+    try {
+      history.replaceState(history.state, '', path);
+      window.dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
+    } finally {
+      state.clipNav = false;
+    }
+    if (clipPlayer) clipPlayer.dirty = true;
+  }
+
+  /**
+   * Like/unlike/save/unsave through Instagram's own button: the post's page is rendered under the
+   * player and its button is pressed, so Instagram's own code sends the request (Throwback sends
+   * none). Labels come from the rules (explore.actions). done(true) once pressed.
+   */
+  function clipAct(code, action, done) {
+    var ex = state.c && state.c.explore;
+    var labels = ex && ex.actions && ex.actions[action];
+    if (!labels || !labels.length || !clipPlayer) return done(false);
+    clipUnderneath('/p/' + code + '/');
+    var tries = 0;
+    (function look() {
+      if (!clipPlayer) return done(false);
+      var main = document.querySelector('main');
+      var btn = null;
+      if (main && main.querySelector('a[href*="/' + code + '/"]')) {
+        var svgs = main.querySelectorAll('svg[aria-label]');
+        for (var i = 0; i < svgs.length && !btn; i++) {
+          if (labels.indexOf(svgs[i].getAttribute('aria-label')) !== -1) {
+            btn = svgs[i].closest('[role=button],button') || svgs[i].parentElement;
+          }
+        }
+      }
+      if (btn) {
+        clickElement(btn);
+        pauseUnderPlayer();
+        return done(true);
+      }
+      if (++tries > 40) return done(false); // ~6 s
+      setTimeout(look, 150);
+    })();
+  }
+
+  /** Nothing under the player may play (the post page underneath autoplays its video). */
+  function pauseUnderPlayer() {
+    var p = clipPlayer;
+    if (!p) return;
+    var media = document.querySelectorAll('video, audio');
+    for (var i = 0; i < media.length; i++) if (!p.root.contains(media[i]) && !media[i].paused) media[i].pause();
+  }
+
+  function onClipUnderPlay(e) {
+    var p = clipPlayer;
+    var m = e.target;
+    if (p && m && (m.tagName === 'VIDEO' || m.tagName === 'AUDIO') && !p.root.contains(m)) m.pause();
+  }
+
+  /**
+   * Leaves the player for an Instagram page (comments, a profile) without a reload; with [resume],
+   * coming Back to Explore reopens the player at that reel.
+   */
+  function openClipPath(path, resume) {
+    closeClipPlayer(true);
+    setTimeout(function () {
+      state.clipResume = resume ? { code: resume, at: location.pathname } : null;
+      state.clipBypass = true;
+      try {
+        history.pushState(null, '', path);
+        window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
+      } finally {
+        state.clipBypass = false;
+      }
+    }, 150);
+  }
 
   function clipText(tag, cls, text) {
     var el = document.createElement(tag);
@@ -1737,19 +1983,27 @@
     v.loop = true;
     v.preload = 'none';
     if (c.poster) v.poster = c.poster;
-    v.addEventListener('click', toggleClipSound);
+    v.addEventListener('click', function () {
+      onClipVideoTap(code);
+    });
     slide.appendChild(v);
+    var heart = document.createElement('div');
+    heart.className = 'tbc-pop';
+    heart.innerHTML = ICON_HEART_FILLED;
+    slide.appendChild(heart);
     var info = document.createElement('div');
     info.className = 'tbc-info';
-    if (c.user) info.appendChild(clipText('div', 'tbc-user', c.user));
+    if (c.user) {
+      var user = clipText('button', 'tbc-user', c.user);
+      user.type = 'button';
+      user.addEventListener('click', function () {
+        openClipPath('/' + c.user + '/', null);
+      });
+      info.appendChild(user);
+    }
     if (c.caption) info.appendChild(clipText('div', 'tbc-cap', c.caption));
-    var open = clipText('button', 'tbc-open', 'Open post');
-    open.type = 'button';
-    open.addEventListener('click', function () {
-      openClipPost(code);
-    });
-    info.appendChild(open);
     slide.appendChild(info);
+    slide.appendChild(clipSide(code));
     clipPlayer.strip.appendChild(slide);
     clipPlayer.list.push(code);
     clipPlayer.slides.push(slide);
@@ -1842,36 +2096,50 @@
       }
     }
     if (p.root.parentNode) p.root.parentNode.removeChild(p.root);
+    clearTimeout(p.tapTimer);
+    clearTimeout(p.toastTimer);
+    // The page under the player may show a post (like/save); Instagram renders the address again.
+    state.clipRerender = !!p.dirty;
     if (viaHistory && p.pushed && history.state && history.state.__tbClips) {
       state.clipPopIgnore = true;
       history.back();
+    } else if (p.dirty) {
+      rerenderUnderneath();
     }
     updateExploreCard();
   }
 
-  /** "Open post": the normal post page (likes, comments, the profile), through Instagram's own link. */
-  function openClipPost(code) {
-    closeClipPlayer(true);
+
+
+  /** After the player closes, Instagram shows the page of the current address again. */
+  function rerenderUnderneath() {
+    if (!state.clipRerender) return;
+    state.clipRerender = false;
     setTimeout(function () {
-      var link = document.querySelector('main a[href="/p/' + code + '/"]');
-      if (link) {
-        state.clipBypass = true;
-        clickElement(link);
-        state.clipBypass = false;
-      } else {
-        location.assign('/p/' + code + '/');
-      }
-    }, 120);
+      window.dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
+    }, 0);
   }
 
   /** Back while the player is open closes it; Instagram doesn't see that history step. */
   function onClipPop(e) {
+    if (state.clipNav) return; // the player's own switch of the page underneath: Instagram renders it
     if (state.clipPopIgnore) {
       state.clipPopIgnore = false;
       e.stopImmediatePropagation();
+      rerenderUnderneath();
       return;
     }
-    if (!clipPlayer) return;
+    if (!clipPlayer) {
+      // Back from comments or a profile opened from the player: reopen it at that reel.
+      var r = state.clipResume;
+      if (r && location.pathname === r.at) {
+        state.clipResume = null;
+        setTimeout(function () {
+          if (clips.byCode[r.code] && exploreAllowed()) openClipPlayer(r.code);
+        }, 400);
+      }
+      return;
+    }
     e.stopImmediatePropagation();
     closeClipPlayer(false);
   }
@@ -3341,6 +3609,7 @@
     }, { passive: true });
     window.addEventListener('click', onClick, true);
     window.addEventListener('popstate', onClipPop, true);
+    document.addEventListener('play', onClipUnderPlay, true);
     document.addEventListener('visibilitychange', onClipVisibility);
     document.addEventListener('play', onMediaPlay, true); // media events don't bubble; capture sees them
     document.addEventListener('play', onCoveredPlay, true);

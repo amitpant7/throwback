@@ -105,6 +105,9 @@ object RulesValidator {
             checkSelector(e.items, "explore.items", errors)
             checkOn(e.on, "explore")
             check(e.dailySeconds in 0..3600) { "explore.dailySeconds out of range" }
+            e.actions?.let { a ->
+                (a.like + a.unlike + a.save + a.unsave).forEach { check(it.isNotBlank() && it.length <= 60) { "explore.actions: bad label" } }
+            }
         }
         rules.nav?.let { n ->
             checkSelector(n.links, "nav.links", errors)

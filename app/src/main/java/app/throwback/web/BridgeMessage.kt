@@ -36,12 +36,16 @@ internal sealed interface BridgeMessage {
     /** The feed showed "You're all caught up" (a good moment to ask for a rating). */
     data object CaughtUp : BridgeMessage
 
+    /** Share a reel's link (Explore reel player) through Android's share sheet. */
+    data class Share(val url: String) : BridgeMessage
+
     /** The page's background colour (ARGB), for the system bar areas around the WebView. */
     data class Background(val argb: Int) : BridgeMessage
 
     companion object {
         private val json = Json { ignoreUnknownKeys = true }
         private val THREAD = Regex("^\\d{5,40}$")
+        val SHARE_URL = Regex("^https://www\\.instagram\\.com/reel/[A-Za-z0-9_-]{5,40}/$")
         private val USER = Regex("^[A-Za-z0-9._]{1,30}$")
 
         fun parse(text: String?): BridgeMessage? {
@@ -62,6 +66,7 @@ internal sealed interface BridgeMessage {
                 "callInApp" -> CallInApp(str("thread")?.takeIf { THREAD.matches(it) }, str("user")?.takeIf { USER.matches(it) })
                 "reelLimit" -> ReelLimit
                 "caughtUp" -> CaughtUp
+                "share" -> str("url")?.takeIf { SHARE_URL.matches(it) }?.let(::Share)
                 else -> null
             }
         }

@@ -156,6 +156,19 @@ data class ExploreRules(
     val items: String,
     /** Seconds a day the Explore grid may show (time on the Explore tab); then "Enough for today". 0: never. */
     val dailySeconds: Int = 0,
+    /**
+     * Labels (aria-label, any language) of Instagram's own buttons on a post page, which the Explore
+     * reel player presses for its like and save buttons.
+     */
+    val actions: ExploreActions? = null,
+)
+
+@Serializable
+data class ExploreActions(
+    val like: List<String> = emptyList(),
+    val unlike: List<String> = emptyList(),
+    val save: List<String> = emptyList(),
+    val unsave: List<String> = emptyList(),
 )
 
 @Serializable

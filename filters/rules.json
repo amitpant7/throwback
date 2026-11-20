@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112023,
+  "version": 2026112024,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -136,6 +136,13 @@
     "keep": "input[type='search'], input[aria-label*='Search' i], input[placeholder*='Search' i]",
     "items": "a[href^='/p/'], a[href^='/reel/'], a[href*='/p/'], a[href*='/reel/']",
     "dailySeconds": 300,
+    "actions": {
+      "like": ["Like", "Gefällt mir", "J’aime", "Me gusta", "Curtir", "Mi piace"],
+      "unlike": ["Unlike", "Gefällt mir nicht mehr", "Je n’aime plus", "Ya no me gusta", "Descurtir", "Non mi piace più"],
+      "save": ["Save", "Speichern", "Enregistrer", "Guardar", "Salvar", "Salva"],
+      "unsave": ["Remove", "Entfernen", "Retirer", "Eliminar", "Remover", "Rimuovi"],
+      "note": "aria-labels of Instagram's own Like/Unlike/Save/Remove buttons on a post page; the Explore reel player presses them (no requests of its own)."
+    },
     "note": "The Explore grid shows for dailySeconds a day (time actually on the Explore tab), then it is hidden: the search box stays; every block that holds post tiles (and not the search box) is hidden, and Throwback shows 'Enough for today'."
   },
 

@@ -52,6 +52,12 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     Back closes it; "Open post" shows the normal post (likes, comments, profile). The time counts
     toward the 5 minutes, and at 0:00 it closes onto "Enough for today". Only 3 videos are loaded
     at a time.
+    **Side bar like Instagram's** (owner, 2026-11-20): ♥ (and double-tap) and 🔖 save work by
+    rendering the post's own page under the player (Instagram's router, no reload) and pressing
+    Instagram's own button there, so Instagram's code sends the request and Throwback sends none
+    (labels in rules `explore.actions`, fixable remotely); the icon changes at once and goes back if
+    the button can't be found. 💬 opens the post's comments (Back returns to the player at that reel),
+    ↗ opens Android's share sheet with the reel link, the username opens the profile.
 13b. **A little discovery** (decided 2026-11-20): of Instagram's suggested posts (never ads), a few are
     shown, tagged "Discover · not someone you follow". Per 5 minutes of time actually spent on the feed:
     at most 1 video/reel and 1 photo post; at most 20 a day; only after 8 posts from people you follow

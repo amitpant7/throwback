@@ -145,7 +145,9 @@ class RelayListenerService : NotificationListenerService() {
     private suspend fun classifier(): NotificationClassifier {
         val rules = notificationRules()
         classifier?.let { (r, c) -> if (r == rules) return c }
-        return NotificationClassifier(rules).also { classifier = rules to it }
+        val debug = RelayDebug.extraMatches()
+        val effective = if (debug.isEmpty()) rules else (rules ?: NotificationRules()).let { it.copy(classify = it.classify + debug) }
+        return NotificationClassifier(effective).also { classifier = rules to it }
     }
 
     companion object {

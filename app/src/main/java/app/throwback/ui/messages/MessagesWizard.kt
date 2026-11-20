@@ -169,6 +169,7 @@ private fun InstallStep(onNext: () -> Unit, onNotNow: () -> Unit, showMessage: (
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 BulletPoint(R.drawable.ui_ic_chat, R.string.ui_install_point_messages)
                 BulletPoint(R.drawable.ui_ic_phone, R.string.ui_install_point_calls)
+                BulletPoint(R.drawable.ui_ic_camera_app, R.string.ui_install_point_post)
                 BulletPoint(R.drawable.ui_ic_shield, R.string.ui_install_point_guard)
             }
         }

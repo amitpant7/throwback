@@ -78,7 +78,7 @@ internal fun SettingsHomeScreen(prefs: UiPrefs, onBack: () -> Unit, onOpen: (Set
             SectionLabel(stringResource(R.string.ui_section_notifications))
             TbCard {
                 NavRow(
-                    icon = R.drawable.ui_ic_bell,
+                    icon = R.drawable.ui_ic_app_square,
                     title = stringResource(R.string.ui_messages_title),
                     subtitle = stringResource(R.string.ui_messages_sub),
                     value = stringResource(if (messagesDone) R.string.ui_messages_value_on else R.string.ui_messages_value_setup),

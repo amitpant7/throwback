@@ -82,6 +82,8 @@ internal fun MessagesSettingsScreen(
                 AlwaysOnRow(R.drawable.ui_ic_chat, R.string.ui_always_messages)
                 CardDivider()
                 AlwaysOnRow(R.drawable.ui_ic_phone, R.string.ui_always_calls)
+                CardDivider()
+                AlwaysOnRow(R.drawable.ui_ic_camera_app, R.string.ui_always_posting)
             }
 
             SectionLabel(stringResource(R.string.ui_also_notify))

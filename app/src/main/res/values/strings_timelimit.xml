@@ -136,7 +136,7 @@
         <item quantity="one">Enter your PIN to raise the limit to %1$d minute</item>
         <item quantity="other">Enter your PIN to raise the limit to %1$d minutes</item>
     </plurals>
-    <string name="tl_enter_pin_guard_off">Enter your PIN to turn off Messages &amp; calls</string>
+    <string name="tl_enter_pin_guard_off">Enter your PIN to disconnect the Instagram app</string>
     <string name="tl_enter_pin_off">Enter your PIN to turn off the limit</string>
     <string name="tl_enter_pin_change">Enter your current PIN</string>
     <string name="tl_starts_tomorrow">The change starts tomorrow.</string>

@@ -38,7 +38,7 @@
     <string name="ui_found_remove_title">Remove it</string>
     <string name="ui_found_remove_body">Opens the app\'s page in Android Settings. Tap Uninstall there.</string>
     <string name="ui_found_later">Decide later</string>
-    <string name="ui_found_footer">You can change this anytime in Settings → Messages &amp; calls.</string>
+    <string name="ui_found_footer">You can change this anytime in Settings → Instagram app.</string>
 
     <!-- 4 · Settings -->
     <string name="ui_settings_title">Settings</string>
@@ -53,11 +53,11 @@
     <string name="ui_time_limit_sub">Lock Throwback after a set time each day</string>
     <string name="ui_pause_title">Mindful pause</string>
     <string name="ui_pause_sub">A short pause before Instagram opens</string>
-    <string name="ui_section_notifications">Notifications</string>
-    <string name="ui_messages_title">Messages &amp; calls</string>
-    <string name="ui_messages_sub">Get message and call alerts</string>
+    <string name="ui_section_notifications">Connected app</string>
+    <string name="ui_messages_title">Instagram app</string>
+    <string name="ui_messages_sub">Calls, message alerts and posting</string>
     <string name="ui_messages_value_setup">Set up</string>
-    <string name="ui_messages_value_on">On</string>
+    <string name="ui_messages_value_on">Connected</string>
     <string name="ui_section_app">App</string>
     <string name="ui_shortcut_title">Add to home screen</string>
     <string name="ui_about_title">About</string>
@@ -66,10 +66,11 @@
     <string name="ui_wizard_step_optional">Step %1$d of %2$d · Optional</string>
     <string name="ui_wizard_step">Step %1$d of %2$d</string>
 
-    <string name="ui_install_title">Get message and call alerts</string>
+    <string name="ui_install_title">Connect the Instagram app</string>
     <string name="ui_install_body">Instagram only sends notifications to its own app. So the real app stays on your phone, and Throwback keeps you out of it. Log in to the Instagram app with the same account you use in Throwback.</string>
     <string name="ui_install_point_messages">Message alerts open in Throwback</string>
     <string name="ui_install_point_calls">Calls ring and you answer normally</string>
+    <string name="ui_install_point_post">Post and add stories with Instagram\'s own editor</string>
     <string name="ui_install_point_guard">Open the Instagram app outside a call and Throwback brings you back</string>
     <string name="ui_install_app_name">Instagram app</string>
     <string name="ui_install_not_installed">Not installed</string>
@@ -110,7 +111,7 @@
 
     <!-- 17 · Messages & calls settings -->
     <string name="ui_status_ready_title">Ready</string>
-    <string name="ui_status_ready_body">Messages come from Throwback, and opening the Instagram app outside a call brings you back</string>
+    <string name="ui_status_ready_body">Messages come from Throwback. The Instagram app opens for calls and posting; anything else brings you back</string>
     <string name="ui_status_no_app_title">Instagram app not installed</string>
     <string name="ui_status_no_app_body">Install it to get message and call alerts</string>
     <string name="ui_status_incomplete_title">Setup not finished</string>
@@ -122,6 +123,7 @@
     <string name="ui_always_on">Always on</string>
     <string name="ui_always_messages">Messages</string>
     <string name="ui_always_calls">Calls</string>
+    <string name="ui_always_posting">Posting: “+” and “Your story” open Instagram\'s editor</string>
     <string name="ui_always_on_description">On</string>
     <string name="ui_also_notify">Also notify me about</string>
     <string name="ui_notify_likes">Likes</string>
@@ -130,11 +132,11 @@
     <string name="ui_notify_story_mentions">Story mentions and tags</string>
     <string name="ui_notify_live_videos">Live videos</string>
     <string name="ui_notify_footer">Everything you leave off is removed before you see it.</string>
-    <string name="ui_turn_off_messages">Turn off Messages &amp; calls</string>
-    <string name="ui_messages_off_pending">Messages &amp; calls turns off tomorrow.</string>
+    <string name="ui_turn_off_messages">Disconnect the Instagram app</string>
+    <string name="ui_messages_off_pending">The Instagram app disconnects tomorrow.</string>
     <string name="ui_messages_off_keep">Keep it on</string>
-    <string name="ui_messages_off_scheduled">Messages &amp; calls turns off tomorrow.</string>
-    <string name="ui_messages_off_cancelled">Messages &amp; calls stays on.</string>
+    <string name="ui_messages_off_scheduled">The Instagram app disconnects tomorrow.</string>
+    <string name="ui_messages_off_cancelled">The Instagram app stays connected.</string>
 
     <!-- 5 · Add to home screen -->
     <string name="ui_shortcut_default_name">Throwback</string>

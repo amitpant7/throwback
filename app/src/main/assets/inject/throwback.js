@@ -878,6 +878,10 @@
     var root = document.documentElement;
     var card = document.getElementById(END_CARD_ID);
     if (!card) {
+      if (!state.caughtUpSent) {
+        state.caughtUpSent = true;
+        send({ t: 'caughtUp' });
+      }
       card = document.createElement('div');
       card.id = END_CARD_ID;
       card.setAttribute('role', 'status');

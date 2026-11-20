@@ -12,6 +12,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
    the mockup are Beer / Rock show / GTA 6. Beer and GTA 6 have original icons; Rock show uses a prism
    image supplied by the owner (source and licence to confirm before release). Before the Play
    release, recheck using third-party names as product names.
+4a. **Rating ask** (owner, 2026-11-20): once, through Google Play's own in-app review card, at the
+    moment "You're all caught up" shows, once the app is at least 7 days old and was used on 5
+    different days. Play decides whether the card actually appears; no "do you like it?" pre-question
+    (Play policy). Builds not from Play do nothing.
 5. **Privacy:** no analytics, no accounts, no server. Nothing leaves the phone except traffic to
    Instagram itself and a daily fetch of the public filter rules.
 6. **Disclaimer:** "Not affiliated with Instagram or Meta" on the store listing and the About screen.

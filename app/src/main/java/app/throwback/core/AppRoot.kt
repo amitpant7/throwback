@@ -221,6 +221,8 @@ private fun MainScreen(
                 Log.d("ThrowbackApp", "reel poster shown (was showing: $reelPoster)")
                 reelPoster = true
             },
+            // A calm, positive moment: after a week of use, Google Play's rating card (asked once).
+            onCaughtUp = { (context as? android.app.Activity)?.let { RateAsk.onGoodMoment(it) } },
             // While locked or paused, screen readers must not reach the feed underneath.
             modifier = if (lockShowing || pauseShowing) Modifier.clearAndSetSemantics {} else Modifier,
         )

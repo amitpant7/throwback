@@ -85,6 +85,8 @@ fun InstagramScreen(
     covered: Boolean = false,
     /** The reel allowance in Instagram's swipe viewer is used up: show the poster. */
     onReelLimit: () -> Unit = {},
+    /** The feed reached "You're all caught up". */
+    onCaughtUp: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val repository = remember { RulesRepository.get(context) }
@@ -132,6 +134,7 @@ fun InstagramScreen(
             backEnabled = backEnabled,
             covered = covered,
             onReelLimit = onReelLimit,
+            onCaughtUp = onCaughtUp,
             modifier = modifier,
         )
     }
@@ -155,6 +158,7 @@ private fun InstagramWebHost(
     backEnabled: Boolean,
     covered: Boolean,
     onReelLimit: () -> Unit,
+    onCaughtUp: () -> Unit,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
@@ -185,6 +189,7 @@ private fun InstagramWebHost(
     val latestOnOpenSettings by rememberUpdatedState(onOpenSettings)
     val latestOnCallInApp by rememberUpdatedState(onCallInApp)
     val latestOnReelLimit by rememberUpdatedState(onReelLimit)
+    val latestOnCaughtUp by rememberUpdatedState(onCaughtUp)
 
     // Photos and videos go through Android's photo picker; anything else through the file chooser.
     val pickOne = rememberLauncherForActivityResult(PickVisualMedia()) { uri ->
@@ -211,6 +216,8 @@ private fun InstagramWebHost(
             override fun onCallInApp(thread: String?, user: String?) = latestOnCallInApp(thread, user)
 
             override fun onReelLimit() = latestOnReelLimit()
+
+            override fun onCaughtUp() = latestOnCaughtUp()
 
             override fun pickFiles(kind: PickKind, multiple: Boolean, documentIntent: Intent?): Boolean {
                 val media = when (kind) {

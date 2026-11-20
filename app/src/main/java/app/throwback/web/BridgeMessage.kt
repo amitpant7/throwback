@@ -33,6 +33,9 @@ internal sealed interface BridgeMessage {
     /** The user swiped past the reel allowance in Instagram's reel viewer; the app shows its poster. */
     data object ReelLimit : BridgeMessage
 
+    /** The feed showed "You're all caught up" (a good moment to ask for a rating). */
+    data object CaughtUp : BridgeMessage
+
     /** The page's background colour (ARGB), for the system bar areas around the WebView. */
     data class Background(val argb: Int) : BridgeMessage
 
@@ -58,6 +61,7 @@ internal sealed interface BridgeMessage {
                 "settings" -> OpenSettings
                 "callInApp" -> CallInApp(str("thread")?.takeIf { THREAD.matches(it) }, str("user")?.takeIf { USER.matches(it) })
                 "reelLimit" -> ReelLimit
+                "caughtUp" -> CaughtUp
                 else -> null
             }
         }

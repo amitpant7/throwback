@@ -12,8 +12,10 @@ splashscreen = "1.0.1"
 coroutines = "1.9.0"
 serialization = "1.7.3"
 junit = "4.13.2"
+playReview = "2.0.2"
 
 [libraries]
+play-review-ktx = { group = "com.google.android.play", name = "review-ktx", version.ref = "playReview" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }

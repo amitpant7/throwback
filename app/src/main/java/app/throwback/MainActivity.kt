@@ -34,6 +34,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         deepLink.value = intent.instagramUrl()
+        app.throwback.core.RateAsk.noteUse(this)
         if (intent.action == ACTION_OPEN_SETTINGS) settingsRequests.intValue++
         if (intent.action == RelayNotifier.ACTION_OPEN_MESSAGES) messagesRequests.intValue++
         // Test builds only: `adb shell am start -n app.throwback/.MainActivity --es debug_open settings`

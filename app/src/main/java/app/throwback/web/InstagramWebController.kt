@@ -70,6 +70,9 @@ internal class InstagramWebController(
         /** The reel allowance in Instagram's swipe viewer is used up. */
         fun onReelLimit()
 
+        /** The feed reached "You're all caught up". */
+        fun onCaughtUp() {}
+
         /** Opens a picker; must eventually call [deliverFiles]. False if no picker could be opened. */
         fun pickFiles(kind: PickKind, multiple: Boolean, documentIntent: Intent?): Boolean
     }
@@ -446,6 +449,7 @@ internal class InstagramWebController(
                 Log.d(TAG, "reel poster requested by the page")
                 host?.onReelLimit()
             }
+            BridgeMessage.CaughtUp -> host?.onCaughtUp()
             null -> Unit
         }
     }

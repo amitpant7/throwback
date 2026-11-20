@@ -89,6 +89,12 @@ internal fun SettingsHomeScreen(prefs: UiPrefs, onBack: () -> Unit, onOpen: (Set
                 CardDivider()
                 NavRow(
                     icon = R.drawable.ui_ic_heart,
+                    title = stringResource(R.string.ui_support_title),
+                    onClick = { onOpen(SettingsRoute.Support) },
+                )
+                CardDivider()
+                NavRow(
+                    icon = R.drawable.ui_ic_info,
                     title = stringResource(R.string.ui_about_title),
                     onClick = { onOpen(SettingsRoute.About) },
                 )

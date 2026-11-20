@@ -39,6 +39,7 @@ import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.ui.SettingsStart
 import app.throwback.ui.UiPrefs
 import app.throwback.ui.about.AboutScreen
+import app.throwback.ui.about.SupportScreen
 import app.throwback.ui.common.UiText
 import app.throwback.ui.messages.MessagesSettingsScreen
 import app.throwback.ui.messages.MessagesWizard
@@ -187,6 +188,7 @@ private fun RouteContent(
 
         SettingsRoute.Shortcut -> Box(padded) { ShortcutScreen(onBack = back, showMessage = showMessage) }
 
+        SettingsRoute.Support -> Box(padded) { SupportScreen(onBack = back, showMessage = showMessage) }
         SettingsRoute.About -> Box(padded) { AboutScreen(onBack = back, showMessage = showMessage) }
     }
 }

@@ -69,7 +69,6 @@ internal fun AboutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
     val colors = ThrowbackTheme.colors
     val context = LocalContext.current
     val linkFailed = stringResource(R.string.ui_link_failed)
-    val tipsSoon = stringResource(R.string.ui_tips_soon)
     val open: (String) -> Unit = { url -> if (!SystemScreens.openUrl(context, url)) showMessage(linkFailed) }
 
     Column(Modifier.fillMaxSize()) {
@@ -97,31 +96,8 @@ internal fun AboutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                 )
             }
 
-            // Support
-            TbCard {
-                Column(Modifier.padding(18.dp)) {
-                    Text(
-                        stringResource(R.string.ui_support_title),
-                        style = UiText.rowStrong,
-                        color = colors.text,
-                        modifier = Modifier.semantics { heading() },
-                    )
-                    Text(
-                        stringResource(R.string.ui_support_body),
-                        style = UiText.body14,
-                        color = colors.muted,
-                        modifier = Modifier.padding(top = 6.dp, bottom = 14.dp),
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Tip.entries.forEach { tip ->
-                            TipButton(tip, onClick = { showMessage(tipsSoon) }, modifier = Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-
             // Links
-            TbCard(Modifier.padding(top = 16.dp)) {
+            TbCard {
                 NavRow(
                     title = stringResource(R.string.ui_link_source),
                     onClick = { open(AboutLinks.PLACEHOLDER_REPO_URL) },
@@ -150,6 +126,40 @@ internal fun AboutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth().padding(start = 6.dp, end = 6.dp, top = 18.dp, bottom = 24.dp),
             )
+        }
+    }
+}
+
+/** Support Throwback: the optional tips (no paid features). Separate from About (owner, 2026-11-20). */
+@Composable
+internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
+    val colors = ThrowbackTheme.colors
+    val tipsSoon = stringResource(R.string.ui_tips_soon)
+
+    Column(Modifier.fillMaxSize()) {
+        TopBar(stringResource(R.string.ui_support_title), onBack = onBack)
+        Column(
+            Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, top = 12.dp)
+                .navigationBarsPadding(),
+        ) {
+            TbCard {
+                Column(Modifier.padding(18.dp)) {
+                    Text(
+                        stringResource(R.string.ui_support_body),
+                        style = UiText.body14,
+                        color = colors.muted,
+                        modifier = Modifier.padding(bottom = 14.dp),
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Tip.entries.forEach { tip ->
+                            TipButton(tip, onClick = { showMessage(tipsSoon) }, modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
         }
     }
 }

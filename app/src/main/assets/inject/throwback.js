@@ -2500,6 +2500,13 @@
 
   function checkReady() {
     if (state.readySent || state.leaving || !document.body) return;
+    // Message pages (opened from a message alert, or messages-only mode) have nothing to filter
+    // before showing, and matched none of the ready landmarks early: the cover stayed up for the
+    // 6-second fallback. There, anything drawn is enough.
+    if (pageActive('direct') && document.body.querySelector('svg, img, [role], [aria-label]')) {
+      sendReady();
+      return;
+    }
     try {
       if (!document.querySelector(state.c.readySelector)) return;
     } catch (e) {

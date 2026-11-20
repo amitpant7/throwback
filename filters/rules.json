@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112017,
+  "version": 2026112018,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -65,7 +65,7 @@
     "stories": "^/stories/"
   },
 
-  "readySelector": "main, nav, article, form, [role='main'], [role='dialog'], input[type='password'], [role='heading']",
+  "readySelector": "main, nav, article, form, [role='main'], [role='dialog'], input[type='password'], [role='heading'], [role='navigation'], [role='list'], [role='grid'], [role='textbox']",
 
   "hide": [
     { "id": "reels-links", "selector": "a[href^='/reels/'], a[href$='/reels/']", "on": "always", "style": "remove",

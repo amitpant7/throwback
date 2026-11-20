@@ -1,7 +1,7 @@
 package app.throwback.ui.about
 
 import app.throwback.core.ui.SectionLabel
-import app.throwback.core.ui.LineIcon
+import app.throwback.core.ui.TbIcon
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -64,7 +64,7 @@ import app.throwback.core.ui.NavRow
 import app.throwback.ui.common.SystemScreens
 import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.ThrowbackLogo
-import app.throwback.core.ui.TopBar
+import app.throwback.core.ui.TbTopBar
 import app.throwback.core.ui.UiText
 
 /**
@@ -94,7 +94,7 @@ internal fun AboutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
     val open: (String) -> Unit = { url -> if (!SystemScreens.openUrl(context, url)) showMessage(linkFailed) }
 
     Column(Modifier.fillMaxSize()) {
-        TopBar(stringResource(R.string.ui_about_title), onBack = onBack)
+        TbTopBar(stringResource(R.string.ui_about_title), onBack = onBack)
         Column(
             Modifier
                 .weight(1f)
@@ -169,7 +169,7 @@ internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
 
     // imePadding: edge to edge, the screen itself keeps the amount field above the keyboard.
     Column(Modifier.fillMaxSize().imePadding()) {
-        TopBar(stringResource(R.string.ui_support_title), onBack = onBack)
+        TbTopBar(stringResource(R.string.ui_support_title), onBack = onBack)
         Column(
             Modifier
                 .weight(1f)
@@ -200,15 +200,15 @@ internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                 TipRow(
                     icon = {
                         Box(Modifier.size(40.dp).clip(CircleShape).background(colors.surface2), contentAlignment = Alignment.Center) {
-                            LineIcon(R.drawable.ui_ic_heart, size = 22.dp, tint = colors.accentText)
+                            TbIcon(R.drawable.ic_heart, size = 22.dp, tint = colors.accentText)
                         }
                     },
                     name = stringResource(R.string.ui_tip_any),
                     line = stringResource(R.string.ui_tip_any_line),
                     onClick = { bigOpen = !bigOpen },
                 ) {
-                    LineIcon(
-                        R.drawable.ui_ic_chevron, size = 18.dp, tint = colors.muted,
+                    TbIcon(
+                        R.drawable.ic_chevron, size = 18.dp, tint = colors.muted,
                         modifier = Modifier.rotate(if (bigOpen) 270f else 90f),
                     )
                 }

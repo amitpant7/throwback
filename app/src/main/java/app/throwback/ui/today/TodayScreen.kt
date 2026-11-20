@@ -34,7 +34,7 @@ import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.CardDivider
 import app.throwback.core.ui.SectionLabel
 import app.throwback.core.ui.TbCard
-import app.throwback.core.ui.TopBar
+import app.throwback.core.ui.TbTopBar
 import app.throwback.core.ui.UiText
 
 /** What "Your day" shows. Page counts are null until the feed has been open once. */
@@ -71,7 +71,7 @@ internal val TODAY_AREAS = listOf("feed", "stories", "messages", "explore", "oth
 internal fun TodayScreen(stats: TodayStats, onBack: () -> Unit) {
     val c = ThrowbackTheme.colors
     Column(Modifier.fillMaxSize()) {
-        TopBar(stringResource(R.string.ui_today_title), onBack = onBack)
+        TbTopBar(stringResource(R.string.ui_today_title), onBack = onBack)
         Column(
             Modifier
                 .weight(1f)

@@ -49,6 +49,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.R
 import app.throwback.core.LockState
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.core.ui.TbButton
+import app.throwback.core.ui.TbIcon
+import app.throwback.core.ui.TbTopBar
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.LockPhase
@@ -116,7 +119,7 @@ private fun SetupScreen(controller: DefaultTimeLimitController, onClose: () -> U
     }
 
     Column(Modifier.fillMaxSize()) {
-        TlHeader(stringResource(R.string.tl_title), onClose)
+        TbTopBar(stringResource(R.string.tl_title), onClose)
         ScreenColumn(
             PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 28.dp),
             horizontalAlignment = Alignment.Start,
@@ -126,10 +129,10 @@ private fun SetupScreen(controller: DefaultTimeLimitController, onClose: () -> U
 
             Spacer(Modifier.height(18.dp))
             TlCard(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                IconLine(R.drawable.tl_ic_lock, pluralStringResource(R.plurals.tl_rule_locks, minutes, minutes))
-                IconLine(R.drawable.tl_ic_clock, stringResource(R.string.tl_rule_extend))
-                IconLine(R.drawable.tl_ic_chat, stringResource(R.string.tl_rule_messages))
-                IconLine(R.drawable.tl_ic_shield, stringResource(R.string.tl_setup_pin_next))
+                IconLine(R.drawable.ic_lock, pluralStringResource(R.plurals.tl_rule_locks, minutes, minutes))
+                IconLine(R.drawable.ic_clock, stringResource(R.string.tl_rule_extend))
+                IconLine(R.drawable.ic_chat, stringResource(R.string.tl_rule_messages))
+                IconLine(R.drawable.ic_shield, stringResource(R.string.tl_setup_pin_next))
             }
 
             Spacer(Modifier.weight(1f))
@@ -144,7 +147,7 @@ private fun SetupScreen(controller: DefaultTimeLimitController, onClose: () -> U
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
             )
-            TlButton(
+            TbButton(
                 stringResource(R.string.tl_turn_on, minutes),
                 enabled = !busy,
                 onClick = { creatingPin = true },
@@ -328,7 +331,7 @@ private fun ManageHome(
     val reset = view.pinReset
 
     Column(Modifier.fillMaxSize()) {
-        TlHeader(stringResource(R.string.tl_title), onClose)
+        TbTopBar(stringResource(R.string.tl_title), onClose)
         ScreenColumn(
             PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 28.dp),
             horizontalAlignment = Alignment.Start,
@@ -494,7 +497,7 @@ private fun SettingsRow(title: String, subtitle: String?, onClick: () -> Unit, e
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 2.dp))
             }
         }
-        TlIcon(R.drawable.tl_ic_chevron, size = 18.dp, tint = c.muted)
+        TbIcon(R.drawable.ic_chevron, size = 18.dp, tint = c.muted)
     }
 }
 
@@ -537,7 +540,7 @@ private fun PinPrompt(
     var lastResult by remember { mutableStateOf<ActionResult?>(null) }
 
     Column(Modifier.fillMaxSize()) {
-        TlHeader(stringResource(R.string.tl_title), onBack)
+        TbTopBar(stringResource(R.string.tl_title), onBack)
         PinEntry(
             title = title,
             subtitle = stringResource(R.string.tl_starts_tomorrow).takeIf { onSuccessWithPin == null },

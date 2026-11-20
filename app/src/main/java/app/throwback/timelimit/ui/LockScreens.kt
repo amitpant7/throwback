@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,6 +53,10 @@ import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.LockState
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.core.ui.TbBackButton
+import app.throwback.core.ui.TbButton
+import app.throwback.core.ui.TbButtonStyle
+import app.throwback.core.ui.TbIcon
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.LockPhase
@@ -160,7 +163,7 @@ private fun TimesUpScreen(
     val reset = view.pinReset
 
     ScreenColumn(PaddingValues(start = 24.dp, end = 24.dp, top = 72.dp, bottom = 28.dp)) {
-        TlIcon(R.drawable.tl_ic_lock, size = 36.dp, tint = c.accentText)
+        TbIcon(R.drawable.ic_lock, size = 36.dp, tint = c.accentText)
         Spacer(Modifier.height(16.dp))
         Text(
             stringResource(R.string.tl_times_up_title),
@@ -203,21 +206,21 @@ private fun TimesUpScreen(
         Spacer(Modifier.height(24.dp))
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             when {
-                reset != null -> TlButton(
+                reset != null -> TbButton(
                     stringResource(if (reset.ready) R.string.tl_reset_set_new else R.string.tl_reset_in_progress),
                     onClick = onOpenReset,
-                    style = if (reset.ready) TlButtonStyle.Primary else TlButtonStyle.Secondary,
+                    style = if (reset.ready) TbButtonStyle.Primary else TbButtonStyle.Secondary,
                 )
-                phase is LockPhase.Waiting -> TlButton(stringResource(R.string.tl_ask_in, waitText), onClick = {}, enabled = false)
-                else -> TlButton(stringResource(R.string.tl_ask), onClick = onAsk)
+                phase is LockPhase.Waiting -> TbButton(stringResource(R.string.tl_ask_in, waitText), onClick = {}, enabled = false)
+                else -> TbButton(stringResource(R.string.tl_ask), onClick = onAsk)
             }
-            TlButton(
+            TbButton(
                 stringResource(R.string.tl_open_messages),
                 onClick = onOpenMessagesOnly,
-                style = TlButtonStyle.Secondary,
-                icon = R.drawable.tl_ic_chat,
+                style = TbButtonStyle.Secondary,
+                icon = R.drawable.ic_chat,
             )
-            TlButton(stringResource(R.string.tl_close), onClick = onCloseApp, style = TlButtonStyle.Plain)
+            TbButton(stringResource(R.string.tl_close), onClick = onCloseApp, style = TbButtonStyle.Plain)
         }
     }
 }
@@ -311,9 +314,7 @@ private fun ExtensionPinScreen(
                 }
             },
         )
-        IconButton(onClick = onBack, modifier = Modifier.padding(6.dp).size(48.dp).align(Alignment.TopStart)) {
-            TlIcon(R.drawable.tl_ic_back, size = 22.dp, tint = c.text, contentDescription = stringResource(R.string.tl_back))
-        }
+        TbBackButton(onBack, Modifier.padding(6.dp).align(Alignment.TopStart))
     }
 }
 
@@ -324,7 +325,7 @@ private fun GrantedScreen(view: TimeLimitView, onContinue: () -> Unit) {
     val leftText = if (left > 0) pluralStringResource(R.plurals.tl_granted_left, left, left) else stringResource(R.string.tl_granted_last)
     ScreenColumn(PaddingValues(start = 28.dp, end = 28.dp, top = 64.dp, bottom = 28.dp)) {
         Spacer(Modifier.weight(1f))
-        TlIcon(R.drawable.tl_ic_check, size = 44.dp, tint = c.accentText)
+        TbIcon(R.drawable.ic_check, size = 44.dp, tint = c.accentText)
         Spacer(Modifier.height(12.dp))
         Text(
             stringResource(R.string.tl_granted_title),
@@ -341,7 +342,7 @@ private fun GrantedScreen(view: TimeLimitView, onContinue: () -> Unit) {
         )
         Spacer(Modifier.weight(1f))
         Spacer(Modifier.height(24.dp))
-        TlButton(stringResource(R.string.tl_back_to_feed), onClick = onContinue)
+        TbButton(stringResource(R.string.tl_back_to_feed), onClick = onContinue)
     }
 }
 
@@ -351,7 +352,7 @@ private fun GrantedScreen(view: TimeLimitView, onContinue: () -> Unit) {
 private fun DoneForTodayScreen(phase: LockPhase.DoneForToday, onOpenMessagesOnly: () -> Unit, onCloseApp: () -> Unit) {
     val c = ThrowbackTheme.colors
     ScreenColumn(PaddingValues(start = 24.dp, end = 24.dp, top = 96.dp, bottom = 28.dp)) {
-        TlIcon(R.drawable.tl_ic_moon, size = 56.dp, tint = c.accent)
+        TbIcon(R.drawable.ic_moon, size = 56.dp, tint = c.accent)
         Spacer(Modifier.height(20.dp))
         Text(
             stringResource(R.string.tl_done_title),
@@ -379,20 +380,20 @@ private fun DoneForTodayScreen(phase: LockPhase.DoneForToday, onOpenMessagesOnly
         }
         Spacer(Modifier.height(20.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TlIcon(R.drawable.tl_ic_phone, size = 16.dp, tint = c.muted)
+            TbIcon(R.drawable.ic_phone, size = 16.dp, tint = c.muted)
             Text(stringResource(R.string.tl_calls_note), style = MaterialTheme.typography.bodySmall, color = c.muted)
         }
 
         Spacer(Modifier.weight(1f))
         Spacer(Modifier.height(24.dp))
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            TlButton(
+            TbButton(
                 stringResource(R.string.tl_open_messages),
                 onClick = onOpenMessagesOnly,
-                style = TlButtonStyle.Secondary,
-                icon = R.drawable.tl_ic_chat,
+                style = TbButtonStyle.Secondary,
+                icon = R.drawable.ic_chat,
             )
-            TlButton(stringResource(R.string.tl_close), onClick = onCloseApp)
+            TbButton(stringResource(R.string.tl_close), onClick = onCloseApp)
         }
     }
 }

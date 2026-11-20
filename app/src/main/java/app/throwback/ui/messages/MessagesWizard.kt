@@ -55,16 +55,15 @@ import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.CardDivider
 import app.throwback.core.ui.DoneLabel
-import app.throwback.core.ui.LineIcon
+import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.PillButton
-import app.throwback.core.ui.PrimaryButton
-import app.throwback.core.ui.QuietButton
-import app.throwback.core.ui.SecondaryButton
 import app.throwback.core.ui.SectionLabel
 import app.throwback.core.ui.StepBars
 import app.throwback.ui.common.SystemScreens
+import app.throwback.core.ui.TbButton
+import app.throwback.core.ui.TbButtonStyle
 import app.throwback.core.ui.TbCard
-import app.throwback.core.ui.TopBar
+import app.throwback.core.ui.TbTopBar
 import app.throwback.core.ui.UiText
 import app.throwback.ui.common.rememberCheckedOnResume
 
@@ -96,7 +95,7 @@ internal fun MessagesWizard(onExit: () -> Unit, onFinish: () -> Unit, showMessag
     BackHandler(enabled = step != WizardStep.Install) { goBack() }
 
     Column(Modifier.fillMaxSize().background(ThrowbackTheme.colors.bg)) {
-        TopBar(stringResource(R.string.ui_messages_title), onBack = goBack)
+        TbTopBar(stringResource(R.string.ui_messages_title), onBack = goBack)
         AnimatedContent(
             targetState = step,
             transitionSpec = {
@@ -159,18 +158,23 @@ private fun InstallStep(onNext: () -> Unit, onNotNow: () -> Unit, showMessage: (
         step = WizardStep.Install,
         title = stringResource(R.string.ui_install_title),
         buttons = {
-            PrimaryButton(stringResource(R.string.ui_next), onClick = onNext)
-            QuietButton(stringResource(R.string.ui_not_now), onClick = onNotNow, modifier = Modifier.padding(top = 6.dp))
+            TbButton(stringResource(R.string.ui_next), onClick = onNext)
+            TbButton(
+                stringResource(R.string.ui_not_now),
+                onClick = onNotNow,
+                modifier = Modifier.padding(top = 6.dp),
+                style = TbButtonStyle.Quiet,
+            )
         },
     ) {
         Text(stringResource(R.string.ui_install_body), style = UiText.lead, color = colors.muted)
         Spacer(Modifier.height(20.dp))
         TbCard {
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                BulletPoint(R.drawable.ui_ic_chat, R.string.ui_install_point_messages)
-                BulletPoint(R.drawable.ui_ic_phone, R.string.ui_install_point_calls)
-                BulletPoint(R.drawable.ui_ic_camera_app, R.string.ui_install_point_post)
-                BulletPoint(R.drawable.ui_ic_shield, R.string.ui_install_point_guard)
+                BulletPoint(R.drawable.ic_chat, R.string.ui_install_point_messages)
+                BulletPoint(R.drawable.ic_phone, R.string.ui_install_point_calls)
+                BulletPoint(R.drawable.ic_camera_app, R.string.ui_install_point_post)
+                BulletPoint(R.drawable.ic_shield, R.string.ui_install_point_guard)
             }
         }
         Row(
@@ -185,7 +189,7 @@ private fun InstallStep(onNext: () -> Unit, onNotNow: () -> Unit, showMessage: (
             Box(
                 Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(colors.surface2),
                 contentAlignment = Alignment.Center,
-            ) { LineIcon(R.drawable.ui_ic_app_square, size = 20.dp) }
+            ) { TbIcon(R.drawable.ic_app_square, size = 20.dp) }
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.ui_install_app_name), style = UiText.row15Strong, color = colors.text)
                 Text(
@@ -212,7 +216,7 @@ private fun InstallStep(onNext: () -> Unit, onNotNow: () -> Unit, showMessage: (
 @Composable
 private fun BulletPoint(@DrawableRes icon: Int, @StringRes text: Int) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        LineIcon(icon, size = 20.dp, tint = ThrowbackTheme.colors.accentText)
+        TbIcon(icon, size = 20.dp, tint = ThrowbackTheme.colors.accentText)
         Text(stringResource(text), style = UiText.body14, color = ThrowbackTheme.colors.text)
     }
 }
@@ -246,13 +250,13 @@ private fun PermissionsStep(onNext: () -> Unit, showMessage: (String) -> Unit) {
     StepLayout(
         step = WizardStep.Permissions,
         title = stringResource(R.string.ui_perm_title),
-        buttons = { PrimaryButton(stringResource(R.string.ui_finish), onClick = finish) },
+        buttons = { TbButton(stringResource(R.string.ui_finish), onClick = finish) },
     ) {
         Text(stringResource(R.string.ui_perm_body), style = UiText.lead, color = colors.muted)
         Spacer(Modifier.height(16.dp))
         TbCard {
             PermissionRow(
-                icon = R.drawable.ui_ic_bell,
+                icon = R.drawable.ic_bell,
                 title = R.string.ui_perm_notifications_title,
                 body = R.string.ui_perm_notifications_body,
                 granted = state.notificationAccess,
@@ -260,7 +264,7 @@ private fun PermissionsStep(onNext: () -> Unit, showMessage: (String) -> Unit) {
             )
             CardDivider()
             PermissionRow(
-                icon = R.drawable.ui_ic_usage,
+                icon = R.drawable.ic_usage,
                 title = R.string.ui_perm_usage_title,
                 body = R.string.ui_perm_usage_body,
                 granted = state.usageAccess,
@@ -268,7 +272,7 @@ private fun PermissionsStep(onNext: () -> Unit, showMessage: (String) -> Unit) {
             )
             CardDivider()
             PermissionRow(
-                icon = R.drawable.ui_ic_overlay,
+                icon = R.drawable.ic_overlay,
                 title = R.string.ui_perm_overlay_title,
                 body = R.string.ui_perm_overlay_body,
                 granted = state.drawOverlays,
@@ -279,7 +283,7 @@ private fun PermissionsStep(onNext: () -> Unit, showMessage: (String) -> Unit) {
             Modifier.padding(top = 16.dp, start = 4.dp, end = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            LineIcon(R.drawable.ui_ic_shield, size = 18.dp, tint = colors.muted)
+            TbIcon(R.drawable.ic_shield, size = 18.dp, tint = colors.muted)
             Text(stringResource(R.string.ui_perm_privacy), style = UiText.sub, color = colors.muted)
         }
         // Android 13+ blocks notification access for apps installed outside an app store until the
@@ -291,10 +295,11 @@ private fun PermissionsStep(onNext: () -> Unit, showMessage: (String) -> Unit) {
                 color = colors.muted,
                 modifier = Modifier.padding(top = 14.dp, start = 4.dp, end = 4.dp),
             )
-            QuietButton(
+            TbButton(
                 stringResource(R.string.ui_perm_app_info),
                 onClick = { if (!SystemScreens.openOwnAppDetails(context)) showMessage(failed) },
                 modifier = Modifier.padding(top = 2.dp),
+                style = TbButtonStyle.Quiet,
             )
         }
     }
@@ -314,7 +319,7 @@ private fun PermissionRow(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        LineIcon(icon, tint = colors.accentText)
+        TbIcon(icon, tint = colors.accentText)
         Column(Modifier.weight(1f)) {
             Text(stringResource(title), style = UiText.row15Strong, color = colors.text)
             Text(stringResource(body), style = UiText.sub, color = colors.muted, modifier = Modifier.padding(top = 2.dp))

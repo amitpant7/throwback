@@ -57,8 +57,8 @@ import androidx.core.graphics.drawable.IconCompat
 import app.throwback.MainActivity
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.core.ui.PrimaryButton
-import app.throwback.core.ui.TopBar
+import app.throwback.core.ui.TbButton
+import app.throwback.core.ui.TbTopBar
 import app.throwback.core.ui.UiText
 
 /** Icon choices for the pinned shortcut (DECISIONS.md #31). */
@@ -119,7 +119,7 @@ internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
     val unsupported = stringResource(R.string.ui_shortcut_unsupported)
 
     Column(Modifier.fillMaxSize().navigationBarsPadding().imePadding()) {
-        TopBar(stringResource(R.string.ui_shortcut_title), onBack = onBack)
+        TbTopBar(stringResource(R.string.ui_shortcut_title), onBack = onBack)
         Column(
             Modifier
                 .weight(1f)
@@ -187,7 +187,7 @@ internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
             )
             Spacer(Modifier.height(20.dp))
         }
-        PrimaryButton(
+        TbButton(
             stringResource(R.string.ui_shortcut_add),
             onClick = {
                 focus.clearFocus()

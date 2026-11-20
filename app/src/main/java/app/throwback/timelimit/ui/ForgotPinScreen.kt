@@ -30,6 +30,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.core.ui.TbButton
+import app.throwback.core.ui.TbButtonStyle
+import app.throwback.core.ui.TbTopBar
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.TimeLimitView
@@ -80,7 +83,7 @@ internal fun ForgotPinScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
-        TlHeader(stringResource(R.string.tl_reset_title), onBack)
+        TbTopBar(stringResource(R.string.tl_reset_title), onBack)
         ScreenColumn(
             PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 28.dp),
             horizontalAlignment = Alignment.Start,
@@ -139,10 +142,10 @@ internal fun ForgotPinScreen(
 
             Spacer(Modifier.height(22.dp))
             Column(Modifier.padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                IconLine(R.drawable.tl_ic_shield, stringResource(R.string.tl_reset_step_wait))
-                IconLine(R.drawable.tl_ic_clock, stringResource(R.string.tl_reset_step_limit))
+                IconLine(R.drawable.ic_shield, stringResource(R.string.tl_reset_step_wait))
+                IconLine(R.drawable.ic_clock, stringResource(R.string.tl_reset_step_limit))
                 IconLine(
-                    R.drawable.tl_ic_check,
+                    R.drawable.ic_check,
                     stringResource(if (reset == null) R.string.tl_reset_step_cancel_start else R.string.tl_reset_step_cancel),
                 )
             }
@@ -151,15 +154,15 @@ internal fun ForgotPinScreen(
             Spacer(Modifier.height(24.dp))
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 when {
-                    reset == null -> TlButton(stringResource(R.string.tl_reset_start), onClick = { controller.requestPinReset() })
+                    reset == null -> TbButton(stringResource(R.string.tl_reset_start), onClick = { controller.requestPinReset() })
                     reset.ready -> {
-                        TlButton(stringResource(R.string.tl_reset_set_new), onClick = {
+                        TbButton(stringResource(R.string.tl_reset_set_new), onClick = {
                             failed = false
                             settingNewPin = true
                         })
-                        TlButton(stringResource(R.string.tl_reset_cancel), onClick = controller::cancelPinReset, style = TlButtonStyle.Secondary)
+                        TbButton(stringResource(R.string.tl_reset_cancel), onClick = controller::cancelPinReset, style = TbButtonStyle.Secondary)
                     }
-                    else -> TlButton(stringResource(R.string.tl_reset_cancel), onClick = controller::cancelPinReset, style = TlButtonStyle.Secondary)
+                    else -> TbButton(stringResource(R.string.tl_reset_cancel), onClick = controller::cancelPinReset, style = TbButtonStyle.Secondary)
                 }
             }
         }

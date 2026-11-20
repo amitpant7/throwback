@@ -25,8 +25,9 @@ import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.CardDivider
-import app.throwback.core.ui.SecondaryButton
 import app.throwback.ui.common.SystemScreens
+import app.throwback.core.ui.TbButton
+import app.throwback.core.ui.TbButtonStyle
 import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.UiText
 
@@ -91,7 +92,7 @@ internal fun QuietTipCard(showMessage: (String) -> Unit, modifier: Modifier = Mo
             }
         }
         CardDivider()
-        SecondaryButton(
+        TbButton(
             stringResource(R.string.ui_quiet_open_instagram),
             onClick = {
                 // Android's own notification settings for Instagram: every category with a switch,
@@ -104,6 +105,7 @@ internal fun QuietTipCard(showMessage: (String) -> Unit, modifier: Modifier = Mo
                 }
             },
             modifier = Modifier.padding(16.dp),
+            style = TbButtonStyle.Secondary,
         )
     }
 }

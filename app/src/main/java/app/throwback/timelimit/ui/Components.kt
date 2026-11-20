@@ -17,16 +17,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,7 +35,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -67,6 +60,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.core.ui.TbIcon
+import app.throwback.core.ui.TbTopBar
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.Rules
@@ -168,37 +163,6 @@ internal fun ScreenColumn(
     }
 }
 
-@Composable
-internal fun TlIcon(
-    @DrawableRes res: Int,
-    modifier: Modifier = Modifier,
-    size: Dp = 20.dp,
-    tint: Color = LocalContentColor.current,
-    contentDescription: String? = null,
-) {
-    Icon(painterResource(res), contentDescription, modifier.size(size), tint = tint)
-}
-
-/** 60dp top bar with a 48dp back button, as in the settings mockups. */
-@Composable
-internal fun TlHeader(title: String, onBack: () -> Unit) {
-    val c = ThrowbackTheme.colors
-    Row(
-        Modifier.fillMaxWidth().height(60.dp).padding(horizontal = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
-            TlIcon(R.drawable.tl_ic_back, size = 22.dp, tint = c.text, contentDescription = stringResource(R.string.tl_back))
-        }
-        Text(
-            title,
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = c.text,
-            modifier = Modifier.semantics { heading() },
-        )
-    }
-}
-
 /** Small capitals label ("EXTENSION 1 OF 2", "RESET REQUESTED"). */
 @Composable
 internal fun Eyebrow(text: String, modifier: Modifier = Modifier) {
@@ -244,51 +208,8 @@ internal fun TlCard(
 internal fun IconLine(@DrawableRes icon: Int, text: String) {
     val c = ThrowbackTheme.colors
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        TlIcon(icon, tint = c.accentText)
+        TbIcon(icon, size = 20.dp, tint = c.accentText)
         Text(text, style = MaterialTheme.typography.bodyMedium, color = c.text)
-    }
-}
-
-internal enum class TlButtonStyle { Primary, Secondary, Plain }
-
-/** Full-width 52dp button (mockup `.btn`). Disabled buttons look like the mockup's waiting button. */
-@Composable
-internal fun TlButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    style: TlButtonStyle = TlButtonStyle.Primary,
-    enabled: Boolean = true,
-    @DrawableRes icon: Int? = null,
-) {
-    val c = ThrowbackTheme.colors
-    val (bg, fg) = when (style) {
-        TlButtonStyle.Primary -> c.accent to c.onAccent
-        TlButtonStyle.Secondary -> c.surface2 to c.text
-        TlButtonStyle.Plain -> Color.Transparent to c.text
-    }
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
-        shape = RoundedCornerShape(14.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = bg,
-            contentColor = fg,
-            disabledContainerColor = if (style == TlButtonStyle.Plain) Color.Transparent else c.surface2,
-            disabledContentColor = c.muted,
-        ),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-    ) {
-        if (icon != null) {
-            TlIcon(icon)
-            Spacer(Modifier.width(8.dp))
-        }
-        Text(
-            text,
-            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            textAlign = TextAlign.Center,
-        )
     }
 }
 
@@ -350,13 +271,13 @@ internal fun PinPad(
                 row.forEach { key ->
                     when (key) {
                         '<' -> PadKey(deleteLabel, canDelete, onDelete, Modifier.weight(1f)) {
-                            TlIcon(R.drawable.tl_ic_backspace, size = 26.dp, tint = if (canDelete) c.text else c.muted)
+                            TbIcon(R.drawable.ic_backspace, size = 26.dp, tint = if (canDelete) c.text else c.muted)
                         }
                         '>' -> PadKey(
                             confirmLabel, canConfirm, onConfirm, Modifier.weight(1f),
                             background = if (canConfirm) c.accent else c.surface,
                         ) {
-                            TlIcon(R.drawable.tl_ic_check, size = 26.dp, tint = if (canConfirm) c.onAccent else c.muted)
+                            TbIcon(R.drawable.ic_check, size = 26.dp, tint = if (canConfirm) c.onAccent else c.muted)
                         }
                         else -> PadKey(key.toString(), canType, { onDigit(key) }, Modifier.weight(1f)) {
                             Text(key.toString(), style = digitStyle, color = c.text)
@@ -459,7 +380,7 @@ internal fun CreatePinFlow(
     var mismatch by remember { mutableStateOf(false) }
     var round by remember { mutableIntStateOf(0) }
     Column(Modifier.fillMaxSize()) {
-        TlHeader(headerTitle, onBack)
+        TbTopBar(headerTitle, onBack)
         PinEntry(
             title = if (first == null) firstTitle else stringResource(R.string.tl_confirm_pin_title),
             subtitle = stringResource(R.string.tl_write_it_down),

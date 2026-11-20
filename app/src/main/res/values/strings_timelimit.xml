@@ -3,7 +3,6 @@
 <resources>
     <!-- Shared -->
     <string name="tl_title">Daily time limit</string>
-    <string name="tl_back">Back</string>
     <string name="tl_cancel">Cancel</string>
     <string name="tl_open_messages">Open messages only</string>
     <string name="tl_close">Close Throwback</string>

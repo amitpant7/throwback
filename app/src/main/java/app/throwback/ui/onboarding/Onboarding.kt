@@ -48,9 +48,9 @@ import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.ui.UiPrefs
-import app.throwback.core.ui.LineIcon
-import app.throwback.core.ui.PrimaryButton
-import app.throwback.core.ui.QuietButton
+import app.throwback.core.ui.TbIcon
+import app.throwback.core.ui.TbButton
+import app.throwback.core.ui.TbButtonStyle
 import app.throwback.ui.common.SystemScreens
 import app.throwback.core.ui.ThrowbackLogo
 import app.throwback.core.ui.UiText
@@ -130,7 +130,7 @@ private fun WelcomeScreen(onLogIn: () -> Unit) {
             FeatureGrid()
             Spacer(Modifier.height(24.dp))
         }
-        PrimaryButton(stringResource(R.string.ui_onb_login), onClick = onLogIn)
+        TbButton(stringResource(R.string.ui_onb_login), onClick = onLogIn)
         Text(
             stringResource(R.string.ui_onb_note),
             style = UiText.fine,
@@ -170,8 +170,8 @@ private fun FeatureItem(label: String, kept: Boolean, modifier: Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        LineIcon(
-            if (kept) R.drawable.ui_ic_check else R.drawable.ui_ic_blocked,
+        TbIcon(
+            if (kept) R.drawable.ic_check else R.drawable.ic_blocked,
             tint = if (kept) colors.accentText else colors.muted,
         )
         Text(label, style = UiText.body14, color = if (kept) colors.text else colors.muted)
@@ -204,14 +204,14 @@ private fun InstagramFoundScreen(onKeep: () -> Unit, onRemove: () -> Unit, onLat
             )
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 ChoiceCard(
-                    icon = R.drawable.ui_ic_phone,
+                    icon = R.drawable.ic_phone,
                     title = stringResource(R.string.ui_found_keep_title),
                     body = stringResource(R.string.ui_found_keep_body),
                     accentBadge = true,
                     onClick = onKeep,
                 )
                 ChoiceCard(
-                    icon = R.drawable.ui_ic_trash,
+                    icon = R.drawable.ic_trash,
                     title = stringResource(R.string.ui_found_remove_title),
                     body = stringResource(R.string.ui_found_remove_body),
                     accentBadge = false,
@@ -220,7 +220,12 @@ private fun InstagramFoundScreen(onKeep: () -> Unit, onRemove: () -> Unit, onLat
             }
             Spacer(Modifier.height(16.dp))
         }
-        QuietButton(stringResource(R.string.ui_found_later), onClick = onLater, color = colors.text, style = UiText.button.copy(fontWeight = FontWeight.Bold))
+        TbButton(
+            stringResource(R.string.ui_found_later),
+            onClick = onLater,
+            style = TbButtonStyle.Plain,
+            textStyle = UiText.button.copy(fontWeight = FontWeight.Bold),
+        )
         Text(
             stringResource(R.string.ui_found_footer),
             style = UiText.sub,
@@ -240,7 +245,7 @@ private fun FoundIcon() {
         Box(
             Modifier.size(64.dp).clip(RoundedCornerShape(18.dp)).background(colors.surface2),
             contentAlignment = Alignment.Center,
-        ) { LineIcon(R.drawable.ui_ic_camera_app, size = 30.dp) }
+        ) { TbIcon(R.drawable.ic_camera_app, size = 30.dp) }
         Box(
             Modifier
                 .align(Alignment.TopEnd)
@@ -282,7 +287,7 @@ private fun ChoiceCard(
                     .background(if (accentBadge) colors.accent else colors.surface2),
                 contentAlignment = Alignment.Center,
             ) {
-                LineIcon(icon, tint = if (accentBadge) colors.onAccent else colors.text)
+                TbIcon(icon, tint = if (accentBadge) colors.onAccent else colors.text)
             }
             Column(Modifier.weight(1f)) {
                 Text(title, style = UiText.rowStrong.copy(fontWeight = FontWeight.Bold), color = colors.text)

@@ -38,7 +38,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.core.ui.LineIcon
+import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.UiText
 import kotlin.math.ceil
 
@@ -89,7 +89,7 @@ internal fun MindfulPauseContent(onContinue: () -> Unit, onBack: () -> Unit, bac
             Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
         ) {
-            LineIcon(R.drawable.ui_ic_quote, size = 40.dp, tint = colors.accent)
+            TbIcon(R.drawable.ic_quote, size = 40.dp, tint = colors.accent)
             Text(lines[lineIndex.coerceIn(lines.indices)], style = UiText.pauseLine, color = colors.text)
         }
 

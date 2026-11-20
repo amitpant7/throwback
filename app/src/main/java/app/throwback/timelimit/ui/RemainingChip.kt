@@ -23,6 +23,7 @@ import app.throwback.R
 import app.throwback.core.LockState
 import app.throwback.core.TimeLimitController
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.core.ui.TbIcon
 
 /**
  * "18 min left" on the home feed (mockup 2). In the last minute it switches to "0:42 left" in the
@@ -60,7 +61,7 @@ internal fun RemainingChip(controller: TimeLimitController, modifier: Modifier =
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        TlIcon(R.drawable.tl_ic_clock, size = 16.dp, tint = fg)
+        TbIcon(R.drawable.ic_clock, size = 16.dp, tint = fg)
         Text(text, style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"), color = fg, maxLines = 1)
     }
 }

@@ -3,7 +3,6 @@ package app.throwback.core.ui
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,11 +10,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -23,24 +24,24 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchColors
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -62,9 +63,13 @@ internal fun ThrowbackLogo(size: Dp, modifier: Modifier = Modifier, contentDescr
     )
 }
 
-/** Line icon from the ui_ic_* set, tinted. Decorative unless [contentDescription] is given. */
+/**
+ * Line icon from the ic_* set, tinted. Decorative unless [contentDescription] is given. The default
+ * tint is the text colour rather than LocalContentColor: screens draw on a plain background, where
+ * LocalContentColor is black.
+ */
 @Composable
-internal fun LineIcon(
+internal fun TbIcon(
     @DrawableRes icon: Int,
     modifier: Modifier = Modifier,
     size: Dp = 22.dp,
@@ -74,21 +79,26 @@ internal fun LineIcon(
     Icon(painterResource(icon), contentDescription = contentDescription, tint = tint, modifier = modifier.size(size))
 }
 
-/** 60dp header with a back arrow and the screen title. */
+/** 48dp back arrow ("Back" for TalkBack). */
 @Composable
-internal fun TopBar(title: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
-    val colors = ThrowbackTheme.colors
+internal fun TbBackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
+    IconButton(onClick = onBack, modifier = modifier.size(48.dp)) {
+        TbIcon(R.drawable.ic_back, contentDescription = stringResource(R.string.ui_back))
+    }
+}
+
+/** Header with a back arrow and the screen title: 60dp, taller when a large font size wraps the title. */
+@Composable
+internal fun TbTopBar(title: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
     Row(
         modifier.fillMaxWidth().heightIn(min = 60.dp).padding(horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
-            LineIcon(R.drawable.ui_ic_back, contentDescription = stringResource(R.string.ui_back))
-        }
+        TbBackButton(onBack)
         Text(
             text = title,
             style = UiText.screenTitle,
-            color = colors.text,
+            color = ThrowbackTheme.colors.text,
             modifier = Modifier.semantics { heading() },
         )
     }
@@ -122,58 +132,59 @@ internal fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-/** Full-width 52dp accent button. */
+internal enum class TbButtonStyle {
+    /** Accent fill: the main action. */
+    Primary,
+
+    /** Neutral fill. */
+    Secondary,
+
+    /** No fill, in the text colour ("Close Throwback", "Decide later"). */
+    Plain,
+
+    /** No fill, muted ("Not now"). */
+    Quiet,
+}
+
+/**
+ * Full-width button, at least 52dp tall (mockup `.btn`). Disabled, it looks like the mockup's waiting
+ * button. [icon] goes before the text, in the content colour so it greys out with it.
+ */
 @Composable
-internal fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+internal fun TbButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    style: TbButtonStyle = TbButtonStyle.Primary,
+    enabled: Boolean = true,
+    @DrawableRes icon: Int? = null,
+    textStyle: TextStyle = UiText.button,
+) {
     val colors = ThrowbackTheme.colors
+    val (container, content) = when (style) {
+        TbButtonStyle.Primary -> colors.accent to colors.onAccent
+        TbButtonStyle.Secondary -> colors.surface2 to colors.text
+        TbButtonStyle.Plain -> Color.Transparent to colors.text
+        TbButtonStyle.Quiet -> Color.Transparent to colors.muted
+    }
     Button(
         onClick = onClick,
         enabled = enabled,
         shape = ButtonShape,
         colors = ButtonDefaults.buttonColors(
-            containerColor = colors.accent,
-            contentColor = colors.onAccent,
-            disabledContainerColor = colors.surface2,
+            containerColor = container,
+            contentColor = content,
+            disabledContainerColor = if (container == Color.Transparent) Color.Transparent else colors.surface2,
             disabledContentColor = colors.muted,
         ),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
         modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
     ) {
-        Text(text, style = UiText.button, textAlign = TextAlign.Center)
-    }
-}
-
-/** Full-width 52dp neutral button (surface2). */
-@Composable
-internal fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val colors = ThrowbackTheme.colors
-    Button(
-        onClick = onClick,
-        shape = ButtonShape,
-        colors = ButtonDefaults.buttonColors(containerColor = colors.surface2, contentColor = colors.text),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
-    ) {
-        Text(text, style = UiText.button, textAlign = TextAlign.Center)
-    }
-}
-
-/** Text-only 52dp button ("Not now", "Decide later"). */
-@Composable
-internal fun QuietButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    color: Color = ThrowbackTheme.colors.muted,
-    style: androidx.compose.ui.text.TextStyle = UiText.button,
-) {
-    TextButton(
-        onClick = onClick,
-        shape = ButtonShape,
-        colors = ButtonDefaults.textButtonColors(contentColor = color),
-        modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
-    ) {
-        Text(text, style = style, textAlign = TextAlign.Center)
+        if (icon != null) {
+            TbIcon(icon, size = 20.dp, tint = LocalContentColor.current)
+            Spacer(Modifier.width(8.dp))
+        }
+        Text(text, style = textStyle, textAlign = TextAlign.Center)
     }
 }
 
@@ -215,7 +226,7 @@ internal fun PillButton(
 internal fun DoneLabel(text: String, modifier: Modifier = Modifier) {
     val colors = ThrowbackTheme.colors
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        LineIcon(R.drawable.ui_ic_check, size = 16.dp, tint = colors.ok)
+        TbIcon(R.drawable.ic_check, size = 16.dp, tint = colors.ok)
         Text(text, style = UiText.subStrong, color = colors.ok)
     }
 }
@@ -240,7 +251,7 @@ internal fun NavRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        if (icon != null) LineIcon(icon)
+        if (icon != null) TbIcon(icon)
         Column(Modifier.weight(1f)) {
             Text(title, style = UiText.row, color = colors.text)
             if (subtitle != null) {
@@ -248,7 +259,7 @@ internal fun NavRow(
             }
         }
         if (value != null) Text(value, style = UiText.body14, color = colors.muted)
-        LineIcon(R.drawable.ui_ic_chevron, size = 18.dp, tint = colors.muted)
+        TbIcon(R.drawable.ic_chevron, size = 18.dp, tint = colors.muted)
     }
 }
 
@@ -261,7 +272,7 @@ internal fun SwitchRow(
     @DrawableRes icon: Int? = null,
     subtitle: String? = null,
     minHeight: Dp = 56.dp,
-    titleStyle: androidx.compose.ui.text.TextStyle = UiText.row,
+    titleStyle: TextStyle = UiText.row,
 ) {
     val colors = ThrowbackTheme.colors
     Row(
@@ -273,7 +284,7 @@ internal fun SwitchRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        if (icon != null) LineIcon(icon)
+        if (icon != null) TbIcon(icon)
         Column(Modifier.weight(1f)) {
             Text(title, style = titleStyle, color = colors.text)
             if (subtitle != null) {

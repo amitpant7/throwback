@@ -23,12 +23,12 @@ import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.ui.UiPrefs
 import app.throwback.core.ui.CardDivider
-import app.throwback.core.ui.LineIcon
+import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.NavRow
 import app.throwback.core.ui.SectionLabel
 import app.throwback.core.ui.SwitchRow
 import app.throwback.core.ui.TbCard
-import app.throwback.core.ui.TopBar
+import app.throwback.core.ui.TbTopBar
 import app.throwback.core.ui.UiText
 
 /** The saved settings Settings home shows: the pause switch and the Instagram row's value. */
@@ -42,7 +42,7 @@ internal data class HomeValues(val mindfulPause: Boolean, val instagramConnected
 @Composable
 internal fun SettingsHomeScreen(values: HomeValues, prefs: UiPrefs, onBack: () -> Unit, onOpen: (SettingsRoute) -> Unit) {
     Column(Modifier.fillMaxSize()) {
-        TopBar(stringResource(R.string.ui_settings_title), onBack = onBack)
+        TbTopBar(stringResource(R.string.ui_settings_title), onBack = onBack)
         Column(
             Modifier
                 .weight(1f)
@@ -55,7 +55,7 @@ internal fun SettingsHomeScreen(values: HomeValues, prefs: UiPrefs, onBack: () -
             SectionLabel(stringResource(R.string.ui_section_notifications))
             TbCard {
                 NavRow(
-                    icon = R.drawable.ui_ic_camera_app,
+                    icon = R.drawable.ic_camera_app,
                     title = stringResource(R.string.ui_messages_title),
                     subtitle = stringResource(R.string.ui_messages_sub),
                     value = stringResource(if (values.instagramConnected) R.string.ui_messages_value_on else R.string.ui_messages_value_setup),
@@ -66,21 +66,21 @@ internal fun SettingsHomeScreen(values: HomeValues, prefs: UiPrefs, onBack: () -
             SectionLabel(stringResource(R.string.ui_section_focus))
             TbCard {
                 NavRow(
-                    icon = R.drawable.ui_ic_usage,
+                    icon = R.drawable.ic_usage,
                     title = stringResource(R.string.ui_today_title),
                     subtitle = stringResource(R.string.ui_today_row_sub),
                     onClick = { onOpen(SettingsRoute.Today) },
                 )
                 CardDivider()
                 NavRow(
-                    icon = R.drawable.ui_ic_clock,
+                    icon = R.drawable.ic_clock,
                     title = stringResource(R.string.ui_time_limit_title),
                     subtitle = stringResource(R.string.ui_time_limit_sub),
                     onClick = { onOpen(SettingsRoute.TimeLimit) },
                 )
                 CardDivider()
                 SwitchRow(
-                    icon = R.drawable.ui_ic_pause,
+                    icon = R.drawable.ic_pause,
                     title = stringResource(R.string.ui_pause_title),
                     subtitle = stringResource(R.string.ui_pause_sub),
                     checked = values.mindfulPause,
@@ -91,19 +91,19 @@ internal fun SettingsHomeScreen(values: HomeValues, prefs: UiPrefs, onBack: () -
             SectionLabel(stringResource(R.string.ui_section_app))
             TbCard {
                 NavRow(
-                    icon = R.drawable.ui_ic_add_home,
+                    icon = R.drawable.ic_add_home,
                     title = stringResource(R.string.ui_shortcut_title),
                     onClick = { onOpen(SettingsRoute.Shortcut) },
                 )
                 CardDivider()
                 NavRow(
-                    icon = R.drawable.ui_ic_heart,
+                    icon = R.drawable.ic_heart,
                     title = stringResource(R.string.ui_support_title),
                     onClick = { onOpen(SettingsRoute.Support) },
                 )
                 CardDivider()
                 NavRow(
-                    icon = R.drawable.ui_ic_info,
+                    icon = R.drawable.ic_info,
                     title = stringResource(R.string.ui_about_title),
                     onClick = { onOpen(SettingsRoute.About) },
                 )
@@ -140,7 +140,7 @@ private fun RemovesCard() {
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                LineIcon(R.drawable.ui_ic_blocked, size = 18.dp, tint = colors.muted)
+                                TbIcon(R.drawable.ic_blocked, size = 18.dp, tint = colors.muted)
                                 Text(label, style = UiText.body14, color = colors.muted)
                             }
                         }

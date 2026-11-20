@@ -7,7 +7,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
-import app.throwback.core.ui.SecondaryButton
 import app.throwback.relay.CallInApp
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -36,13 +35,14 @@ import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.ui.ExtraNotification
 import app.throwback.ui.UiPrefs
 import app.throwback.core.ui.CardDivider
-import app.throwback.core.ui.LineIcon
+import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.PillButton
-import app.throwback.core.ui.QuietButton
 import app.throwback.core.ui.SectionLabel
 import app.throwback.core.ui.SwitchRow
+import app.throwback.core.ui.TbButton
+import app.throwback.core.ui.TbButtonStyle
 import app.throwback.core.ui.TbCard
-import app.throwback.core.ui.TopBar
+import app.throwback.core.ui.TbTopBar
 import app.throwback.core.ui.UiText
 import app.throwback.ui.common.rememberCheckedOnResume
 
@@ -73,7 +73,7 @@ internal fun MessagesSettingsScreen(
     val extras by prefs.extraNotifications.collectAsStateWithLifecycle(initialValue = emptySet())
 
     Column(Modifier.fillMaxSize().background(colors.bg)) {
-        TopBar(stringResource(R.string.ui_messages_title), onBack = onBack)
+        TbTopBar(stringResource(R.string.ui_messages_title), onBack = onBack)
         Column(
             Modifier
                 .weight(1f)
@@ -85,11 +85,11 @@ internal fun MessagesSettingsScreen(
 
             SectionLabel(stringResource(R.string.ui_always_on))
             TbCard {
-                AlwaysOnRow(R.drawable.ui_ic_chat, R.string.ui_always_messages)
+                AlwaysOnRow(R.drawable.ic_chat, R.string.ui_always_messages)
                 CardDivider()
-                AlwaysOnRow(R.drawable.ui_ic_phone, R.string.ui_always_calls)
+                AlwaysOnRow(R.drawable.ic_phone, R.string.ui_always_calls)
                 CardDivider()
-                AlwaysOnRow(R.drawable.ui_ic_camera_app, R.string.ui_always_posting)
+                AlwaysOnRow(R.drawable.ic_camera_app, R.string.ui_always_posting)
             }
 
             // Other alerts: one row (owner: the five switches took a lot of room); tap to show them.
@@ -112,13 +112,13 @@ internal fun MessagesSettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    LineIcon(R.drawable.ui_ic_bell)
+                    TbIcon(R.drawable.ic_bell)
                     Column(Modifier.weight(1f)) {
                         Text(stringResource(R.string.ui_also_notify), style = UiText.row, color = colors.text)
                         Text(summary, style = UiText.sub, color = colors.muted)
                     }
-                    LineIcon(
-                        R.drawable.ui_ic_chevron,
+                    TbIcon(
+                        R.drawable.ic_chevron,
                         size = 18.dp,
                         tint = colors.muted,
                         modifier = Modifier.rotate(if (extrasOpen) 270f else 90f),
@@ -153,7 +153,7 @@ internal fun MessagesSettingsScreen(
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.ui_visit_title), style = UiText.rowStrong, color = colors.text)
                     Text(stringResource(R.string.ui_visit_body), style = UiText.sub, color = colors.muted)
-                    SecondaryButton(
+                    TbButton(
                         stringResource(R.string.ui_visit_button),
                         onClick = {
                             when (CallInApp.visit(context)) {
@@ -164,6 +164,7 @@ internal fun MessagesSettingsScreen(
                             }
                         },
                         modifier = Modifier.padding(top = 4.dp),
+                        style = TbButtonStyle.Secondary,
                     )
                 }
             }
@@ -175,18 +176,20 @@ internal fun MessagesSettingsScreen(
                     color = colors.muted,
                     modifier = Modifier.padding(start = 6.dp, top = 18.dp),
                 )
-                QuietButton(
+                TbButton(
                     stringResource(R.string.ui_messages_off_keep),
                     onClick = onCancelPendingOff,
-                    style = UiText.body14,
                     modifier = Modifier.padding(bottom = 16.dp),
+                    style = TbButtonStyle.Quiet,
+                    textStyle = UiText.body14,
                 )
             } else {
-                QuietButton(
+                TbButton(
                     stringResource(R.string.ui_turn_off_messages),
                     onClick = onTurnOff,
-                    style = UiText.body14,
                     modifier = Modifier.padding(top = 18.dp, bottom = 16.dp),
+                    style = TbButtonStyle.Quiet,
+                    textStyle = UiText.body14,
                 )
             }
         }
@@ -214,8 +217,8 @@ private fun StatusCard(status: MessagesStatus, onFinishSetup: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            LineIcon(
-                if (ready) R.drawable.ui_ic_shield_check else R.drawable.ui_ic_shield,
+            TbIcon(
+                if (ready) R.drawable.ic_shield_check else R.drawable.ic_shield,
                 size = 26.dp,
                 tint = if (ready) colors.ok else colors.muted,
             )
@@ -236,10 +239,10 @@ private fun AlwaysOnRow(@DrawableRes icon: Int, @StringRes label: Int) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        LineIcon(icon, size = 20.dp)
+        TbIcon(icon, size = 20.dp)
         Text(stringResource(label), style = UiText.row15, color = colors.text, modifier = Modifier.weight(1f))
-        LineIcon(
-            R.drawable.ui_ic_check,
+        TbIcon(
+            R.drawable.ic_check,
             size = 20.dp,
             tint = colors.ok,
             contentDescription = stringResource(R.string.ui_always_on_description),

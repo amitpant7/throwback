@@ -64,6 +64,9 @@ internal class InstagramWebController(
         /** Throwback's settings icon in the page was tapped. */
         fun onOpenSettings()
 
+        /** The reel allowance in Instagram's swipe viewer is used up. */
+        fun onReelLimit()
+
         /** Opens a picker; must eventually call [deliverFiles]. False if no picker could be opened. */
         fun pickFiles(kind: PickKind, multiple: Boolean, documentIntent: Intent?): Boolean
     }
@@ -157,6 +160,12 @@ internal class InstagramWebController(
             error = null
             load(router.startUrl(startUrl, mode))
         }
+    }
+
+    /** Closes Instagram's stopped reel viewer ("Back to chat" on the poster). */
+    fun closeReels() {
+        if (destroyed) return
+        webView.evaluateJavascript("window.__throwback && window.__throwback.closeReels && window.__throwback.closeReels()", null)
     }
 
     private var covered = false
@@ -435,6 +444,7 @@ internal class InstagramWebController(
             }
             is BridgeMessage.Background -> pageBackground = m.argb
             BridgeMessage.OpenSettings -> host?.onOpenSettings()
+            BridgeMessage.ReelLimit -> host?.onReelLimit()
             null -> Unit
         }
     }

@@ -120,6 +120,10 @@ object RulesValidator {
             }
             check(fd.endAfterEmptyPages in 1..20) { "feedData.endAfterEmptyPages out of range" }
         }
+        rules.reelViewer?.let { rv ->
+            check(rv.allowedSwipes in 0..50) { "reelViewer.allowedSwipes out of range" }
+            check(rv.windowMinutes in 1..1440) { "reelViewer.windowMinutes out of range" }
+        }
         rules.settingsSection?.let { ss ->
             checkPattern(ss.path, "settingsSection.path", errors)
             checkTexts(ss.after, "settingsSection.after", errors)

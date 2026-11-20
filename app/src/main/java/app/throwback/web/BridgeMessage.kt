@@ -24,6 +24,9 @@ internal sealed interface BridgeMessage {
     /** The user tapped Throwback's settings icon on their profile page. */
     data object OpenSettings : BridgeMessage
 
+    /** The user swiped past the reel allowance in Instagram's reel viewer; the app shows its poster. */
+    data object ReelLimit : BridgeMessage
+
     /** The page's background colour (ARGB), for the system bar areas around the WebView. */
     data class Background(val argb: Int) : BridgeMessage
 
@@ -45,6 +48,7 @@ internal sealed interface BridgeMessage {
                 "touch" -> (obj["top"] as? JsonPrimitive)?.booleanOrNull?.let(::Touch)
                 "bg" -> str("c")?.let(::parseCssColor)?.let(::Background)
                 "settings" -> OpenSettings
+                "reelLimit" -> ReelLimit
                 else -> null
             }
         }

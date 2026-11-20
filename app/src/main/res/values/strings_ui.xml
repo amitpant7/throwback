@@ -180,4 +180,12 @@
     <string name="ui_settings_hint_title">Throwback\'s settings</string>
     <string name="ui_settings_hint_body">Long-press Home to open them. There\'s also a Throwback icon at the top of your profile, and a Throwback section in Instagram\'s settings.</string>
     <string name="ui_settings_hint_ok">Got it</string>
+    <!-- Reel poster: shown after the reel allowance in Instagram's swipe viewer (copy by the owner) -->
+    <string name="ui_reel_poster_title">Thought you could cheat…?</string>
+    <string name="ui_reel_poster_nah">Nahhh…</string>
+    <string name="ui_reel_poster_go">Go goooooo…</string>
+    <string name="ui_reel_poster_ideas">Maybe go out.\nObserve things.\nCall a friend.\nListen to music.\nPlay an instrument.</string>
+    <string name="ui_reel_poster_bored">Or just get bored.</string>
+    <string name="ui_reel_poster_back">Back to chat</string>
+    <string name="ui_reel_poster_rule">A reel someone sends you, plus a few more. That\'s the deal.</string>
 </resources>

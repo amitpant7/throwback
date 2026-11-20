@@ -320,6 +320,11 @@
       endAtMarker: !!fd.endAtMarker,
       endAfterEmptyPages: typeof fd.endAfterEmptyPages === 'number' ? fd.endAfterEmptyPages : 3
     } : null;
+    var rv = rules.reelViewer;
+    c.reelViewer = rv ? {
+      allowed: typeof rv.allowedSwipes === 'number' ? rv.allowedSwipes : 3,
+      windowMs: (typeof rv.windowMinutes === 'number' ? rv.windowMinutes : 10) * 60000
+    } : null;
     var ss = rules.settingsSection;
     var ssRe = ss && toRegex(ss.path);
     c.settingsSection = ssRe && ss.after && ss.after.length ? { re: ssRe, after: textSet(ss.after) } : null;
@@ -360,6 +365,8 @@
     out.push('html.tb-full.tb-on-home main ' + c.postContainer + ':not([' + ATTR_OK + ']):not([' + ATTR_DISCOVER + '])' + HIDE);
     out.push('[' + ATTR_SLOT + ']' + HIDE);
     out.push('[' + ATTR_THREADS + ']' + HIDE);
+    // A stopped reel viewer can't be swiped any further.
+    out.push('[' + ATTR_REEL_STOP + ']{overflow:hidden!important;touch-action:none!important}');
     // Discovery posts get a small tag so you always know it's not someone you follow.
     out.push('article[' + ATTR_DISCOVER + ']::before{content:"Discover \u00b7 not someone you follow";display:block;' +
       'font-size:12px;opacity:.65;padding:10px 16px 2px;letter-spacing:.01em}');
@@ -1170,6 +1177,71 @@
     }, PERF_SETTLE_MS);
   }
 
+  // ---------------------------------------------------------------- reel viewer limit
+
+  /*
+   * A reel opened from a chat plays in Instagram's full-screen swipe viewer: the address stays the
+   * same and a vertical scroll-snap strip of videos opens (found on the owner's phone). Opening a
+   * reel someone sent is fine; swiping on through more is the endless feed again. The opened reel is
+   * free; swipes to other reels are counted (rules: reelViewer), across viewers, so closing and
+   * reopening doesn't reset it. Past the allowance the videos stop and the app shows its poster.
+   */
+  var ATTR_REEL_STOP = 'data-tb-reelstop';
+  var reels = { current: null, viewer: null, swipes: [] };
+
+  /** The swipe viewer around a video: a vertical scroll-snap container holding several videos. */
+  function reelViewerOf(video) {
+    var n = video.parentElement;
+    for (var depth = 0; n && depth < 14 && n !== document.body; depth++, n = n.parentElement) {
+      var snap = getComputedStyle(n).scrollSnapType || '';
+      if (snap.indexOf('y') === 0 && n.querySelectorAll('video').length >= 2) return n;
+    }
+    return null;
+  }
+
+  function onMediaPlay(e) {
+    var v = e.target;
+    var rv = state.c && state.c.reelViewer;
+    if (!rv || !v || v.tagName !== 'VIDEO' || pageActive('stories')) return;
+    var viewer = reelViewerOf(v);
+    if (!viewer) return;
+    if (viewer.hasAttribute(ATTR_REEL_STOP)) {
+      v.pause();
+      return;
+    }
+    if (reels.current === v) return; // the same reel looping
+    var opened = reels.viewer !== viewer || !viewer.isConnected;
+    reels.current = v;
+    reels.viewer = viewer;
+    if (opened) return; // the reel that was opened is free
+    var now = Date.now();
+    reels.swipes = reels.swipes.filter(function (t) {
+      return now - t < rv.windowMs;
+    });
+    reels.swipes.push(now);
+    if (reels.swipes.length > rv.allowed) stopReels(viewer);
+  }
+
+  function stopReels(viewer) {
+    viewer.setAttribute(ATTR_REEL_STOP, '1');
+    var vids = viewer.querySelectorAll('video');
+    for (var i = 0; i < vids.length; i++) vids[i].pause();
+    send({ t: 'reelLimit' });
+  }
+
+  /** "Back to chat" on the poster: close Instagram's viewer (its close button, else history back). */
+  function closeReels() {
+    var viewer = document.querySelector('[' + ATTR_REEL_STOP + ']');
+    if (!viewer) return;
+    var close = null;
+    for (var n = viewer; n && n !== document.body && !close; n = n.parentElement) {
+      var icon = n.querySelector('svg[aria-label="Close"], [aria-label="Close"][role="button"], button[aria-label="Close"]');
+      if (icon) close = icon.closest('button, [role="button"], a') || icon;
+    }
+    if (close) clickElement(close);
+    else history.back();
+  }
+
   // ---------------------------------------------------------------- messages and stories warm-up
 
   /*
@@ -1957,6 +2029,7 @@
       });
     }, { passive: true });
     window.addEventListener('click', onClick, true);
+    document.addEventListener('play', onMediaPlay, true); // media events don't bubble; capture sees them
     window.addEventListener('pointerup', function () {
       perf.lastTap = performance.now();
     }, { capture: true, passive: true });
@@ -1997,7 +2070,8 @@
     /** The app tells the page when one of its own screens (Settings, lock, pause) covers it. */
     setCovered: function (covered) {
       state.covered = !!covered;
-    }
+    },
+    closeReels: closeReels
   };
   try {
     Object.defineProperty(window, '__throwback', { value: api, enumerable: false, configurable: false, writable: false });

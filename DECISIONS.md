@@ -47,6 +47,11 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 13c. **Feed bottom** (decided 2026-11-20): never blank space. Gaps between waves of followed posts show
     Instagram's loading spinner; "You're all caught up" only when only suggestions are left (20 hidden
     in a row, or nothing new for 10 s at the bottom). The next posts are loaded ahead for smooth scrolling.
+13f. **Reels sent in chats** (decided 2026-11-20): a reel opened from a chat plays in Instagram's
+    full-screen swipe viewer (same address). The opened reel is free; 3 swipes to other reels per
+    10 minutes (rules `reelViewer`), counted across viewers so reopening doesn't reset it. Then the
+    videos stop and a full-screen poster shows ("Thought you could cheat…? Nahhh…"), with "Back to
+    chat". The poster's final design and an animated version with licensed music are in design.
 14. **No toggles.** Throwback is minimal; there is no setting to bring distractions back.
     Settings shows a read-only "Throwback removes" list.
 15. Video captions and descriptions must never be hidden (a known complaint about a competitor).

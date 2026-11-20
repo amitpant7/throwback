@@ -63,6 +63,14 @@ class RulesParserTest {
     }
 
     @Test
+    fun `reel viewer limit is bundled and range-checked`() {
+        val rv = TestRules.bundled.reelViewer
+        assertNotNull(rv)
+        assertEquals(3, rv!!.allowedSwipes)
+        assertRejected(TestRules.bundledWith { it.replace("\"windowMinutes\": 10", "\"windowMinutes\": 0") }, "windowMinutes")
+    }
+
+    @Test
     fun `built-in fallback rules are valid`() {
         assertEquals(emptyList<String>(), RulesValidator.validate(FallbackRules.rules))
     }

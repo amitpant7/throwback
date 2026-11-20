@@ -81,6 +81,10 @@ fun InstagramScreen(
     backEnabled: Boolean = true,
     /** True while Throwback's own screens (Settings, lock, pause) cover the page. */
     covered: Boolean = false,
+    /** The reel allowance in Instagram's swipe viewer is used up: show the poster. */
+    onReelLimit: () -> Unit = {},
+    /** Incremented to close Instagram's stopped reel viewer. */
+    closeReelsRequest: Int = 0,
 ) {
     val context = LocalContext.current
     val repository = remember { RulesRepository.get(context) }
@@ -126,6 +130,8 @@ fun InstagramScreen(
             onRecreate = { generation++ },
             backEnabled = backEnabled,
             covered = covered,
+            onReelLimit = onReelLimit,
+            closeReelsRequest = closeReelsRequest,
             modifier = modifier,
         )
     }
@@ -147,6 +153,8 @@ private fun InstagramWebHost(
     onRecreate: () -> Unit,
     backEnabled: Boolean,
     covered: Boolean,
+    onReelLimit: () -> Unit,
+    closeReelsRequest: Int,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
@@ -175,6 +183,7 @@ private fun InstagramWebHost(
     val latestOnStartUrlHandled by rememberUpdatedState(onStartUrlHandled)
     val latestOnExitRequest by rememberUpdatedState(onExitRequest)
     val latestOnOpenSettings by rememberUpdatedState(onOpenSettings)
+    val latestOnReelLimit by rememberUpdatedState(onReelLimit)
 
     // Photos and videos go through Android's photo picker; anything else through the file chooser.
     val pickOne = rememberLauncherForActivityResult(PickVisualMedia()) { uri ->
@@ -197,6 +206,8 @@ private fun InstagramWebHost(
             override fun onStartUrlHandled(url: String?) = latestOnStartUrlHandled(url)
 
             override fun onOpenSettings() = latestOnOpenSettings()
+
+            override fun onReelLimit() = latestOnReelLimit()
 
             override fun pickFiles(kind: PickKind, multiple: Boolean, documentIntent: Intent?): Boolean {
                 val media = when (kind) {
@@ -226,6 +237,9 @@ private fun InstagramWebHost(
     }
     LaunchedEffect(controller, covered) {
         controller.setCovered(covered)
+    }
+    LaunchedEffect(controller, closeReelsRequest) {
+        if (closeReelsRequest > 0) controller.closeReels()
     }
     val night = LocalConfiguration.current.uiMode and Configuration.UI_MODE_NIGHT_MASK
     LaunchedEffect(controller, night) {

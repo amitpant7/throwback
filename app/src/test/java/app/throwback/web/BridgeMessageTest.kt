@@ -44,4 +44,9 @@ class BridgeMessageTest {
         assertNull(BridgeMessage.parseCssColor("#ffffff"))
         assertNull(BridgeMessage.parseCssColor("color(srgb 1 1 1)"))
     }
+
+    @Test
+    fun `reel limit message parses`() {
+        assertEquals(BridgeMessage.ReelLimit, BridgeMessage.parse("""{"t":"reelLimit"}"""))
+    }
 }

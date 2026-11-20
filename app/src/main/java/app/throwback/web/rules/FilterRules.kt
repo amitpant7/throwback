@@ -51,6 +51,8 @@ data class FilterRules(
     val settingsSection: SettingsSectionRules? = null,
     /** Filtering of Instagram's feed data before the page draws it (null: off, page filtering only). */
     val feedData: FeedDataRules? = null,
+    /** Limit on swiping through reels in Instagram's full-screen viewer (null: no limit). */
+    val reelViewer: ReelViewerRules? = null,
 )
 
 @Serializable
@@ -181,6 +183,14 @@ data class FeedDataRules(
 /** Matches when the value at [path] (dot-separated) is present, or equals [equals] as text. */
 @Serializable
 data class FieldTest(val path: String, val equals: String? = null, val present: Boolean? = null)
+
+@Serializable
+data class ReelViewerRules(
+    /** Swipes to other reels allowed (the reel that was opened is free). */
+    val allowedSwipes: Int = 3,
+    /** ... per this many minutes, so closing and reopening the viewer doesn't reset it. */
+    val windowMinutes: Int = 10,
+)
 
 @Serializable
 data class NavRules(val links: String, val minLinks: Int = 3)

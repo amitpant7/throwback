@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -38,6 +39,7 @@ import app.throwback.timelimit.TimeLimitOverlay
 import app.throwback.timelimit.TimeLimitSettingsScreen
 import app.throwback.timelimit.TimeRemainingChip
 import app.throwback.ui.InstagramAppPrompt
+import app.throwback.ui.ReelPoster
 import app.throwback.ui.SettingsHint
 import app.throwback.ui.markSettingsHintShown
 import app.throwback.ui.shouldShowSettingsHint
@@ -138,6 +140,10 @@ private fun MainScreen(
         if (loggedIn && shouldOfferInstagramPrompt(context)) offerInstagramPrompt = true
     }
 
+    // Reel allowance in Instagram's swipe viewer used up: the poster, then back to the chat.
+    var reelPoster by rememberSaveable { mutableStateOf(false) }
+    var closeReels by remember { mutableIntStateOf(0) }
+
     // Once, after setup: where Throwback's settings are (long-press Home). Opening settings any other
     // way also counts as found.
     var settingsHint by rememberSaveable { mutableStateOf(false) }
@@ -186,8 +192,10 @@ private fun MainScreen(
             onLocationChanged = { path = it },
             onExitRequest = onCloseApp,
             onOpenSettings = onOpenSettings,
-            backEnabled = !settingsOpen && !pauseShowing,
-            covered = settingsOpen || pauseShowing || lockShowing,
+            backEnabled = !settingsOpen && !pauseShowing && !reelPoster,
+            covered = settingsOpen || pauseShowing || lockShowing || reelPoster,
+            onReelLimit = { reelPoster = true },
+            closeReelsRequest = closeReels,
             // While locked or paused, screen readers must not reach the feed underneath.
             modifier = if (lockShowing || pauseShowing) Modifier.clearAndSetSemantics {} else Modifier,
         )
@@ -226,6 +234,13 @@ private fun MainScreen(
                     .navigationBarsPadding()
                     .padding(start = 12.dp, end = 12.dp, bottom = 54.dp),
             )
+        }
+
+        if (reelPoster && !lockShowing) {
+            ReelPoster(onBack = {
+                reelPoster = false
+                closeReels++
+            })
         }
 
         if (lockShowing) {

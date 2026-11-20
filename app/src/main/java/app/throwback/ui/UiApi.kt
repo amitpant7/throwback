@@ -71,3 +71,9 @@ suspend fun markSettingsHintShown(context: Context) =
 fun SettingsHint(onDone: () -> Unit, modifier: Modifier = Modifier) {
     SettingsHintContent(onDone = onDone, modifier = modifier)
 }
+
+/** Full-screen poster after the reel allowance in Instagram's swipe viewer; [onBack] returns to the chat. */
+@Composable
+fun ReelPoster(onBack: () -> Unit) {
+    app.throwback.ui.reels.ReelPosterContent(onBack = onBack)
+}

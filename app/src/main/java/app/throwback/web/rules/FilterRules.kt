@@ -148,7 +148,13 @@ data class DialogRule(
 )
 
 @Serializable
-data class ExploreRules(val on: String = "explore", val keep: String, val items: String)
+data class ExploreRules(
+    val on: String = "explore",
+    val keep: String,
+    val items: String,
+    /** Seconds a day the Explore grid may show (time on the Explore tab); then "Enough for today". 0: never. */
+    val dailySeconds: Int = 0,
+)
 
 @Serializable
 data class SettingsSectionRules(

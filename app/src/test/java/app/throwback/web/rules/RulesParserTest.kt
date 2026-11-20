@@ -94,6 +94,12 @@ class RulesParserTest {
     }
 
     @Test
+    fun `explore shows 5 minutes a day`() {
+        assertEquals(300, TestRules.bundled.explore!!.dailySeconds)
+        assertRejected(TestRules.bundledWith { it.replace("\"dailySeconds\": 300", "\"dailySeconds\": 99999") }, "dailySeconds")
+    }
+
+    @Test
     fun `built-in fallback rules are valid`() {
         assertEquals(emptyList<String>(), RulesValidator.validate(FallbackRules.rules))
     }

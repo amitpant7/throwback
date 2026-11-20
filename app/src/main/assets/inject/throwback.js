@@ -42,6 +42,7 @@
   var ATTR_THREADS = 'data-tb-threads'; // the Threads link on the own-profile top bar (hidden)
   var PROFILE_ENTRY_ID = '__tb_profile_entry'; // Throwback's settings icon that replaces it
   var CLASS_BLANK = 'tb-page-blocked';
+  var CLASS_EXPLORE_OPEN = 'tb-explore-open'; // on <html> while today's Explore allowance lasts
   var LOOP_KEY = '__tb_redirects';
   var READY_FALLBACK_MS = 6000;
   var NAV_SCAN_MS = 1000;
@@ -304,7 +305,10 @@
     });
     c.dismissMaxAttempts = typeof rules.dismissMaxAttempts === 'number' ? rules.dismissMaxAttempts : 40;
     var ex = rules.explore;
-    c.explore = ex && validSelector(ex.keep) && validSelector(ex.items) ? { on: ex.on || 'explore', keep: ex.keep, items: ex.items } : null;
+    c.explore = ex && validSelector(ex.keep) && validSelector(ex.items) ? {
+      on: ex.on || 'explore', keep: ex.keep, items: ex.items,
+      dailySeconds: typeof ex.dailySeconds === 'number' ? ex.dailySeconds : 0
+    } : null;
     var nav = rules.nav;
     c.nav = nav && validSelector(nav.links) ? { links: nav.links, minLinks: nav.minLinks || 3 } : null;
     var fd = rules.feedData;
@@ -352,6 +356,8 @@
     if (!on || on === 'always') return 'html';
     if (on === 'messagesOnly') return 'html.tb-messages-only';
     if (on === 'full') return 'html.tb-full';
+    // Explore hiding applies only once the day's Explore allowance is used up.
+    if (on === 'explore') return 'html.tb-on-explore:not(.' + CLASS_EXPLORE_OPEN + ')';
     return 'html.tb-on-' + on;
   }
 
@@ -431,6 +437,7 @@
       if (p.re.test(state.path)) want['tb-on-' + p.name] = true;
     });
     if (state.leaving) want[CLASS_BLANK] = true;
+    if (exploreAllowed()) want[CLASS_EXPLORE_OPEN] = true;
     var current = Array.prototype.slice.call(root.classList);
     current.forEach(function (cl) {
       if (cl.indexOf('tb-') === 0 && !want[cl]) root.classList.remove(cl);
@@ -1357,6 +1364,83 @@
     reels.current = null;
     clickElement(best);
     return true;
+  }
+
+  // ---------------------------------------------------------------- Explore: a few minutes a day
+
+  /*
+   * The Explore grid shows for explore.dailySeconds a day (5 minutes), counted only while actually on
+   * the Explore tab (visible, not covered). Then it is hidden as before and "Enough for today"
+   * shows in its place until midnight. Search keeps working. Stored per day, so a restart doesn't
+   * reset it.
+   */
+  var EXPLORE_KEY = '__tb_explore';
+  var EXPLORE_CARD_ID = '__tb_explore_card';
+  var exploreDay = null;
+
+  function exploreLog() {
+    if (!exploreDay) {
+      try {
+        exploreDay = JSON.parse(localStorage.getItem(EXPLORE_KEY) || 'null');
+      } catch (e) {
+        exploreDay = null;
+      }
+    }
+    if (!exploreDay || exploreDay.date !== today()) exploreDay = { date: today(), used: 0 };
+    return exploreDay;
+  }
+
+  function exploreAllowed() {
+    var ex = state.c && state.c.explore;
+    return !!(ex && ex.dailySeconds > 0 && exploreLog().used < ex.dailySeconds);
+  }
+
+  /** The grid page itself (not the search results while typing). */
+  function onExploreGrid() {
+    return /^\/explore\/?$/.test(location.pathname);
+  }
+
+  function startExploreClock() {
+    setInterval(function () {
+      var ex = state.c && state.c.explore;
+      if (!ex || !ex.dailySeconds || state.mode === MODE_MESSAGES || !pageActive('explore')) return;
+      if (document.visibilityState === 'visible' && !state.covered && exploreAllowed()) {
+        var d = exploreLog();
+        d.used++;
+        if (d.used % 5 === 0 || d.used >= ex.dailySeconds) {
+          try {
+            localStorage.setItem(EXPLORE_KEY, JSON.stringify(d));
+          } catch (e) {
+            // Storage unavailable: counted for this page only.
+          }
+        }
+        if (d.used >= ex.dailySeconds) applyClasses(); // time's up: the grid hides now
+      }
+      updateExploreCard();
+    }, 1000);
+  }
+
+  /** "Enough for today" in place of the grid, once the allowance is used up. */
+  function updateExploreCard() {
+    var card = document.getElementById(EXPLORE_CARD_ID);
+    var show = !!(state.c && state.c.explore && state.c.explore.dailySeconds) && state.mode !== MODE_MESSAGES &&
+      onExploreGrid() && !exploreAllowed();
+    var main = show && document.querySelector('main');
+    if (!main) {
+      if (card && card.parentNode) card.parentNode.removeChild(card);
+      return;
+    }
+    if (!card) {
+      card = document.createElement('div');
+      card.id = EXPLORE_CARD_ID;
+      card.setAttribute('role', 'status');
+      card.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:8px;padding:56px 28px 64px;' +
+        'text-align:center;color:inherit;font-family:inherit';
+      card.innerHTML =
+        '<div style="font-size:22px;font-weight:700">Enough for today\u2026</div>' +
+        '<div style="font-size:16px;line-height:1.4">Go have an argument with your sibling instead.</div>';
+    }
+    if (card.parentNode !== main) main.appendChild(card);
   }
 
   // ---------------------------------------------------------------- nothing plays while covered
@@ -2605,6 +2689,7 @@
     installHomeLongPress();
     startFeedClock();
     watchStoryImages();
+    startExploreClock();
     // Scrolling into Instagram's empty placeholder space changes nothing in the page, so check the
     // end of the feed on scroll too (at most once a frame).
     var endCheckQueued = false;

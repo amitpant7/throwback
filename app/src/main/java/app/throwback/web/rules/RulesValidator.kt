@@ -104,6 +104,7 @@ object RulesValidator {
             checkSelector(e.keep, "explore.keep", errors)
             checkSelector(e.items, "explore.items", errors)
             checkOn(e.on, "explore")
+            check(e.dailySeconds in 0..3600) { "explore.dailySeconds out of range" }
         }
         rules.nav?.let { n ->
             checkSelector(n.links, "nav.links", errors)

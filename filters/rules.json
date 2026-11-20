@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112016,
+  "version": 2026112017,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -135,7 +135,8 @@
     "on": "explore",
     "keep": "input[type='search'], input[aria-label*='Search' i], input[placeholder*='Search' i]",
     "items": "a[href^='/p/'], a[href^='/reel/'], a[href*='/p/'], a[href*='/reel/']",
-    "note": "On Explore the search box stays; every block that holds post tiles (and not the search box) is hidden."
+    "dailySeconds": 300,
+    "note": "The Explore grid shows for dailySeconds a day (time actually on the Explore tab), then it is hidden: the search box stays; every block that holds post tiles (and not the search box) is hidden, and Throwback shows 'Enough for today'."
   },
 
   "nav": {

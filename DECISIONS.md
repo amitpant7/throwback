@@ -33,6 +33,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 13. Open at Instagram's regular home feed (stories included, Instagram's own ranking; decided
     2026-11-20, replacing the Following feed, which has no stories), then filter it: hide Reels (tab and pages), hide the Explore grid (search stays),
     hide suggested posts, hide sponsored posts.
+13i. **Explore, 5 minutes a day** (decided 2026-11-20): the Explore grid on the Search tab shows for
+    5 minutes a day of time actually on that tab (rules `explore.dailySeconds`), then it is hidden
+    as before and "Enough for today… Go have an argument with your sibling instead." shows in its
+    place until midnight. Search keeps working. Stored on the device per day.
 13b. **A little discovery** (decided 2026-11-20): of Instagram's suggested posts (never ads), a few are
     shown, tagged "Discover · not someone you follow". Per 5 minutes of time actually spent on the feed:
     at most 1 video/reel and 1 photo post; at most 20 a day; only after 8 posts from people you follow

@@ -22,8 +22,9 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
    release, recheck using third-party names as product names.
 4b. **Support screen: design A "list rows"** (owner, 2026-11-20; mockups row 5): one row per tip with
     the existing icons, a one-liner and the price: Beer **$3** ("A cold one, on you"), Rock show **$10**
-    ("Toward a gig ticket"), GTA 6 **$25** ("Toward the next big game"), and **"Whatever you want"**
-    ($50 / $100 / $200: Play needs fixed prices). India priced by hand (₹99 / ₹299 / ₹799 suggested).
+    ("Toward a gig ticket"), GTA 6 **$25** ("Toward the next big game"), and **"Whatever you want"**:
+    a field where the user types any amount (no starting value; owner). Play needs fixed prices, so
+    billing will charge the closest tip product, set up in steps (each dollar to $100, then wider). India priced by hand (₹99 / ₹299 / ₹799 suggested).
     Prices shown from Google Play in the user's currency. Fine print "Paid through Google Play", then
     "How tips work" and "Report something Throwback missed". Renaming "GTA 6" and the prism image stay
     on the release list.

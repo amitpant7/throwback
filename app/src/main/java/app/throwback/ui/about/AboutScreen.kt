@@ -205,21 +205,58 @@ internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                     )
                 }
                 if (bigOpen) {
+                    // Any amount (owner): typed freely. Play needs fixed prices, so billing will charge
+                    // the closest tip product (set up in steps); until then it says tips are coming.
+                    var amount by rememberSaveable { mutableStateOf("") }
+                    val value = amount.toIntOrNull()?.takeIf { it in 1..9999 }
                     Row(
                         Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 14.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        listOf(R.string.ui_tip_any_50, R.string.ui_tip_any_100, R.string.ui_tip_any_200).forEach { amount ->
-                            Surface(
-                                onClick = { showMessage(tipsSoon) },
-                                shape = RoundedCornerShape(12.dp),
-                                color = colors.surface2,
-                                contentColor = colors.text,
-                                modifier = Modifier.weight(1f).heightIn(min = 44.dp),
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(stringResource(amount), style = UiText.row15.copy(fontWeight = FontWeight.Bold))
-                                }
+                        Row(
+                            Modifier
+                                .weight(1f)
+                                .heightIn(min = 48.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(colors.surface2)
+                                .padding(horizontal = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("$", style = UiText.row15.copy(fontWeight = FontWeight.Bold), color = colors.muted)
+                            androidx.compose.foundation.text.BasicTextField(
+                                value = amount,
+                                onValueChange = { t -> amount = t.filter { it.isDigit() }.take(4) },
+                                singleLine = true,
+                                textStyle = UiText.row15.copy(fontWeight = FontWeight.Bold, color = colors.text),
+                                cursorBrush = androidx.compose.ui.graphics.SolidColor(colors.accent),
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                                ),
+                                modifier = Modifier.weight(1f).padding(start = 4.dp),
+                                decorationBox = { inner ->
+                                    Box {
+                                        if (amount.isEmpty()) {
+                                            Text(stringResource(R.string.ui_tip_any_hint), style = UiText.row15, color = colors.muted)
+                                        }
+                                        inner()
+                                    }
+                                },
+                            )
+                        }
+                        Surface(
+                            onClick = { if (value != null) showMessage(tipsSoon) },
+                            enabled = value != null,
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (value != null) colors.accent else colors.surface2,
+                            contentColor = if (value != null) colors.onAccent else colors.muted,
+                            modifier = Modifier.heightIn(min = 48.dp),
+                        ) {
+                            Box(Modifier.padding(horizontal = 18.dp), contentAlignment = Alignment.Center) {
+                                Text(
+                                    if (value != null) stringResource(R.string.ui_tip_any_button, value) else stringResource(R.string.ui_tip_any_button_empty),
+                                    style = UiText.row15.copy(fontWeight = FontWeight.ExtraBold),
+                                )
                             }
                         }
                     }

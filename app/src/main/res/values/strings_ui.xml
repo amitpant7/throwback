@@ -227,6 +227,15 @@
     <string name="ui_today_discover">Discover posts</string>
     <string name="ui_today_discover_value">%1$d of %2$d left</string>
     <string name="ui_today_section_removed">Removed today</string>
+    <string name="ui_today_section_app">Instagram app</string>
+    <string name="ui_today_story_passes">Story passes</string>
+    <string name="ui_today_story_ready">%1$d of %2$d used · ready</string>
+    <string name="ui_today_story_wait">%1$d of %2$d used · next in %3$d min</string>
+    <string name="ui_today_story_tomorrow">%1$d of %2$d used · tomorrow</string>
+    <string name="ui_today_visit">Open Instagram for 5 minutes</string>
+    <string name="ui_today_visit_used">Used today</string>
+    <string name="ui_today_visit_free">Available</string>
+    <string name="ui_today_app_time">Time in the Instagram app</string>
     <string name="ui_today_ads">Ads</string>
     <string name="ui_today_suggested">Suggested posts</string>
     <string name="ui_today_alerts">Instagram alerts kept away</string>

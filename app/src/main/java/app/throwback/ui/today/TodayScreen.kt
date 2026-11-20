@@ -51,7 +51,11 @@ data class TodayStats(
     val suggestionsRemoved: Int? = null,
     /** Instagram alerts the relay removed today; null when Messages & calls isn't set up. */
     val alertsKept: Int? = null,
+    /** The connected Instagram app today; null when it isn't connected. */
+    val instagramApp: InstagramAppDay? = null,
 ) {
+    data class InstagramAppDay(val storiesUsed: Int, val storiesMax: Int, val storyWaitMinutes: Int?, val visitUsed: Boolean, val appMinutes: Int)
+
     sealed interface Limit {
         data object None : Limit
         data class Left(val millis: Long) : Limit
@@ -110,6 +114,30 @@ internal fun TodayScreen(stats: TodayStats, onBack: () -> Unit) {
                     value = if (shown == null) "–" else stringResource(R.string.ui_today_discover_value, (stats.discoverMax - shown).coerceAtLeast(0), stats.discoverMax),
                     fraction = if (shown != null && stats.discoverMax > 0) 1f - shown.toFloat() / stats.discoverMax else null,
                 )
+            }
+
+            stats.instagramApp?.let { ig ->
+                SectionLabel(stringResource(R.string.ui_today_section_app))
+                TbCard {
+                    AllowanceRow(
+                        title = stringResource(R.string.ui_today_story_passes),
+                        value = when {
+                            ig.storyWaitMinutes == null -> stringResource(R.string.ui_today_story_tomorrow, ig.storiesUsed, ig.storiesMax)
+                            ig.storyWaitMinutes > 0 -> stringResource(R.string.ui_today_story_wait, ig.storiesUsed, ig.storiesMax, ig.storyWaitMinutes)
+                            else -> stringResource(R.string.ui_today_story_ready, ig.storiesUsed, ig.storiesMax)
+                        },
+                    )
+                    CardDivider()
+                    AllowanceRow(
+                        title = stringResource(R.string.ui_today_visit),
+                        value = stringResource(if (ig.visitUsed) R.string.ui_today_visit_used else R.string.ui_today_visit_free),
+                    )
+                    CardDivider()
+                    AllowanceRow(
+                        title = stringResource(R.string.ui_today_app_time),
+                        value = duration(ig.appMinutes * 60L),
+                    )
+                }
             }
 
             SectionLabel(stringResource(R.string.ui_today_section_removed))

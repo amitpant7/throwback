@@ -118,6 +118,32 @@ internal object CallInApp {
         return PassRules.storyAllowed(lastDay, count, day, last, nowWall, (st?.cooldownMinutes ?: 30) * 60_000L, st?.perDay ?: 3)
     }
 
+    /** Today's use of the Instagram app through Throwback's passes ("Your day"). */
+    data class AppDay(val storiesUsed: Int, val storiesMax: Int, val storyWaitMinutes: Int?, val visitUsed: Boolean, val appMinutes: Int)
+
+    fun appDay(context: Context, today: LocalDate = LocalDate.now()): AppDay {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val day = today.toEpochDay()
+        val storiesUsed = if (prefs.getLong("storyDay", Long.MIN_VALUE) == day) prefs.getInt("storyCount", 0) else 0
+        val wait = if (storyAvailable(context, today)) 0 else storyWaitMinutes(context, today)
+        val appMs = if (prefs.getLong("appDay", Long.MIN_VALUE) == day) prefs.getLong("appMillis", 0) else 0
+        return AppDay(
+            storiesUsed = storiesUsed,
+            storiesMax = storyRules(context)?.perDay ?: 3,
+            storyWaitMinutes = wait,
+            visitUsed = prefs.getLong("visitDay", Long.MIN_VALUE) == day,
+            appMinutes = (appMs / 60_000).toInt(),
+        )
+    }
+
+    /** Called by the guard: [millis] more of the Instagram app in front during a pass today. */
+    fun addAppTime(context: Context, millis: Long, today: LocalDate = LocalDate.now()) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val day = today.toEpochDay()
+        val before = if (prefs.getLong("appDay", Long.MIN_VALUE) == day) prefs.getLong("appMillis", 0) else 0
+        prefs.edit().putLong("appDay", day).putLong("appMillis", before + millis).apply()
+    }
+
     /** Why "Your story" uses the website now: minutes until the next pass, or null = not today. */
     fun storyWaitMinutes(context: Context, today: LocalDate = LocalDate.now(), nowWall: Long = System.currentTimeMillis()): Int? {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

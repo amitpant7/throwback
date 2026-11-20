@@ -25,10 +25,15 @@ internal fun TodayRoute(timeLimit: TimeLimitController, onClose: () -> Unit) {
     val lock by timeLimit.state.collectAsStateWithLifecycle()
     var page by remember { mutableStateOf<PageDayStats?>(null) }
     var alerts by remember { mutableStateOf<Int?>(null) }
+    var appDay by remember { mutableStateOf<TodayStats.InstagramAppDay?>(null) }
     LaunchedEffect(Unit) {
         while (true) {
             page = readPage() ?: page
-            alerts = if (MessagesFeature.isSetUp(context)) RelayStats.otherGroupLastDays(context, days = 1) else null
+            val connected = MessagesFeature.isSetUp(context)
+            alerts = if (connected) RelayStats.otherGroupLastDays(context, days = 1) else null
+            appDay = if (connected) app.throwback.relay.CallInApp.appDay(context).let {
+                TodayStats.InstagramAppDay(it.storiesUsed, it.storiesMax, it.storyWaitMinutes, it.visitUsed, it.appMinutes)
+            } else null
             delay(2_000)
         }
     }
@@ -48,6 +53,7 @@ internal fun TodayRoute(timeLimit: TimeLimitController, onClose: () -> Unit) {
         adsRemoved = p?.adsRemoved,
         suggestionsRemoved = p?.suggestionsRemoved,
         alertsKept = alerts,
+        instagramApp = appDay,
     )
     TodayScreen(stats, onBack = onClose)
 }

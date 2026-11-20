@@ -200,6 +200,14 @@ class GuardService : Service() {
             // notification may not show for outgoing calls), and then the pass itself ends.
             if (GuardPass.active(now)) {
                 val watched = RelayDebug.watchedPackages()
+                // "Your day": time the Instagram app is in front during a pass (calls aren't passes).
+                if (fg != null && fg in watched) {
+                    unsavedAppMillis += POLL_MS
+                    if (unsavedAppMillis >= 10_000L) {
+                        app.throwback.relay.CallInApp.addAppTime(this, unsavedAppMillis)
+                        unsavedAppMillis = 0L
+                    }
+                }
                 if (fg != null && fg in watched) {
                     GuardPass.sawInstagram = true
                 } else if (GuardPass.sawInstagram && fg != null && !PassRules.partOfInstagramFlow(fg, flowPackages() + settingsRules()?.flowPackages.orEmpty().takeIf { GuardPass.kind == GuardPass.Kind.SETTINGS }.orEmpty())) {
@@ -388,5 +396,9 @@ class GuardService : Service() {
 
     /** The story pass just ran out without a post: the next cover says so. */
     private var storyTimeUp = false
+
+
+    /** Pass time in the Instagram app not yet saved for "Your day". */
+    private var unsavedAppMillis = 0L
 
 }

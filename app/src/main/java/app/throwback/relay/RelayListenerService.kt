@@ -1,5 +1,6 @@
 package app.throwback.relay
 
+import app.throwback.BuildConfig
 import android.app.Notification
 import android.os.SystemClock
 import android.service.notification.NotificationListenerService
@@ -74,6 +75,17 @@ class RelayListenerService : NotificationListenerService() {
     private suspend fun handle(facts: NotificationFacts, alreadyTracked: Boolean) {
         val rules = notificationRules()
         val kind = classifier().classify(facts)
+        if (BuildConfig.DEBUG) {
+            // Test builds: Instagram's real notification labels, to fill the rules from a real phone.
+            // Labels only: never the title, text, names, tags, groups or thread ids.
+            Log.d(
+                LABELS_TAG,
+                "pkg=${facts.packageName} channel=${facts.channelId} category=${facts.category} " +
+                    "style=${facts.template?.substringAfterLast('$')} ongoing=${facts.ongoing} " +
+                    "summary=${facts.groupSummary} fullScreen=${facts.fullScreenIntent} " +
+                    "grouped=${facts.group != null} -> ${kind.ruleName}",
+            )
+        }
         if (!alreadyTracked) {
             if (kind == NotificationKind.CALL) {
                 CallState.tracker.onCallShowing(facts.key)
@@ -152,6 +164,7 @@ class RelayListenerService : NotificationListenerService() {
 
     companion object {
         private const val TAG = "ThrowbackRelay"
+        private const val LABELS_TAG = "ThrowbackRelayLabels"
 
         /** Copies the fields the classifier and the relayed notification need; nothing is kept afterwards. */
         internal fun factsOf(sbn: StatusBarNotification): NotificationFacts {

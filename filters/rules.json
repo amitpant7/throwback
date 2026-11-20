@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112033,
+  "version": 2026112034,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -153,6 +153,7 @@
       "editMinutes": 5,
       "cooldownMinutes": 30,
       "perDay": 3,
+      "freeLeaveMinutes": 3,
       "openSeconds": 10,
       "postingChannels": "^(uploads|ig_posting_status)$",
       "note": "Instagram's story camera, gallery and editor live in its main screen (with the feed); the link lands on the feed (owner's phone), so the user swipes right for the camera. The pass gives editMinutes of Instagram, not counting time with the camera on (Android reports camera use to every app; seen on the owner's phone); Instagram's posting notification ends it. Then cooldownMinutes (30) before the next one, at most perDay a day; meanwhile 'Your story' uses the website's own story upload in Throwback (owner, 2026-11-20)."

@@ -203,7 +203,14 @@ class GuardService : Service() {
                 if (fg != null && fg in watched) {
                     GuardPass.sawInstagram = true
                 } else if (GuardPass.sawInstagram && fg != null && !PassRules.partOfInstagramFlow(fg, flowPackages() + settingsRules()?.flowPackages.orEmpty().takeIf { GuardPass.kind == GuardPass.Kind.SETTINGS }.orEmpty())) {
-                    GuardPass.end() // left Instagram: the rest of the pass isn't kept for later
+                    // Left Instagram: the rest of the pass isn't kept for later. A story pass left within
+                    // a few minutes was a change of mind (owner): no wait, doesn't count.
+                    if (GuardPass.kind == GuardPass.Kind.STORY &&
+                        now - GuardPass.grantedAt < (storyRules()?.freeLeaveMinutes ?: 3) * 60_000L
+                    ) {
+                        app.throwback.relay.CallInApp.storyForgiven(this)
+                    }
+                    GuardPass.end()
                 }
                 if (GuardPass.kind == GuardPass.Kind.CREATE && fg != null && fg in watched &&
                     !PassRules.createPassHolds(tracker.currentClass, createScreens(), now - GuardPass.grantedAt)

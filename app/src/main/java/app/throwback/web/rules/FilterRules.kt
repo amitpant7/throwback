@@ -329,6 +329,8 @@ data class AppStoryRules(
     val cooldownMinutes: Int = 30,
     /** Story passes a day; after that, the website's story upload. */
     val perDay: Int = 3,
+    /** Leaving Instagram within this many minutes = changed one's mind: no wait, doesn't count. */
+    val freeLeaveMinutes: Int = 3,
     /** Notification channels Instagram shows while posting (regex); posting ends the pass. */
     val postingChannels: String = "^(uploads|ig_posting_status)$",
 )

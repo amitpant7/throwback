@@ -143,10 +143,10 @@ internal object CallInApp {
     }
 
     /**
-     * The story pass ended with Instagram posting (owner, 2026-11-20): it was used honestly, so it
-     * neither starts the wait nor counts toward the day's passes.
+     * The story pass ended with Instagram posting, or the user left within a few minutes (owner,
+     * 2026-11-20): used honestly, so it neither starts the wait nor counts toward the day's passes.
      */
-    fun storyPosted(context: Context, today: LocalDate = LocalDate.now()) {
+    fun storyForgiven(context: Context, today: LocalDate = LocalDate.now()) {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val e = prefs.edit().remove("storyLastAt")
         if (prefs.getLong("storyDay", Long.MIN_VALUE) == today.toEpochDay()) {

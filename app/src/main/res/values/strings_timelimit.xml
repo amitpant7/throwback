@@ -18,7 +18,7 @@
     <string name="tl_dur_days_hours">%1$dd %2$dh</string>
 
     <!-- Setup (mockup 7) -->
-    <string name="tl_setup_step_minutes">1 · How long per day?</string>
+    <string name="tl_setup_step_minutes">How long per day?</string>
     <string name="tl_minutes_chip">%1$d min</string>
     <plurals name="tl_rule_locks">
         <item quantity="one">When %1$d minute is up, Throwback locks.</item>
@@ -26,10 +26,6 @@
     </plurals>
     <string name="tl_rule_extend">Need more? Wait 5 minutes, enter your PIN, get 5 more. Twice a day, then it\'s locked until midnight.</string>
     <string name="tl_rule_messages">Messages stay open while locked. Calls never count.</string>
-    <string name="tl_setup_step_pin">2 · Create a 4-digit PIN</string>
-    <string name="tl_setup_pin_note">Turning the limit off, raising it or changing the PIN later needs this PIN.</string>
-    <string name="tl_setup_pin_empty_cd">Create a PIN</string>
-    <string name="tl_setup_pin_set_cd">PIN created. Change it</string>
     <string name="tl_turn_on">Turn on %1$d-minute limit</string>
 
     <!-- PIN entry -->
@@ -172,4 +168,5 @@
         <item quantity="one">%d second of Throwback left today</item>
         <item quantity="other">%d seconds of Throwback left today</item>
     </plurals>
+    <string name="tl_setup_pin_next">Next you\'ll create a 4-digit PIN. Turning the limit off, raising it or changing the PIN later needs it.</string>
 </resources>

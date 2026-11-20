@@ -95,10 +95,9 @@ private fun SetupScreen(controller: DefaultTimeLimitController, onClose: () -> U
     val c = ThrowbackTheme.colors
     val scope = rememberCoroutineScope()
     var minutes by rememberSaveable { mutableIntStateOf(30) }
-    // The PIN lives only in memory (never in saved instance state).
-    var pin by remember { mutableStateOf<String?>(null) }
+    // The PIN is created only after "Turn on" (owner: an empty PIN box first was confusing), and it
+    // lives only in memory, never in saved instance state.
     var creatingPin by remember { mutableStateOf(false) }
-    var turnOnAfterPin by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
 
@@ -118,9 +117,8 @@ private fun SetupScreen(controller: DefaultTimeLimitController, onClose: () -> U
             headerTitle = stringResource(R.string.tl_title),
             onBack = { creatingPin = false },
             onCreated = { p ->
-                pin = p
                 creatingPin = false
-                if (turnOnAfterPin) turnOn(p)
+                turnOn(p)
             },
         )
         return
@@ -140,31 +138,8 @@ private fun SetupScreen(controller: DefaultTimeLimitController, onClose: () -> U
                 IconLine(R.drawable.tl_ic_lock, pluralStringResource(R.plurals.tl_rule_locks, minutes, minutes))
                 IconLine(R.drawable.tl_ic_clock, stringResource(R.string.tl_rule_extend))
                 IconLine(R.drawable.tl_ic_chat, stringResource(R.string.tl_rule_messages))
+                IconLine(R.drawable.tl_ic_shield, stringResource(R.string.tl_setup_pin_next))
             }
-
-            Spacer(Modifier.height(24.dp))
-            SectionLabel(stringResource(R.string.tl_setup_step_pin))
-            val pinDescription = stringResource(if (pin == null) R.string.tl_setup_pin_empty_cd else R.string.tl_setup_pin_set_cd)
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(c.surface)
-                    .buttonSemantics(pinDescription) {
-                        turnOnAfterPin = false
-                        creatingPin = true
-                    }
-                    .padding(vertical = 18.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                PinDots(if (pin == null) 0 else Rules.PIN_LENGTH, gap = 14.dp)
-            }
-            Text(
-                stringResource(R.string.tl_setup_pin_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = c.muted,
-                modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 12.dp),
-            )
 
             Spacer(Modifier.weight(1f))
             Spacer(Modifier.height(24.dp))
@@ -181,15 +156,7 @@ private fun SetupScreen(controller: DefaultTimeLimitController, onClose: () -> U
             TlButton(
                 stringResource(R.string.tl_turn_on, minutes),
                 enabled = !busy,
-                onClick = {
-                    val p = pin
-                    if (p == null) {
-                        turnOnAfterPin = true
-                        creatingPin = true
-                    } else {
-                        turnOn(p)
-                    }
-                },
+                onClick = { creatingPin = true },
             )
         }
     }

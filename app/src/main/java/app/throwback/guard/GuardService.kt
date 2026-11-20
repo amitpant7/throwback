@@ -37,7 +37,9 @@ import app.throwback.relay.MessagesFeature
 import app.throwback.relay.RelayDebug
 import app.throwback.relay.RelayListenerService
 import app.throwback.relay.RelayNotifier
+import app.throwback.web.rules.AppStoryRules
 import app.throwback.web.rules.DEFAULT_CALL_GRACE_SECONDS
+import app.throwback.web.rules.FilterRules
 import app.throwback.web.rules.RulesRepository
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
@@ -74,7 +76,16 @@ class GuardService : Service() {
     private var loop: Job? = null
     private val screenOn = MutableStateFlow(true)
     private val tracker = ForegroundTracker(stopEvents = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-    private var lastQueryEnd = 0L
+
+    /** Where the next usage-events query starts (phone wall ms); null: look back [LOOK_BACK_MS]. */
+    private var queryFrom: Long? = null
+
+    /** When the screen last went off (phone wall ms): the replay at screen-on starts there. */
+    @Volatile
+    private var screenOffAt: Long? = null
+
+    /** What the rules say about passes and calls, worked out once per rules object. */
+    private var rulesCache: GuardRules? = null
 
     /** Last time the phone's audio was in call mode for an Instagram call. */
     private var callAudioAt: Long? = null
@@ -109,7 +120,9 @@ class GuardService : Service() {
 
     private val screenReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            screenOn.value = intent?.action != Intent.ACTION_SCREEN_OFF
+            val off = intent?.action == Intent.ACTION_SCREEN_OFF
+            if (off) screenOffAt = System.currentTimeMillis()
+            screenOn.value = !off
         }
     }
 
@@ -221,8 +234,10 @@ class GuardService : Service() {
             if (!screenOn.value) {
                 overlay.hide()
                 screenOn.first { it }
-                tracker.clear() // the replay rebuilds what is on screen
-                lastQueryEnd = 0L // events while off are irrelevant; start fresh
+                // What is on screen now is rebuilt from the events since the screen went off (a pass
+                // that ran out meanwhile is then covered); before, a whole hour was replayed.
+                tracker.clear()
+                queryFrom = screenOffAt?.let { it - SCREEN_OFF_MARGIN_MS }
             }
             val now = SystemClock.elapsedRealtime()
             if (now - lastPermissionCheck > PERMISSION_CHECK_MS) {
@@ -279,10 +294,8 @@ class GuardService : Service() {
 
     private fun poll(usm: UsageStatsManager) {
         val end = System.currentTimeMillis()
-        // First run, or the clock moved back: look back a little to learn what is in front now.
-        // Overlap the previous window a little: events are recorded asynchronously and one stamped
-        // just before the last end could be missed. Replaying events in order is harmless.
-        val begin = if (lastQueryEnd == 0L || lastQueryEnd > end) end - LOOK_BACK_MS else lastQueryEnd - QUERY_OVERLAP_MS
+        // First run, or the clock moved back: look back a while to learn what is on screen now.
+        val begin = queryFrom?.takeIf { it <= end }?.coerceAtLeast(end - LOOK_BACK_MS) ?: (end - LOOK_BACK_MS)
         val events = try {
             usm.queryEvents(begin, end)
         } catch (e: RuntimeException) {
@@ -293,7 +306,9 @@ class GuardService : Service() {
             events.getNextEvent(event)
             tracker.onEvent(event.eventType, event.packageName, event.className)
         }
-        lastQueryEnd = end
+        // The next window overlaps this one a little: events are recorded asynchronously and one
+        // stamped just before this end could be missed. Replaying events in order is harmless.
+        queryFrom = end - QUERY_OVERLAP_MS
     }
 
     /**
@@ -321,10 +336,11 @@ class GuardService : Service() {
     /** A pass is running: "Your day" time, leaving Instagram ends it, and each kind's own rules. */
     private fun followPass(now: Long, fg: String?, calls: CallSnapshot, inCallAudio: Boolean) {
         val inInstagram = fg != null && fg in RelayDebug.watchedPackages()
+        val flow = if (GuardPass.kind == GuardPass.Kind.SETTINGS) rules().settingsFlow else rules().createFlow
         if (inInstagram) {
             countAppTime()
             GuardPass.sawInstagram = true
-        } else if (GuardPass.sawInstagram && fg != null && !PassRules.partOfInstagramFlow(fg, flowPackages(GuardPass.kind))) {
+        } else if (GuardPass.sawInstagram && fg != null && !PassRules.partOfInstagramFlow(fg, flow)) {
             leftInstagram(now)
         }
         when (GuardPass.kind) {
@@ -354,7 +370,7 @@ class GuardService : Service() {
         if (GuardPass.kind == GuardPass.Kind.STORY && PassRules.storyLeftEarly(
                 sinceGrant = now - GuardPass.grantedAt,
                 cameraOffMillis = GuardPass.outsideMillis,
-                freeLeaveMillis = (storyRules()?.freeLeaveMinutes ?: 3) * 60_000L,
+                freeLeaveMillis = (rules().story?.freeLeaveMinutes ?: 3) * 60_000L,
             )
         ) {
             CallInApp.storyLeftEarly(this)
@@ -372,7 +388,7 @@ class GuardService : Service() {
 
     /** Posting: only Instagram's creation screens. */
     private fun createPass(now: Long) {
-        if (!PassRules.createPassHolds(tracker.currentClass, createScreens(), now - GuardPass.grantedAt)) {
+        if (!PassRules.createPassHolds(tracker.currentClass, rules().createScreens, now - GuardPass.grantedAt)) {
             Log.i(TAG, "left Instagram's create screens: pass ends")
             GuardPass.end()
         }
@@ -381,10 +397,10 @@ class GuardService : Service() {
     /** Instagram's settings screens, and its other screens for at most `appSettings.otherScreenMinutes`. */
     private fun settingsPass(now: Long) {
         if (now - GuardPass.grantedAt < PassRules.CREATE_GRACE_MS) return
-        val rules = settingsRules()
-        if (!PassRules.onScreens(tracker.currentClass, PassRules.screensPattern(rules?.screens))) {
+        val rules = rules()
+        if (!PassRules.onScreens(tracker.currentClass, rules.settingsScreens)) {
             GuardPass.outsideMillis += POLL_MS
-            if (GuardPass.outsideMillis > (rules?.otherScreenMinutes ?: 0) * 60_000L) {
+            if (GuardPass.outsideMillis > rules.settingsOtherMillis) {
                 Log.i(TAG, "settings pass: time outside the settings screens is up")
                 GuardPass.end()
             }
@@ -394,7 +410,7 @@ class GuardService : Service() {
     /** Minutes of Instagram for a story; time with the camera on doesn't count. */
     private fun storyPass() {
         if (camerasInUse.isEmpty()) GuardPass.outsideMillis += POLL_MS
-        if (!PassRules.storyPassHolds(GuardPass.outsideMillis, (storyRules()?.editMinutes ?: 5) * 60_000L)) {
+        if (!PassRules.storyPassHolds(GuardPass.outsideMillis, (rules().story?.editMinutes ?: 5) * 60_000L)) {
             Log.i(TAG, "story pass: time is up")
             storyTimeUp = true
             GuardPass.end()
@@ -434,7 +450,11 @@ class GuardService : Service() {
         private const val REBIND_AFTER_MS = 30_000L
         /** Call audio counts if an Instagram call notification was seen this recently (ringing, then answered). */
         private const val IG_CALL_LINK_MS = 120_000L
+        /** The first query after the guard starts looks back this far, to learn what is on screen. */
         private const val LOOK_BACK_MS = 60 * 60 * 1000L
+
+        /** The replay at screen-on starts this long before the screen went off. */
+        private const val SCREEN_OFF_MARGIN_MS = 5_000L
         private const val PERMISSION_CHECK_MS = 10_000L
 
         /** True while the service is in the foreground (for Settings' status line). */
@@ -463,19 +483,24 @@ class GuardService : Service() {
         }
     }
 
-    /** Instagram's creation screens (rules `appCreate.screens`). */
-    private fun createScreens(): Regex? = PassRules.screensPattern(RulesRepository.get(this).rules.value?.appCreate?.screens)
+    /** The rules' pass settings, compiled once per rules object (not every 500 ms during a pass). */
+    private class GuardRules(val source: FilterRules?) {
+        /** Instagram's creation and settings screens (`appCreate.screens`, `appSettings.screens`). */
+        val createScreens = PassRules.screensPattern(source?.appCreate?.screens)
+        val settingsScreens = PassRules.screensPattern(source?.appSettings?.screens)
+        val settingsOtherMillis = (source?.appSettings?.otherScreenMinutes ?: 0) * 60_000L
 
-    /** Android screens Instagram opens on the way (rules `appCreate.flowPackages`; for settings also `appSettings.flowPackages`). */
-    private fun flowPackages(kind: GuardPass.Kind): Set<String> {
-        val rules = RulesRepository.get(this).rules.value
-        val settings = if (kind == GuardPass.Kind.SETTINGS) rules?.appSettings?.flowPackages.orEmpty() else emptyList()
-        return (rules?.appCreate?.flowPackages.orEmpty() + settings).toSet()
+        /** Android screens Instagram opens on the way (`appCreate.flowPackages`; for settings also `appSettings.flowPackages`). */
+        val createFlow: Set<String> = source?.appCreate?.flowPackages.orEmpty().toSet()
+        val settingsFlow: Set<String> = createFlow + source?.appSettings?.flowPackages.orEmpty()
+        val story: AppStoryRules? = source?.appCreate?.story
     }
 
-    private fun settingsRules() = RulesRepository.get(this).rules.value?.appSettings
-
-    private fun storyRules() = RulesRepository.get(this).rules.value?.appCreate?.story
+    private fun rules(): GuardRules {
+        val current = RulesRepository.get(this).rules.value
+        rulesCache?.takeIf { it.source === current }?.let { return it }
+        return GuardRules(current).also { rulesCache = it }
+    }
 
     /**
      * Cameras in use by any app (Android reports this to every app, no permission). Throwback itself

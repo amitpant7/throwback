@@ -168,26 +168,28 @@ internal class InstagramWebController(
     /** Back: through the WebView history (skipping pages this mode doesn't show). False = nothing left. */
     fun goBack(): Boolean {
         val router = router ?: return false
-        if (!webView.canGoBack()) return false
-        error = null
         if (mode == WebMode.MESSAGES_ONLY) {
             val history = webView.copyBackForwardList()
             for (i in history.currentIndex - 1 downTo 0) {
                 val url = history.getItemAtIndex(i)?.url ?: continue
                 if (router.decide(url, mode, currentUrl = url) == UrlRouter.Decision.Load) {
+                    error = null
                     webView.goBackOrForward(i - history.currentIndex)
                     return true
                 }
             }
-            // Only pages this mode hides are behind us: from a chat go to the inbox, from the inbox leave.
+            // Nothing behind us this mode shows: from a chat go to the inbox, from the inbox leave.
             val inbox = router.homeUrl(mode)
             val current = webView.url
             if (current != null && router.locationFor(current) != router.locationFor(inbox)) {
+                error = null
                 load(inbox)
                 return true
             }
             return false
         }
+        if (!webView.canGoBack()) return false
+        error = null
         webView.goBack()
         return true
     }

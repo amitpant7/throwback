@@ -9,7 +9,7 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 2. **Name** (owner, 2026-11-20): **"Throwback: 2019 Mode"** on the Play Store (colon, the usual
    "name: what it is" pattern; 20 of Play's 30 characters). Under the icon it is just "Throwback"
    (launchers cut longer names). **Logo** (owner, 2026-11-20): "Falling backwards": a figure
-   falling backwards in a night-sky portal formed by a rewind arrow, on brand mint #8FD1AD. Masters in
+   falling backwards in a night-sky portal formed by a rewind arrow, on **Emerald #36A56E** (owner's pick from samples, 2026-11-20; the icon pack's mint was #8FD1AD). Masters in
    `design/logo/`; the launcher (adaptive + legacy + round), splash, in-app logo, guard cover and the
    white notification icon (made from the mark) all use it.
 3. **Repository:** public on GitHub (github.com/amitpant7/throwback). **Licence: PolyForm Strict 1.0.0**

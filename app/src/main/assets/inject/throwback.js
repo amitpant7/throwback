@@ -1147,8 +1147,10 @@
     var ac = state.c && state.c.appCreate;
     if (!state.createInApp || !ac || state.mode === MODE_MESSAGES || !e.target || !e.target.closest) return false;
     var hit = false;
+    var kind = 'post';
     for (var i = 0; i < ac.triggers.length && !hit; i++) {
       var t = ac.triggers[i];
+      kind = t.kind === 'story' ? 'story' : 'post';
       if (t.selector) {
         var el = e.target.closest('[role=button],[role=link],button,a');
         hit = !!(el && (el.matches(t.selector) || el.querySelector(t.selector)));
@@ -1160,7 +1162,7 @@
     if (!hit) return false;
     e.preventDefault();
     e.stopImmediatePropagation();
-    send({ t: 'createInApp' });
+    send({ t: 'createInApp', kind: kind });
     return true;
   }
 

@@ -37,7 +37,7 @@ internal sealed interface BridgeMessage {
     data object CaughtUp : BridgeMessage
 
     /** "+" or "Your story" tapped while the Instagram app is connected: open its create screen. */
-    data object CreateInApp : BridgeMessage
+    data class CreateInApp(val story: Boolean = false) : BridgeMessage
 
     /** "Open settings in the Instagram app" at the end of Instagram's settings page. */
     data object SettingsInApp : BridgeMessage
@@ -72,7 +72,7 @@ internal sealed interface BridgeMessage {
                 "callInApp" -> CallInApp(str("thread")?.takeIf { THREAD.matches(it) }, str("user")?.takeIf { USER.matches(it) })
                 "reelLimit" -> ReelLimit
                 "caughtUp" -> CaughtUp
-                "createInApp" -> CreateInApp
+                "createInApp" -> CreateInApp(story = str("kind") == "story")
                 "settingsInApp" -> SettingsInApp
                 "share" -> str("url")?.takeIf { SHARE_URL.matches(it) }?.let(::Share)
                 else -> null

@@ -103,6 +103,21 @@ internal object CallInApp {
         }
     }
 
+    /** "Your story": the app's story camera, with a STORY pass (camera on, then editMinutes; see GuardService). */
+    fun story(context: Context): Boolean {
+        val pkg = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) } ?: return false
+        val link = app.throwback.web.rules.RulesRepository.get(context).rules.value?.appCreate?.story?.link ?: "instagram://story-camera"
+        return try {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(pkg).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            GuardPass.grant(SystemClock.elapsedRealtime(), CREATE_PASS_MS, GuardPass.Kind.STORY)
+            true
+        } catch (e: ActivityNotFoundException) {
+            false
+        } catch (e: SecurityException) {
+            false
+        }
+    }
+
     /** Longest a settings pass lasts. */
     const val SETTINGS_PASS_MS = 60 * 60_000L
 

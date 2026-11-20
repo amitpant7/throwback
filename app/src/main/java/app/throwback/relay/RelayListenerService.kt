@@ -75,6 +75,8 @@ class RelayListenerService : NotificationListenerService() {
     private suspend fun handle(facts: NotificationFacts, alreadyTracked: Boolean) {
         val rules = notificationRules()
         val kind = classifier().classify(facts)
+        // Instagram started posting (a story or post made through a pass): the pass has done its job.
+        endPassWhenPosting(facts)
         if (BuildConfig.DEBUG) {
             // Test builds: Instagram's real notification labels, to fill the rules from a real phone.
             // Labels only: never the title, text, names, tags, groups or thread ids.
@@ -192,4 +194,18 @@ class RelayListenerService : NotificationListenerService() {
             )
         }
     }
+
+    private fun endPassWhenPosting(facts: NotificationFacts) {
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (!app.throwback.guard.GuardPass.active(now)) return
+        val kind = app.throwback.guard.GuardPass.kind
+        if (kind != app.throwback.guard.GuardPass.Kind.STORY && kind != app.throwback.guard.GuardPass.Kind.CREATE) return
+        val pattern = app.throwback.web.rules.RulesRepository.get(this).rules.value?.appCreate?.story?.postingChannels ?: return
+        val channel = facts.channelId ?: return
+        if (facts.packageName in InstagramPackages.ALL && runCatching { Regex(pattern).containsMatchIn(channel) }.getOrDefault(false)) {
+            Log.i(TAG, "Instagram is posting: pass ends")
+            app.throwback.guard.GuardPass.end()
+        }
+    }
+
 }

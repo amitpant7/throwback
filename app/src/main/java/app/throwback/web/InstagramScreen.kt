@@ -88,7 +88,7 @@ fun InstagramScreen(
     /** The feed reached "You're all caught up". */
     onCaughtUp: () -> Unit = {},
     /** "+" / "Your story" with the Instagram app connected. */
-    onCreateInApp: () -> Unit = {},
+    onCreateInApp: (story: Boolean) -> Unit = {},
     /** "Open settings in the Instagram app". */
     onSettingsInApp: () -> Unit = {},
 ) {
@@ -168,7 +168,7 @@ private fun InstagramWebHost(
     covered: Boolean,
     onReelLimit: () -> Unit,
     onCaughtUp: () -> Unit,
-    onCreateInApp: () -> Unit,
+    onCreateInApp: (Boolean) -> Unit,
     onSettingsInApp: () -> Unit,
     modifier: Modifier,
 ) {
@@ -242,7 +242,7 @@ private fun InstagramWebHost(
 
             override fun onCaughtUp() = latestOnCaughtUp()
 
-            override fun onCreateInApp() = latestOnCreateInApp()
+            override fun onCreateInApp(story: Boolean) = latestOnCreateInApp(story)
 
             override fun onSettingsInApp() = latestOnSettingsInApp()
 

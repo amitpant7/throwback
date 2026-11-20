@@ -31,4 +31,14 @@ class PassRulesTest {
         assertTrue(PassRules.partOfInstagramFlow("com.example.picker", setOf("com.example.picker")))
         assertFalse(PassRules.partOfInstagramFlow("com.whatsapp"))
     }
+
+    @Test
+    fun `story pass holds while the camera is on, then 5 minutes of editing`() {
+        val open = 10_000L
+        val edit = 5 * 60_000L
+        assertTrue(PassRules.storyPassHolds(cameraOn = false, now = 5_000, grantedAt = 0, cameraOffSince = null, openMillis = open, editMillis = edit))
+        assertTrue(PassRules.storyPassHolds(cameraOn = true, now = 600_000, grantedAt = 0, cameraOffSince = null, openMillis = open, editMillis = edit))
+        assertTrue(PassRules.storyPassHolds(cameraOn = false, now = 100_000 + edit, grantedAt = 0, cameraOffSince = 100_000, openMillis = open, editMillis = edit))
+        assertFalse(PassRules.storyPassHolds(cameraOn = false, now = 100_001 + edit, grantedAt = 0, cameraOffSince = 100_000, openMillis = open, editMillis = edit))
+    }
 }

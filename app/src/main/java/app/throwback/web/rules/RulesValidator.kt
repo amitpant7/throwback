@@ -114,6 +114,12 @@ object RulesValidator {
                 check(a.link.startsWith("instagram://")) { "appCreate.link must be an instagram:// link" }
                 check(runCatching { Regex(a.screens) }.isSuccess) { "appCreate.screens is not a valid pattern" }
                 check(a.triggers.size <= 10) { "appCreate.triggers: too many" }
+                a.story?.let { st ->
+                    check(st.link.startsWith("instagram://")) { "appCreate.story.link must be an instagram:// link" }
+                    check(st.editMinutes in 1..15) { "appCreate.story.editMinutes out of range" }
+                    check(st.openSeconds in 3..30) { "appCreate.story.openSeconds out of range" }
+                    check(runCatching { Regex(st.postingChannels) }.isSuccess) { "appCreate.story.postingChannels invalid" }
+                }
             }
             e.actions?.let { a ->
                 (a.like + a.unlike + a.save + a.unsave).forEach { check(it.isNotBlank() && it.length <= 60) { "explore.actions: bad label" } }

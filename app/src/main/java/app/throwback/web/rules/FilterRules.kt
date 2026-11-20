@@ -313,12 +313,28 @@ data class AppCreateRules(
     val triggers: List<AppCreateTrigger> = emptyList(),
     /** More system packages Instagram opens on the way (pickers on some phones); they don't end a pass. */
     val flowPackages: List<String> = emptyList(),
+    /** "Your story": the app's story camera (it lives in the app's main screen, with the feed). */
+    val story: AppStoryRules? = null,
+)
+
+@Serializable
+data class AppStoryRules(
+    /** Opens the app's story camera. */
+    val link: String,
+    /** Once the camera is off (editing), minutes left before the pass ends. */
+    val editMinutes: Int = 5,
+    /** Seconds to open the camera after the tap before "camera off" counts. */
+    val openSeconds: Int = 10,
+    /** Notification channels Instagram shows while posting (regex); posting ends the pass. */
+    val postingChannels: String = "^(uploads|ig_posting_status)$",
 )
 
 @Serializable
 data class AppCreateTrigger(
     /** A CSS selector of the button (or something inside it). */
     val selector: String? = null,
+    /** "story" opens the story camera; anything else the post/reel editor. */
+    val kind: String = "post",
     /** Or: a button whose text is one of these (e.g. "Your story", any language)... */
     val text: List<String> = emptyList(),
     /** ...and that holds a file input (the web's own "add to story" picker). */

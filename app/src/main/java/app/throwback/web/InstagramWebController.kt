@@ -74,7 +74,7 @@ internal class InstagramWebController(
         fun onCaughtUp() {}
 
         /** "+" / "Your story" with the Instagram app connected. */
-        fun onCreateInApp() {}
+        fun onCreateInApp(story: Boolean) {}
 
         /** "Open settings in the Instagram app". */
         fun onSettingsInApp() {}
@@ -497,7 +497,7 @@ internal class InstagramWebController(
             }
             BridgeMessage.CaughtUp -> host?.onCaughtUp()
             is BridgeMessage.Share -> share(m.url)
-            BridgeMessage.CreateInApp -> host?.onCreateInApp()
+            is BridgeMessage.CreateInApp -> host?.onCreateInApp(m.story)
             BridgeMessage.SettingsInApp -> host?.onSettingsInApp()
             null -> Unit
         }

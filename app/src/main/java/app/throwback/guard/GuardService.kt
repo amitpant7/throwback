@@ -86,6 +86,7 @@ class GuardService : Service() {
     override fun onCreate() {
         super.onCreate()
         overlay = GuardOverlay(this)
+        watchCameras(true)
         RelayNotifier.ensureChannels(this)
         goForeground()
         screenOn.value = getSystemService(PowerManager::class.java)?.isInteractive != false
@@ -104,6 +105,7 @@ class GuardService : Service() {
     }
 
     override fun onDestroy() {
+        watchCameras(false)
         running = false
         scope.cancel()
         overlay.hide()
@@ -208,6 +210,23 @@ class GuardService : Service() {
                 ) {
                     Log.i(TAG, "left Instagram's create screens: pass ends")
                     GuardPass.end()
+                }
+                if (GuardPass.kind == GuardPass.Kind.STORY && fg != null && fg in watched) {
+                    val st = storyRules()
+                    val cameraOn = camerasInUse.isNotEmpty()
+                    if (cameraOn) {
+                        GuardPass.cameraOffSince = null
+                    } else if (GuardPass.cameraOffSince == null && now - GuardPass.grantedAt >= (st?.openSeconds ?: 10) * 1000L) {
+                        GuardPass.cameraOffSince = now
+                    }
+                    if (!PassRules.storyPassHolds(
+                            cameraOn, now, GuardPass.grantedAt, GuardPass.cameraOffSince,
+                            (st?.openSeconds ?: 10) * 1000L, (st?.editMinutes ?: 5) * 60_000L,
+                        )
+                    ) {
+                        Log.i(TAG, "story pass: editing time is up")
+                        GuardPass.end()
+                    }
                 }
                 if (GuardPass.kind == GuardPass.Kind.SETTINGS && fg != null && fg in watched &&
                     now - GuardPass.grantedAt >= PassRules.CREATE_GRACE_MS
@@ -335,5 +354,35 @@ class GuardService : Service() {
 
 
     private fun settingsRules() = app.throwback.web.rules.RulesRepository.get(this).rules.value?.appSettings
+
+
+    private fun storyRules() = app.throwback.web.rules.RulesRepository.get(this).rules.value?.appCreate?.story
+
+    /**
+     * Cameras in use by any app (Android reports this to every app, no permission). Throwback itself
+     * never uses the camera, so "in use" while Instagram is in front means its camera is open.
+     */
+    private val camerasInUse = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+    private val cameraCallback = object : android.hardware.camera2.CameraManager.AvailabilityCallback() {
+        override fun onCameraUnavailable(cameraId: String) {
+            camerasInUse.add(cameraId)
+            if (app.throwback.BuildConfig.DEBUG) Log.d(TAG, "camera $cameraId in use")
+        }
+
+        override fun onCameraAvailable(cameraId: String) {
+            camerasInUse.remove(cameraId)
+            if (app.throwback.BuildConfig.DEBUG) Log.d(TAG, "camera $cameraId free")
+        }
+    }
+
+    private fun watchCameras(on: Boolean) {
+        val cm = getSystemService(android.hardware.camera2.CameraManager::class.java) ?: return
+        try {
+            if (on) cm.registerAvailabilityCallback(cameraCallback, android.os.Handler(android.os.Looper.getMainLooper()))
+            else cm.unregisterAvailabilityCallback(cameraCallback)
+        } catch (e: RuntimeException) {
+            Log.w(TAG, "camera watch unavailable: ${e.javaClass.simpleName}")
+        }
+    }
 
 }

@@ -85,7 +85,11 @@ internal object GuardPolicy {
  */
 internal object GuardPass {
     /** CREATE: posting from the Instagram app ("+" / "Your story"), only its creation screens. */
-    enum class Kind { CALL, VISIT, CREATE, SETTINGS }
+    enum class Kind { CALL, VISIT, CREATE, SETTINGS, STORY }
+
+    /** STORY: since when the camera has been off (editing), or null while it's on. */
+    @Volatile
+    var cameraOffSince: Long? = null
 
     /** SETTINGS: time spent on the app's screens other than its settings (capped, see GuardService). */
     @Volatile
@@ -111,6 +115,7 @@ internal object GuardPass {
     fun grant(now: Long, durationMs: Long, kind: Kind) {
         grantedAt = now
         outsideMillis = 0L
+        cameraOffSince = null
         allowUntil = now + durationMs
         this.kind = kind
         sawInstagram = false
@@ -151,6 +156,19 @@ internal object PassRules {
     )
 
     fun partOfInstagramFlow(pkg: String, extra: Set<String> = emptySet()): Boolean = pkg in FLOW_PACKAGES || pkg in extra
+
+    /**
+     * Story pass (owner, 2026-11-20): Instagram's story camera and editor share its main screen with
+     * the feed, so the phone's camera tells them apart. While the camera is on: allowed. Once it is
+     * off (editing a photo, or the feed): [editMillis] more. The first [openMillis] after the tap
+     * count as opening. Returns false when the pass should end.
+     */
+    fun storyPassHolds(cameraOn: Boolean, now: Long, grantedAt: Long, cameraOffSince: Long?, openMillis: Long, editMillis: Long): Boolean = when {
+        cameraOn -> true
+        now - grantedAt < openMillis -> true
+        cameraOffSince == null -> true
+        else -> now - cameraOffSince <= editMillis
+    }
 
     /** Instagram's own redirects while the create screen opens. */
     const val CREATE_GRACE_MS = 3_000L

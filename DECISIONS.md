@@ -20,6 +20,13 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
    the mockup are Beer / Rock show / GTA 6. Beer and GTA 6 have original icons; Rock show uses a prism
    image supplied by the owner (source and licence to confirm before release). Before the Play
    release, recheck using third-party names as product names.
+4b. **Support screen: design A "list rows"** (owner, 2026-11-20; mockups row 5): one row per tip with
+    the existing icons, a one-liner and the price: Beer **$3** ("A cold one, on you"), Rock show **$10**
+    ("Toward a gig ticket"), GTA 6 **$25** ("Toward the next big game"), and **"Whatever you want"**
+    ($50 / $100 / $200: Play needs fixed prices). India priced by hand (₹99 / ₹299 / ₹799 suggested).
+    Prices shown from Google Play in the user's currency. Fine print "Paid through Google Play", then
+    "How tips work" and "Report something Throwback missed". Renaming "GTA 6" and the prism image stay
+    on the release list.
 4a. **Rating ask** (owner, 2026-11-20): once, through Google Play's own in-app review card, at the
     moment "You're all caught up" shows, once the app is at least 7 days old and was used on 5
     different days. Play decides whether the card actually appears; no "do you like it?" pre-question

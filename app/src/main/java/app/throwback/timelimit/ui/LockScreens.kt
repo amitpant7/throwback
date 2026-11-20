@@ -1,5 +1,7 @@
 package app.throwback.timelimit.ui
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.clickable
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
@@ -40,7 +42,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -111,7 +112,13 @@ internal fun LockOverlay(
         modifier
             .fillMaxSize()
             .background(ThrowbackTheme.colors.bg)
-            .swallowTouches()
+            .clickable(
+                // Takes the touches that reach the overlay so nothing below it gets touched. A plain
+                // click handler: consuming every pointer event (as before) also consumed a finger's
+                // small movements and cancelled taps on the lock screen's own buttons.
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) {}
             .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
         when {
@@ -141,14 +148,6 @@ internal fun LockOverlay(
     }
 }
 
-/** Consumes every pointer event that reaches the overlay, so nothing below it gets touched. */
-private fun Modifier.swallowTouches(): Modifier = pointerInput(Unit) {
-    awaitPointerEventScope {
-        while (true) {
-            awaitPointerEvent().changes.forEach { it.consume() }
-        }
-    }
-}
 
 // ---- Mockup 8: time's up, 5-minute wait ---------------------------------------------------
 

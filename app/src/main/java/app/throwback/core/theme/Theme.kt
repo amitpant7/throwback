@@ -1,5 +1,9 @@
 package app.throwback.core.theme
 
+import android.content.Context
+import android.content.ContextWrapper
+import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
@@ -8,8 +12,10 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -112,7 +118,30 @@ fun ThrowbackTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composa
             outline = c.line,
         )
     }
+    SystemBarsFollowDarkMode(darkTheme)
     CompositionLocalProvider(LocalThrowbackColors provides c) {
         MaterialTheme(colorScheme = scheme, typography = ThrowbackTypography, content = content)
     }
+}
+
+/**
+ * Status and navigation bar icons (and, before Android 10, the navigation bar scrim) for dark mode.
+ * MainActivity sets the bars up once with enableEdgeToEdge(), but the activity handles dark-mode
+ * changes itself (configChanges uiMode), so a switch while the app runs kept the old icon colours.
+ * Setting up again reads the new configuration. The bars stay transparent: Throwback's screens and
+ * the Instagram page (which paints its own background behind them) show through. Nothing to do
+ * outside an activity (the guard's overlay window).
+ */
+@Composable
+private fun SystemBarsFollowDarkMode(darkTheme: Boolean) {
+    val view = LocalView.current
+    if (view.isInEditMode) return
+    val activity = view.context.findActivity() ?: return
+    LaunchedEffect(activity, darkTheme) { activity.enableEdgeToEdge() }
+}
+
+private tailrec fun Context.findActivity(): ComponentActivity? = when (this) {
+    is ComponentActivity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

@@ -147,7 +147,8 @@ object RulesValidator {
                 check(st.openSeconds in 3..30) { "appCreate.story.openSeconds out of range" }
                 check(st.cooldownMinutes in 0..240) { "appCreate.story.cooldownMinutes out of range" }
                 check(st.perDay in 0..20) { "appCreate.story.perDay out of range" }
-                pattern(st.postingChannels, "appCreate.story.postingChannels")
+                // Any notification on a matching channel counts as "posted" (the pass is forgiven).
+                checkNarrow(st.postingChannels, "appCreate.story.postingChannels", "notification channel", errors)
             }
         }
         rules.nav?.let { n ->
@@ -215,9 +216,13 @@ object RulesValidator {
      * Instagram app screens a pass allows (regex on the activity class). One that matches the empty
      * string (blank, ".*", "x?") matches every screen, so the pass would never hold anything back.
      */
-    private fun checkScreens(screens: String, where: String, errors: MutableList<String>) {
-        val regex = RulePatterns.check(screens, where, errors) ?: return
-        if (regex.containsMatchIn("")) errors += "$where: matches every screen"
+    private fun checkScreens(screens: String, where: String, errors: MutableList<String>) =
+        checkNarrow(screens, where, "screen", errors)
+
+    /** A valid pattern that doesn't match the empty string (which would match every [what]). */
+    private fun checkNarrow(pattern: String, where: String, what: String, errors: MutableList<String>) {
+        val regex = RulePatterns.check(pattern, where, errors) ?: return
+        if (regex.containsMatchIn("")) errors += "$where: matches every $what"
     }
 
     /** Apps a pass may pass through: package names, never Instagram's own (a pass can't extend itself). */

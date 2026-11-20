@@ -242,6 +242,14 @@ class RulesParserTest {
     }
 
     @Test
+    fun `posting channel patterns that match every channel are rejected`() {
+        listOf(".*", "x?", "(a|)").forEach { blank ->
+            val edited = TestRules.bundledWith { it.replace("\"postingChannels\": \"^(uploads|ig_posting_status)$\"", "\"postingChannels\": \"$blank\"") }
+            assertRejected(edited, "appCreate.story.postingChannels: matches every notification channel")
+        }
+    }
+
+    @Test
     fun `flow packages are package names, never Instagram's own`() {
         val create = "\"flowPackages\": [\"com.samsung.android.permissioncontroller\","
         assertRejected(TestRules.bundledWith { it.replace(create, "\"flowPackages\": [\"com.instagram.android\",") }, "is Instagram itself")

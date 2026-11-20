@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "version": 1,
+  "updated": "2026-11-20",
+  "note": "Starter file. The web agent owns this schema and fills in the real rules. Installed apps fetch this file from GitHub at most once a day.",
+  "homeUrl": "https://www.instagram.com/?variant=following",
+  "blockedPathPrefixes": ["/reels/", "/reel/", "/explore/"],
+  "messagesOnlyAllowedPathPrefixes": ["/direct/"],
+  "hideSelectors": [],
+  "hideIfContainsText": []
+}

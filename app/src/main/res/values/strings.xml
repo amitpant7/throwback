@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shared strings (integration). Feature agents use strings_web.xml / strings_timelimit.xml / strings_ui.xml. -->
+<resources>
+    <string name="app_name">Throwback</string>
+    <string name="open_settings">Open Throwback settings</string>
+</resources>

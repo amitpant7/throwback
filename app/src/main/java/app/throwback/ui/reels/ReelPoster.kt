@@ -2,18 +2,19 @@ package app.throwback.ui.reels
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -24,14 +25,14 @@ import androidx.compose.ui.unit.sp
 import app.throwback.R
 import app.throwback.core.theme.Nunito
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.ui.common.PrimaryButton
 import app.throwback.ui.common.UiText
 
 /**
  * Full-screen poster after the reel allowance in Instagram's swipe viewer. A first, plain version;
  * the designed poster (and its animated version) replaces this. The page has already closed
- * Instagram's reel viewer underneath, so Back and the button just dismiss the poster. Touches never
- * reach the page underneath.
+ * Instagram's reel viewer underneath, so system Back (or the back swipe) just dismisses the poster.
+ * No button: Instagram's reel viewer has none either (owner's decision). Touches never reach the
+ * page underneath.
  */
 @Composable
 internal fun ReelPosterContent(onBack: () -> Unit) {
@@ -41,11 +42,9 @@ internal fun ReelPosterContent(onBack: () -> Unit) {
         Modifier
             .fillMaxSize()
             .background(colors.bg)
-            .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) awaitPointerEvent().changes.forEach { it.consume() }
-                }
-            }
+            // Takes the touches so they don't reach the page underneath. A plain click handler, not a
+            // consume-everything pointer filter: that cancelled taps on children (a finger always moves).
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
             .safeDrawingPadding()
             .padding(horizontal = 28.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.Center,
@@ -74,8 +73,8 @@ internal fun ReelPosterContent(onBack: () -> Unit) {
             color = colors.accentText,
         )
         Spacer(Modifier.height(40.dp))
-        PrimaryButton(stringResource(R.string.ui_reel_poster_back), onClick = onBack, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(12.dp))
         Text(stringResource(R.string.ui_reel_poster_rule), style = UiText.body14, color = colors.muted)
+        Spacer(Modifier.height(6.dp))
+        Text(stringResource(R.string.ui_reel_poster_hint), style = UiText.body14Strong, color = colors.muted)
     }
 }

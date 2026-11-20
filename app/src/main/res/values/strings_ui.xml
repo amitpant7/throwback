@@ -186,6 +186,6 @@
     <string name="ui_reel_poster_go">Go goooooo…</string>
     <string name="ui_reel_poster_ideas">Maybe go out.\nObserve things.\nCall a friend.\nListen to music.\nPlay an instrument.</string>
     <string name="ui_reel_poster_bored">Or just get bored.</string>
-    <string name="ui_reel_poster_back">Back to chat</string>
     <string name="ui_reel_poster_rule">A reel someone sends you, plus a few more. That\'s the deal.</string>
+    <string name="ui_reel_poster_hint">Swipe back to return to your chat.</string>
 </resources>

@@ -3,6 +3,8 @@ package app.throwback.core
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,7 +30,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -240,7 +241,7 @@ private fun MainScreen(
         if (reelPoster && !lockShowing) {
             // The page has already closed Instagram's reel viewer: the poster just goes away.
             ReelPoster(onBack = {
-                Log.d("ThrowbackApp", "reel poster dismissed")
+                Log.d("ThrowbackApp", "reel poster dismissed (Back)")
                 reelPoster = false
             })
         }
@@ -257,11 +258,12 @@ private fun MainScreen(
         if (pauseShowing) {
             // Taps on the pause's empty areas must not reach the page loading underneath.
             Box(
-                Modifier.fillMaxSize().pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) awaitPointerEvent().changes.forEach { it.consume() }
-                    }
-                },
+                // A plain click handler takes the touches; a consume-everything filter cancelled taps
+                // on the pause's own buttons (a finger always moves a little).
+                Modifier.fillMaxSize().clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) {},
             ) {
                 MindfulPauseScreen(onContinue = { pauseDone = true }, onNotNow = onCloseApp)
             }

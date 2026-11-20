@@ -45,7 +45,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.ui.UiPrefs
@@ -232,12 +231,12 @@ private fun InstagramFoundScreen(onKeep: () -> Unit, onRemove: () -> Unit, onLat
     }
 }
 
-/** 64dp app tile with a "!" badge at its top-right corner. */
+/** 64dp app tile with a "!" badge at its top-right corner; one image for TalkBack (not "…, !"). */
 @Composable
 private fun FoundIcon() {
     val colors = ThrowbackTheme.colors
     val description = stringResource(R.string.ui_found_icon_description)
-    Box(Modifier.size(64.dp).semantics { contentDescription = description }) {
+    Box(Modifier.size(64.dp).clearAndSetSemantics { contentDescription = description }) {
         Box(
             Modifier.size(64.dp).clip(RoundedCornerShape(18.dp)).background(colors.surface2),
             contentAlignment = Alignment.Center,
@@ -251,7 +250,7 @@ private fun FoundIcon() {
                 .background(colors.accent),
             contentAlignment = Alignment.Center,
         ) {
-            Text("!", color = colors.onAccent, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
+            Text("!", style = UiText.row.copy(fontWeight = FontWeight.ExtraBold), color = colors.onAccent)
         }
     }
 }

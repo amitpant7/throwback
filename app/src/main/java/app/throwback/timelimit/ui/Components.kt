@@ -294,11 +294,16 @@ internal fun TlButton(
 
 /** A line that screen readers announce when it changes (errors, confirmations). */
 @Composable
-internal fun AnnouncedText(text: String, modifier: Modifier = Modifier, style: TextStyle = MaterialTheme.typography.bodyMedium) {
+internal fun AnnouncedText(
+    text: String,
+    modifier: Modifier = Modifier,
+    style: TextStyle = MaterialTheme.typography.bodyMedium,
+    color: Color = ThrowbackTheme.colors.text,
+) {
     Text(
         text,
         style = style,
-        color = ThrowbackTheme.colors.text,
+        color = color,
         textAlign = TextAlign.Center,
         modifier = modifier.semantics { liveRegion = LiveRegionMode.Polite },
     )

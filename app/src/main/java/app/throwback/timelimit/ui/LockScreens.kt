@@ -336,7 +336,8 @@ private fun GrantedScreen(view: TimeLimitView, onContinue: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         AnnouncedText(
             leftText + "\n" + stringResource(R.string.tl_granted_lock_again),
-            style = leadStyle().copy(color = c.muted),
+            style = leadStyle(),
+            color = c.muted,
         )
         Spacer(Modifier.weight(1f))
         Spacer(Modifier.height(24.dp))

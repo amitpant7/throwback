@@ -13,14 +13,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.ui.UiPrefs
@@ -33,12 +31,16 @@ import app.throwback.ui.common.TbCard
 import app.throwback.ui.common.TopBar
 import app.throwback.ui.common.UiText
 
-/** Settings home. No filter toggles anywhere: the filters are always on (DECISIONS.md #14). */
-@Composable
-internal fun SettingsHomeScreen(prefs: UiPrefs, onBack: () -> Unit, onOpen: (SettingsRoute) -> Unit) {
-    val mindfulPause by prefs.mindfulPause.collectAsStateWithLifecycle(initialValue = false)
-    val messagesDone by prefs.messagesSetupDone.collectAsStateWithLifecycle(initialValue = false)
+/** The saved settings Settings home shows: the pause switch and the Instagram row's value. */
+internal data class HomeValues(val mindfulPause: Boolean, val instagramConnected: Boolean)
 
+/**
+ * Settings home. No filter toggles anywhere: the filters are always on (DECISIONS.md #14).
+ * [values] are read by SettingsRoot, so they are right from the first frame (no switch animating from
+ * a default, no "Set up" flashing before "Connected").
+ */
+@Composable
+internal fun SettingsHomeScreen(values: HomeValues, prefs: UiPrefs, onBack: () -> Unit, onOpen: (SettingsRoute) -> Unit) {
     Column(Modifier.fillMaxSize()) {
         TopBar(stringResource(R.string.ui_settings_title), onBack = onBack)
         Column(
@@ -56,7 +58,7 @@ internal fun SettingsHomeScreen(prefs: UiPrefs, onBack: () -> Unit, onOpen: (Set
                     icon = R.drawable.ui_ic_camera_app,
                     title = stringResource(R.string.ui_messages_title),
                     subtitle = stringResource(R.string.ui_messages_sub),
-                    value = stringResource(if (messagesDone) R.string.ui_messages_value_on else R.string.ui_messages_value_setup),
+                    value = stringResource(if (values.instagramConnected) R.string.ui_messages_value_on else R.string.ui_messages_value_setup),
                     onClick = { onOpen(SettingsRoute.Messages) },
                 )
             }
@@ -81,7 +83,7 @@ internal fun SettingsHomeScreen(prefs: UiPrefs, onBack: () -> Unit, onOpen: (Set
                     icon = R.drawable.ui_ic_pause,
                     title = stringResource(R.string.ui_pause_title),
                     subtitle = stringResource(R.string.ui_pause_sub),
-                    checked = mindfulPause,
+                    checked = values.mindfulPause,
                     onCheckedChange = { on -> prefs.write { setMindfulPause(on) } },
                 )
             }

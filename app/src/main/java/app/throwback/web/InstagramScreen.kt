@@ -102,7 +102,7 @@ fun InstagramScreen(
     val context = LocalContext.current
     val repository = remember { RulesRepository.get(context) }
     val rules by repository.rules.collectAsStateWithLifecycle()
-    // Usually already in memory (warmed up at app start): then the WebView is created and starts
+    // Usually already in memory (MainActivity reads it as it starts): then the WebView is created and starts
     // loading in this first composition instead of a frame later (~300 ms sooner on a cold start).
     var assets by remember { mutableStateOf(PageAssets.loadedOrNull()) }
     LaunchedEffect(Unit) {

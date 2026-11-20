@@ -18,7 +18,7 @@ internal class PageAssets(val template: String, val css: String) {
         @Volatile
         private var cached: PageAssets? = null
 
-        /** Already loaded (warmed up at app start), or null. */
+        /** Already loaded (MainActivity reads it as it starts), or null. */
         fun loadedOrNull(): PageAssets? = cached
 
         suspend fun load(context: Context): PageAssets = cached ?: withContext(Dispatchers.IO) {

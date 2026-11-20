@@ -44,6 +44,7 @@ object TimeLimitModule {
 /**
  * Full-screen lock UI drawn over the Instagram screen. Draws nothing unless the state is Locked.
  * Handles the 5-minute wait, PIN entry, +5 minutes, locked-until-midnight and forgot-PIN screens.
+ * [backEnabled] false leaves system Back alone (while Settings covers the lock).
  */
 @Composable
 fun TimeLimitOverlay(
@@ -51,9 +52,10 @@ fun TimeLimitOverlay(
     onOpenMessagesOnly: () -> Unit,
     onCloseApp: () -> Unit,
     modifier: Modifier = Modifier,
+    backEnabled: Boolean = true,
 ) {
     val impl = controller as? DefaultTimeLimitController ?: return
-    LockOverlay(impl, onOpenMessagesOnly, onCloseApp, modifier)
+    LockOverlay(impl, onOpenMessagesOnly, onCloseApp, modifier, backEnabled)
 }
 
 /** Small "18 min left" chip. Draws nothing when the limit is disabled. */

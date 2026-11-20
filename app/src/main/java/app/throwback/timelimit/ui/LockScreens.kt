@@ -68,7 +68,8 @@ private enum class LockPage { Main, Pin, Reset }
 /**
  * Full-screen lock over Instagram: the 5-minute wait (mockup 8), PIN for +5 minutes (9),
  * locked until midnight (10) and the forgot-PIN countdown (12). Draws nothing unless locked, and
- * swallows every touch so the WebView underneath can't be used.
+ * swallows every touch so the WebView underneath can't be used. [backEnabled] false leaves system
+ * Back to the screen on top (Settings).
  */
 @Composable
 internal fun LockOverlay(
@@ -76,6 +77,7 @@ internal fun LockOverlay(
     onOpenMessagesOnly: () -> Unit,
     onCloseApp: () -> Unit,
     modifier: Modifier = Modifier,
+    backEnabled: Boolean = true,
 ) {
     val view by controller.view.collectAsStateWithLifecycle()
     val phase = view.lock
@@ -100,7 +102,8 @@ internal fun LockOverlay(
         }
     }
     // Back leaves a sub-page; on the main lock screen it closes Throwback rather than reaching the WebView.
-    BackHandler {
+    // Off under Settings: the lock can engage while Settings is open, and the handler added last wins.
+    BackHandler(enabled = backEnabled) {
         when {
             phase is LockPhase.Granted -> controller.acknowledgeExtension()
             page == LockPage.Main -> onCloseApp()

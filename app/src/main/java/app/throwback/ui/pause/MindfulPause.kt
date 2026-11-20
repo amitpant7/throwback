@@ -60,7 +60,7 @@ internal object PauseTiming {
 
 /** See UiApi.MindfulPauseScreen. */
 @Composable
-internal fun MindfulPauseContent(onContinue: () -> Unit, onNotNow: () -> Unit) {
+internal fun MindfulPauseContent(onContinue: () -> Unit, onBack: () -> Unit, backEnabled: Boolean = true) {
     val colors = ThrowbackTheme.colors
     val lines = stringArrayResource(R.array.ui_pause_lines)
     val context = LocalContext.current
@@ -127,7 +127,7 @@ internal fun MindfulPauseContent(onContinue: () -> Unit, onNotNow: () -> Unit) {
         }
     }
     // No buttons (owner): the pause just runs; the phone's Back still leaves.
-    BackHandler { onNotNow() }
+    BackHandler(enabled = backEnabled, onBack = onBack)
 }
 
 /**

@@ -35,9 +35,9 @@ import app.throwback.ui.common.UiText
  * page underneath.
  */
 @Composable
-internal fun ReelPosterContent(onBack: () -> Unit) {
+internal fun ReelPosterContent(onBack: () -> Unit, backEnabled: Boolean = true) {
     val colors = ThrowbackTheme.colors
-    BackHandler(onBack = onBack)
+    BackHandler(enabled = backEnabled, onBack = onBack)
     Column(
         Modifier
             .fillMaxSize()

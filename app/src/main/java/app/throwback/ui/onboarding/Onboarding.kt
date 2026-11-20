@@ -79,12 +79,12 @@ internal suspend fun shouldOfferInstagramPrompt(context: Context): Boolean =
 
 /** The "You still have the Instagram app" choice, shown once after the first login. */
 @Composable
-internal fun InstagramAppPromptContent(onOpenMessagesSetup: () -> Unit, onDone: () -> Unit) {
+internal fun InstagramAppPromptContent(onOpenMessagesSetup: () -> Unit, onDone: () -> Unit, backEnabled: Boolean = true) {
     val context = LocalContext.current
     val prefs = remember { UiPrefs.from(context) }
     val found = remember { InstagramApp.installedPackage(context) }
     LaunchedEffect(Unit) { prefs.write { setInstagramPromptShown() } }
-    BackHandler(onBack = onDone)
+    BackHandler(enabled = backEnabled, onBack = onDone)
     InstagramFoundScreen(
         onKeep = onOpenMessagesSetup,
         onRemove = {

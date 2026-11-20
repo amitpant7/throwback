@@ -189,6 +189,9 @@ private fun MainScreen(
     // null while loading, so the feed never flashes for a frame before the pause screen.
     val mindfulPause by app.uiPreferences.mindfulPause.collectAsStateWithLifecycle(initialValue = null)
     var pauseDone by rememberSaveable { mutableStateOf(false) }
+    // Opening Settings ends the pause for this launch. It's a pause before Instagram: opened straight
+    // into Settings (the "Throwback settings" shortcut, a notification), it would only run unseen.
+    var pauseSkipped by rememberSaveable { mutableStateOf(false) }
     var mode by rememberSaveable { mutableStateOf(WebMode.FULL) }
     var path by remember { mutableStateOf("/") }
     val loggedIn by InstagramSession.loggedIn.collectAsStateWithLifecycle()
@@ -214,6 +217,7 @@ private fun MainScreen(
     }
     LaunchedEffect(settingsOpen) {
         if (settingsOpen) {
+            pauseSkipped = true
             markSettingsHintShown(context)
             settingsHint = false
         }
@@ -244,7 +248,7 @@ private fun MainScreen(
             pauseOverdue = true
         }
     }
-    val pauseShowing = mindfulPause == true && !(pauseDone && (pageShown || pauseOverdue)) && deepLink == null
+    val pauseShowing = mindfulPause == true && !pauseSkipped && !(pauseDone && (pageShown || pauseOverdue)) && deepLink == null
     val onInstagram = mindfulPause != null && !pauseShowing && !settingsOpen
     var resumed by remember { mutableStateOf(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { resumed = true }
@@ -336,13 +340,16 @@ private fun MainScreen(
             )
         }
 
-        if (offerInstagramPrompt && !lockShowing && !pauseShowing) {
+        // The layers below Settings leave system Back to it (backEnabled): Android gives Back to the
+        // handler added last, and a layer can appear while Settings is open (the lock engaging).
+        if (offerInstagramPrompt && !lockShowing && !pauseShowing && !settingsOpen) {
             InstagramAppPrompt(
                 onOpenMessagesSetup = {
                     offerInstagramPrompt = false
                     onOpenMessagesSetup()
                 },
                 onDone = { offerInstagramPrompt = false },
+                backEnabled = !settingsOpen && !lockShowing,
             )
         }
 
@@ -360,7 +367,7 @@ private fun MainScreen(
 
         if (reelPoster && !lockShowing) {
             // The page has already closed Instagram's reel viewer: the poster just goes away.
-            ReelPoster(onBack = { reelPoster = false })
+            ReelPoster(onBack = { reelPoster = false }, backEnabled = !settingsOpen && !lockShowing)
         }
 
         if (lockShowing) {
@@ -368,6 +375,7 @@ private fun MainScreen(
                 controller = timeLimit,
                 onOpenMessagesOnly = { mode = WebMode.MESSAGES_ONLY },
                 onCloseApp = onCloseApp,
+                backEnabled = !settingsOpen,
             )
         }
 
@@ -382,7 +390,7 @@ private fun MainScreen(
                     indication = null,
                 ) {},
             ) {
-                MindfulPauseScreen(onContinue = { pauseDone = true }, onNotNow = onCloseApp)
+                MindfulPauseScreen(onContinue = { pauseDone = true }, onBack = onCloseApp, backEnabled = !settingsOpen)
             }
         }
     }

@@ -35,7 +35,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 4c. **Support ask** (owner, 2026-11-20, design C with boxes): in "You're all caught up", after 1 month
     of use, then every 2 months, never once the user has tipped: "Your first month" (later "Your last 2
     months"), two minimal boxes with the ads and suggested posts removed since the last ask, and
-    "Say thanks →" (opens Support). Skipped when fewer than 20 were removed.
+    "Say thanks →" (opens Support). Skipped when fewer than 20 were removed. The card can be built
+    while still screens away; the support line and the rating ask (#4a) wait until it is on screen.
 5. **Privacy:** no analytics, no accounts, no server. Nothing leaves the phone except traffic to
    Instagram itself and a daily fetch of the public filter rules.
 6. **Disclaimer:** "Not affiliated with Instagram or Meta" on the store listing and the About screen.
@@ -61,7 +62,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 13i. **Explore, 5 minutes a day** (decided 2026-11-20): the Explore grid on the Search tab shows for
     5 minutes a day of time actually on that tab (rules `explore.dailySeconds`), then it is hidden
     as before and "Enough for today… Your time is yours. Keep it. Go have an argument with your sibling instead." shows in its
-    place until midnight. Search keeps working. Stored on the device per day. **Design B** (owner,
+    place until midnight. Search keeps working, and typing a search doesn't use the minutes (they
+    count on the grid pages and in the reel player). Stored on the device per day. **Design B** (owner,
     2026-11-20): a calm scene above the lines, one picked at random each time from five drawn scenes
     (sunset hills, misty lake, moonlit sea, aurora, dunes) plus photos listed in rules
     `explore.images`, which must be served from Throwback's own GitHub repo (CC0 or own art).
@@ -103,13 +105,17 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     you could cheat…? Nahhh…"). No button (Instagram's reel viewer has none either): Back or the back
     swipe removes the poster, leaving you in the chat. After a poster, no free swipes for an hour
     (each new poster restarts the hour), stored on the device so a restart doesn't reset it. The
-    poster's final design and an animated version with licensed music are in design.
+    poster's final design and an animated version with licensed music are in design. Counted in
+    chats only (2026-11-20 review: other video plays skip the check).
 13g. **Stories** (decided 2026-11-20): story ads are removed from Instagram's data (key
     `xdt_injected_story_units`). Look-ahead to avoid the dark screen between stories: the first
     400 KB (plus a little audio) of the next 5 story videos (owner: 5 is the sweet spot) are kept in memory and handed to the
     player; photo stories ahead go to the browser's disk cache. The current story comes from the
     address (/stories/<user>/<id>/). Memory stays under ~3 MB and is cleared on leaving stories;
     off with Data Saver; no extra logged-in requests; nothing is marked seen (rules `stories`).
+    Each piece is handed over from memory once (2026-11-20): Instagram's player can ask for the same
+    piece again and again, and answered from memory at once that froze the page; a repeat ask goes
+    to the network. The same applies to the feed's video look-ahead (#13h).
 13h. **Feed loading** (decided 2026-11-20): Instagram's feed request asks for 12 entries (`first`);
     after filtering ~2-4 real posts remain per batch, ~3 s per batch, and Instagram already requests
     the next batch the moment one arrives (measured), so supply is set by its server, not by
@@ -123,7 +129,11 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     the phone's since-boot stopwatch plus the last trusted time, and the time zone saved with it. A
     new time zone counts only from the next midnight, and a new day needs at least 23 h of real time
     after the last one began, so switching to a zone where it's already tomorrow gives nothing. The
-    page never goes back a day. Still open: clock forward + reboot (the stopwatch restarts at boot).
+    page never goes back a day. The page anchors the app's clock on its own monotonic clock and only
+    uses a fresh one (read less than 10 minutes before); without one the day doesn't move on, so
+    changing the phone's date while the page is open changes nothing (2026-11-20 review). Clock
+    forward + reboot: on Android 13+ network time is preferred and, after a reboot without it, the
+    trusted time continues from the last one (closed there); below Android 13 it remains open.
 14. **No toggles.** Throwback is minimal; there is no setting to bring distractions back.
     Settings shows a read-only "Throwback removes" list.
 15. Video captions and descriptions must never be hidden (a known complaint about a competitor).
@@ -168,27 +178,33 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     "Open Instagram for 5 minutes": once a day, not while the daily limit is reached, and the pass ends
     as soon as the user leaves Instagram (no saving it for later). The chat's 📞 button: a 30-second
     pass, at most 3 taps an hour; it ends once the call is running (the call itself then keeps
-    Instagram allowed, and call audio during that pass counts as an Instagram call).
+    Instagram allowed). Call audio counts as an Instagram call only after an Instagram call
+    notification, or when it starts while Instagram is in front (2026-11-20 review: any phone call
+    used to count). All passes are counted on the time limit's trusted clock, so changing the
+    phone's date or time zone gives no extra passes (2026-11-20 review).
     Explore's 5 minutes also cover hashtag, place and keyword-result grids (every page under /explore/).
 27b. **Turning the guard off follows the time-limit rule** (owner, 2026-11-20): while a daily limit
     is on, "Disconnect the Instagram app" needs the PIN and takes effect the next day ("Keep it on"
     cancels it). Without a limit it is immediate (there is no PIN). If the limit itself is turned
     off, a scheduled guard turn-off becomes due with it. Not preventable in-app: force-stopping
-    Throwback or revoking its permissions in Android settings (to look at: count the real app's time
-    against the limit when Throwback next runs).
+    Throwback or revoking its permissions in Android settings. Since 2026-11-20, the real app's time
+    while the guard was stopped is counted against the daily limit when Throwback next runs, and a
+    notification says when the guard is off and can't restart itself.
 27c. **Posting through the Instagram app** (owner, 2026-11-20): with the app connected, "+" and
     "Your story" in Throwback open the app's create screen (link `instagram://share`, its better
     editor: music, filters, reels). The guard then follows the app's *screen*, not just the app: it
     allows only creation screens (activity class `instagram.features.creation.*`, rules `appCreate`),
-    with 3 s of grace while it opens and at most 30 minutes. Any other screen (the feed after
-    posting, Reels) ends the pass and the guard brings the user back. Calls work as before.
+    with 3 s of grace while it opens and at most 20 minutes, 10 a day, not while the daily limit is
+    reached (2026-11-20 review). Any other screen (the feed after posting, Reels) ends the pass and the
+    guard brings the user back. Calls work as before.
 27d. **Name and place** (owner, 2026-11-20): Settings section **"Connect"** (first, above Focus), row
     **"Instagram · Calls, message alerts, posting · Connected"**; screen title "Instagram", setup
     "Connect Instagram", turn-off "Disconnect Instagram".
 27e. **Instagram app settings** (owner, 2026-11-20): with Instagram connected, a row at the very end
     of Instagram's settings page, "Open settings in the Instagram app", opens the app's Settings and
-    activity (`instagram://settings`). Settings screens (`com.instagram.urlhandlers.settings.*`): no
-    time limit. Instagram's main screen (the feed; Back out of settings lands there, and Accounts Center opens there too) is never allowed during this pass (owner, 2026-11-20: Back to the feed was a loophole); Accounts Center is on Instagram's website.
+    activity (`instagram://settings`). Settings screens (`com.instagram.urlhandlers.settings.*`): at
+    most 10 minutes, 5 a day, not while the daily limit is reached (2026-11-20 review: Saved and
+    Archive live inside that screen). Instagram's main screen (the feed; Back out of settings lands there, and Accounts Center opens there too) is never allowed during this pass (owner, 2026-11-20: Back to the feed was a loophole); Accounts Center is on Instagram's website.
     Leaving Instagram ends the pass (pickers and Chrome's in-app pages excepted). Rules `appSettings`.
 27f. **"Your story" through the Instagram app** (owner, 2026-11-20): Instagram's story camera, gallery
     and editor share the app's main screen with the feed, and its story link lands on the feed. So
@@ -200,8 +216,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     editor (its own screen, no time window). **Wait between story passes: 30 minutes** (rules
     `cooldownMinutes`), at most 3 a day (`perDay`); meanwhile "Your story" uses Instagram's website story
     upload in Throwback. A pass that ended with a post (Instagram's posting notification) starts no wait
-    and doesn't count (owner: a real upload means no cheating); neither does one left within 3 minutes
-    (`freeLeaveMinutes`: a change of mind).
+    and doesn't count (owner: a real upload means no cheating). One left early counts nothing only if
+    at most 30 seconds of it were spent outside the camera (a change of mind), and even then a
+    10-minute wait follows (2026-11-20 review: leaving within 3 minutes allowed endless 3-minute
+    visits to the whole app).
 29. **Instagram app found:** after first login, if the Instagram app is installed, Throwback offers
     "Keep it for calls & messages", "Remove it" (opens Android Settings) or "Decide later".
 

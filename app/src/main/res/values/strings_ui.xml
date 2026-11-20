@@ -69,7 +69,7 @@
     <string name="ui_wizard_step">Step %1$d of %2$d</string>
 
     <string name="ui_install_title">Get message and call alerts</string>
-    <string name="ui_install_body">Instagram only sends notifications to its own app. So the real app stays on your phone, hidden, and Throwback keeps you out of it.</string>
+    <string name="ui_install_body">Instagram only sends notifications to its own app. So the real app stays on your phone, and Throwback keeps you out of it.</string>
     <string name="ui_install_point_messages">Message alerts open in Throwback</string>
     <string name="ui_install_point_calls">Calls ring and you answer normally</string>
     <string name="ui_install_point_guard">Open the Instagram app outside a call and Throwback brings you back</string>
@@ -107,22 +107,6 @@
     <string name="ui_perm_allow_description">Allow %1$s</string>
     <string name="ui_perm_privacy">Throwback only looks at Instagram. Nothing is stored or sent anywhere.</string>
     <string name="ui_perm_preview_note">Preview: message and call alerts arrive in a later version. Until then, Throwback won\'t appear in the notification access list.</string>
-
-    <string name="ui_hide_title">Hide the Instagram icon</string>
-    <string name="ui_hide_body">Out of sight, out of mind. On your phone:</string>
-    <string name="ui_hide_your_phone">Your phone</string>
-    <string name="ui_hide_brand_samsung">Samsung</string>
-    <string name="ui_hide_steps_samsung">Home screen settings → Hide apps</string>
-    <string name="ui_hide_brand_oneplus">OnePlus / Oppo</string>
-    <string name="ui_hide_steps_oneplus">App drawer → swipe right → Hidden space</string>
-    <string name="ui_hide_brand_xiaomi">Xiaomi</string>
-    <string name="ui_hide_steps_xiaomi">Settings → Apps → Hide apps</string>
-    <string name="ui_hide_brand_other">Other phones</string>
-    <string name="ui_hide_steps_other">Move it into a folder on your last home page</string>
-    <string name="ui_hide_check_title">Check it works</string>
-    <string name="ui_hide_check_notification">Test notification</string>
-    <string name="ui_hide_check_guard">Open Instagram, get sent back</string>
-    <string name="ui_hide_check_later">Later version</string>
 
     <!-- 17 · Messages & calls settings -->
     <string name="ui_status_ready_title">Ready</string>

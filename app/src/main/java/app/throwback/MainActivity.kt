@@ -25,6 +25,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         deepLink.value = intent.instagramUrl()
+        // Test builds only: `adb shell am start -n app.throwback/.MainActivity --es debug_open settings`
+        // (or messages) opens Settings directly, so screens can be checked without an Instagram login.
+        val debugOpen = if (BuildConfig.DEBUG) intent.getStringExtra("debug_open") else null
         val app = application as ThrowbackApp
         setContent {
             ThrowbackTheme {
@@ -33,6 +36,7 @@ class MainActivity : ComponentActivity() {
                     deepLink = deepLink.value,
                     onCloseApp = { finish() },
                     onSplashHold = { holdSplash = it },
+                    debugOpen = debugOpen,
                 )
             }
         }

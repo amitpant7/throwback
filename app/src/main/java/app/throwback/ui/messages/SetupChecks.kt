@@ -92,27 +92,3 @@ internal object Permissions {
 
     fun canDrawOverlays(context: Context): Boolean = Settings.canDrawOverlays(context)
 }
-
-/** Launcher families with different "hide app" steps. Order is the order shown on screen. */
-internal enum class PhoneBrand { Samsung, OnePlusOppo, Xiaomi, Other }
-
-internal object HideIconInstructions {
-
-    /** Maps Build.MANUFACTURER (any case, may be blank) to a launcher family. */
-    fun brandFor(manufacturer: String?): PhoneBrand {
-        val m = manufacturer.orEmpty().trim().lowercase()
-        return when {
-            m.isEmpty() -> PhoneBrand.Other
-            m == "samsung" -> PhoneBrand.Samsung
-            m in setOf("oneplus", "oppo", "realme") -> PhoneBrand.OnePlusOppo
-            m in setOf("xiaomi", "redmi", "poco") -> PhoneBrand.Xiaomi
-            else -> PhoneBrand.Other
-        }
-    }
-
-    /** All brands, with this phone's brand first so its steps are the first thing the user reads. */
-    fun ordered(manufacturer: String?): List<PhoneBrand> {
-        val mine = brandFor(manufacturer)
-        return listOf(mine) + PhoneBrand.entries.filter { it != mine }
-    }
-}

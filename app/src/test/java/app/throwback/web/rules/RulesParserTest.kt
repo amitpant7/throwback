@@ -54,7 +54,7 @@ class RulesParserTest {
 
     @Test
     fun `version must be positive`() {
-        assertRejected(TestRules.bundledWith { it.replaceFirst("\"version\": 2026112001", "\"version\": 0") }, "version")
+        assertRejected(TestRules.bundledWith { it.replaceFirst(Regex("\"version\": \\d+"), "\"version\": 0") }, "version")
     }
 
     @Test

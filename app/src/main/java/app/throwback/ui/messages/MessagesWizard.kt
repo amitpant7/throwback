@@ -1,6 +1,5 @@
 package app.throwback.ui.messages
 
-import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -65,9 +64,9 @@ import app.throwback.ui.common.TopBar
 import app.throwback.ui.common.UiText
 import app.throwback.ui.common.rememberCheckedOnResume
 
-/** The four steps of the Messages & calls setup (DECISIONS.md #28). */
+/** The three steps of the Messages & calls setup (DECISIONS.md #28; the hide-icon step was dropped). */
 internal enum class WizardStep {
-    Install, Quiet, Permissions, Hide;
+    Install, Quiet, Permissions;
 
     val number: Int get() = ordinal + 1
     fun next(): WizardStep? = entries.getOrNull(ordinal + 1)
@@ -105,7 +104,6 @@ internal fun MessagesWizard(onExit: () -> Unit, onFinish: () -> Unit, showMessag
                 WizardStep.Install -> InstallStep(onNext = goNext, onNotNow = onExit, showMessage = showMessage)
                 WizardStep.Quiet -> QuietStep(onNext = goNext, showMessage = showMessage)
                 WizardStep.Permissions -> PermissionsStep(onNext = goNext, showMessage = showMessage)
-                WizardStep.Hide -> HideStep(onFinish = goNext)
             }
         }
     }
@@ -310,7 +308,7 @@ private fun PermissionsStep(onNext: () -> Unit, showMessage: (String) -> Unit) {
     StepLayout(
         step = WizardStep.Permissions,
         title = stringResource(R.string.ui_perm_title),
-        buttons = { PrimaryButton(stringResource(R.string.ui_next), onClick = onNext) },
+        buttons = { PrimaryButton(stringResource(R.string.ui_finish), onClick = onNext) },
     ) {
         Text(stringResource(R.string.ui_perm_body), style = UiText.lead, color = colors.muted)
         Spacer(Modifier.height(16.dp))
@@ -379,84 +377,5 @@ private fun PermissionRow(
                 accessibilityLabel = stringResource(R.string.ui_perm_allow_description, stringResource(title)),
             )
         }
-    }
-}
-
-// ---------------------------------------------------------------------------------- step 4
-
-@Composable
-private fun HideStep(onFinish: () -> Unit) {
-    val colors = ThrowbackTheme.colors
-    val brands = remember { HideIconInstructions.ordered(Build.MANUFACTURER) }
-    val detected = remember { HideIconInstructions.brandFor(Build.MANUFACTURER) }
-
-    StepLayout(
-        step = WizardStep.Hide,
-        title = stringResource(R.string.ui_hide_title),
-        buttons = { PrimaryButton(stringResource(R.string.ui_finish), onClick = onFinish) },
-    ) {
-        Text(stringResource(R.string.ui_hide_body), style = UiText.lead, color = colors.muted)
-        Spacer(Modifier.height(14.dp))
-        TbCard {
-            brands.forEachIndexed { index, brand ->
-                if (index > 0) CardDivider()
-                BrandRow(brand, isThisPhone = brand == detected && index == 0)
-            }
-        }
-        SectionLabel(stringResource(R.string.ui_hide_check_title))
-        TbCard {
-            CheckRow(R.string.ui_hide_check_notification)
-            CardDivider()
-            CheckRow(R.string.ui_hide_check_guard)
-        }
-        InfoNote(stringResource(R.string.ui_preview_note), Modifier.padding(top = 16.dp))
-    }
-}
-
-@Composable
-private fun BrandRow(brand: PhoneBrand, isThisPhone: Boolean) {
-    val colors = ThrowbackTheme.colors
-    val (name, steps) = when (brand) {
-        PhoneBrand.Samsung -> R.string.ui_hide_brand_samsung to R.string.ui_hide_steps_samsung
-        PhoneBrand.OnePlusOppo -> R.string.ui_hide_brand_oneplus to R.string.ui_hide_steps_oneplus
-        PhoneBrand.Xiaomi -> R.string.ui_hide_brand_xiaomi to R.string.ui_hide_steps_xiaomi
-        PhoneBrand.Other -> R.string.ui_hide_brand_other to R.string.ui_hide_steps_other
-    }
-    val nameText = stringResource(name)
-    val stepsText = stringResource(steps)
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
-        if (isThisPhone) {
-            Text(
-                stringResource(R.string.ui_hide_your_phone),
-                style = UiText.fine.copy(fontWeight = FontWeight.SemiBold),
-                color = colors.onAccent,
-                modifier = Modifier
-                    .padding(bottom = 6.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(colors.accent)
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
-            )
-        }
-        Text(
-            buildAnnotatedString {
-                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = colors.text)) { append(nameText) }
-                withStyle(SpanStyle(color = colors.muted)) { append(" · "); append(stepsText) }
-            },
-            style = UiText.body14,
-        )
-    }
-}
-
-@Composable
-private fun CheckRow(@StringRes label: Int) {
-    val colors = ThrowbackTheme.colors
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(stringResource(label), style = UiText.row15, color = colors.text, modifier = Modifier.weight(1f))
-        // The relay and guard services ship in a later version, so there is nothing real to test yet.
-        Text(stringResource(R.string.ui_hide_check_later), style = UiText.subStrong, color = colors.muted)
     }
 }

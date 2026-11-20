@@ -44,7 +44,6 @@ import app.throwback.ui.SettingsStart
 import app.throwback.ui.shouldOfferInstagramPrompt
 import app.throwback.web.InstagramScreen
 import app.throwback.web.InstagramSession
-import app.throwback.web.WebReadiness
 import kotlinx.coroutines.launch
 
 /**
@@ -55,11 +54,25 @@ import kotlinx.coroutines.launch
  * so the user never loses their place.
  */
 @Composable
-fun AppRoot(app: ThrowbackApp, deepLink: String?, onCloseApp: () -> Unit, onSplashHold: (Boolean) -> Unit) {
+fun AppRoot(
+    app: ThrowbackApp,
+    deepLink: String?,
+    onCloseApp: () -> Unit,
+    onSplashHold: (Boolean) -> Unit,
+    debugOpen: String? = null,
+) {
     val prefs = app.uiPreferences
     val onboardingDone by prefs.onboardingDone.collectAsStateWithLifecycle(initialValue = null)
     val scope = rememberCoroutineScope()
-    var settingsOpen by rememberSaveable { mutableStateOf<SettingsStart?>(null) }
+    var settingsOpen by rememberSaveable {
+        mutableStateOf(
+            when (debugOpen) { // test builds only, see MainActivity
+                "settings" -> SettingsStart.Home
+                "messages" -> SettingsStart.MessagesAndCalls
+                else -> null
+            },
+        )
+    }
 
     Box(Modifier.fillMaxSize().background(ThrowbackTheme.colors.bg)) {
         when (onboardingDone) {
@@ -131,10 +144,11 @@ private fun MainScreen(
         if (resumed && onInstagram) timeLimit.onForeground(mode) else timeLimit.onBackground()
     }
 
-    // Hold the splash until Instagram's first filtered page is drawn, unless something else
-    // (the mindful pause or settings) is what the user will see first. WebReadiness caps the wait.
-    val firstPageShown by WebReadiness.firstPageShown.collectAsStateWithLifecycle()
-    SideEffect { onSplashHold(mindfulPause == null || (!settingsOpen && !pauseShowing && !firstPageShown)) }
+    // Hold the system splash only until preferences are loaded. It must not wait for the WebView:
+    // the WebView can't draw (and so can't report itself ready) while the splash blocks drawing.
+    // Unfiltered content is still never visible: the web layer's own loading cover hides the page
+    // until the filtered page is ready.
+    SideEffect { onSplashHold(mindfulPause == null) }
 
     if (mindfulPause == null) return
     if (pauseShowing) {

@@ -32,12 +32,10 @@ class MessagesSetupStateTest {
 
     @Test
     fun `wizard steps run in order`() {
-        assertEquals(4, WizardStep.COUNT)
+        assertEquals(3, WizardStep.COUNT)
         assertEquals(WizardStep.Quiet, WizardStep.Install.next())
-        assertEquals(WizardStep.Hide, WizardStep.Permissions.next())
-        assertNull(WizardStep.Hide.next())
+        assertNull(WizardStep.Permissions.next())
         assertNull(WizardStep.Install.previous())
-        assertEquals(WizardStep.Permissions, WizardStep.Hide.previous())
-        assertEquals(listOf(1, 2, 3, 4), WizardStep.entries.map { it.number })
+        assertEquals(listOf(1, 2, 3), WizardStep.entries.map { it.number })
     }
 }

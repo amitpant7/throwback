@@ -227,7 +227,13 @@ private fun InstagramWebHost(
             AndroidView(
                 factory = {
                     // The same WebView instance is reused if this view is ever recreated.
-                    controller.webView.also { (it.parent as? ViewGroup)?.removeView(it) }
+                    controller.webView.also {
+                        (it.parent as? ViewGroup)?.removeView(it)
+                        // Without explicit MATCH_PARENT the holder gives the WebView WRAP_CONTENT, and a
+                        // wrap-content WebView reports a 0px-tall viewport to the page: percentage-height
+                        // layouts (Instagram's login page) then collapse to nothing and render blank.
+                        it.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                    }
                 },
                 modifier = Modifier.fillMaxSize(),
                 update = { it.setBackgroundColor(colors.bg.toArgb()) },

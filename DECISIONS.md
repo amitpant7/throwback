@@ -33,6 +33,11 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 13. Open at Instagram's regular home feed (stories included, Instagram's own ranking; decided
     2026-11-20, replacing the Following feed, which has no stories), then filter it: hide Reels (tab and pages), hide the Explore grid (search stays),
     hide suggested posts, hide sponsored posts.
+13b. **A little discovery** (decided 2026-11-20): of Instagram's suggested posts (never ads), a few are
+    shown, tagged "Discover · not someone you follow". Per 5 minutes of time actually spent on the feed:
+    at most 1 video/reel and 1 photo post; at most 20 a day; only after 8 posts from people you follow
+    since the previous one; never after "You're all caught up". Always on, no setting. When only hidden
+    suggestions are left, the feed shows "You're all caught up" instead of an endless spinner.
 14. **No toggles.** Throwback is minimal; there is no setting to bring distractions back.
     Settings shows a read-only "Throwback removes" list.
 15. Video captions and descriptions must never be hidden (a known complaint about a competitor).

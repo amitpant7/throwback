@@ -338,6 +338,12 @@
     out.push('[' + ATTR_POST + ']' + HIDE);
     out.push('[' + ATTR_SLOT + ']' + HIDE);
     out.push('[' + ATTR_THREADS + ']' + HIDE);
+    // Discovery posts get a small tag so you always know it's not someone you follow.
+    out.push('article[' + ATTR_DISCOVER + ']::before{content:"Discover \u00b7 not someone you follow";display:block;' +
+      'font-size:12px;opacity:.65;padding:10px 16px 2px;letter-spacing:.01em}');
+    // While the end card shows, the feed's loading spinner (it would only load hidden suggestions).
+    out.push('html[' + ATTR_FEED_END + '] main [role="progressbar"]' + HIDE);
+    out.push('html[' + ATTR_FEED_END + '] main svg[aria-label="Loading..."]' + HIDE);
     out.push('html.tb-messages-only [' + ATTR_NAV + ']' + HIDE);
     if (c.explore) out.push(scopeFor(c.explore.on) + ' [' + ATTR_EXPLORE + ']' + HIDE);
     out.push('html.' + CLASS_BLANK + ' body{visibility:hidden!important}');
@@ -495,6 +501,56 @@
         }
       }, true);
     });
+  }
+
+  // ---------------------------------------------------------------- end of the feed
+
+  var END_CARD_ID = '__tb_end_card';
+  var ATTR_FEED_END = 'data-tb-feedend'; // on <html> while the end card shows (hides the endless spinner)
+  var END_AFTER_HIDDEN = 4; // this many hidden posts after the last real one = only suggestions are left
+
+  /**
+   * Instagram's ranked feed keeps loading suggested posts after the people you follow run out.
+   * Throwback hides those, which left an endless spinner and blank space. When the posts after the
+   * last visible one are all hidden, show "You're all caught up" and hide the spinner: the feed ends.
+   */
+  function updateEndCard() {
+    var root = document.documentElement;
+    var card = document.getElementById(END_CARD_ID);
+    var first = state.mode === MODE_MESSAGES || !pageActive('home') ? null : document.querySelector('article');
+    var list = first && first.parentElement;
+    var visible = 0, trailingHidden = 0;
+    if (list) {
+      for (var k = list.firstElementChild; k; k = k.nextElementSibling) {
+        if (k.tagName !== 'ARTICLE') continue;
+        if (k.hasAttribute(ATTR_POST)) trailingHidden++;
+        else { visible++; trailingHidden = 0; }
+      }
+    }
+    if (!list || visible === 0 || trailingHidden < END_AFTER_HIDDEN) {
+      if (card && card.parentNode) card.parentNode.removeChild(card);
+      root.removeAttribute(ATTR_FEED_END);
+      return;
+    }
+    if (!card) {
+      card = document.createElement('div');
+      card.id = END_CARD_ID;
+      card.setAttribute('role', 'status');
+      card.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;padding:40px 24px 64px;' +
+        'text-align:center;color:inherit;font-family:inherit';
+      card.innerHTML =
+        '<svg aria-hidden="true" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" ' +
+        'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/>' +
+        '<path d="m7.5 12.5 3 3 6-7"/></svg>' +
+        '<div style="font-size:18px;font-weight:600">You\u2019re all caught up</div>' +
+        '<div style="font-size:14px;opacity:.7">That\u2019s everything new from the people you follow.</div>';
+    }
+    // After the feed list (React owns the list itself); hidden posts take no space, so the card sits
+    // right under the last real post.
+    if (card.parentNode !== list.parentNode || card.previousElementSibling !== list) {
+      list.parentNode.insertBefore(card, list.nextSibling);
+    }
+    root.setAttribute(ATTR_FEED_END, '1');
   }
 
   function fixViewport() {
@@ -786,12 +842,102 @@
     return true;
   }
 
-  /** "Sponsored" / "Suggested for you" in a post's header removes the post. */
+  /** "Sponsored" / "Suggested for you" in a post's header removes the post (unless discovery lets it in). */
   function onPostLabel(el, id) {
     var post = el.closest(state.c.postContainer);
-    if (!post || post === el || post.hasAttribute(ATTR_POST)) return;
+    if (!post || post === el || post.hasAttribute(ATTR_POST) || post.hasAttribute(ATTR_DISCOVER)) return;
     if (!inPostHeader(post, el)) return; // caption text, never hidden
+    if (id === 'suggested' && allowDiscovery(post)) {
+      post.setAttribute(ATTR_DISCOVER, '1');
+      return;
+    }
     post.setAttribute(ATTR_POST, id);
+  }
+
+  // ---------------------------------------------------------------- discovery
+
+  /*
+   * A little discovery so the feed isn't sealed shut (owner's decision, 2026-11-20): of the posts
+   * Instagram suggests from accounts you don't follow, a few are shown, tagged "Discover":
+   *  - per 5 minutes of time actually spent on the feed: at most 1 video/reel and 1 photo post;
+   *  - at most 20 a day;
+   *  - spread out: only after DISCOVER.spacing posts from people you follow since the last one;
+   *  - never once the feed has ended ("You're all caught up"); never ads (only 'suggested' labels).
+   */
+  var ATTR_DISCOVER = 'data-tb-discover';
+  var DISCOVER = { windowSec: 300, perDay: 20, spacing: 8, storageKey: '__tb_discover' };
+  var disc = null;
+
+  function today() {
+    return new Date().toDateString();
+  }
+
+  function discState() {
+    if (!disc) {
+      try {
+        disc = JSON.parse(localStorage.getItem(DISCOVER.storageKey) || 'null');
+      } catch (e) {
+        disc = null;
+      }
+    }
+    if (!disc || disc.date !== today()) {
+      disc = { date: today(), count: 0, feedSec: 0, win: -1, video: 0, photo: 0, keys: [] };
+    }
+    return disc;
+  }
+
+  function saveDisc() {
+    try {
+      localStorage.setItem(DISCOVER.storageKey, JSON.stringify(disc));
+    } catch (e) {
+      // Storage unavailable: the allowance just resets with the page.
+    }
+  }
+
+  /** Key of a post (its /p/ or /reel/ code), so a post shown once stays shown when Instagram re-renders it. */
+  function postKey(post) {
+    var a = post.querySelector('a[href*="/p/"], a[href*="/reel/"]');
+    var m = a && /\/(?:p|reels?)\/([A-Za-z0-9_-]+)/.exec(a.getAttribute('href') || '');
+    return m ? m[1] : null;
+  }
+
+  function allowDiscovery(post) {
+    if (state.mode === MODE_MESSAGES || !pageActive('home')) return false;
+    if (document.documentElement.hasAttribute(ATTR_FEED_END)) return false;
+    var d = discState();
+    var key = postKey(post);
+    if (key && d.keys.indexOf(key) >= 0) return true; // already shown today
+    if (d.count >= DISCOVER.perDay) return false;
+    var win = Math.floor(d.feedSec / DISCOVER.windowSec);
+    if (win !== d.win) {
+      d.win = win;
+      d.video = 0;
+      d.photo = 0;
+    }
+    var kind = post.querySelector('video') ? 'video' : 'photo';
+    if (d[kind] >= 1) return false;
+    // Spread out: enough posts from people you follow since the previous discovery (or the top).
+    var followed = 0;
+    for (var s = post.previousElementSibling; s; s = s.previousElementSibling) {
+      if (s.hasAttribute(ATTR_DISCOVER)) break;
+      if (s.tagName === 'ARTICLE' && !s.hasAttribute(ATTR_POST)) followed++;
+    }
+    if (followed < DISCOVER.spacing) return false;
+    d[kind]++;
+    d.count++;
+    if (key) d.keys.push(key);
+    saveDisc();
+    return true;
+  }
+
+  /** Counts time actually spent looking at the feed (the 5-minute windows). */
+  function startFeedClock() {
+    setInterval(function () {
+      if (document.visibilityState !== 'visible' || state.mode === MODE_MESSAGES || !state.c || !pageActive('home')) return;
+      var d = discState();
+      d.feedSec++;
+      if (d.feedSec % 10 === 0) saveDisc();
+    }, 1000);
   }
 
   /**
@@ -1050,6 +1196,7 @@
       ensureStyle();
       fixViewport();
       updateProfileEntry();
+      updateEndCard();
       dismissDialogs();
       applyExplore();
       detectNav(false);
@@ -1146,6 +1293,7 @@
   function start() {
     hookHistory();
     installHomeLongPress();
+    startFeedClock();
     window.addEventListener('click', onClick, true);
     document.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
     if (window.matchMedia) {

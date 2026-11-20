@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112004,
+  "version": 2026112005,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -98,8 +98,8 @@
     "headerMaxFraction": 0.3,
     "labels": [
       { "id": "sponsored",
-        "text": ["Sponsored", "Gesponsert", "Sponsorisé", "Sponsorisée", "Patrocinado", "Patrocinada", "Sponsorizzato", "Gesponsord", "Sponsorowane", "Sponsrad", "Sponset", "Sponsoreret", "Sponsoroitu", "Sponzorováno", "Szponzorált", "Sponsorlu", "Реклама", "Χορηγούμενη", "ממומן", "ممول", "प्रायोजित", "Bersponsor", "Được tài trợ", "広告", "광고", "赞助内容", "贊助"],
-        "note": "Ads. The English wording is Instagram's; the translations are best effort." },
+        "text": ["Sponsored", "Ad", "Gesponsert", "Sponsorisé", "Sponsorisée", "Patrocinado", "Patrocinada", "Sponsorizzato", "Gesponsord", "Sponsorowane", "Sponsrad", "Sponset", "Sponsoreret", "Sponsoroitu", "Sponzorováno", "Szponzorált", "Sponsorlu", "Реклама", "Χορηγούμενη", "ממומן", "ممول", "प्रायोजित", "Bersponsor", "Được tài trợ", "広告", "광고", "赞助内容", "贊助"],
+        "note": "Ads. Instagram labels them 'Sponsored' or, newer, 'Ad' (matched as the whole label, in the post header only). The translations are best effort." },
       { "id": "suggested",
         "text": ["Suggested for you", "Suggested post", "Suggested posts", "Vorschläge für dich", "Suggestions pour vous", "Sugerencias para ti", "Sugestões para você", "Suggeriti per te", "Voorgesteld voor jou", "Proponowane dla Ciebie", "Рекомендации для вас", "あなたへのおすすめ", "회원님을 위한 추천", "为你推荐", "為你推薦"],
         "note": "Posts from accounts you don't follow." }

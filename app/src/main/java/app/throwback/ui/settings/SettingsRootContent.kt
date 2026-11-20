@@ -1,5 +1,7 @@
 package app.throwback.ui.settings
 
+import app.throwback.R
+import app.throwback.ui.messages.MessagesOffHooks
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
@@ -58,6 +60,7 @@ internal fun SettingsRootContent(
     timeLimitScreen: @Composable (onClose: () -> Unit) -> Unit,
     startAt: SettingsStart,
     todayScreen: @Composable (onClose: () -> Unit) -> Unit = {},
+    messagesOff: MessagesOffHooks = MessagesOffHooks(),
 ) {
     val colors = ThrowbackTheme.colors
     val context = LocalContext.current
@@ -107,6 +110,7 @@ internal fun SettingsRootContent(
                         showMessage = showMessage,
                         timeLimitScreen = timeLimitScreen,
                         todayScreen = todayScreen,
+                        messagesOff = messagesOff,
                     )
                 }
             }
@@ -133,6 +137,7 @@ private fun RouteContent(
     showMessage: (String) -> Unit,
     timeLimitScreen: @Composable (onClose: () -> Unit) -> Unit,
     todayScreen: @Composable (onClose: () -> Unit) -> Unit,
+    messagesOff: MessagesOffHooks,
 ) {
     val padded = Modifier.fillMaxSize().statusBarsPadding()
     when (route) {
@@ -154,6 +159,8 @@ private fun RouteContent(
             val done by prefs.messagesSetupDone.collectAsStateWithLifecycle(initialValue = null)
             var showSettings by rememberSaveable { mutableStateOf<Boolean?>(null) }
             LaunchedEffect(done) { if (showSettings == null && done != null) showSettings = done }
+            val offState = messagesOff.state()
+            val context = LocalContext.current
             when (showSettings) {
                 null -> Unit
                 true -> MessagesSettingsScreen(
@@ -161,8 +168,17 @@ private fun RouteContent(
                     onBack = back,
                     onFinishSetup = { push(SettingsRoute.MessagesWizard) },
                     onTurnOff = {
-                        prefs.write { setMessagesSetupDone(false) }
-                        back()
+                        if (offState.limitOn) {
+                            push(SettingsRoute.MessagesOffPin) // PIN, then it turns off tomorrow
+                        } else {
+                            prefs.write { setMessagesSetupDone(false) }
+                            back()
+                        }
+                    },
+                    pendingOff = offState.pendingDate,
+                    onCancelPendingOff = {
+                        messagesOff.cancel()
+                        showMessage(context.getString(R.string.ui_messages_off_cancelled))
                     },
                     showMessage = showMessage,
                 )
@@ -177,6 +193,17 @@ private fun RouteContent(
                     )
                 }
             }
+        }
+
+        SettingsRoute.MessagesOffPin -> Box(padded.navigationBarsPadding()) {
+            val context = LocalContext.current
+            messagesOff.pinScreen(
+                {
+                    back()
+                    showMessage(context.getString(R.string.ui_messages_off_scheduled))
+                },
+                back,
+            )
         }
 
         SettingsRoute.MessagesWizard -> Box(padded.navigationBarsPadding()) {

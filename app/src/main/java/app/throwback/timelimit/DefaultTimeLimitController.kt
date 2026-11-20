@@ -118,6 +118,13 @@ internal class DefaultTimeLimitController(
 
     fun cancelPendingLimit() = update(Save.Now) { s, r -> engine.cancelPendingLimit(s, r) }
 
+    /** Messages & calls off, the next day (PIN). */
+    suspend fun scheduleGuardOff(pin: String): ActionResult = withPinCheck(pin) { s, r, ok -> engine.scheduleGuardOff(s, r, ok) }
+
+    fun cancelGuardOff() = update(Save.Now) { s, r -> engine.cancelGuardOff(s, r) }
+
+    fun guardOffHandled() = update(Save.Now) { s, r -> engine.guardOffHandled(s, r) }
+
     /** Checks [pin] (counts towards the wrong-PIN block) without changing anything. */
     suspend fun verifyPin(pin: String): ActionResult = withPinCheck(pin) { s, r, ok -> engine.verifyPin(s, r, ok) }
 

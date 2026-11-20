@@ -7,6 +7,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ProcessLifecycleOwner
 import app.throwback.core.TimeLimitController
 import app.throwback.timelimit.data.DataStoreStateStore
+import app.throwback.timelimit.ui.GuardOffPin
 import app.throwback.timelimit.ui.LockOverlay
 import app.throwback.timelimit.ui.RemainingChip
 import app.throwback.timelimit.ui.TimeLimitSettings
@@ -66,4 +67,27 @@ fun TimeRemainingChip(controller: TimeLimitController, modifier: Modifier = Modi
 fun TimeLimitSettingsScreen(controller: TimeLimitController, onClose: () -> Unit) {
     val impl = controller as? DefaultTimeLimitController ?: return
     TimeLimitSettings(impl, onClose)
+}
+
+/**
+ * Messages & calls turn-off while a daily limit is on (needs the PIN, takes effect tomorrow).
+ * [limitOn] and [pendingGuardOff] describe the current state; [guardOffDue] means the app should turn
+ * Messages & calls off now and call [guardOffHandled].
+ */
+object GuardOffApi {
+    fun view(controller: TimeLimitController) = (controller as? DefaultTimeLimitController)?.view
+
+    fun cancel(controller: TimeLimitController) {
+        (controller as? DefaultTimeLimitController)?.cancelGuardOff()
+    }
+
+    fun handled(controller: TimeLimitController) {
+        (controller as? DefaultTimeLimitController)?.guardOffHandled()
+    }
+}
+
+@Composable
+fun GuardOffPinScreen(controller: TimeLimitController, onScheduled: () -> Unit, onBack: () -> Unit) {
+    val impl = controller as? DefaultTimeLimitController ?: return
+    GuardOffPin(impl, onScheduled, onBack)
 }

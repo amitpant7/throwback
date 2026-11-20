@@ -58,6 +58,9 @@ internal fun MessagesSettingsScreen(
     onFinishSetup: () -> Unit,
     onTurnOff: () -> Unit,
     showMessage: (String) -> Unit = {},
+    /** A PIN-scheduled turn-off (daily limit on): shown instead of the turn-off link. */
+    pendingOff: java.time.LocalDate? = null,
+    onCancelPendingOff: () -> Unit = {},
 ) {
     val colors = ThrowbackTheme.colors
     val state by rememberCheckedOnResume { MessagesSetupState.read(it) }
@@ -125,12 +128,27 @@ internal fun MessagesSettingsScreen(
                 }
             }
 
-            QuietButton(
-                stringResource(R.string.ui_turn_off_messages),
-                onClick = onTurnOff,
-                style = UiText.body14,
-                modifier = Modifier.padding(top = 18.dp, bottom = 16.dp),
-            )
+            if (pendingOff != null) {
+                Text(
+                    stringResource(R.string.ui_messages_off_pending),
+                    style = UiText.body14,
+                    color = colors.muted,
+                    modifier = Modifier.padding(start = 6.dp, top = 18.dp),
+                )
+                QuietButton(
+                    stringResource(R.string.ui_messages_off_keep),
+                    onClick = onCancelPendingOff,
+                    style = UiText.body14,
+                    modifier = Modifier.padding(bottom = 16.dp),
+                )
+            } else {
+                QuietButton(
+                    stringResource(R.string.ui_turn_off_messages),
+                    onClick = onTurnOff,
+                    style = UiText.body14,
+                    modifier = Modifier.padding(top = 18.dp, bottom = 16.dp),
+                )
+            }
         }
     }
 }

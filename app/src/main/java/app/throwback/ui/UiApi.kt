@@ -49,8 +49,12 @@ fun SettingsRoot(
     timeLimitScreen: @Composable (onClose: () -> Unit) -> Unit,
     startAt: SettingsStart = SettingsStart.Home,
     todayScreen: @Composable (onClose: () -> Unit) -> Unit = {},
+    messagesOff: app.throwback.ui.messages.MessagesOffHooks = app.throwback.ui.messages.MessagesOffHooks(),
 ) {
-    SettingsRootContent(onClose = onClose, timeLimitScreen = timeLimitScreen, startAt = startAt, todayScreen = todayScreen)
+    SettingsRootContent(
+        onClose = onClose, timeLimitScreen = timeLimitScreen, startAt = startAt,
+        todayScreen = todayScreen, messagesOff = messagesOff,
+    )
 }
 
 /** "Your day": time spent, allowances left, what Throwback removed today. */

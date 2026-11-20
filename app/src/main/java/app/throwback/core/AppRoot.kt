@@ -1,5 +1,10 @@
 package app.throwback.core
 
+import app.throwback.ui.UiPrefs
+import app.throwback.ui.messages.MessagesOffState
+import app.throwback.ui.messages.MessagesOffHooks
+import app.throwback.timelimit.GuardOffPinScreen
+import app.throwback.timelimit.GuardOffApi
 import app.throwback.relay.CallInApp
 import android.widget.Toast
 import android.util.Log
@@ -88,6 +93,16 @@ fun AppRoot(
         )
     }
 
+    // A Messages & calls turn-off scheduled with the PIN is due (a new day): turn it off now.
+    val limitView = GuardOffApi.view(app.timeLimit)?.collectAsStateWithLifecycle()?.value
+    val appContext = LocalContext.current.applicationContext
+    LaunchedEffect(limitView?.guardOffDue) {
+        if (limitView?.guardOffDue == true) {
+            UiPrefs.from(appContext).setMessagesSetupDone(false)
+            GuardOffApi.handled(app.timeLimit)
+        }
+    }
+
     // "Throwback settings" app-icon shortcut (MainActivity counts the requests).
     LaunchedEffect(settingsRequests) { if (settingsRequests > 0) settingsOpen = SettingsStart.Home }
 
@@ -117,6 +132,16 @@ fun AppRoot(
                 startAt = start,
                 timeLimitScreen = { onClose -> TimeLimitSettingsScreen(app.timeLimit, onClose) },
                 todayScreen = { onClose -> TodayRoute(app.timeLimit, onClose) },
+                messagesOff = remember {
+                    MessagesOffHooks(
+                        state = {
+                            val v = GuardOffApi.view(app.timeLimit)?.collectAsStateWithLifecycle()?.value
+                            MessagesOffState(limitOn = v?.limitMinutes != null, pendingDate = v?.pendingGuardOff)
+                        },
+                        cancel = { GuardOffApi.cancel(app.timeLimit) },
+                        pinScreen = { onScheduled, onBack -> GuardOffPinScreen(app.timeLimit, onScheduled, onBack) },
+                    )
+                },
             )
         }
     }

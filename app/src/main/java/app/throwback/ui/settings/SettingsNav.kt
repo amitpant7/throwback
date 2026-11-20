@@ -13,6 +13,9 @@ internal enum class SettingsRoute {
 
     /** The wizard opened explicitly from the Messages & calls settings ("Finish setup"). */
     MessagesWizard,
+
+    /** PIN before Messages & calls turns off (only while a daily limit is on). */
+    MessagesOffPin,
     Shortcut,
     Support,
     About,

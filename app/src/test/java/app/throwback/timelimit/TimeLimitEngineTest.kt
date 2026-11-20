@@ -375,6 +375,37 @@ class TimeLimitEngineTest {
     }
 
     @Test
+    fun `turning Messages and calls off needs the PIN and takes effect the next day`() {
+        h.setup(30)
+        assertEquals(ActionResult.WrongPin(4), h.act { s, r -> h.engine.scheduleGuardOff(s, r, pinOk = false) })
+        assertEquals(ActionResult.Scheduled(h.today.plusDays(1)), h.act { s, r -> h.engine.scheduleGuardOff(s, r, pinOk = true) })
+        assertEquals(h.today.plusDays(1), h.view().pendingGuardOff)
+        assertFalse(h.view().guardOffDue)
+
+        h.advanceToMidnight()
+        h.refresh()
+        assertTrue(h.view().guardOffDue)
+        assertNull(h.view().pendingGuardOff)
+        h.s = h.engine.guardOffHandled(h.s, h.reading())
+        assertFalse(h.view().guardOffDue)
+    }
+
+    @Test
+    fun `a scheduled guard turn-off can be cancelled, and is due at once when the limit goes`() {
+        h.setup(30)
+        h.act { s, r -> h.engine.scheduleGuardOff(s, r, pinOk = true) }
+        h.s = h.engine.cancelGuardOff(h.s, h.reading())
+        assertNull(h.view().pendingGuardOff)
+
+        h.act { s, r -> h.engine.scheduleGuardOff(s, r, pinOk = true) }
+        h.act { s, r -> h.engine.turnOff(s, r, pinOk = true) } // both tomorrow; the limit goes first
+        h.advanceToMidnight()
+        h.refresh()
+        assertEquals(LockState.Disabled, h.view().lockState)
+        assertTrue(h.view().guardOffDue)
+    }
+
+    @Test
     fun `changing the PIN needs the current one and takes effect the next day`() {
         h.setup(30)
         assertEquals(ActionResult.WrongPin(4), h.act { s, r -> h.engine.changePin(s, r, pinOk = false, newPin = PIN_B) })

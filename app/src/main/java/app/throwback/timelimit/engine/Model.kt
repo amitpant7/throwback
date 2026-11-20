@@ -71,6 +71,13 @@ data class TimeLimitState(
     val pinBlockedAt: Moment? = null,
     /** Last clock reading, used to tell real time passing from the wall clock being changed. */
     val anchor: Moment? = null,
+    /**
+     * Turning Messages & calls (the guard on the Instagram app) off while a limit is on: needs the PIN
+     * and takes effect the next day, like turning the limit off (owner, 2026-11-20).
+     */
+    val pendingGuardOff: LocalDate? = null,
+    /** The scheduled guard turn-off is due; the app turns Messages & calls off and clears this. */
+    val guardOffDue: Boolean = false,
 
     // Transient: not persisted.
     /** Open foreground interval, or null in the background. */
@@ -148,6 +155,10 @@ data class TimeLimitView(
     val pendingPinEffective: LocalDate? = null,
     val pinReset: PinResetStatus? = null,
     val pinBlockedMillis: Long = 0,
+    /** Messages & calls turns off on this day (scheduled with the PIN). */
+    val pendingGuardOff: LocalDate? = null,
+    /** That day has come: the app should turn Messages & calls off now. */
+    val guardOffDue: Boolean = false,
 ) {
     /** Minutes of today's allowance (limit plus extensions). */
     val budgetMinutes: Int get() = (limitMinutes ?: 0) + extensionsUsed * Rules.EXTENSION_MINUTES

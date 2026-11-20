@@ -110,10 +110,15 @@ class TimeLimitEngine {
                 st = if (p.minutes == null) turnedOff(st) else st.copy(limitMinutes = p.minutes, pendingLimit = null)
             }
         }
+        st.pendingGuardOff?.let { if (!it.isAfter(today)) st = st.copy(pendingGuardOff = null, guardOffDue = true) }
         return st
     }
 
-    private fun turnedOff(s: TimeLimitState) = TimeLimitState(day = s.day, anchor = s.anchor, session = s.session)
+    /** No limit any more: nothing protects a scheduled guard turn-off, so it is due at once. */
+    private fun turnedOff(s: TimeLimitState) = TimeLimitState(
+        day = s.day, anchor = s.anchor, session = s.session,
+        guardOffDue = s.guardOffDue || s.pendingGuardOff != null,
+    )
 
     /**
      * Records when a lock begins, and clears it when time is available again. While locked, usage
@@ -189,6 +194,21 @@ class TimeLimitEngine {
             Outcome(ok.copy(pendingLimit = PendingLimit(null, effective)), ActionResult.Scheduled(effective))
         }
     }
+
+    /** Messages & calls off while a limit is on: needs the PIN, takes effect tomorrow. */
+    fun scheduleGuardOff(s: TimeLimitState, r: ClockReading, pinOk: Boolean): Outcome {
+        val (st, at) = sync(s, r)
+        if (!st.enabled) return Outcome(st, ActionResult.NotAllowed("No limit set"))
+        return withPin(st, at, pinOk) { ok ->
+            val effective = ok.day!!.plusDays(1)
+            Outcome(ok.copy(pendingGuardOff = effective), ActionResult.Scheduled(effective))
+        }
+    }
+
+    fun cancelGuardOff(s: TimeLimitState, r: ClockReading): TimeLimitState = sync(s, r).first.copy(pendingGuardOff = null)
+
+    /** The app has turned Messages & calls off. */
+    fun guardOffHandled(s: TimeLimitState, r: ClockReading): TimeLimitState = sync(s, r).first.copy(guardOffDue = false)
 
     /** Cancels a pending raise or turn-off. Tightening never needs the PIN. */
     fun cancelPendingLimit(s: TimeLimitState, r: ClockReading): TimeLimitState =
@@ -301,7 +321,7 @@ class TimeLimitEngine {
 
     /** What the UI should show. Call it with a state that was just refreshed with the same reading. */
     fun view(s: TimeLimitState, r: ClockReading): TimeLimitView {
-        val limit = s.limitMinutes ?: return TimeLimitView.Disabled
+        val limit = s.limitMinutes ?: return TimeLimitView.Disabled.copy(guardOffDue = s.guardOffDue)
         val at = at(s, r)
         val today = today(s, at)
         val extensionsLeft = max(0, Rules.MAX_EXTENSIONS_PER_DAY - s.extensionsUsed)
@@ -327,6 +347,8 @@ class TimeLimitEngine {
             remainingMillis = remaining,
             extensionsUsed = s.extensionsUsed,
             extensionsLeft = extensionsLeft,
+            pendingGuardOff = s.pendingGuardOff,
+            guardOffDue = s.guardOffDue,
             lock = phase,
             pendingLimit = s.pendingLimit,
             pendingPinEffective = s.pendingPin?.effective,

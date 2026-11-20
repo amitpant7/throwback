@@ -502,6 +502,26 @@ private fun SettingsRow(title: String, subtitle: String?, onClick: () -> Unit, e
     }
 }
 
+/** "Turn off Messages & calls" while a limit is on: PIN, then it turns off tomorrow. */
+@Composable
+internal fun GuardOffPin(controller: DefaultTimeLimitController, onScheduled: () -> Unit, onBack: () -> Unit) {
+    val view by controller.view.collectAsStateWithLifecycle()
+    var forgot by remember { mutableStateOf(false) }
+    BackHandler { if (forgot) forgot = false else onBack() }
+    if (forgot) {
+        ForgotPinScreen(controller, view, onBack = { forgot = false })
+    } else {
+        PinPrompt(
+            title = stringResource(R.string.tl_enter_pin_guard_off),
+            view = view,
+            onBack = onBack,
+            onForgot = { forgot = true },
+            check = { pin -> controller.scheduleGuardOff(pin) },
+            onSuccess = onScheduled,
+        )
+    }
+}
+
 /** PIN keypad for a protected change, with a back arrow and "Forgot PIN?". */
 @Composable
 private fun PinPrompt(

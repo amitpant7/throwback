@@ -135,6 +135,12 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     pass, at most 3 taps an hour; it ends once the call is running (the call itself then keeps
     Instagram allowed, and call audio during that pass counts as an Instagram call).
     Explore's 5 minutes also cover hashtag, place and keyword-result grids (every page under /explore/).
+27b. **Turning the guard off follows the time-limit rule** (owner, 2026-11-20): while a daily limit
+    is on, "Turn off Messages & calls" needs the PIN and takes effect the next day ("Keep it on"
+    cancels it). Without a limit it is immediate (there is no PIN). If the limit itself is turned
+    off, a scheduled guard turn-off becomes due with it. Not preventable in-app: force-stopping
+    Throwback or revoking its permissions in Android settings (to look at: count the real app's time
+    against the limit when Throwback next runs).
 29. **Instagram app found:** after first login, if the Instagram app is installed, Throwback offers
     "Keep it for calls & messages", "Remove it" (opens Android Settings) or "Decide later".
 

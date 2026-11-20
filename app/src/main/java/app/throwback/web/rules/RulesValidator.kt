@@ -118,6 +118,8 @@ object RulesValidator {
                     check(st.link.startsWith("instagram://")) { "appCreate.story.link must be an instagram:// link" }
                     check(st.editMinutes in 1..15) { "appCreate.story.editMinutes out of range" }
                     check(st.openSeconds in 3..30) { "appCreate.story.openSeconds out of range" }
+                    check(st.cooldownMinutes in 0..240) { "appCreate.story.cooldownMinutes out of range" }
+                    check(st.perDay in 0..20) { "appCreate.story.perDay out of range" }
                     check(runCatching { Regex(st.postingChannels) }.isSuccess) { "appCreate.story.postingChannels invalid" }
                 }
             }

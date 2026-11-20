@@ -98,9 +98,20 @@ fun AppRoot(
 
     // With the Instagram app connected, "+" and "Your story" open its create screen: tell the page.
     val messagesConnected by UiPrefs.from(LocalContext.current).messagesSetupDone.collectAsStateWithLifecycle(initialValue = false)
+    val featureContext = LocalContext.current.applicationContext
     LaunchedEffect(messagesConnected) {
         PageFeatures.createInApp = messagesConnected
-        InstagramWebController.current?.get()?.pushFeatures()
+        // Re-checked every minute: a story pass becomes available again after its cooldown.
+        var first = true
+        while (true) {
+            val story = messagesConnected && CallInApp.storyAvailable(featureContext)
+            if (first || story != PageFeatures.storyInApp) {
+                PageFeatures.storyInApp = story
+                InstagramWebController.current?.get()?.pushFeatures()
+                first = false
+            }
+            kotlinx.coroutines.delay(60_000)
+        }
     }
 
     // A Messages & calls turn-off scheduled with the PIN is due (a new day): turn it off now.
@@ -267,7 +278,10 @@ private fun MainScreen(
             onCaughtUp = { (context as? android.app.Activity)?.let { RateAsk.onGoodMoment(it) } },
             onCreateInApp = { story ->
                 if (story) {
-                    val msg = when (CallInApp.story(context)) {
+                    val result = CallInApp.story(context)
+                    PageFeatures.storyInApp = CallInApp.storyAvailable(context)
+                    InstagramWebController.current?.get()?.pushFeatures()
+                    val msg = when (result) {
                         CallInApp.StoryResult.OPENED -> R.string.story_in_app_hint
                         CallInApp.StoryResult.USED_UP -> R.string.story_in_app_used_up
                         CallInApp.StoryResult.NO_APP -> R.string.create_in_app_failed

@@ -164,9 +164,16 @@ internal object PassRules {
      */
     fun storyPassHolds(cameraOffMillis: Long, limitMillis: Long): Boolean = cameraOffMillis <= limitMillis
 
-    const val STORIES_PER_DAY = 3
-
-    fun storyAllowed(lastDay: Long?, countThatDay: Int, today: Long): Boolean = lastDay != today || countThatDay < STORIES_PER_DAY
+    /**
+     * A story pass is available: fewer than [perDay] today, and [cooldownMillis] since the last one
+     * started ([lastStartWall], wall ms; a clock moved back counts as "just now").
+     */
+    fun storyAllowed(lastDay: Long?, countThatDay: Int, today: Long, lastStartWall: Long?, nowWall: Long, cooldownMillis: Long, perDay: Int): Boolean {
+        if (lastDay == today && countThatDay >= perDay) return false
+        if (lastStartWall == null) return true
+        val since = nowWall - lastStartWall
+        return since >= cooldownMillis
+    }
 
     /** Instagram's own redirects while the create screen opens. */
     const val CREATE_GRACE_MS = 3_000L

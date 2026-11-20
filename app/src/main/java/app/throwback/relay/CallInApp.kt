@@ -105,27 +105,57 @@ internal object CallInApp {
 
     enum class StoryResult { OPENED, NO_APP, USED_UP }
 
+    private fun storyRules(context: Context) = app.throwback.web.rules.RulesRepository.get(context).rules.value?.appCreate?.story
+
+    /** Whether "Your story" can open the Instagram app now (else the website's story upload). */
+    fun storyAvailable(context: Context, today: LocalDate = LocalDate.now(), nowWall: Long = System.currentTimeMillis()): Boolean {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val st = storyRules(context)
+        val day = today.toEpochDay()
+        val lastDay = prefs.getLong("storyDay", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }
+        val count = if (lastDay == day) prefs.getInt("storyCount", 0) else 0
+        val last = prefs.getLong("storyLastAt", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }
+        return PassRules.storyAllowed(lastDay, count, day, last, nowWall, (st?.cooldownMinutes ?: 30) * 60_000L, st?.perDay ?: 3)
+    }
+
     /**
      * "Your story": the Instagram app with a STORY pass: a few minutes (camera time not counted),
-     * ended by posting or leaving; [PassRules.STORIES_PER_DAY] a day.
+     * ended by posting or leaving; then a cooldown (see [storyAvailable]).
      */
     fun story(context: Context, today: LocalDate = LocalDate.now()): StoryResult {
         val pkg = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) } ?: return StoryResult.NO_APP
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val day = today.toEpochDay()
+        if (!storyAvailable(context, today)) return StoryResult.USED_UP
         val lastDay = prefs.getLong("storyDay", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }
         val count = if (lastDay == day) prefs.getInt("storyCount", 0) else 0
-        if (!PassRules.storyAllowed(lastDay, count, day)) return StoryResult.USED_UP
-        val link = app.throwback.web.rules.RulesRepository.get(context).rules.value?.appCreate?.story?.link ?: "instagram://story-camera"
+        val link = storyRules(context)?.link ?: "instagram://story-camera"
         return try {
             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(pkg).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             GuardPass.grant(SystemClock.elapsedRealtime(), CREATE_PASS_MS, GuardPass.Kind.STORY)
-            prefs.edit().putLong("storyDay", day).putInt("storyCount", count + 1).apply()
+            prefs.edit().putLong("storyDay", day).putInt("storyCount", count + 1).putLong("storyLastAt", System.currentTimeMillis()).apply()
             StoryResult.OPENED
         } catch (e: ActivityNotFoundException) {
             StoryResult.NO_APP
         } catch (e: SecurityException) {
             StoryResult.NO_APP
+        }
+    }
+
+    /**
+     * The story pass ended with Instagram posting (owner, 2026-11-20): it was used honestly, so it
+     * neither starts the wait nor counts toward the day's passes.
+     */
+    fun storyPosted(context: Context, today: LocalDate = LocalDate.now()) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val e = prefs.edit().remove("storyLastAt")
+        if (prefs.getLong("storyDay", Long.MIN_VALUE) == today.toEpochDay()) {
+            e.putInt("storyCount", (prefs.getInt("storyCount", 0) - 1).coerceAtLeast(0))
+        }
+        e.apply()
+        app.throwback.web.PageFeatures.storyInApp = storyAvailable(context, today)
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            app.throwback.web.InstagramWebController.current?.get()?.pushFeatures()
         }
     }
 

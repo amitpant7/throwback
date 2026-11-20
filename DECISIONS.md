@@ -182,7 +182,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     on (Android reports camera use to every app: confirmed on the owner's phone). Instagram's posting
     notification or leaving the app ends it; at most 3 a day. Throwback can't swipe for the user
     (that would need the accessibility permission, avoided). The top bar's "+" opens the post/reel
-    editor (its own screen, no time window).
+    editor (its own screen, no time window). **Wait between story passes: 30 minutes** (rules
+    `cooldownMinutes`), at most 3 a day (`perDay`); meanwhile "Your story" uses Instagram's website story
+    upload in Throwback. A pass that ended with a post (Instagram's posting notification) starts no wait
+    and doesn't count (owner: a real upload means no cheating).
 29. **Instagram app found:** after first login, if the Instagram app is installed, Throwback offers
     "Keep it for calls & messages", "Remove it" (opens Android Settings) or "Decide later".
 

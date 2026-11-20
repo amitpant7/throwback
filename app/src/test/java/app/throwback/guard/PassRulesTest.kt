@@ -36,8 +36,14 @@ class PassRulesTest {
     fun `story pass gives 5 minutes not counting camera time, 3 a day`() {
         assertTrue(PassRules.storyPassHolds(cameraOffMillis = 5 * 60_000L, limitMillis = 5 * 60_000L))
         assertFalse(PassRules.storyPassHolds(cameraOffMillis = 5 * 60_000L + 1, limitMillis = 5 * 60_000L))
-        assertTrue(PassRules.storyAllowed(lastDay = 9, countThatDay = 3, today = 10))
-        assertTrue(PassRules.storyAllowed(lastDay = 10, countThatDay = 2, today = 10))
-        assertFalse(PassRules.storyAllowed(lastDay = 10, countThatDay = 3, today = 10))
+        val m = 60_000L
+        fun allowed(lastDay: Long?, count: Int, last: Long?, now: Long) =
+            PassRules.storyAllowed(lastDay, count, 10, last, now, cooldownMillis = 30 * m, perDay = 3)
+        assertTrue(allowed(null, 0, null, 0))
+        assertFalse(allowed(10, 1, last = 0, now = 29 * m)) // 30 minutes between story passes
+        assertTrue(allowed(10, 1, last = 0, now = 30 * m))
+        assertFalse(allowed(10, 3, last = 0, now = 300 * m)) // 3 a day
+        assertTrue(allowed(9, 3, last = 0, now = 300 * m)) // a new day
+        assertFalse(allowed(10, 1, last = 100 * m, now = 50 * m)) // clock moved back: wait
     }
 }

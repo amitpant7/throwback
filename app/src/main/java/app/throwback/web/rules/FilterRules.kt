@@ -325,6 +325,10 @@ data class AppStoryRules(
     val editMinutes: Int = 5,
     /** Seconds to open the camera after the tap before "camera off" counts. */
     val openSeconds: Int = 10,
+    /** Minutes between story passes; meanwhile "Your story" uses the website's own story upload. */
+    val cooldownMinutes: Int = 30,
+    /** Story passes a day; after that, the website's story upload. */
+    val perDay: Int = 3,
     /** Notification channels Instagram shows while posting (regex); posting ends the pass. */
     val postingChannels: String = "^(uploads|ig_posting_status)$",
 )

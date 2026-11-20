@@ -1160,6 +1160,9 @@
       }
     }
     if (!hit) return false;
+    // Story through the app only when a story pass is available (30 min apart, a few a day);
+    // otherwise the website's own story upload runs as usual.
+    if (kind === 'story' && !state.storyInApp) return false;
     e.preventDefault();
     e.stopImmediatePropagation();
     send({ t: 'createInApp', kind: kind });
@@ -3637,6 +3640,7 @@
   /** App features passed in the config (see PageFeatures.kt). */
   function applyFeatures(cfg) {
     if (cfg && typeof cfg.createInApp === 'boolean') state.createInApp = cfg.createInApp;
+    if (cfg && typeof cfg.storyInApp === 'boolean') state.storyInApp = cfg.storyInApp;
   }
 
   /** The app's trusted clock (see today()). */

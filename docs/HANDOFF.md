@@ -10,7 +10,7 @@ _Last updated 2026-11-20, at version 0.1.2 (versionCode 3)._
 
 ## 1. What Throwback is
 
-A free, open-source (GPL-3.0) Android app that shows Instagram "the way it used to be": only people
+A free, source-available (PolyForm Strict 1.0.0, personal use, no redistribution) Android app that shows Instagram "the way it used to be": only people
 you follow (with stories), with no Reels, no Explore grid, no suggested posts and no ads. It is a
 **WebView wrapper around instagram.com**, with filters injected as CSS/JS. There is no private API
 and no modded app. On top of the filters:

@@ -3,7 +3,7 @@
 Instagram, the way it used to be: just the people you follow, with their stories. No Reels, no Explore
 grid, no suggested posts, no ads. When you've seen it all, you're done.
 
-Free and open source (GPL-3.0). No accounts, no tracking. Not affiliated with Instagram or Meta.
+Free. Source available for personal use (see Licence). No accounts, no tracking. Not affiliated with Instagram or Meta.
 
 > Work in progress. The first test build is coming soon.
 
@@ -43,5 +43,5 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). In short: JDK 17, Android SDK 
 
 ## Licence
 
-GPL-3.0, see [LICENSE](LICENSE). The Nunito font is under the SIL Open Font License
+[PolyForm Strict 1.0.0](LICENSE): you may read the code and use it for personal, non-commercial purposes; you may not redistribute it or publish changed versions. Earlier copies were published under GPL-3.0 for a short time on 2026-11-20. The Nunito font is under the SIL Open Font License
 ([docs/fonts-OFL.txt](docs/fonts-OFL.txt)).

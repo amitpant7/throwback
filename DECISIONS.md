@@ -9,7 +9,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 2. **Name** (owner, 2026-11-20): **"Throwback: 2019 Mode"** on the Play Store (colon, the usual
    "name: what it is" pattern; 20 of Play's 30 characters). Under the icon it is just "Throwback"
    (launchers cut longer names). The logo is still a placeholder.
-3. **Repository:** public on GitHub, licensed GPL-3.0, so nobody can repackage it as a closed paid app.
+3. **Repository:** public on GitHub (github.com/amitpant7/throwback). **Licence: PolyForm Strict 1.0.0**
+   (owner, 2026-11-20, replacing GPL-3.0): personal and other non-commercial use only, no
+   redistribution, no published changes. Source-available, not open source (so no F-Droid). The
+   repo was public under GPL-3.0 for about an hour on 2026-11-20; copies from then keep GPL rights.
 4. **Money:** free, with optional tips through Google Play Billing (no paid features). The tip tiers in
    the mockup are Beer / Rock show / GTA 6. Beer and GTA 6 have original icons; Rock show uses a prism
    image supplied by the owner (source and licence to confirm before release). Before the Play

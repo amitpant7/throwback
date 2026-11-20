@@ -1463,9 +1463,12 @@
     return !!(ex && ex.dailySeconds > 0 && exploreLog().used < ex.dailySeconds);
   }
 
-  /** The grid page itself (not the search results while typing). */
+  /**
+   * A grid of posts: Explore itself, hashtag and place pages, keyword results (all under /explore/,
+   * all on the same daily minutes). Not the search page while typing.
+   */
   function onExploreGrid() {
-    return /^\/explore\/?$/.test(location.pathname);
+    return /^\/explore\//.test(location.pathname) && !/^\/explore\/search\/?$/.test(location.pathname);
   }
 
   function startExploreClock() {

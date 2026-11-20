@@ -19,5 +19,6 @@
     <string name="guard_notification_text">Opening the Instagram app brings you back to Throwback, except during calls.</string>
     <string name="guard_cover_title">Use Throwback instead</string>
     <string name="guard_cover_body">The Instagram app is only for calls. Taking you back…</string>
+    <string name="call_too_many">That\'s 3 tries this hour. Incoming calls still ring as usual.</string>
     <string name="call_needs_instagram_app">Calls start in the Instagram app. Set up Messages &amp; calls to install it.</string>
 </resources>

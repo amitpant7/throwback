@@ -67,15 +67,51 @@ internal object GuardPolicy {
     }
 }
 
-/** A short pass for when Throwback itself opens the Instagram app (call button, "Open Instagram for 5 minutes", quieter-phone tip). */
+/**
+ * A short pass for when Throwback itself opens the Instagram app: the chat's call button ([Kind.CALL])
+ * or "Open Instagram for 5 minutes" ([Kind.VISIT]). Ends early once the user has been in Instagram
+ * and left it, so time can't be saved up; a call pass also ends once the call is running (the call
+ * itself keeps Instagram allowed).
+ */
 internal object GuardPass {
-    const val SETUP_PASS_MS = 10 * 60 * 1000L
+    enum class Kind { CALL, VISIT }
 
     @Volatile
     var allowUntil: Long = 0L
         private set
 
-    fun grant(now: Long, durationMs: Long = SETUP_PASS_MS) {
+    @Volatile
+    var kind: Kind = Kind.VISIT
+        private set
+
+    /** Instagram was in front during this pass. */
+    @Volatile
+    var sawInstagram: Boolean = false
+
+    fun grant(now: Long, durationMs: Long, kind: Kind) {
         allowUntil = now + durationMs
+        this.kind = kind
+        sawInstagram = false
     }
+
+    fun active(now: Long): Boolean = now < allowUntil
+
+    fun end() {
+        allowUntil = 0L
+    }
+}
+
+/** How often the passes can be used (pure, for tests). */
+internal object PassRules {
+    const val VISITS_PER_DAY = 1
+    const val CALL_TAPS_PER_HOUR = 3
+    private const val HOUR_MS = 3_600_000L
+
+    fun visitAllowed(lastVisitDay: Long?, today: Long, locked: Boolean): Boolean =
+        !locked && lastVisitDay != today
+
+    /** [taps]: wall times of earlier call-button passes. */
+    fun callAllowed(taps: List<Long>, now: Long): Boolean = taps.count { now - it in 0 until HOUR_MS } < CALL_TAPS_PER_HOUR
+
+    fun recentTaps(taps: List<Long>, now: Long): List<Long> = taps.filter { now - it in 0 until HOUR_MS }
 }

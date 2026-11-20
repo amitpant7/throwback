@@ -5,7 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.SystemClock
+import app.throwback.core.LockState
 import app.throwback.guard.GuardPass
+import app.throwback.guard.PassRules
+import app.throwback.timelimit.TimeLimitModule
+import java.time.LocalDate
 
 /**
  * Calls start in the real Instagram app: Instagram's mobile website has no call buttons (only the
@@ -15,11 +19,18 @@ import app.throwback.guard.GuardPass
  */
 internal object CallInApp {
     /** Long enough to tap call; the running call itself is then allowed by its audio. */
-    const val PASS_MS = 90_000L
+    const val PASS_MS = 30_000L
 
-    /** False if the Instagram app isn't installed (the caller explains and offers the setup). */
-    fun open(context: Context, thread: String?, user: String? = null): Boolean {
-        val pkg = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) } ?: return false
+    enum class Result { OPENED, NO_APP, LIMITED }
+
+    private const val PREFS = "guard_passes"
+
+    fun open(context: Context, thread: String?, user: String? = null): Result {
+        val pkg = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) } ?: return Result.NO_APP
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val wall = System.currentTimeMillis()
+        val taps = prefs.getString("callTaps", "").orEmpty().split(',').mapNotNull { it.toLongOrNull() }
+        if (!PassRules.callAllowed(taps, wall)) return Result.LIMITED
         // ig.me/m/<username> opens a chat with that person from whichever account the Instagram app
         // uses (a chat id only exists in one account); the chat id is for group chats.
         val byUser = user?.let { Intent(Intent.ACTION_VIEW, Uri.parse("https://ig.me/m/$it")).setPackage(pkg) }
@@ -30,30 +41,44 @@ internal object CallInApp {
         for (intent in listOfNotNull(byUser, byThread, launch)) {
             try {
                 context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                GuardPass.grant(SystemClock.elapsedRealtime(), PASS_MS) // only once Instagram really opens
-                return true
+                // Only once Instagram really opens.
+                GuardPass.grant(SystemClock.elapsedRealtime(), PASS_MS, GuardPass.Kind.CALL)
+                prefs.edit().putString("callTaps", (PassRules.recentTaps(taps, wall) + wall).joinToString(",")).apply()
+                return Result.OPENED
             } catch (e: ActivityNotFoundException) {
                 // Try the next way in.
             } catch (e: SecurityException) {
                 // Try the next way in.
             }
         }
-        return false
+        return Result.NO_APP
     }
 
     /** "Open Instagram for 5 minutes" (switch accounts, change its settings). */
     const val VISIT_PASS_MS = 5 * 60_000L
 
-    /** Opens the Instagram app with a pass of [VISIT_PASS_MS]; false if it isn't installed. */
-    fun visit(context: Context): Boolean {
-        val pkg = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) } ?: return false
-        val launch = context.packageManager.getLaunchIntentForPackage(pkg) ?: return false
+    enum class VisitResult { OPENED, NO_APP, USED_TODAY, LOCKED }
+
+    /**
+     * Opens the Instagram app with a pass of up to [VISIT_PASS_MS]: once a day, not while the daily
+     * limit is reached, and it ends when the user leaves Instagram.
+     */
+    fun visit(context: Context, today: LocalDate = LocalDate.now()): VisitResult {
+        val pkg = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) } ?: return VisitResult.NO_APP
+        val launch = context.packageManager.getLaunchIntentForPackage(pkg) ?: return VisitResult.NO_APP
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val last = prefs.getLong("visitDay", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }
+        val locked = TimeLimitModule.create(context).state.value is LockState.Locked
+        if (!PassRules.visitAllowed(last, today.toEpochDay(), locked)) {
+            return if (locked) VisitResult.LOCKED else VisitResult.USED_TODAY
+        }
         return try {
             context.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            GuardPass.grant(SystemClock.elapsedRealtime(), VISIT_PASS_MS)
-            true
+            GuardPass.grant(SystemClock.elapsedRealtime(), VISIT_PASS_MS, GuardPass.Kind.VISIT)
+            prefs.edit().putLong("visitDay", today.toEpochDay()).apply()
+            VisitResult.OPENED
         } catch (e: ActivityNotFoundException) {
-            false
+            VisitResult.NO_APP
         }
     }
 

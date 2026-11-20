@@ -211,9 +211,13 @@ private fun MainScreen(
             onOpenSettings = onOpenSettings,
             onCallInApp = { thread, user ->
                 // No Instagram app: explain, and offer the Messages & calls setup (it installs it).
-                if (!CallInApp.open(context, thread, user)) {
-                    Toast.makeText(context, R.string.call_needs_instagram_app, Toast.LENGTH_LONG).show()
-                    onOpenMessagesSetup()
+                when (CallInApp.open(context, thread, user)) {
+                    CallInApp.Result.OPENED -> Unit
+                    CallInApp.Result.NO_APP -> {
+                        Toast.makeText(context, R.string.call_needs_instagram_app, Toast.LENGTH_LONG).show()
+                        onOpenMessagesSetup()
+                    }
+                    CallInApp.Result.LIMITED -> Toast.makeText(context, R.string.call_too_many, Toast.LENGTH_LONG).show()
                 }
             },
             backEnabled = !settingsOpen && !pauseShowing && !reelPoster,

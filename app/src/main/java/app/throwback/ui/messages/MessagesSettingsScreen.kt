@@ -112,7 +112,14 @@ internal fun MessagesSettingsScreen(
                     Text(stringResource(R.string.ui_visit_body), style = UiText.sub, color = colors.muted)
                     SecondaryButton(
                         stringResource(R.string.ui_visit_button),
-                        onClick = { if (!CallInApp.visit(context)) showMessage(notInstalled) },
+                        onClick = {
+                            when (CallInApp.visit(context)) {
+                                CallInApp.VisitResult.OPENED -> Unit
+                                CallInApp.VisitResult.NO_APP -> showMessage(notInstalled)
+                                CallInApp.VisitResult.USED_TODAY -> showMessage(context.getString(R.string.ui_visit_used))
+                                CallInApp.VisitResult.LOCKED -> showMessage(context.getString(R.string.ui_visit_locked))
+                            }
+                        },
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }

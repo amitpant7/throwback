@@ -194,6 +194,20 @@ class GuardService : Service() {
             }
             val audioMode = (getSystemService(AUDIO_SERVICE) as AudioManager).mode
             val inCallAudio = audioMode == AudioManager.MODE_IN_CALL || audioMode == AudioManager.MODE_IN_COMMUNICATION
+            // Pass bookkeeping: a call started from the call button counts as an Instagram call (its
+            // notification may not show for outgoing calls), and then the pass itself ends.
+            if (GuardPass.active(now)) {
+                val watched = RelayDebug.watchedPackages()
+                if (fg != null && fg in watched) {
+                    GuardPass.sawInstagram = true
+                } else if (GuardPass.sawInstagram && fg != null) {
+                    GuardPass.end() // left Instagram: the rest of the pass isn't kept for later
+                }
+                if (GuardPass.kind == GuardPass.Kind.CALL && (inCallAudio || calls.inCall)) {
+                    if (inCallAudio) lastInstagramCallAt = now
+                    GuardPass.end()
+                }
+            }
             if (!inCallAudio) {
                 instagramCallAudio = false
             } else if (instagramCallAudio || (lastInstagramCallAt != null && now - lastInstagramCallAt!! < IG_CALL_LINK_MS)) {

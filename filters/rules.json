@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112022,
+  "version": 2026112023,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -59,7 +59,7 @@
 
   "pages": {
     "home": "^/$",
-    "explore": "^/explore/(search/)?$",
+    "explore": "^/explore/",
     "inbox": "^/direct/inbox/?$",
     "direct": "^/direct(/|$)",
     "stories": "^/stories/"

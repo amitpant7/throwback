@@ -129,6 +129,12 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     "Remove it" covers uninstalling (decided 2026-11-20). "Quiet the Instagram app" is not a step but
     an optional tip on the Messages & calls screen ("For a quieter phone"), since the relay already
     removes everything except messages and calls (owner, 2026-11-20).
+27a. **Passes into the real app are limited** (owner + red-team review, 2026-11-20).
+    "Open Instagram for 5 minutes": once a day, not while the daily limit is reached, and the pass ends
+    as soon as the user leaves Instagram (no saving it for later). The chat's 📞 button: a 30-second
+    pass, at most 3 taps an hour; it ends once the call is running (the call itself then keeps
+    Instagram allowed, and call audio during that pass counts as an Instagram call).
+    Explore's 5 minutes also cover hashtag, place and keyword-result grids (every page under /explore/).
 29. **Instagram app found:** after first login, if the Instagram app is installed, Throwback offers
     "Keep it for calls & messages", "Remove it" (opens Android Settings) or "Decide later".
 

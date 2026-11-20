@@ -72,12 +72,12 @@ class GuardService : Service() {
     private val tracker = ForegroundTracker(stopEvents = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
     private var lastQueryEnd = 0L
 
-    /** Last time the phone's audio was in call mode (MODE_IN_CALL / MODE_IN_COMMUNICATION). */
+    /** Last time the phone's audio was in call mode for an Instagram call. */
     private var callAudioAt: Long? = null
 
-    /** When an Instagram call notification was last seen, and whether the current call audio is that call. */
+    /** When an Instagram call notification was last seen, and whether the call audio is that call. */
     private var lastInstagramCallAt: Long? = null
-    private var instagramCallAudio = false
+    private val callAudio = CallAudioLink()
 
     /** Since when the notification listener is disconnected, and the last rebind request. */
     private var listenerDownSince: Long? = null
@@ -193,10 +193,8 @@ class GuardService : Service() {
             }
             // Reading usage events off the main thread (the WebView shares it).
             withContext(Dispatchers.Default) { poll(usm) }
-            val instagramOnScreen = tracker.onScreen(RelayDebug.watchedPackages())
-            // An answered Instagram call removes its notification, but keeps the audio in call mode.
-            // Call audio counts only for a call that began as an Instagram call notification (seen
-            // within IG_CALL_LINK_MS), so a WhatsApp or Meet call doesn't unlock Instagram.
+            val watched = RelayDebug.watchedPackages()
+            val instagramOnScreen = tracker.onScreen(watched)
             val calls = CallState.tracker.state.value
             if (calls.inCall) lastInstagramCallAt = now
             // Without the listener the guard can't see calls and allows everything (on purpose). Some
@@ -216,15 +214,11 @@ class GuardService : Service() {
             }
             val audioMode = getSystemService(AudioManager::class.java)?.mode
             val inCallAudio = audioMode == AudioManager.MODE_IN_CALL || audioMode == AudioManager.MODE_IN_COMMUNICATION
-            // Pass bookkeeping: a call started from the call button counts as an Instagram call (its
-            // notification may not show for outgoing calls), and then the pass itself ends.
+            // Call audio keeps Instagram allowed only if it is an Instagram call (see CallAudioLink):
+            // its call notification was seen within IG_CALL_LINK_MS, or the call started in Instagram.
+            val igCallRecently = lastInstagramCallAt?.let { now - it < IG_CALL_LINK_MS } == true
+            if (callAudio.update(inCallAudio, tracker.current in watched, igCallRecently)) callAudioAt = now
             if (GuardPass.active(now)) followPass(now, tracker.current, calls, inCallAudio)
-            if (!inCallAudio) {
-                instagramCallAudio = false
-            } else if (instagramCallAudio || (lastInstagramCallAt != null && now - lastInstagramCallAt!! < IG_CALL_LINK_MS)) {
-                instagramCallAudio = true
-                callAudioAt = now
-            }
             val action = GuardPolicy.decide(
                 instagramOnScreen = instagramOnScreen,
                 now = now,
@@ -280,7 +274,7 @@ class GuardService : Service() {
             leftInstagram(now)
         }
         when (GuardPass.kind) {
-            GuardPass.Kind.CALL -> callPass(now, calls, inCallAudio)
+            GuardPass.Kind.CALL -> callPass(calls, inCallAudio)
             GuardPass.Kind.VISIT -> Unit
             GuardPass.Kind.CREATE -> if (inInstagram) createPass(now)
             GuardPass.Kind.SETTINGS -> if (inInstagram) settingsPass(now)
@@ -314,12 +308,12 @@ class GuardService : Service() {
         GuardPass.end()
     }
 
-    /** The call button's pass ends once the call runs (the call itself then keeps Instagram allowed). */
-    private fun callPass(now: Long, calls: CallSnapshot, inCallAudio: Boolean) {
-        if (inCallAudio || calls.inCall) {
-            if (inCallAudio) lastInstagramCallAt = now
-            GuardPass.end()
-        }
+    /**
+     * The call button's pass ends once a call runs. An Instagram call then keeps Instagram allowed by
+     * itself; any other call (phone, WhatsApp) doesn't (see CallAudioLink).
+     */
+    private fun callPass(calls: CallSnapshot, inCallAudio: Boolean) {
+        if (inCallAudio || calls.inCall) GuardPass.end()
     }
 
     /** Posting: only Instagram's creation screens. */

@@ -146,6 +146,27 @@ internal object GuardPolicy {
 }
 
 /**
+ * Whether the phone's call audio (MODE_IN_CALL / MODE_IN_COMMUNICATION) is an Instagram call. An
+ * answered Instagram call removes its notification but keeps the audio in call mode, and calls are
+ * never blocked (DECISIONS.md #20), so that audio keeps Instagram allowed. Only audio linked to
+ * Instagram does, though: a call notification from Instagram shortly before (ringing, then
+ * answered), or the audio switching into call mode while Instagram is in front (a call started
+ * there: the chat's call button, or during a visit or story pass). A phone or WhatsApp call, even
+ * during the call button's pass, doesn't unlock Instagram.
+ */
+internal class CallAudioLink {
+    private var wasInCall = false
+    private var linked = false
+
+    /** @return whether the call audio, if any, is an Instagram call. Called once per check. */
+    fun update(inCallAudio: Boolean, instagramInFront: Boolean, instagramCallSeenRecently: Boolean): Boolean {
+        linked = inCallAudio && (linked || instagramCallSeenRecently || (!wasInCall && instagramInFront))
+        wasInCall = inCallAudio
+        return linked
+    }
+}
+
+/**
  * A short pass for when Throwback itself opens the Instagram app: the chat's call button ([Kind.CALL])
  * or "Open Instagram for 5 minutes" ([Kind.VISIT]). Ends early once the user has been in Instagram
  * and left it, so time can't be saved up; a call pass also ends once the call is running (the call

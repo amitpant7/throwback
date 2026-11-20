@@ -82,6 +82,40 @@ class GuardPolicyTest {
         assertEquals(GuardAction.COVER, decide(true, callAudioAt = null))
     }
 
+    // ---- Which call audio is an Instagram call ---------------------------------------------------
+
+    @Test
+    fun `a phone or WhatsApp call, even during the call button's pass, doesn't unlock Instagram`() {
+        val link = CallAudioLink()
+        assertFalse(link.update(inCallAudio = false, instagramInFront = true, instagramCallSeenRecently = false))
+        // The call button's pass is running, Instagram's chat is open; a phone call is answered and
+        // its call screen comes up: the audio switches with Instagram no longer in front.
+        assertFalse(link.update(inCallAudio = true, instagramInFront = false, instagramCallSeenRecently = false))
+        // Back to Instagram during that call: still not an Instagram call.
+        assertFalse(link.update(inCallAudio = true, instagramInFront = true, instagramCallSeenRecently = false))
+    }
+
+    @Test
+    fun `a call started in Instagram stays an Instagram call until it ends`() {
+        val link = CallAudioLink()
+        link.update(inCallAudio = false, instagramInFront = true, instagramCallSeenRecently = false)
+        // Call tapped in Instagram (call button pass, or during a visit or story pass).
+        assertTrue(link.update(inCallAudio = true, instagramInFront = true, instagramCallSeenRecently = false))
+        // The user goes elsewhere while it runs (a video call shrinks into a small window): still allowed.
+        assertTrue(link.update(inCallAudio = true, instagramInFront = false, instagramCallSeenRecently = false))
+        // Hung up.
+        assertFalse(link.update(inCallAudio = false, instagramInFront = false, instagramCallSeenRecently = false))
+        assertFalse(link.update(inCallAudio = true, instagramInFront = false, instagramCallSeenRecently = false))
+    }
+
+    @Test
+    fun `an Instagram call notification links the call audio`() {
+        val link = CallAudioLink()
+        link.update(inCallAudio = true, instagramInFront = false, instagramCallSeenRecently = false) // another call
+        assertTrue(link.update(inCallAudio = true, instagramInFront = false, instagramCallSeenRecently = true))
+        assertTrue(link.update(inCallAudio = true, instagramInFront = false, instagramCallSeenRecently = false))
+    }
+
     // ---- The cover while it is up -------------------------------------------------------------
 
     @Test

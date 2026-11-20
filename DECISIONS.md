@@ -28,10 +28,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     Prices shown from Google Play in the user's currency. Fine print "Paid through Google Play", then
     "How tips work" and "Report something Throwback missed". Renaming "GTA 6" and the prism image stay
     on the release list.
-4a. **Rating ask** (owner, 2026-11-20): once, through Google Play's own in-app review card, at the
-    moment "You're all caught up" shows, once the app is at least 7 days old and was used on 5
-    different days. Play decides whether the card actually appears; no "do you like it?" pre-question
-    (Play policy). Builds not from Play do nothing.
+4a. **Rating ask** (owner, 2026-11-20): **once, after a month, never again.** Google Play's own in-app
+    review card, at "You're all caught up", once the app is at least 30 days old and was used on 10
+    different days. Google may choose not to show it; there is no second try and no "do you like it?"
+    question first (Play policy). Builds not from Play do nothing.
 5. **Privacy:** no analytics, no accounts, no server. Nothing leaves the phone except traffic to
    Instagram itself and a daily fetch of the public filter rules.
 6. **Disclaimer:** "Not affiliated with Instagram or Meta" on the store listing and the About screen.

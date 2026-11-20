@@ -7,15 +7,15 @@ import com.google.android.play.core.review.ReviewManagerFactory
 import java.time.LocalDate
 
 /**
- * Asking for a rating (owner, 2026-11-20): once, after a week. Google Play's own in-app review card
+ * Asking for a rating (owner, 2026-11-20): once, after a month, never again. Google Play's own in-app review card
  * (stays in the app, Play decides whether it actually shows and how often). Asked at a calm moment,
  * "You're all caught up", once the app is at least [MIN_DAYS] days old and was used on [MIN_USE_DAYS]
  * different days. Builds not installed from Play just do nothing.
  */
 object RateAsk {
     private const val PREFS = "rate_ask"
-    private const val MIN_DAYS = 7L
-    private const val MIN_USE_DAYS = 5
+    private const val MIN_DAYS = 30L
+    private const val MIN_USE_DAYS = 10
 
     /** Pure rule, for tests. */
     internal fun due(firstDay: Long, today: Long, useDays: Int, asked: Boolean): Boolean =

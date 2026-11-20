@@ -84,6 +84,7 @@ object RulesValidator {
         // Feed posts and blocks
         checkSelector(rules.posts.container, "posts.container", errors)
         check(rules.posts.maxMediaBefore in 0..10) { "posts.maxMediaBefore out of range" }
+        check(rules.posts.headerMaxFraction in 0.05..1.0) { "posts.headerMaxFraction out of range" }
         (rules.posts.labels + rules.modules + rules.sectionMarkers).forEach { t ->
             check(ID.matches(t.id)) { "bad id '${t.id}'" }
             checkTexts(t.text, t.id, errors)

@@ -275,7 +275,8 @@
 
     var posts = rules.posts || {};
     c.postContainer = validSelector(posts.container) ? posts.container : 'article';
-    c.maxMediaBefore = typeof posts.maxMediaBefore === 'number' ? posts.maxMediaBefore : 2;
+    c.maxMediaBefore = typeof posts.maxMediaBefore === 'number' ? posts.maxMediaBefore : 1;
+    c.headerMaxFraction = typeof posts.headerMaxFraction === 'number' ? posts.headerMaxFraction : 0.3;
     function textRules(list) {
       return (list || []).filter(function (t) {
         return validId(t.id);
@@ -434,7 +435,7 @@
       var b = c.blocked[i];
       var m = b.re.exec(path);
       if (!m) continue;
-      if (b.redirect) return { to: u.origin + expand(b.redirect, m), kind: b.kind, rewrite: true };
+      if (b.redirect) return { to: (c.home ? c.home.origin : u.origin) + expand(b.redirect, m), kind: b.kind, rewrite: true };
       return { to: c.homeUrl, kind: b.kind, rewrite: false };
     }
     if (c.home && path === c.home.pathname && c.homeVariants.indexOf(u.searchParams.get('variant')) < 0) {
@@ -635,10 +636,13 @@
         break;
       }
     }
-    if (depth < 2 && el.parentElement) checkTextElement(el.parentElement, depth + 1);
+    // Labels can be split over spans ("Spon" + "sored"): also try the parent, but never a block
+    // with images or videos in it, which could hold a photo and its caption together.
+    var parent = el.parentElement;
+    if (depth < 2 && parent && !parent.querySelector('img, video')) checkTextElement(parent, depth + 1);
   }
 
-  /** How many images/videos of the post come before el (1 = just the avatar, so el is in the header). */
+  /** How many images/videos of the post come before el (0 or 1 = at most the avatar: el is in the header). */
   function mediaBefore(post, el) {
     var media = post.querySelectorAll('img, video');
     var n = 0;
@@ -649,11 +653,26 @@
     return n;
   }
 
+  /**
+   * Whether el is in the post's header rather than its caption (DECISIONS.md #15: captions are never
+   * hidden). Two independent checks: no photo/video before it, and, when the post is laid out, a
+   * position near the top. Layout is only read here, for the rare exact label matches.
+   */
+  function inPostHeader(post, el) {
+    if (mediaBefore(post, el) > state.c.maxMediaBefore) return false;
+    var box = post.getBoundingClientRect();
+    if (box.height > 0) {
+      var top = el.getBoundingClientRect().top - box.top;
+      if (top / box.height > state.c.headerMaxFraction) return false;
+    }
+    return true;
+  }
+
   /** "Sponsored" / "Suggested for you" in a post's header removes the post. */
   function onPostLabel(el, id) {
     var post = el.closest(state.c.postContainer);
-    if (!post || post.hasAttribute(ATTR_POST)) return;
-    if (mediaBefore(post, el) > state.c.maxMediaBefore) return; // caption text, never hidden
+    if (!post || post === el || post.hasAttribute(ATTR_POST)) return;
+    if (!inPostHeader(post, el)) return; // caption text, never hidden
     post.setAttribute(ATTR_POST, id);
   }
 

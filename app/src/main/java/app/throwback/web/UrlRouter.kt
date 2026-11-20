@@ -40,6 +40,9 @@ class UrlRouter(private val rules: FilterRules) {
     private val messagesOnly = rules.paths.messagesOnly.map(::Regex)
     private val pullToRefresh = rules.paths.pullToRefresh.map(::Regex)
     private val home = UrlParts.parse(rules.homeUrl)
+
+    /** Rewritten paths go to the home URL's origin (www.instagram.com), saving Instagram's own redirect. */
+    private val canonicalOrigin = home?.let { "https://${it.host}" }
     private val homeVariants: Set<String?> = rules.homeVariants.toSet() + home?.queryParam("variant")
 
     fun isInstagramHost(host: String): Boolean = instagram.matches(host)
@@ -127,7 +130,8 @@ class UrlRouter(private val rules: FilterRules) {
 
         for ((regex, rule) in blocked) {
             val match = regex.find(path) ?: continue
-            val target = rule.redirect?.let { "https://${parts.host}" + expandTemplate(it, match) } ?: rules.homeUrl
+            val origin = canonicalOrigin ?: "https://${parts.host}"
+            val target = rule.redirect?.let { origin + expandTemplate(it, match) } ?: rules.homeUrl
             return Decision.Redirect(target, rule.kind)
         }
 

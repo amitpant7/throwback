@@ -96,9 +96,10 @@
   ],
 
   "posts": {
-    "note": "A feed post (container) is hidden when one of these labels is in its header: at most 'maxMediaBefore' images/videos (the avatar) come before the label, so a caption that happens to say the same words is never matched.",
+    "note": "A feed post (container) is hidden when one of these labels is in its header: at most 'maxMediaBefore' images/videos (the avatar) come before the label, and the label sits in the top 'headerMaxFraction' of the post. A caption that happens to say the same words always comes after the photo or video, so it is never matched.",
     "container": "article",
-    "maxMediaBefore": 2,
+    "maxMediaBefore": 1,
+    "headerMaxFraction": 0.3,
     "labels": [
       { "id": "sponsored",
         "text": ["Sponsored", "Gesponsert", "Sponsorisé", "Sponsorisée", "Patrocinado", "Patrocinada", "Sponsorizzato", "Gesponsord", "Sponsorowane", "Sponsrad", "Sponset", "Sponsoreret", "Sponsoroitu", "Sponzorováno", "Szponzorált", "Sponsorlu", "Реклама", "Χορηγούμενη", "ממומן", "ممول", "प्रायोजित", "Bersponsor", "Được tài trợ", "広告", "광고", "赞助内容", "贊助"],

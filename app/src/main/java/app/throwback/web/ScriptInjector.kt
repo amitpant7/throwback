@@ -32,8 +32,6 @@ internal class PageAssets(val template: String, val css: String) {
  */
 internal class ScriptInjector(private val webView: WebView) {
 
-    val documentStartSupported: Boolean = WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
-
     private var handler: ScriptHandler? = null
     private var script: String? = null
 
@@ -41,7 +39,7 @@ internal class ScriptInjector(private val webView: WebView) {
     fun install(script: String) {
         if (script == this.script) return
         this.script = script
-        if (documentStartSupported) {
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
             handler?.remove()
             handler = WebViewCompat.addDocumentStartJavaScript(webView, script, WebViewConfig.INSTAGRAM_ORIGINS)
         }
@@ -49,7 +47,7 @@ internal class ScriptInjector(private val webView: WebView) {
 
     /** Fallback injection; call from onPageStarted and onPageFinished. */
     fun onPageEvent(isInstagram: Boolean) {
-        if (documentStartSupported || !isInstagram) return
+        if (!isInstagram || WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) return
         script?.let { webView.evaluateJavascript(it, null) }
     }
 
@@ -63,7 +61,7 @@ internal class ScriptInjector(private val webView: WebView) {
     }
 
     fun release() {
-        handler?.remove()
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) handler?.remove()
         handler = null
     }
 }

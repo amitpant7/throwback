@@ -1,0 +1,244 @@
+package app.throwback.web
+
+import app.throwback.core.WebMode
+import app.throwback.core.WebMode.FULL
+import app.throwback.core.WebMode.MESSAGES_ONLY
+import app.throwback.web.UrlRouter.Decision
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/** Routing with the real filters/rules.json. */
+class UrlRouterTest {
+
+    private val router = UrlRouter(TestRules.bundled)
+    private val home = "https://www.instagram.com/?variant=following"
+    private val inbox = "https://www.instagram.com/direct/inbox/"
+    private val ig = "https://www.instagram.com"
+
+    private fun decide(url: String, mode: WebMode = FULL, current: String? = "$ig/") = router.decide(url, mode, current)
+
+    // ---- Reels
+
+    @Test
+    fun `reels tab and reels pages are blocked`() {
+        assertEquals(Decision.Redirect(home, "reels"), decide("$ig/reels/"))
+        assertEquals(Decision.Redirect(home, "reels"), decide("$ig/reels"))
+        assertEquals(Decision.Redirect(home, "reels"), decide("$ig/reels/audio/1234567890/"))
+        assertEquals(Decision.Redirect(home, "reels"), decide("$ig/reel/"))
+    }
+
+    @Test
+    fun `a single reel opens as a post`() {
+        assertEquals(Decision.Redirect("$ig/p/C1a2B3c4D5e/", "reels"), decide("$ig/reel/C1a2B3c4D5e/"))
+        assertEquals(Decision.Redirect("$ig/p/C1a2B3c4D5e/", "reels"), decide("$ig/reels/C1a2B3c4D5e/?igsh=abc"))
+        assertEquals(Decision.Redirect("$ig/p/C1a2B3c4D5e/", "reels"), decide("$ig/some.user/reel/C1a2B3c4D5e/"))
+    }
+
+    @Test
+    fun `a profile's reels tab goes to the profile`() {
+        assertEquals(Decision.Redirect("$ig/some.user_1/", "reels"), decide("$ig/some.user_1/reels/"))
+    }
+
+    @Test
+    fun `posts, profiles, stories and search load normally`() {
+        listOf(
+            "$ig/p/C1a2B3c4D5e/", "$ig/some.user/", "$ig/stories/some.user/123/",
+            "$ig/explore/", "$ig/explore/search/", "$ig/explore/tags/cats/", "$ig/accounts/activity/",
+            "$ig/direct/inbox/", "$ig/direct/t/1234/", "$ig/accounts/edit/",
+        ).forEach { assertEquals(it, Decision.Load, decide(it)) }
+    }
+
+    @Test
+    fun `suggested people page is blocked`() {
+        assertEquals(Decision.Redirect(home, "suggested"), decide("$ig/explore/people/"))
+    }
+
+    // ---- Home feed
+
+    @Test
+    fun `home always means the Following feed`() {
+        assertEquals(Decision.Redirect(home, null), decide("$ig/"))
+        assertEquals(Decision.Redirect(home, null), decide("https://instagram.com"))
+        assertEquals(Decision.Redirect(home, null), decide("$ig/?variant=home"))
+        assertEquals(Decision.Load, decide(home))
+        assertEquals(Decision.Load, decide("$ig/?variant=favorites"))
+    }
+
+    @Test
+    fun `http Instagram links are upgraded`() {
+        assertEquals(Decision.Redirect("$ig/p/X/?a=1", null), decide("http://www.instagram.com/p/X/?a=1"))
+    }
+
+    // ---- Messages-only mode
+
+    @Test
+    fun `messages-only allows the inbox and chats`() {
+        assertEquals(Decision.Load, decide(inbox, MESSAGES_ONLY))
+        assertEquals(Decision.Load, decide("$ig/direct/t/340282366841710300949128/", MESSAGES_ONLY))
+        assertEquals(Decision.Load, decide("$ig/direct/requests/", MESSAGES_ONLY))
+    }
+
+    @Test
+    fun `messages-only redirects everything else to the inbox`() {
+        listOf("$ig/", home, "$ig/p/X/", "$ig/some.user/", "$ig/reels/", "$ig/explore/", "$ig/stories/x/1/").forEach {
+            assertEquals(it, Decision.Redirect(inbox, UrlRouter.KIND_MESSAGES_ONLY), decide(it, MESSAGES_ONLY))
+        }
+    }
+
+    @Test
+    fun `login and calls work in every mode`() {
+        listOf(
+            "$ig/accounts/login/?next=%2Fdirect%2Finbox%2F", "$ig/accounts/onetap/?next=%2F",
+            "$ig/challenge/abc/", "$ig/accounts/password/reset/", "$ig/call/?thread_id=1",
+        ).forEach {
+            assertEquals(it, Decision.Load, decide(it, MESSAGES_ONLY))
+            assertEquals(it, Decision.Load, decide(it, FULL))
+        }
+    }
+
+    // ---- Other sites
+
+    @Test
+    fun `other sites open outside`() {
+        assertEquals(Decision.External("https://example.com/a"), decide("https://example.com/a"))
+        assertEquals(Decision.External("https://threads.net/@x"), decide("https://threads.net/@x"))
+    }
+
+    @Test
+    fun `link shim targets open outside directly`() {
+        val shim = "https://l.instagram.com/?u=https%3A%2F%2Fexample.com%2Fpage%3Fq%3D1&e=AT0abc"
+        assertEquals(Decision.External("https://example.com/page?q=1"), decide(shim))
+    }
+
+    @Test
+    fun `link shims to Instagram stay inside`() {
+        val shim = "https://l.instagram.com/?u=https%3A%2F%2Fwww.instagram.com%2Fp%2FX%2F&e=1"
+        assertEquals(Decision.Redirect("$ig/p/X/", null), decide(shim))
+    }
+
+    @Test
+    fun `facebook stays inside only during login`() {
+        val fb = "https://www.facebook.com/login.php?next=x"
+        assertEquals(Decision.Load, decide(fb, current = "$ig/accounts/login/"))
+        assertEquals(Decision.Load, decide("https://m.facebook.com/v18.0/dialog/oauth?x", current = "https://www.facebook.com/login.php"))
+        assertEquals(Decision.Load, decide(fb, current = null))
+        assertEquals(Decision.External(fb), decide(fb, current = "$ig/direct/t/1/"))
+        assertEquals(Decision.External("https://facebook.com/somepage"), decide("https://facebook.com/somepage", current = home))
+        // Lookalike hosts are not Facebook.
+        assertEquals(Decision.External("https://evilfacebook.com/login"), decide("https://evilfacebook.com/login", current = "$ig/accounts/login/"))
+    }
+
+    @Test
+    fun `accounts center stays inside`() {
+        assertEquals(Decision.Load, decide("https://accountscenter.instagram.com/password_and_security/"))
+    }
+
+    @Test
+    fun `open-in-app and store links do nothing`() {
+        listOf(
+            "intent://instagram.com/_n/mainfeed/#Intent;package=com.instagram.android;scheme=https;end",
+            "instagram://user?username=x",
+            "market://details?id=com.instagram.android",
+            "https://play.google.com/store/apps/details?id=com.instagram.android&referrer=x",
+            "https://apps.apple.com/app/instagram/id389801252",
+        ).forEach { assertEquals(it, Decision.Ignore, decide(it)) }
+        assertEquals(Decision.Ignore, decide("not a url"))
+    }
+
+    @Test
+    fun `other schemes go to their apps`() {
+        assertEquals(Decision.External("mailto:a@b.c"), decide("mailto:a@b.c"))
+        assertEquals(Decision.External("tel:+123"), decide("tel:+123"))
+        assertEquals(
+            Decision.External("https://play.google.com/store/apps/details?id=org.example"),
+            decide("https://play.google.com/store/apps/details?id=org.example"),
+        )
+        assertEquals(Decision.Load, decide("about:blank"))
+    }
+
+    // ---- Start URLs, locations, pull to refresh
+
+    @Test
+    fun `start urls`() {
+        assertEquals(home, router.startUrl(null, FULL))
+        assertEquals(inbox, router.startUrl(null, MESSAGES_ONLY))
+        assertEquals("$ig/p/C1a2B3c4D5e/", router.startUrl("https://instagram.com/reel/C1a2B3c4D5e/", FULL))
+        assertEquals("$ig/p/X/", router.startUrl("$ig/p/X/", FULL))
+        assertEquals(inbox, router.startUrl("$ig/p/X/", MESSAGES_ONLY))
+        assertEquals(home, router.startUrl("https://example.com/", FULL))
+        assertEquals(home, router.startUrl("http://instagram.com/", FULL))
+    }
+
+    @Test
+    fun `location is the path on Instagram and the whole URL elsewhere`() {
+        assertEquals("/", router.locationFor(home))
+        assertEquals("/direct/inbox/", router.locationFor(inbox))
+        assertEquals("https://www.facebook.com/login.php", router.locationFor("https://www.facebook.com/login.php"))
+    }
+
+    @Test
+    fun `pull to refresh only on listed pages`() {
+        assertTrue(router.allowsPullToRefresh(home))
+        assertTrue(router.allowsPullToRefresh(inbox))
+        assertFalse(router.allowsPullToRefresh("$ig/direct/t/1/"))
+        assertFalse(router.allowsPullToRefresh("$ig/p/X/"))
+        assertFalse(router.allowsPullToRefresh("https://www.facebook.com/"))
+        assertFalse(router.allowsPullToRefresh(null))
+    }
+
+    @Test
+    fun `redirect templates never produce protocol-relative paths`() {
+        val match = Regex("^/(.*)$").find("//evil.example/x")!!
+        assertEquals("/evil.example/x", UrlRouter.expandTemplate("/$1", match))
+        assertEquals("/p//", UrlRouter.expandTemplate("/p/$2/", match)) // a missing group is empty
+    }
+
+    // ---- Loop guard and helpers
+
+    @Test
+    fun `loop guard allows three redirects to the same place within the window`() {
+        var t = 0L
+        val guard = RedirectLoopGuard(now = { t }, windowMillis = 1_000, maxRepeats = 3)
+        assertTrue(guard.allow("a"))
+        assertTrue(guard.allow("a"))
+        assertTrue(guard.allow("b"))
+        assertTrue(guard.allow("a"))
+        assertFalse(guard.allow("a"))
+        t = 2_000
+        assertTrue(guard.allow("a"))
+    }
+
+    @Test
+    fun `host matcher`() {
+        val m = HostMatcher(listOf("instagram.com", "*.facebook.com"))
+        assertTrue(m.matches("instagram.com"))
+        assertTrue(m.matches("INSTAGRAM.com"))
+        assertFalse(m.matches("www.instagram.com"))
+        assertTrue(m.matches("m.facebook.com"))
+        assertTrue(m.matches("a.b.facebook.com"))
+        assertFalse(m.matches("facebook.com"))
+        assertFalse(m.matches("evilfacebook.com"))
+    }
+
+    @Test
+    fun `url parts`() {
+        val p = UrlParts.parse("HTTPS://user:pw@WWW.Instagram.com:443/p/X/?a=1&b=two%20words&c#frag")!!
+        assertEquals("https", p.scheme)
+        assertEquals("www.instagram.com", p.host)
+        assertEquals("/p/X/", p.path)
+        assertEquals("1", p.queryParam("a"))
+        assertEquals("two words", p.queryParam("b"))
+        assertEquals("", p.queryParam("c"))
+        assertNull(p.queryParam("d"))
+        assertEquals("/", UrlParts.parse("https://instagram.com")!!.path)
+        assertEquals("", UrlParts.parse("mailto:a@b.c")!!.host)
+        // Characters java.net.URI rejects.
+        assertEquals("/explore/tags/a|b/", UrlParts.parse("https://www.instagram.com/explore/tags/a|b/")!!.path)
+        assertNull(UrlParts.parse("no scheme here"))
+        // Bad percent-encoding is kept as written.
+        assertEquals("%zz", UrlParts.parse("https://x.com/?u=%zz")!!.queryParam("u"))
+    }
+}

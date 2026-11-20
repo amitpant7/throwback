@@ -115,8 +115,13 @@ data class HideTextRule(
 @Serializable
 data class PostRules(
     val container: String = "article",
-    /** A label only counts if at most this many images/videos come before it in the post (header, not caption). */
-    val maxMediaBefore: Int = 2,
+    /**
+     * A label only counts in the post's header, never in its caption: at most this many
+     * images/videos (the avatar) may come before it...
+     */
+    val maxMediaBefore: Int = 1,
+    /** ...and it must sit in this top fraction of the post's height (checked when the post has a layout). */
+    val headerMaxFraction: Double = 0.3,
     val labels: List<TextRule> = emptyList(),
 )
 

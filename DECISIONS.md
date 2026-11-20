@@ -37,6 +37,14 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     5 minutes a day of time actually on that tab (rules `explore.dailySeconds`), then it is hidden
     as before and "Enough for today… Your time is yours. Keep it. Go have an argument with your sibling instead." shows in its
     place until midnight. Search keeps working. Stored on the device per day.
+    **Reels there play as reels** (owner, 2026-11-20): Instagram's mobile site has no single-reel
+    player (a reel tile opens as a static post, even with Throwback off). So while the minutes last,
+    tapping a reel tile on Explore or in search opens Throwback's own full-screen swipe player with
+    the reels from that page, in the order shown. It uses the video, username and caption Explore
+    already loaded; no extra logged-in requests. Shows "m:ss left today"; tap = sound on/off; ✕ or
+    Back closes it; "Open post" shows the normal post (likes, comments, profile). The time counts
+    toward the 5 minutes, and at 0:00 it closes onto "Enough for today". Only 3 videos are loaded
+    at a time.
 13b. **A little discovery** (decided 2026-11-20): of Instagram's suggested posts (never ads), a few are
     shown, tagged "Discover · not someone you follow". Per 5 minutes of time actually spent on the feed:
     at most 1 video/reel and 1 photo post; at most 20 a day; only after 8 posts from people you follow

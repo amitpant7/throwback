@@ -1022,6 +1022,7 @@
     state.href = href;
     state.path = location.pathname;
     if (state.leaving) return;
+    if (clipPlayer && state.path !== previousPath) closeClipPlayer(false);
     var u = parseUrl(href);
     var r = u && route(u);
     // Instagram tidying the address of the page already on screen (e.g. dropping ?variant=following)
@@ -1070,6 +1071,7 @@
   /** Link taps, before Instagram's router sees them. */
   function onClick(e) {
     if (!state.c || e.defaultPrevented || e.button !== 0) return;
+    if (openClipFromTap(e)) return;
     var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
     if (!a) return;
     var u = parseUrl(a.getAttribute('href'));
@@ -1330,7 +1332,7 @@
   function onMediaPlay(e) {
     var v = e.target;
     var rv = state.c && state.c.reelViewer;
-    if (!rv || !v || v.tagName !== 'VIDEO' || pageActive('stories')) return;
+    if (!rv || !v || v.tagName !== 'VIDEO' || pageActive('stories') || clipPlayer) return;
     var viewer = reelViewerOf(v);
     if (!viewer) return;
     if (viewer.hasAttribute(ATTR_REEL_STOP)) {
@@ -1465,7 +1467,8 @@
   function startExploreClock() {
     setInterval(function () {
       var ex = state.c && state.c.explore;
-      if (!ex || !ex.dailySeconds || state.mode === MODE_MESSAGES || !pageActive('explore')) return;
+      if (clipPlayer && !exploreAllowed()) closeClipPlayer(true); // time's up: the card shows on Explore
+      if (!ex || !ex.dailySeconds || state.mode === MODE_MESSAGES || !(pageActive('explore') || clipPlayer)) return;
       if (document.visibilityState === 'visible' && !state.covered && exploreAllowed()) {
         var d = exploreLog();
         d.used++;
@@ -1478,6 +1481,7 @@
         }
         if (d.used >= ex.dailySeconds) applyClasses(); // time's up: the grid hides now
       }
+      updateClipClock();
       updateExploreCard();
     }, 1000);
   }
@@ -1504,6 +1508,371 @@
         '<div style="font-size:16px;line-height:1.4">Go have an argument with your sibling instead.</div>';
     }
     if (card.parentNode !== main) main.appendChild(card);
+  }
+
+
+  // ---------------------------------------------------------------- reels from Explore and search
+
+  /*
+   * Reels from Explore or search (owner, 2026-11-20). Instagram's mobile site has no single-reel
+   * player: a reel tile opens as a static post (checked with Throwback's script off; /reel/<id>/ is
+   * turned into /p/<id>/ by Instagram itself). So, while today's Explore minutes last, tapping a reel
+   * tile there opens Throwback's own full-screen swipe player with the reels from that page, in the
+   * order shown. Everything it needs (MP4 address, poster, username, caption) is already in the data
+   * Explore loaded; videos come from Instagram's CDN like any video; no extra logged-in requests.
+   * The time counts toward the 5 minutes; when they run out the player closes and "Enough for
+   * today" shows. Back or ✕ closes it. "Open post" shows the post (likes, comments, profile).
+   */
+  var CLIP_MAX = 300;
+  var CLIP_ID = '__tb_clips';
+  var clips = { byCode: {}, order: [] };
+  var clipPlayer = null;
+  var CDN_HOST = /(^|\.)(cdninstagram\.com|fbcdn\.net)$/;
+
+  function onExploreOrSearch() {
+    return /^\/explore\//.test(location.pathname);
+  }
+
+  function cdnUrl(url) {
+    var u = typeof url === 'string' && parseUrl(url);
+    return !!(u && u.protocol === 'https:' && CDN_HOST.test(u.hostname));
+  }
+
+  function learnClips(o, depth) {
+    if (!o || typeof o !== 'object' || depth > 14) return;
+    if (Array.isArray(o)) {
+      for (var i = 0; i < o.length; i++) learnClips(o[i], depth + 1);
+      return;
+    }
+    if (typeof o.code === 'string' && Array.isArray(o.video_versions) && o.video_versions.length) {
+      addClip(o);
+      return;
+    }
+    for (var k in o) {
+      if (Object.prototype.hasOwnProperty.call(o, k) && o[k] && typeof o[k] === 'object') learnClips(o[k], depth + 1);
+    }
+  }
+
+  /** The smallest version at least as wide as the screen (capped at 720 px), else the largest. */
+  function pickClipVideo(list) {
+    var want = Math.min(720, Math.round((window.innerWidth || 400) * (window.devicePixelRatio || 2)));
+    var best = null;
+    for (var i = 0; i < list.length; i++) {
+      var v = list[i];
+      if (!v || !cdnUrl(v.url)) continue;
+      var w = v.width || 0;
+      if (!best) best = v;
+      else if (w >= want ? (best.width < want || w < best.width) : (best.width < want && w > best.width)) best = v;
+    }
+    return best;
+  }
+
+  function addClip(m) {
+    if (!/^[A-Za-z0-9_-]{5,40}$/.test(m.code) || clips.byCode[m.code]) return;
+    var v = pickClipVideo(m.video_versions);
+    if (!v) return;
+    var cands = m.image_versions2 && m.image_versions2.candidates;
+    var poster = cands && cands[0] && cdnUrl(cands[0].url) ? cands[0].url : null;
+    clips.byCode[m.code] = {
+      code: m.code,
+      video: v.url,
+      poster: poster,
+      user: m.user && typeof m.user.username === 'string' ? m.user.username : '',
+      caption: m.caption && typeof m.caption.text === 'string' ? m.caption.text.slice(0, 500) : '',
+    };
+    clips.order.push(m.code);
+    if (clips.order.length > CLIP_MAX) delete clips.byCode[clips.order.shift()];
+  }
+
+  function tileCode(a) {
+    var m = a && /^\/p\/([A-Za-z0-9_-]{5,40})\/?$/.exec(a.getAttribute('href') || '');
+    return m ? m[1] : null;
+  }
+
+  /** Reel codes in the order the page shows them, then any others Explore loaded. */
+  function clipList() {
+    var seen = {};
+    var out = [];
+    var tiles = document.querySelectorAll('main a[href^="/p/"]');
+    for (var i = 0; i < tiles.length; i++) {
+      var c = tileCode(tiles[i]);
+      if (c && clips.byCode[c] && !seen[c]) {
+        seen[c] = 1;
+        out.push(c);
+      }
+    }
+    for (var j = 0; j < clips.order.length; j++) {
+      if (!seen[clips.order[j]]) {
+        seen[clips.order[j]] = 1;
+        out.push(clips.order[j]);
+      }
+    }
+    return out;
+  }
+
+  function openClipFromTap(e) {
+    if (clipPlayer || state.clipBypass || state.mode === MODE_MESSAGES || !onExploreOrSearch() || !exploreAllowed()) return false;
+    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    var code = tileCode(a);
+    if (!code || !clips.byCode[code]) return false;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    openClipPlayer(code);
+    return true;
+  }
+
+  var CLIP_CSS =
+    '#' + CLIP_ID + '{position:fixed;inset:0;z-index:2147483600;background:#000;color:#fff;' +
+      'font:14px/1.35 -apple-system,system-ui,Roboto,sans-serif;overscroll-behavior:contain}' +
+    '#' + CLIP_ID + ' .tbc-strip{position:absolute;inset:0;overflow-y:scroll;scroll-snap-type:y mandatory;' +
+      'scrollbar-width:none;overscroll-behavior:contain}' +
+    '#' + CLIP_ID + ' .tbc-strip::-webkit-scrollbar{display:none}' +
+    '#' + CLIP_ID + ' .tbc-slide{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;' +
+      'display:flex;align-items:center;justify-content:center;overflow:hidden}' +
+    '#' + CLIP_ID + ' video{width:100%;height:100%;object-fit:cover;background:#000}' +
+    '#' + CLIP_ID + ' .tbc-info{position:absolute;left:0;right:0;bottom:0;padding:48px 16px 24px;' +
+      'background:linear-gradient(transparent,rgba(0,0,0,.65));pointer-events:none}' +
+    '#' + CLIP_ID + ' .tbc-user{font-weight:600;font-size:15px}' +
+    '#' + CLIP_ID + ' .tbc-cap{margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;' +
+      'overflow:hidden;opacity:.92;white-space:pre-line}' +
+    '#' + CLIP_ID + ' .tbc-open{pointer-events:auto;display:inline-block;margin-top:10px;padding:6px 12px;' +
+      'border:1px solid rgba(255,255,255,.55);border-radius:8px;color:#fff;font-weight:600;font-size:13px;' +
+      'background:transparent}' +
+    '#' + CLIP_ID + ' .tbc-top{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;' +
+      'justify-content:space-between;padding:12px 8px 24px 4px;background:linear-gradient(rgba(0,0,0,.45),transparent);' +
+      'pointer-events:none}' +
+    '#' + CLIP_ID + ' .tbc-close{pointer-events:auto;width:48px;height:48px;border:0;background:transparent;' +
+      'color:#fff;display:flex;align-items:center;justify-content:center}' +
+    '#' + CLIP_ID + ' .tbc-left{font-weight:600;font-size:13px;padding:6px 10px;border-radius:999px;' +
+      'background:rgba(0,0,0,.4);font-variant-numeric:tabular-nums}' +
+    '#' + CLIP_ID + ' .tbc-mute{position:absolute;top:50%;left:50%;width:64px;height:64px;margin:-32px 0 0 -32px;' +
+      'border-radius:50%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;' +
+      'opacity:0;transition:opacity .2s;pointer-events:none}' +
+    '#' + CLIP_ID + ' .tbc-mute.on{opacity:1}';
+
+  var ICON_CLOSE = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    'stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg>';
+  var ICON_MUTED = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4z"/>' +
+    '<path d="M22 9l-6 6M16 9l6 6"/></svg>';
+  var ICON_SOUND = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4z"/>' +
+    '<path d="M15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13"/></svg>';
+
+  function clipText(tag, cls, text) {
+    var el = document.createElement(tag);
+    el.className = cls;
+    el.textContent = text;
+    return el;
+  }
+
+  function openClipPlayer(code) {
+    var list = clipList();
+    var start = Math.max(0, list.indexOf(code));
+    var root = document.createElement('div');
+    root.id = CLIP_ID;
+    root.setAttribute('role', 'dialog');
+    root.setAttribute('aria-label', 'Reels');
+    var style = document.createElement('style');
+    style.textContent = CLIP_CSS;
+    root.appendChild(style);
+    var strip = document.createElement('div');
+    strip.className = 'tbc-strip';
+    root.appendChild(strip);
+    var top = document.createElement('div');
+    top.className = 'tbc-top';
+    var close = document.createElement('button');
+    close.className = 'tbc-close';
+    close.type = 'button';
+    close.setAttribute('aria-label', 'Close');
+    close.innerHTML = ICON_CLOSE;
+    close.addEventListener('click', function () {
+      closeClipPlayer(true);
+    });
+    var left = clipText('div', 'tbc-left', '');
+    top.appendChild(close);
+    top.appendChild(left);
+    root.appendChild(top);
+    var mute = document.createElement('div');
+    mute.className = 'tbc-mute';
+    root.appendChild(mute);
+    clipPlayer = { root: root, strip: strip, left: left, mute: mute, list: [], slides: [], current: -1,
+      muted: false, observer: null, muteTimer: 0 };
+    for (var i = 0; i < list.length; i++) addClipSlide(list[i]);
+    clipPlayer.observer = typeof IntersectionObserver === 'function' ? new IntersectionObserver(function (entries) {
+      for (var k = 0; k < entries.length; k++) {
+        if (entries[k].isIntersecting) setClipCurrent(clipPlayer.slides.indexOf(entries[k].target));
+      }
+    }, { root: strip, threshold: 0.6 }) : null;
+    if (clipPlayer.observer) for (var s = 0; s < clipPlayer.slides.length; s++) clipPlayer.observer.observe(clipPlayer.slides[s]);
+    (document.body || document.documentElement).appendChild(root);
+    pauseAllMedia();
+    try {
+      history.pushState({ __tbClips: 1 }, '', location.href); // Back closes the player, not the page
+      clipPlayer.pushed = true;
+    } catch (e) {
+      clipPlayer.pushed = false;
+    }
+    strip.scrollTop = start * strip.clientHeight;
+    setClipCurrent(start);
+    updateClipClock();
+  }
+
+  function addClipSlide(code) {
+    var c = clips.byCode[code];
+    if (!c || !clipPlayer || clipPlayer.list.indexOf(code) !== -1) return;
+    var slide = document.createElement('section');
+    slide.className = 'tbc-slide';
+    var v = document.createElement('video');
+    v.setAttribute('playsinline', '');
+    v.loop = true;
+    v.preload = 'none';
+    if (c.poster) v.poster = c.poster;
+    v.addEventListener('click', toggleClipSound);
+    slide.appendChild(v);
+    var info = document.createElement('div');
+    info.className = 'tbc-info';
+    if (c.user) info.appendChild(clipText('div', 'tbc-user', c.user));
+    if (c.caption) info.appendChild(clipText('div', 'tbc-cap', c.caption));
+    var open = clipText('button', 'tbc-open', 'Open post');
+    open.type = 'button';
+    open.addEventListener('click', function () {
+      openClipPost(code);
+    });
+    info.appendChild(open);
+    slide.appendChild(info);
+    clipPlayer.strip.appendChild(slide);
+    clipPlayer.list.push(code);
+    clipPlayer.slides.push(slide);
+    if (clipPlayer.observer) clipPlayer.observer.observe(slide);
+  }
+
+  /** Plays slide i; only it and its neighbours keep a video address (memory), the rest are emptied. */
+  function setClipCurrent(i) {
+    var p = clipPlayer;
+    if (!p || i < 0 || i >= p.slides.length) return;
+    p.current = i;
+    for (var k = 0; k < p.slides.length; k++) {
+      var v = p.slides[k].firstChild;
+      var c = clips.byCode[p.list[k]];
+      if (Math.abs(k - i) <= 1 && c) {
+        if (v.getAttribute('src') !== c.video) {
+          v.src = c.video;
+          v.preload = k === i ? 'auto' : 'metadata';
+        }
+      } else if (v.hasAttribute('src')) {
+        v.pause();
+        v.removeAttribute('src');
+        v.load();
+      }
+      if (k !== i && !v.paused) v.pause();
+    }
+    playClip(p.slides[i].firstChild);
+    // Near the end: let Explore load its next page underneath, and take what it learned.
+    if (i >= p.slides.length - 3) {
+      if (onExploreGrid()) window.scrollBy(0, (window.innerHeight || 800) * 3);
+      var more = clipList();
+      for (var j = 0; j < more.length; j++) addClipSlide(more[j]);
+    }
+  }
+
+  function playClip(v) {
+    if (!v || state.covered || document.visibilityState !== 'visible') return;
+    v.muted = clipPlayer.muted;
+    var pr = v.play();
+    if (pr && typeof pr.catch === 'function') {
+      pr.catch(function () {
+        // Sound needs a tap first: play muted (a tap on the video turns sound on).
+        if (!clipPlayer || v.muted) return;
+        clipPlayer.muted = true;
+        v.muted = true;
+        v.play().catch(function () {});
+      });
+    }
+  }
+
+  function toggleClipSound() {
+    var p = clipPlayer;
+    if (!p) return;
+    p.muted = !p.muted;
+    var v = p.slides[p.current] && p.slides[p.current].firstChild;
+    if (v) {
+      v.muted = p.muted;
+      if (v.paused) playClip(v);
+    }
+    p.mute.innerHTML = p.muted ? ICON_MUTED : ICON_SOUND;
+    p.mute.className = 'tbc-mute on';
+    clearTimeout(p.muteTimer);
+    p.muteTimer = setTimeout(function () {
+      if (clipPlayer) clipPlayer.mute.className = 'tbc-mute';
+    }, 700);
+  }
+
+  function updateClipClock() {
+    var p = clipPlayer;
+    var ex = state.c && state.c.explore;
+    if (!p || !ex) return;
+    var left = Math.max(0, ex.dailySeconds - exploreLog().used);
+    var t = Math.floor(left / 60) + ':' + ('0' + (left % 60)).slice(-2) + ' left today';
+    if (p.left.textContent !== t) p.left.textContent = t;
+  }
+
+  /** @param viaHistory true when closed by ✕ or time-out: also drops the history entry it added. */
+  function closeClipPlayer(viaHistory) {
+    var p = clipPlayer;
+    if (!p) return;
+    clipPlayer = null;
+    clearTimeout(p.muteTimer);
+    if (p.observer) p.observer.disconnect();
+    for (var k = 0; k < p.slides.length; k++) {
+      var v = p.slides[k].firstChild;
+      v.pause();
+      if (v.hasAttribute('src')) {
+        v.removeAttribute('src');
+        v.load();
+      }
+    }
+    if (p.root.parentNode) p.root.parentNode.removeChild(p.root);
+    if (viaHistory && p.pushed && history.state && history.state.__tbClips) {
+      state.clipPopIgnore = true;
+      history.back();
+    }
+    updateExploreCard();
+  }
+
+  /** "Open post": the normal post page (likes, comments, the profile), through Instagram's own link. */
+  function openClipPost(code) {
+    closeClipPlayer(true);
+    setTimeout(function () {
+      var link = document.querySelector('main a[href="/p/' + code + '/"]');
+      if (link) {
+        state.clipBypass = true;
+        clickElement(link);
+        state.clipBypass = false;
+      } else {
+        location.assign('/p/' + code + '/');
+      }
+    }, 120);
+  }
+
+  /** Back while the player is open closes it; Instagram doesn't see that history step. */
+  function onClipPop(e) {
+    if (state.clipPopIgnore) {
+      state.clipPopIgnore = false;
+      e.stopImmediatePropagation();
+      return;
+    }
+    if (!clipPlayer) return;
+    e.stopImmediatePropagation();
+    closeClipPlayer(false);
+  }
+
+  function onClipVisibility() {
+    if (!clipPlayer) return;
+    var v = clipPlayer.slides[clipPlayer.current] && clipPlayer.slides[clipPlayer.current].firstChild;
+    if (!v) return;
+    if (document.visibilityState === 'visible') playClip(v);
+    else v.pause();
   }
 
   // ---------------------------------------------------------------- nothing plays while covered
@@ -1657,6 +2026,14 @@
             // Never break Instagram's own parsing.
           }
           break;
+        }
+      }
+      if (typeof text === 'string' && text.length > 200 && out && typeof out === 'object' &&
+        onExploreOrSearch() && text.indexOf('"video_versions"') !== -1) {
+        try {
+          learnClips(out, 0);
+        } catch (e) {
+          // Never break Instagram's own parsing.
         }
       }
       var fd = state.c && state.c.feedData;
@@ -2779,6 +3156,8 @@
       });
     }, { passive: true });
     window.addEventListener('click', onClick, true);
+    window.addEventListener('popstate', onClipPop, true);
+    document.addEventListener('visibilitychange', onClipVisibility);
     document.addEventListener('play', onMediaPlay, true); // media events don't bubble; capture sees them
     document.addEventListener('play', onCoveredPlay, true);
     window.addEventListener('pointerup', function () {
@@ -2823,6 +3202,7 @@
       state.covered = !!covered;
       reelEvent('covered', { on: !!covered });
       if (covered) pauseAllMedia();
+      else onClipVisibility(); // the Explore reel player picks up where it was
       // Backup: when the poster goes away, a stopped viewer that is somehow still open gets closed.
       if (!covered) closeReelViewer();
     },

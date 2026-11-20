@@ -65,23 +65,20 @@
     var wrap = document.createElement('div');
     wrap.id = APP_SETTINGS_ROW_ID;
     wrap.style.cssText = 'font-family:inherit;padding:8px 0 24px';
-    var row = document.createElement('div');
-    row.setAttribute('role', 'button');
-    row.setAttribute('tabindex', '0');
-    row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px ' + left + ';cursor:pointer;color:' + color +
-      ';-webkit-tap-highlight-color:transparent';
-    row.innerHTML =
-      '<svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" ' +
-      'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><rect x="3.5" y="3.5" width="17" ' +
-      'height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17" cy="7" r=".8" fill="currentColor"/></svg>' +
-      '<span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">' +
-      '<span>Open settings in the Instagram app</span>' +
-      '<span style="font-size:12px;opacity:.65">For settings this page doesn’t have</span></span>' +
-      '<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
-      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5;flex:none">' +
-      '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
-    tapToApp(row, { t: 'settingsInApp' });
-    wrap.appendChild(row);
+    wrap.appendChild(appRow({
+      icon: '<svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" ' +
+        'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><rect x="3.5" y="3.5" ' +
+        'width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17" cy="7" r=".8" fill="currentColor"/></svg>',
+      title: 'Open settings in the Instagram app',
+      sub: 'For settings this page doesn’t have',
+      subStyle: 'font-size:12px;opacity:.65',
+      trail: '<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
+        'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5;flex:none">' +
+        '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
+      color: color,
+      left: left,
+      msg: { t: 'settingsInApp' }
+    }));
     return wrap;
   }
 

@@ -144,22 +144,42 @@
     title.textContent = 'Throwback';
     title.style.cssText = 'font-size:' + hs.fontSize + ';font-weight:' + hs.fontWeight + ';color:' + hs.color +
       ';padding:12px ' + left + ' 8px ' + left;
+    var row = appRow({
+      icon: '<span style="display:flex;width:24px;height:24px;flex:none">' + THROWBACK_ICON + '</span>',
+      title: 'Throwback settings',
+      titleStyle: 'font-size:' + label.size + ';font-weight:' + label.weight,
+      sub: 'Your day, time limit, Instagram app',
+      subStyle: 'font-size:' + sub.size + ';color:' + sub.color + (rows[1] ? '' : ';opacity:.65'),
+      trail: CHEVRON_ICON,
+      color: label.color,
+      left: left,
+      msg: { t: 'settings' }
+    });
+    row.setAttribute('aria-label', 'Throwback settings');
+    wrap.appendChild(title);
+    wrap.appendChild(row);
+    return wrap;
+  }
+
+  var CHEVRON_ICON = '<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5;flex:none"><path d="m9 6 6 6-6 6"/></svg>';
+
+  /**
+   * A row in the style of Instagram's settings page that hands its tap to the app: icon, title,
+   * subtitle and a trailing icon, with touch feedback. Texts are Throwback's own (put in as HTML).
+   * o: {icon, title, titleStyle, sub, subStyle, trail, color, left (padding), msg (bridge message)}.
+   */
+  function appRow(o) {
     var row = document.createElement('div');
     row.setAttribute('role', 'button');
     row.setAttribute('tabindex', '0');
-    row.setAttribute('aria-label', 'Throwback settings');
-    row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px ' + left + ';cursor:pointer;' +
-      'color:' + label.color + ';-webkit-tap-highlight-color:transparent';
-    row.innerHTML =
-      '<span style="display:flex;width:24px;height:24px;flex:none">' + THROWBACK_ICON + '</span>' +
+    row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px ' + o.left + ';cursor:pointer;' +
+      'color:' + o.color + ';-webkit-tap-highlight-color:transparent';
+    row.innerHTML = o.icon +
       '<span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">' +
-      '<span style="font-size:' + label.size + ';font-weight:' + label.weight + '">Throwback settings</span>' +
-      '<span style="font-size:' + sub.size + ';color:' + sub.color + (rows[1] ? '' : ';opacity:.65') +
-      '">Your day, time limit, Instagram app</span></span>' +
-      '<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
-      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5;flex:none">' +
-      '<path d="m9 6 6 6-6 6"/></svg>';
-    tapToApp(row, { t: 'settings' });
+      '<span style="' + (o.titleStyle || '') + '">' + o.title + '</span>' +
+      '<span style="' + o.subStyle + '">' + o.sub + '</span></span>' + o.trail;
+    tapToApp(row, o.msg);
     row.addEventListener('touchstart', function () {
       row.style.background = 'rgba(128,128,128,.14)';
     }, { passive: true });
@@ -168,9 +188,7 @@
         row.style.background = '';
       }, { passive: true });
     });
-    wrap.appendChild(title);
-    wrap.appendChild(row);
-    return wrap;
+    return row;
   }
 
   /**

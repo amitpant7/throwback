@@ -23,7 +23,7 @@ Free. Source available for personal use (see Licence). No accounts, no tracking.
 ## Opening Throwback's settings
 
 There's no Throwback button on the feed, so it looks exactly like Instagram. Open Throwback's settings
-(Instagram app, Your day, time limit, mindful pause, shortcut, Support, About) any of these ways:
+(Connect → Instagram, Your day, time limit, mindful pause, shortcut, Support, About) any of these ways:
 
 1. **Your profile:** the Throwback icon at the top right (where the Threads icon was).
 2. **Instagram's settings:** profile → gear → the **Throwback** section, right after "Your account".

@@ -164,8 +164,9 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     allows only creation screens (activity class `instagram.features.creation.*`, rules `appCreate`),
     with 3 s of grace while it opens and at most 30 minutes. Any other screen (the feed after
     posting, Reels) ends the pass and the guard brings the user back. Calls work as before.
-27d. **Name and place** (owner, 2026-11-20): Settings section "Connected app" (first, above Focus),
-    row "Instagram app · Calls, message alerts and posting · Connected".
+27d. **Name and place** (owner, 2026-11-20): Settings section **"Connect"** (first, above Focus), row
+    **"Instagram · Calls, message alerts, posting · Connected"**; screen title "Instagram", setup
+    "Connect Instagram", turn-off "Disconnect Instagram".
 29. **Instagram app found:** after first login, if the Instagram app is installed, Throwback offers
     "Keep it for calls & messages", "Remove it" (opens Android Settings) or "Decide later".
 

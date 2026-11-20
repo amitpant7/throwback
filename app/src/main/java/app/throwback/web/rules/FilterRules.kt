@@ -186,8 +186,12 @@ data class FieldTest(val path: String, val equals: String? = null, val present: 
 
 @Serializable
 data class ReelViewerRules(
-    /** Swipes to other reels allowed (the reel that was opened is free). */
-    val allowedSwipes: Int = 3,
+    /**
+     * The poster shows on a random swipe between these (inclusive), picked each time a new count
+     * starts, so it can't be predicted. The reel that was opened is free.
+     */
+    val posterOnSwipeMin: Int = 2,
+    val posterOnSwipeMax: Int = 4,
     /** ... per this many minutes, so closing and reopening the viewer doesn't reset it. */
     val windowMinutes: Int = 10,
     /** After the poster showed, no free swipes for this many minutes (the opened reel still plays). */

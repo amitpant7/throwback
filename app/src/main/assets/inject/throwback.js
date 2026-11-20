@@ -322,7 +322,8 @@
     } : null;
     var rv = rules.reelViewer;
     c.reelViewer = rv ? {
-      allowed: typeof rv.allowedSwipes === 'number' ? rv.allowedSwipes : 3,
+      minSwipe: typeof rv.posterOnSwipeMin === 'number' ? rv.posterOnSwipeMin : 2,
+      maxSwipe: typeof rv.posterOnSwipeMax === 'number' ? rv.posterOnSwipeMax : 4,
       windowMs: (typeof rv.windowMinutes === 'number' ? rv.windowMinutes : 10) * 60000,
       cooldownMs: (typeof rv.cooldownMinutes === 'number' ? rv.cooldownMinutes : 60) * 60000
     } : null;
@@ -1185,7 +1186,8 @@
    * same and a vertical scroll-snap strip of videos opens (found on the owner's phone). Opening a
    * reel someone sent is fine; swiping on through more is the endless feed again. The opened reel is
    * free; swipes to other reels are counted (rules: reelViewer), across viewers, so closing and
-   * reopening doesn't reset it. Past the allowance the videos stop and the app shows its poster.
+   * reopening doesn't reset it. The poster shows on a random swipe (2nd to 4th): the videos stop and
+   * the app shows its poster.
    * After the poster, no free swipes for the cooldown (an hour): opening other reels to get "3 more"
    * each time doesn't work. Swipes and the last poster time are stored, so a restart doesn't reset.
    */
@@ -1200,7 +1202,7 @@
     } catch (e) {
       log = null;
     }
-    if (!log || !Array.isArray(log.swipes)) log = { swipes: [], poster: 0 };
+    if (!log || !Array.isArray(log.swipes)) log = { swipes: [], poster: 0, limit: 0 };
     return log;
   }
 
@@ -1243,10 +1245,15 @@
     log.swipes = log.swipes.filter(function (t) {
       return now - t < rv.windowMs;
     });
+    // A new count: pick on which swipe the poster shows (random, so it can't be predicted).
+    if (!log.swipes.length || !log.limit) {
+      log.limit = rv.minSwipe + Math.floor(Math.random() * (rv.maxSwipe - rv.minSwipe + 1));
+    }
     log.swipes.push(now);
-    if (cooling || log.swipes.length > rv.allowed) {
+    if (cooling || log.swipes.length >= log.limit) {
       log.poster = now;
       log.swipes = [];
+      log.limit = 0;
       saveReelLog(log);
       stopReels(viewer);
       return;

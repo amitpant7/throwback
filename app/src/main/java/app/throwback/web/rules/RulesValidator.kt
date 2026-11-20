@@ -121,7 +121,9 @@ object RulesValidator {
             check(fd.endAfterEmptyPages in 1..20) { "feedData.endAfterEmptyPages out of range" }
         }
         rules.reelViewer?.let { rv ->
-            check(rv.allowedSwipes in 0..50) { "reelViewer.allowedSwipes out of range" }
+            check(rv.posterOnSwipeMin in 1..50 && rv.posterOnSwipeMax in rv.posterOnSwipeMin..50) {
+                "reelViewer.posterOnSwipe range out of range"
+            }
             check(rv.windowMinutes in 1..1440) { "reelViewer.windowMinutes out of range" }
             check(rv.cooldownMinutes in 0..1440) { "reelViewer.cooldownMinutes out of range" }
         }

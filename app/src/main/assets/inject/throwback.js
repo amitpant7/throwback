@@ -344,6 +344,8 @@
     // While the end card shows, the feed's loading spinner (it would only load hidden suggestions).
     out.push('html[' + ATTR_FEED_END + '] main [role="progressbar"]' + HIDE);
     out.push('html[' + ATTR_FEED_END + '] main svg[aria-label="Loading..."]' + HIDE);
+    // ... and the list's reserved space for more (hidden) posts, so the page ends at the end card.
+    out.push('html[' + ATTR_FEED_END + '] [' + ATTR_FEED_LIST + ']{padding-bottom:0!important}');
     out.push('html.tb-messages-only [' + ATTR_NAV + ']' + HIDE);
     if (c.explore) out.push(scopeFor(c.explore.on) + ' [' + ATTR_EXPLORE + ']' + HIDE);
     out.push('html.' + CLASS_BLANK + ' body{visibility:hidden!important}');
@@ -508,6 +510,8 @@
   var END_CARD_ID = '__tb_end_card';
   var ATTR_FEED_END = 'data-tb-feedend'; // on <html> while the end card shows (hides the endless spinner)
   var END_AFTER_HIDDEN = 4; // this many hidden posts after the last real one = only suggestions are left
+  var ATTR_FEED_LIST = 'data-tb-feedlist'; // the feed's (virtualized) list element
+  var END_PAST_MS = 1000; // how long the user must be past the last real post before the feed ends
 
   /**
    * Instagram's ranked feed keeps loading suggested posts after the people you follow run out.
@@ -519,19 +523,65 @@
     var card = document.getElementById(END_CARD_ID);
     var first = state.mode === MODE_MESSAGES || !pageActive('home') ? null : document.querySelector('article');
     var list = first && first.parentElement;
-    var visible = 0, trailingHidden = 0;
+    var visible = 0, trailingHidden = 0, lastVisible = null;
     if (list) {
+      if (!list.hasAttribute(ATTR_FEED_LIST)) list.setAttribute(ATTR_FEED_LIST, '1');
       for (var k = list.firstElementChild; k; k = k.nextElementSibling) {
         if (k.tagName !== 'ARTICLE') continue;
         if (k.hasAttribute(ATTR_POST)) trailingHidden++;
-        else { visible++; trailingHidden = 0; }
+        else { visible++; trailingHidden = 0; lastVisible = k; }
       }
     }
-    if (!list || visible === 0 || trailingHidden < END_AFTER_HIDDEN) {
+    // Instagram's list is virtualized: posts far below aren't rendered yet and stand in as a big
+    // padding-bottom sized for them. When those turn out to be hidden suggestions, that padding is
+    // empty space. So the feed has also ended when the user is half a screen past the last real post
+    // and everything rendered after it is hidden.
+    // Once ended, the feed stays ended until a genuinely new real post appears (one that wasn't on the
+    // feed when it ended). Ending removes Instagram's reserved space, which scrolls the user back up
+    // to the end card; and Instagram's virtualized list also drops posts far from the screen. Neither
+    // may "un-end" the feed, or the page flickers between blank and the card.
+    if (state.feedEnded && list) {
+      var fresh = false;
+      for (var j = list.firstElementChild; j && !fresh; j = j.nextElementSibling) {
+        if (j.tagName !== 'ARTICLE' || j.hasAttribute(ATTR_POST)) continue;
+        var key = postKey(j);
+        if (key && state.endedSeen.indexOf(key) < 0) fresh = true;
+      }
+      if (!fresh) {
+        showEndCard(list);
+        return;
+      }
+    }
+    state.feedEnded = false;
+    // Held for END_PAST_MS so a fast scroll, before Instagram renders the next real posts, doesn't end it.
+    var past = !!lastVisible && lastVisible.getBoundingClientRect().bottom < -window.innerHeight * 0.5;
+    var now = Date.now();
+    if (!past) state.pastSince = 0;
+    else if (!state.pastSince) {
+      state.pastSince = now;
+      setTimeout(updateEndCard, END_PAST_MS + 50);
+    }
+    var pastLastReal = past && now - state.pastSince >= END_PAST_MS;
+    if (!list || visible === 0 || (trailingHidden < END_AFTER_HIDDEN && !pastLastReal)) {
       if (card && card.parentNode) card.parentNode.removeChild(card);
       root.removeAttribute(ATTR_FEED_END);
       return;
     }
+    state.feedEnded = true;
+    state.endedSeen = [];
+    for (var v = list.firstElementChild; v; v = v.nextElementSibling) {
+      if (v.tagName === 'ARTICLE' && !v.hasAttribute(ATTR_POST)) {
+        var vk = postKey(v);
+        if (vk) state.endedSeen.push(vk);
+      }
+    }
+    state.pastSince = 0;
+    showEndCard(list);
+  }
+
+  function showEndCard(list) {
+    var root = document.documentElement;
+    var card = document.getElementById(END_CARD_ID);
     if (!card) {
       card = document.createElement('div');
       card.id = END_CARD_ID;
@@ -1294,6 +1344,17 @@
     hookHistory();
     installHomeLongPress();
     startFeedClock();
+    // Scrolling into Instagram's empty placeholder space changes nothing in the page, so check the
+    // end of the feed on scroll too (at most once a frame).
+    var endCheckQueued = false;
+    window.addEventListener('scroll', function () {
+      if (endCheckQueued || !state.c) return;
+      endCheckQueued = true;
+      requestAnimationFrame(function () {
+        endCheckQueued = false;
+        updateEndCard();
+      });
+    }, { passive: true });
     window.addEventListener('click', onClick, true);
     document.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
     if (window.matchMedia) {

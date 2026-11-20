@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
@@ -47,14 +48,18 @@ internal class GuardOverlay(private val context: Context) {
 
     val showing: Boolean get() = view != null
 
-    /** @param storyTimeUp the story pass ran out without a post: the cover says so, with a wink. */
-    fun show(storyTimeUp: Boolean = false): Boolean {
+    /**
+     * @param storyTimeUp the story pass ran out without a post: the cover says so, with a wink.
+     * @param windowHint Instagram stayed on screen under the last cover (split screen, a pop-up
+     *        window, picture-in-picture): the cover says to close that window.
+     */
+    fun show(storyTimeUp: Boolean = false, windowHint: Boolean = false): Boolean {
         if (view != null) return true
         val owner = OverlayOwner().also { it.start() }
         val v = ComposeView(context).apply {
             setViewTreeLifecycleOwner(owner)
             setViewTreeSavedStateRegistryOwner(owner)
-            setContent { ThrowbackTheme { Cover(storyTimeUp) } }
+            setContent { ThrowbackTheme { Cover(storyTimeUp, windowHint) } }
         }
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -113,9 +118,14 @@ internal class GuardOverlay(private val context: Context) {
     }
 }
 
-@androidx.compose.runtime.Composable
-private fun Cover(storyTimeUp: Boolean) {
+@Composable
+private fun Cover(storyTimeUp: Boolean, windowHint: Boolean) {
     val colors = ThrowbackTheme.colors
+    val (title, body) = when {
+        windowHint -> R.string.guard_cover_window_title to R.string.guard_cover_window_body
+        storyTimeUp -> R.string.guard_cover_story_title to R.string.guard_cover_story_body
+        else -> R.string.guard_cover_title to R.string.guard_cover_body
+    }
     Column(
         Modifier.fillMaxSize().background(colors.bg).padding(32.dp),
         verticalArrangement = Arrangement.Center,
@@ -128,14 +138,14 @@ private fun Cover(storyTimeUp: Boolean) {
         )
         Spacer(Modifier.height(20.dp))
         Text(
-            stringResource(if (storyTimeUp) R.string.guard_cover_story_title else R.string.guard_cover_title),
+            stringResource(title),
             style = MaterialTheme.typography.headlineSmall,
             color = colors.text,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            stringResource(if (storyTimeUp) R.string.guard_cover_story_body else R.string.guard_cover_body),
+            stringResource(body),
             style = MaterialTheme.typography.bodyMedium,
             color = colors.muted,
             textAlign = TextAlign.Center,

@@ -49,10 +49,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * The guard (DECISIONS.md #27): while the screen is on, it checks about twice a second which app
- * is in front (usage access). If it is the Instagram app and there is no call, it covers it with
- * "Use Throwback instead" (display over other apps) and brings Throwback to the front. During a
- * call it does nothing; when the call ends and the app is still open, it covers it then.
+ * The guard (DECISIONS.md #27): while the screen is on, it checks about twice a second which apps
+ * are on screen (usage access). If an Instagram app is (in front, or in split screen, a pop-up
+ * window or picture-in-picture) and no call or pass allows it, it covers the screen with "Use
+ * Throwback instead" (display over other apps) and brings Throwback to the front. The cover stays
+ * while Instagram stays on screen, stepping aside for a moment now and then so a window left open
+ * can be closed. During a call it does nothing; when the call ends and the app is still open, it
+ * covers it then.
  *
  * Why a foreground service: Android has no callback for "another app came to the front" without an
  * accessibility service (which Play reserves for accessibility tools), so the guard has to ask, and
@@ -66,9 +69,8 @@ class GuardService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var loop: Job? = null
     private val screenOn = MutableStateFlow(true)
-    private val tracker = ForegroundTracker()
+    private val tracker = ForegroundTracker(stopEvents = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
     private var lastQueryEnd = 0L
-    private var lastCoverAt: Long? = null
 
     /** Last time the phone's audio was in call mode (MODE_IN_CALL / MODE_IN_COMMUNICATION). */
     private var callAudioAt: Long? = null
@@ -80,7 +82,13 @@ class GuardService : Service() {
     /** Since when the notification listener is disconnected, and the last rebind request. */
     private var listenerDownSince: Long? = null
     private var lastRebindAt = 0L
+
+    /** When the cover went up, and until when it stays away after stepping aside. */
     private var coverShownAt = 0L
+    private var noCoverUntil = 0L
+
+    /** Instagram stayed on screen under the last cover: the next one says to close its window. */
+    private var windowLeftOpen = false
     private lateinit var overlay: GuardOverlay
 
     /** The story pass just ran out without a post: the next cover says so. */
@@ -171,6 +179,7 @@ class GuardService : Service() {
             if (!screenOn.value) {
                 overlay.hide()
                 screenOn.first { it }
+                tracker.clear() // the replay rebuilds what is on screen
                 lastQueryEnd = 0L // events while off are irrelevant; start fresh
             }
             val now = SystemClock.elapsedRealtime()
@@ -184,10 +193,7 @@ class GuardService : Service() {
             }
             // Reading usage events off the main thread (the WebView shares it).
             withContext(Dispatchers.Default) { poll(usm) }
-            val fg = tracker.current
-            if (overlay.showing && (fg == packageName || now - coverShownAt > COVER_MAX_MS) && now - coverShownAt > COVER_MIN_MS) {
-                overlay.hide()
-            }
+            val instagramOnScreen = tracker.onScreen(RelayDebug.watchedPackages())
             // An answered Instagram call removes its notification, but keeps the audio in call mode.
             // Call audio counts only for a call that began as an Instagram call notification (seen
             // within IG_CALL_LINK_MS), so a WhatsApp or Meet call doesn't unlock Instagram.
@@ -220,16 +226,27 @@ class GuardService : Service() {
                 callAudioAt = now
             }
             val action = GuardPolicy.decide(
-                foreground = fg,
-                watched = RelayDebug.watchedPackages(),
+                instagramOnScreen = instagramOnScreen,
                 now = now,
                 calls = calls,
                 graceMillis = graceMillis,
                 allowUntil = GuardPass.allowUntil,
-                lastCoverAt = lastCoverAt,
+                coverShownAt = coverShownAt.takeIf { overlay.showing },
+                noCoverUntil = noCoverUntil,
                 callAudioAt = callAudioAt,
             )
-            if (action == GuardAction.COVER) cover(now)
+            if (!instagramOnScreen) windowLeftOpen = false
+            when (action) {
+                GuardAction.COVER -> cover(now)
+                GuardAction.UNCOVER -> overlay.hide()
+                GuardAction.STEP_ASIDE -> {
+                    Log.i(TAG, "Instagram stays on screen (split screen, pop-up or picture-in-picture): cover steps aside")
+                    overlay.hide()
+                    noCoverUntil = now + GuardPolicy.STEP_ASIDE_MS
+                    windowLeftOpen = true
+                }
+                GuardAction.NONE -> Unit
+            }
             delay(POLL_MS)
         }
     }
@@ -336,10 +353,14 @@ class GuardService : Service() {
         }
     }
 
+    /** Covers Instagram and brings Throwback to the front; the cover stays while Instagram is on screen. */
     private fun cover(now: Long) {
         Log.i(TAG, "Instagram app opened outside a call: back to Throwback")
-        lastCoverAt = now
-        if (overlay.show(storyTimeUp)) coverShownAt = now
+        if (overlay.show(storyTimeUp, windowHint = windowLeftOpen)) {
+            coverShownAt = now
+        } else {
+            noCoverUntil = now + GuardPolicy.STEP_ASIDE_MS // no overlay permission: don't retry every poll
+        }
         storyTimeUp = false
         // Allowed from the background: the user granted "display over other apps".
         try {
@@ -367,8 +388,6 @@ class GuardService : Service() {
         private const val IG_CALL_LINK_MS = 120_000L
         private const val LOOK_BACK_MS = 60 * 60 * 1000L
         private const val PERMISSION_CHECK_MS = 10_000L
-        private const val COVER_MIN_MS = 900L
-        private const val COVER_MAX_MS = 3_000L
 
         /** True while the service is in the foreground (for Settings' status line). */
         @Volatile

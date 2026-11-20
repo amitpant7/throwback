@@ -1,5 +1,11 @@
 package app.throwback.ui.messages
 
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import app.throwback.ui.common.SecondaryButton
 import app.throwback.relay.CallInApp
@@ -86,25 +92,57 @@ internal fun MessagesSettingsScreen(
                 AlwaysOnRow(R.drawable.ui_ic_camera_app, R.string.ui_always_posting)
             }
 
-            SectionLabel(stringResource(R.string.ui_also_notify))
-            TbCard {
-                ExtraNotification.entries.forEachIndexed { index, type ->
-                    if (index > 0) CardDivider()
-                    SwitchRow(
-                        title = stringResource(type.label()),
-                        checked = type in extras,
-                        onCheckedChange = { on -> prefs.write { setExtraNotification(type, on) } },
-                        minHeight = 52.dp,
-                        titleStyle = UiText.row15,
+            // Other alerts: one row (owner: the five switches took a lot of room); tap to show them.
+            var extrasOpen by rememberSaveable { mutableStateOf(false) }
+            val onLabels = ExtraNotification.entries.filter { it in extras }.map { stringResource(it.label()) }
+            val summary = when {
+                onLabels.isEmpty() -> stringResource(R.string.ui_extras_off)
+                onLabels.size <= 2 -> onLabels.joinToString(", ")
+                else -> stringResource(R.string.ui_extras_count, onLabels.size)
+            }
+            TbCard(Modifier.padding(top = 16.dp)) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .clickable(role = Role.Button, onClickLabel = stringResource(if (extrasOpen) R.string.ui_extras_hide else R.string.ui_extras_show)) {
+                            extrasOpen = !extrasOpen
+                        }
+                        .padding(horizontal = 18.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    LineIcon(R.drawable.ui_ic_bell)
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.ui_also_notify), style = UiText.row, color = colors.text)
+                        Text(summary, style = UiText.sub, color = colors.muted)
+                    }
+                    LineIcon(
+                        R.drawable.ui_ic_chevron,
+                        size = 18.dp,
+                        tint = colors.muted,
+                        modifier = Modifier.rotate(if (extrasOpen) 270f else 90f),
+                    )
+                }
+                if (extrasOpen) {
+                    ExtraNotification.entries.forEach { type ->
+                        CardDivider()
+                        SwitchRow(
+                            title = stringResource(type.label()),
+                            checked = type in extras,
+                            onCheckedChange = { on -> prefs.write { setExtraNotification(type, on) } },
+                            minHeight = 52.dp,
+                            titleStyle = UiText.row15,
+                        )
+                    }
+                    Text(
+                        stringResource(R.string.ui_notify_footer),
+                        style = UiText.sub,
+                        color = colors.muted,
+                        modifier = Modifier.padding(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 14.dp),
                     )
                 }
             }
-            Text(
-                stringResource(R.string.ui_notify_footer),
-                style = UiText.sub,
-                color = colors.muted,
-                modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 10.dp),
-            )
 
             QuietTipCard(showMessage = showMessage, modifier = Modifier.padding(top = 18.dp))
 

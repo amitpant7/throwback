@@ -125,7 +125,11 @@
     <string name="ui_always_calls">Calls</string>
     <string name="ui_always_posting">Posting: “+” and “Your story” open Instagram\'s editor</string>
     <string name="ui_always_on_description">On</string>
-    <string name="ui_also_notify">Also notify me about</string>
+    <string name="ui_also_notify">Other alerts</string>
+    <string name="ui_extras_off">Off: likes, comments, followers and more</string>
+    <string name="ui_extras_count">%1$d on</string>
+    <string name="ui_extras_show">Show other alerts</string>
+    <string name="ui_extras_hide">Hide other alerts</string>
     <string name="ui_notify_likes">Likes</string>
     <string name="ui_notify_comments">Comments</string>
     <string name="ui_notify_new_followers">New followers</string>

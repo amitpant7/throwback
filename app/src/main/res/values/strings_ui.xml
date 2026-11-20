@@ -62,7 +62,7 @@
     <string name="ui_messages_value_on">On</string>
     <string name="ui_section_app">App</string>
     <string name="ui_shortcut_title">Add to home screen</string>
-    <string name="ui_about_title">About &amp; support</string>
+    <string name="ui_about_title">About</string>
 
     <!-- 13–16 · Messages & calls wizard -->
     <string name="ui_wizard_step_optional">Step %1$d of %2$d · Optional</string>

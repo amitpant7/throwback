@@ -13,6 +13,7 @@ internal enum class SettingsRoute {
     /** The wizard opened explicitly from the Messages & calls settings ("Finish setup"). */
     MessagesWizard,
     Shortcut,
+    Support,
     About,
 }
 

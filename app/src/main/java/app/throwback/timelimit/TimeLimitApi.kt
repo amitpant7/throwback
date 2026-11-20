@@ -3,23 +3,41 @@ package app.throwback.timelimit
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import app.throwback.core.LockState
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ProcessLifecycleOwner
 import app.throwback.core.TimeLimitController
-import app.throwback.core.WebMode
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import app.throwback.timelimit.data.DataStoreStateStore
+import app.throwback.timelimit.ui.LockOverlay
+import app.throwback.timelimit.ui.RemainingChip
+import app.throwback.timelimit.ui.TimeLimitSettings
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 /*
- * STUBS owned by the timelimit agent: replace the bodies, keep the signatures.
+ * Public entry points of the timelimit area, used by core/AppRoot.kt (signatures fixed by the
+ * scaffold). The rules live in engine/TimeLimitEngine.kt; DefaultTimeLimitController adds
+ * persistence and ticking; ui/ holds the screens.
  */
 
 object TimeLimitModule {
-    /** Called once by ThrowbackApp; return the app-wide controller. */
-    fun create(context: Context): TimeLimitController = object : TimeLimitController {
-        override val state: StateFlow<LockState> = MutableStateFlow(LockState.Disabled)
-        override fun onForeground(mode: WebMode) = Unit
-        override fun onBackground() = Unit
-    }
+    @Volatile
+    private var instance: TimeLimitController? = null
+
+    /** Called once by ThrowbackApp; return the app-wide controller. Repeat calls return the same one. */
+    fun create(context: Context): TimeLimitController =
+        instance ?: synchronized(this) {
+            instance ?: build(context.applicationContext).also { instance = it }
+        }
+
+    private fun build(app: Context): TimeLimitController = DefaultTimeLimitController(
+        clock = AndroidClock(app),
+        store = DataStoreStateStore.create(app),
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
+        ioDispatcher = Dispatchers.IO,
+        hashDispatcher = Dispatchers.Default,
+        isAppVisible = { ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) },
+    )
 }
 
 /**
@@ -32,12 +50,20 @@ fun TimeLimitOverlay(
     onOpenMessagesOnly: () -> Unit,
     onCloseApp: () -> Unit,
     modifier: Modifier = Modifier,
-) = Unit
+) {
+    val impl = controller as? DefaultTimeLimitController ?: return
+    LockOverlay(impl, onOpenMessagesOnly, onCloseApp, modifier)
+}
 
 /** Small "18 min left" chip. Draws nothing when the limit is disabled. */
 @Composable
-fun TimeRemainingChip(controller: TimeLimitController, modifier: Modifier = Modifier) = Unit
+fun TimeRemainingChip(controller: TimeLimitController, modifier: Modifier = Modifier) {
+    RemainingChip(controller, modifier)
+}
 
 /** Settings entry for the limit: first-time setup (limit + PIN) or manage an existing limit (PIN-protected). */
 @Composable
-fun TimeLimitSettingsScreen(controller: TimeLimitController, onClose: () -> Unit) = Unit
+fun TimeLimitSettingsScreen(controller: TimeLimitController, onClose: () -> Unit) {
+    val impl = controller as? DefaultTimeLimitController ?: return
+    TimeLimitSettings(impl, onClose)
+}

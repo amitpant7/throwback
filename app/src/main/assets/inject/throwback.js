@@ -38,6 +38,8 @@
   var ATTR_NAV = 'data-tb-nav'; // a navigation bar
   var ATTR_SLOT = 'data-tb-slot'; // a navigation slot whose only button is hidden
   var ATTR_EXPLORE = 'data-tb-explore'; // a block of the Explore grid
+  var ATTR_THREADS = 'data-tb-threads'; // the Threads link on the own-profile top bar (hidden)
+  var PROFILE_ENTRY_ID = '__tb_profile_entry'; // Throwback's settings icon that replaces it
   var CLASS_BLANK = 'tb-page-blocked';
   var LOOP_KEY = '__tb_redirects';
   var READY_FALLBACK_MS = 6000;
@@ -335,6 +337,7 @@
     });
     out.push('[' + ATTR_POST + ']' + HIDE);
     out.push('[' + ATTR_SLOT + ']' + HIDE);
+    out.push('[' + ATTR_THREADS + ']' + HIDE);
     out.push('html.tb-messages-only [' + ATTR_NAV + ']' + HIDE);
     if (c.explore) out.push(scopeFor(c.explore.on) + ' [' + ATTR_EXPLORE + ']' + HIDE);
     out.push('html.' + CLASS_BLANK + ' body{visibility:hidden!important}');
@@ -386,6 +389,114 @@
 
   var VIEWPORT_LOCK = { 'maximum-scale': '1', 'user-scalable': 'no' };
   /** No pinch zoom: keep Instagram's viewport settings and add the zoom lock. */
+  // ---------------------------------------------------------------- Throwback's own entry point
+
+  /** Throwback's mark as a line icon, drawn in the page's text colour like Instagram's icons. */
+  var THROWBACK_ICON =
+    '<svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M5.4 10.4A7.2 7.2 0 1 1 5.2 15.6"/><path d="M4.8 5.4v5h5"/></svg>';
+
+  /**
+   * On the user's own profile (the only profile whose top bar has Instagram's settings gear), the
+   * Threads link at the top-right is hidden and Throwback's settings icon takes its place.
+   */
+  function updateProfileEntry() {
+    var existing = document.getElementById(PROFILE_ENTRY_ID);
+    var gear = state.mode === MODE_MESSAGES ? null : document.querySelector('a[href^="/accounts/settings/"]');
+    var gearBox = gear && gear.getBoundingClientRect();
+    if (!gear || gearBox.width === 0 || gearBox.top > 80) {
+      if (existing) existing.parentNode.removeChild(existing);
+      return;
+    }
+    if (existing && existing.isConnected) return;
+    // The other top-bar button, at the far right of the same bar (the Threads link).
+    var threads = null;
+    for (var up = gear.parentElement, depth = 0; up && depth < 6 && !threads; up = up.parentElement, depth++) {
+      var candidates = up.querySelectorAll('a, [role="link"], [role="button"]');
+      for (var i = 0; i < candidates.length; i++) {
+        var c = candidates[i];
+        if (c === gear || c.id === PROFILE_ENTRY_ID || !c.querySelector('svg')) continue;
+        var box = c.getBoundingClientRect();
+        if (box.width > 0 && box.width <= 48 && box.top < 80 && box.left > window.innerWidth * 0.7) {
+          threads = c;
+          break;
+        }
+      }
+    }
+    if (!threads || !threads.parentNode) return;
+    var size = Math.round(threads.getBoundingClientRect().width) || 24;
+    // Match Instagram's own top-bar icons (the gear), not the link colour of the Threads link.
+    var gearIcon = gear.querySelector('svg');
+    var color = getComputedStyle(gearIcon || gear).color;
+    threads.setAttribute(ATTR_THREADS, '1');
+    var btn = document.createElement('a');
+    btn.id = PROFILE_ENTRY_ID;
+    btn.href = '#';
+    btn.setAttribute('role', 'button');
+    btn.setAttribute('aria-label', 'Throwback settings');
+    btn.innerHTML = THROWBACK_ICON;
+    btn.style.cssText = 'display:flex;align-items:center;justify-content:center;cursor:pointer;' +
+      'width:' + size + 'px;height:' + size + 'px;color:' + color + ';-webkit-tap-highlight-color:transparent';
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      send({ t: 'settings' });
+    }, true);
+    threads.parentNode.insertBefore(btn, threads.nextSibling);
+  }
+
+  /**
+   * Long-press on the Home tab of the bottom bar opens Throwback's settings (a normal tap still goes
+   * home). The Home tab is the bottom-bar link to "/" (any feed variant).
+   */
+  var LONG_PRESS_MS = 550;
+  var longPress = { timer: 0, fired: false, x: 0, y: 0 };
+  function homeTabFrom(target) {
+    var el = target && target.closest ? target.closest('a[href="/"], a[href^="/?"]') : null;
+    if (!el) return null;
+    var box = el.getBoundingClientRect();
+    return box.top > window.innerHeight - 120 ? el : null; // only the bottom bar, not header links
+  }
+  function cancelLongPress() {
+    if (longPress.timer) clearTimeout(longPress.timer);
+    longPress.timer = 0;
+  }
+  function installHomeLongPress() {
+    document.addEventListener('touchstart', function (e) {
+      longPress.fired = false;
+      if (state.mode === MODE_MESSAGES || !e.touches || e.touches.length !== 1) return;
+      if (!homeTabFrom(e.target)) return;
+      longPress.x = e.touches[0].clientX;
+      longPress.y = e.touches[0].clientY;
+      cancelLongPress();
+      longPress.timer = setTimeout(function () {
+        longPress.timer = 0;
+        longPress.fired = true;
+        send({ t: 'settings' });
+      }, LONG_PRESS_MS);
+    }, { capture: true, passive: true });
+    document.addEventListener('touchmove', function (e) {
+      if (!longPress.timer || !e.touches || !e.touches.length) return;
+      var dx = e.touches[0].clientX - longPress.x, dy = e.touches[0].clientY - longPress.y;
+      if (dx * dx + dy * dy > 100) cancelLongPress(); // moved more than ~10px: not a press
+    }, { capture: true, passive: true });
+    document.addEventListener('touchend', cancelLongPress, { capture: true, passive: true });
+    document.addEventListener('touchcancel', cancelLongPress, { capture: true, passive: true });
+    // After a long-press, swallow the tap that follows so the feed doesn't reload, and the
+    // browser's own long-press menu.
+    // Registered on window before Throwback's own click handler, so it runs first and can stop it.
+    ['click', 'contextmenu'].forEach(function (type) {
+      window.addEventListener(type, function (e) {
+        if (longPress.fired && homeTabFrom(e.target)) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          if (type === 'click') longPress.fired = false;
+        }
+      }, true);
+    });
+  }
+
   function fixViewport() {
     var head = document.head;
     if (!head) return;
@@ -938,6 +1049,7 @@
       if (!state.c) return;
       ensureStyle();
       fixViewport();
+      updateProfileEntry();
       dismissDialogs();
       applyExplore();
       detectNav(false);
@@ -1033,6 +1145,7 @@
 
   function start() {
     hookHistory();
+    installHomeLongPress();
     window.addEventListener('click', onClick, true);
     document.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
     if (window.matchMedia) {

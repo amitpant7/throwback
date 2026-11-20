@@ -77,4 +77,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 31. **Home-screen shortcut:** the user picks a name and icon (pinned shortcut).
 32. **Theme: Sage.** Nunito type with a sage-green accent, following the phone's light/dark setting.
     The Instagram feed keeps Instagram's own colours.
+33a. **Throwback settings ("portal") has no button on the feed** (decided 2026-11-20); the feed looks
+    exactly like Instagram. Ways in:
+    1. **Profile page:** Throwback's icon at the top right of your own profile, replacing the Threads icon.
+    2. **Instagram's settings page:** a "Throwback" section right after "Your account".
+    3. **Long-press the Home tab** in the bottom bar (a normal tap still goes home).
+    4. **Long-press the Throwback app icon** → "Throwback settings" (launcher shortcut).
 33. **Mockups:** https://claude.ai/artifact/JVunY8kiNTP8abRP43LSGV (private to the owner).

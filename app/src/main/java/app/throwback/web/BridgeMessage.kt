@@ -21,6 +21,9 @@ internal sealed interface BridgeMessage {
     /** A touch started; [atTop] says the page and the touched element are scrolled to the top. */
     data class Touch(val atTop: Boolean) : BridgeMessage
 
+    /** The user tapped Throwback's settings icon on their profile page. */
+    data object OpenSettings : BridgeMessage
+
     /** The page's background colour (ARGB), for the system bar areas around the WebView. */
     data class Background(val argb: Int) : BridgeMessage
 
@@ -41,6 +44,7 @@ internal sealed interface BridgeMessage {
                 "blocked" -> Blocked(str("kind") ?: "hidden")
                 "touch" -> (obj["top"] as? JsonPrimitive)?.booleanOrNull?.let(::Touch)
                 "bg" -> str("c")?.let(::parseCssColor)?.let(::Background)
+                "settings" -> OpenSettings
                 else -> null
             }
         }

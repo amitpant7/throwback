@@ -61,6 +61,9 @@ internal class InstagramWebController(
         fun onLocationChanged(location: String, url: String)
         fun onStartUrlHandled(url: String?)
 
+        /** Throwback's settings icon in the page was tapped. */
+        fun onOpenSettings()
+
         /** Opens a picker; must eventually call [deliverFiles]. False if no picker could be opened. */
         fun pickFiles(kind: PickKind, multiple: Boolean, documentIntent: Intent?): Boolean
     }
@@ -412,6 +415,7 @@ internal class InstagramWebController(
                 pullProgress = pull.progress
             }
             is BridgeMessage.Background -> pageBackground = m.argb
+            BridgeMessage.OpenSettings -> host?.onOpenSettings()
             null -> Unit
         }
     }

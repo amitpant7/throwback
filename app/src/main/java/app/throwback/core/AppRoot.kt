@@ -91,6 +91,7 @@ fun AppRoot(
                 settingsOpen = settingsOpen != null,
                 onSplashHold = onSplashHold,
                 onCloseApp = onCloseApp,
+                onOpenSettings = { settingsOpen = SettingsStart.Home },
                 onOpenMessagesSetup = { settingsOpen = SettingsStart.MessagesAndCalls },
             )
         }
@@ -113,6 +114,7 @@ private fun MainScreen(
     settingsOpen: Boolean,
     onSplashHold: (Boolean) -> Unit,
     onCloseApp: () -> Unit,
+    onOpenSettings: () -> Unit,
     onOpenMessagesSetup: () -> Unit,
 ) {
     val timeLimit = app.timeLimit
@@ -166,6 +168,7 @@ private fun MainScreen(
             startUrl = deepLink,
             onLocationChanged = { path = it },
             onExitRequest = onCloseApp,
+            onOpenSettings = onOpenSettings,
             // While locked, screen readers must not reach the feed under the lock screen.
             modifier = if (lockShowing) Modifier.clearAndSetSemantics {} else Modifier,
         )

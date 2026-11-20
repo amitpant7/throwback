@@ -15,6 +15,16 @@ Free and open source (GPL-3.0). No accounts, no tracking. Not affiliated with In
 - Optional mindful pause before opening
 - Your own home-screen name and icon
 
+## Opening Throwback's settings
+
+There's no Throwback button on the feed, so it looks exactly like Instagram. Open Throwback's settings
+(time limit, mindful pause, Messages & calls, shortcut, About) any of these ways:
+
+1. **Your profile:** the Throwback icon at the top right (where the Threads icon was).
+2. **Instagram's settings:** profile → gear → the **Throwback** section, right after "Your account".
+3. **Long-press the Home tab** in the bottom bar.
+4. **Long-press the Throwback app icon** on your home screen → **Throwback settings**.
+
 ## Building
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). In short: JDK 17, Android SDK 35, then

@@ -144,6 +144,18 @@ Highlights:
    - GitHub Releases APK.
    - The owner's personal story in the README "Why" section, written with the owner.
 
+## 5a. Ways into Throwback's settings (no button on the feed)
+
+| Way | Where it's implemented |
+|---|---|
+| Profile page icon (replaces the Threads icon, own profile only) | `throwback.js` `updateProfileEntry()`, bridge message `{"t":"settings"}` |
+| "Throwback" section on Instagram's settings page, after "Your account" | `throwback.js` (in progress) |
+| Long-press the Home tab | `throwback.js` `installHomeLongPress()` |
+| Long-press the app icon → "Throwback settings" | `res/xml/shortcuts.xml`, action `app.throwback.action.OPEN_SETTINGS` |
+
+All of them end in `AppRoot` opening `SettingsRoot`. Test builds can also use
+`adb shell am start -n app.throwback/.MainActivity --es debug_open settings`.
+
 ## 5b. Ideas for later (owner)
 
 - **Search tab looks empty** now that the Explore grid is hidden. Ideas: a calm motivating line or

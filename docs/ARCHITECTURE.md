@@ -74,7 +74,10 @@ Composable entry points used by `core/AppRoot.kt`:
    After the first login, if the Instagram app is installed, `InstagramAppPrompt` is shown once.
 4. "Open messages only" on the lock screen switches the WebView to `MESSAGES_ONLY`. When the state
    leaves `Locked`, AppRoot switches back to `FULL`.
-5. Settings opens as a full-screen layer over everything; the WebView stays alive underneath.
+5. Settings opens as a full-screen layer over everything; the WebView stays alive underneath. There is no
+   settings button on the feed. Settings opens from the page (profile icon, Instagram's settings page,
+   long-press on the Home tab: the page script sends `{"t":"settings"}`, `InstagramScreen` calls
+   `onOpenSettings`) or from the app-icon shortcut (`MainActivity.ACTION_OPEN_SETTINGS`).
 
 ## Build
 

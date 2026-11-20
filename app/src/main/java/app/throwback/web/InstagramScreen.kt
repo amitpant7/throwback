@@ -66,6 +66,7 @@ import kotlinx.coroutines.launch
  *        including in-page (pushState) navigation. Integration shows its top-start controls only on the home feed.
  *        Outside instagram.com (Facebook login) the full URL is passed instead, so it never looks like "/".
  * @param onExitRequest back pressed with no web history left; integration decides (normally finishes the activity).
+ * @param onOpenSettings Throwback's settings icon (on the user's own profile page) was tapped.
  */
 @Composable
 fun InstagramScreen(
@@ -74,6 +75,7 @@ fun InstagramScreen(
     onExitRequest: () -> Unit,
     modifier: Modifier = Modifier,
     startUrl: String? = null,
+    onOpenSettings: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val repository = remember { RulesRepository.get(context) }
@@ -112,6 +114,7 @@ fun InstagramScreen(
             onStartUrlHandled = { handledStartUrl = it },
             onLocationChanged = onLocationChanged,
             onExitRequest = onExitRequest,
+            onOpenSettings = onOpenSettings,
             onRecreate = { generation++ },
             modifier = modifier,
         )
@@ -130,6 +133,7 @@ private fun InstagramWebHost(
     onStartUrlHandled: (String?) -> Unit,
     onLocationChanged: (String) -> Unit,
     onExitRequest: () -> Unit,
+    onOpenSettings: () -> Unit,
     onRecreate: () -> Unit,
     modifier: Modifier,
 ) {
@@ -158,6 +162,7 @@ private fun InstagramWebHost(
     val latestOnPageVisited by rememberUpdatedState(onPageVisited)
     val latestOnStartUrlHandled by rememberUpdatedState(onStartUrlHandled)
     val latestOnExitRequest by rememberUpdatedState(onExitRequest)
+    val latestOnOpenSettings by rememberUpdatedState(onOpenSettings)
 
     // Photos and videos go through Android's photo picker; anything else through the file chooser.
     val pickOne = rememberLauncherForActivityResult(PickVisualMedia()) { uri ->
@@ -178,6 +183,8 @@ private fun InstagramWebHost(
             }
 
             override fun onStartUrlHandled(url: String?) = latestOnStartUrlHandled(url)
+
+            override fun onOpenSettings() = latestOnOpenSettings()
 
             override fun pickFiles(kind: PickKind, multiple: Boolean, documentIntent: Intent?): Boolean {
                 val media = when (kind) {

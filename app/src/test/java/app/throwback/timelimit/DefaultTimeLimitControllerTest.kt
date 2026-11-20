@@ -115,6 +115,27 @@ class DefaultTimeLimitControllerTest {
     }
 
     @Test
+    fun `the clock reading alone is saved only now and then, not every 10 s`() = runTest {
+        val store = MemoryStore()
+        val c = controller(store) // no limit: nothing but the clock reading changes while open
+        val loaded = store.saves
+        c.onForeground(WebMode.FULL)
+        advanceTimeBy(14 * MIN)
+        runCurrent()
+        assertEquals(loaded, store.saves) // before: a write every 10 s
+        advanceTimeBy(MIN + 1)
+        runCurrent()
+        assertEquals(loaded + 1, store.saves) // every 15 minutes
+        c.onBackground()
+        runCurrent()
+        assertEquals(loaded + 1, store.saves)
+        // Real changes still go at once.
+        c.setup(15, "1234")
+        runCurrent()
+        assertEquals(loaded + 2, store.saves)
+    }
+
+    @Test
     fun `no counting once no activity is visible, even without onBackground`() = runTest {
         val c = controller(MemoryStore())
         c.setup(30, "1234")

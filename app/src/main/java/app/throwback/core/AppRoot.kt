@@ -40,8 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.ThrowbackApp
 import app.throwback.core.theme.ThrowbackTheme
@@ -246,11 +245,11 @@ private fun MainScreen(
     }
     val pauseShowing = mindfulPause == true && !(pauseDone && (pageShown || pauseOverdue)) && deepLink == null
     val onInstagram = mindfulPause != null && !pauseShowing && !settingsOpen
-    var resumed by remember { mutableStateOf(false) }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { resumed = true }
-    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { resumed = false }
-    LaunchedEffect(resumed, onInstagram, mode) {
-        if (resumed && onInstagram) timeLimit.onForeground(mode) else timeLimit.onBackground()
+    // Straight from ON_RESUME / ON_PAUSE: a "resumed" state read in an effect only re-ran if a frame
+    // came between ON_PAUSE and ON_STOP, so after the power button counting might not restart.
+    LifecycleResumeEffect(onInstagram, mode) {
+        if (onInstagram) timeLimit.onForeground(mode) else timeLimit.onBackground()
+        onPauseOrDispose { timeLimit.onBackground() }
     }
 
     // Hold the system splash only until preferences are loaded. It must not wait for the WebView:

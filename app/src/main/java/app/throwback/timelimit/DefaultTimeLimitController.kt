@@ -46,6 +46,7 @@ internal class DefaultTimeLimitController(
     private val engine: TimeLimitEngine = TimeLimitEngine(),
     private val tickMillis: Long = 1_000,
     private val saveEveryMillis: Long = 10_000,
+    private val anchorSaveEveryMillis: Long = 15 * 60_000,
 ) : TimeLimitController {
 
     private val lock = Any()
@@ -239,16 +240,29 @@ internal class DefaultTimeLimitController(
         }
     }
 
-    /** Saves after real changes at once, and usage-only changes at most every [saveEveryMillis]. */
+    /**
+     * Saves real changes at once, and usage at most every [saveEveryMillis]. The anchor alone (the
+     * last clock reading, new on every call) is saved only for a new boot or every
+     * [anchorSaveEveryMillis]: within a boot any anchor of that boot gives the same trusted time,
+     * and after a reboot it is only where Android 13+ counts on from until network time is back.
+     * (Before, it was written every 10 s while Throwback was open, with or without a limit.)
+     */
     private fun persist(s: TimeLimitState, r: ClockReading, save: Save) {
         if (!loaded) return // Never overwrite the stored state with the blank pre-load one.
         val p = s.persistent()
         val previous = lastSaved
         if (p == previous) return
-        val usageOnly = previous != null && p.copy(usedMillis = previous.usedMillis, anchor = previous.anchor) == previous
         val last = lastSaveElapsed
-        val due = last == null || r.elapsedMillis < last || r.elapsedMillis - last >= saveEveryMillis
-        if (save == Save.Now || !usageOnly || due) {
+        val sinceSave = if (last == null || r.elapsedMillis < last) Long.MAX_VALUE else r.elapsedMillis - last
+        val due = when {
+            previous == null -> true
+            p.copy(anchor = previous.anchor) == previous -> // only the anchor moved
+                p.anchor?.bootCount != previous.anchor?.bootCount || sinceSave >= anchorSaveEveryMillis
+            p.copy(usedMillis = previous.usedMillis, anchor = previous.anchor) == previous -> // usage
+                save == Save.Now || sinceSave >= saveEveryMillis
+            else -> true
+        }
+        if (due) {
             lastSaved = p
             lastSaveElapsed = r.elapsedMillis
             saves.trySend(p)

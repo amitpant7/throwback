@@ -23,10 +23,10 @@ class UiPrefsTest {
         UiPrefs(PreferenceDataStoreFactory.create(scope = backgroundScope, produceFile = { file }))
 
     @Test
-    fun `everything is off by default`() = runTest {
+    fun `everything is off by default, except the mindful pause`() = runTest {
         val prefs = newPrefs()
         assertFalse(prefs.onboardingDone.first())
-        assertFalse(prefs.mindfulPause.first())
+        assertTrue(prefs.mindfulPause.first()) // on by default (owner, 2026-11-20)
         assertFalse(prefs.instagramPromptShown.first())
         assertFalse(prefs.messagesSetupDone.first())
         assertEquals(emptySet<ExtraNotification>(), prefs.extraNotifications.first())

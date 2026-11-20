@@ -192,7 +192,9 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 
 ## Other
 
-30. **Mindful pause:** optional and off by default. A 3-second quote before Instagram opens.
+30. **Mindful pause:** **on by default** (owner, 2026-11-20: Instagram loads underneath, so it hides the
+    page load), can be turned off in Settings. **4 seconds**, no buttons (Back still leaves). 30 short
+    original lines in a shuffled order that goes through all of them before repeating.
 31. **Home-screen shortcut:** the user picks a name and icon (pinned shortcut).
 32. **Theme: Sage.** Nunito type with a sage-green accent, following the phone's light/dark setting.
     The Instagram feed keeps Instagram's own colours.

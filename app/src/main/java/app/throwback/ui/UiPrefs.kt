@@ -48,7 +48,8 @@ internal class UiPrefs(private val store: DataStore<Preferences>) : UiPreference
         data.map { it[key] ?: false }.distinctUntilChanged()
 
     override val onboardingDone: Flow<Boolean> = flag(ONBOARDING_DONE)
-    override val mindfulPause: Flow<Boolean> = flag(MINDFUL_PAUSE)
+    /** On unless turned off (owner: default on; Instagram loads underneath, so it costs no time). */
+    override val mindfulPause: Flow<Boolean> = data.map { it[MINDFUL_PAUSE] ?: true }.distinctUntilChanged()
 
     /** The "Instagram app found" choice has been shown once. */
     val instagramPromptShown: Flow<Boolean> = flag(INSTAGRAM_PROMPT_SHOWN)

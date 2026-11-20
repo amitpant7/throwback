@@ -174,17 +174,38 @@
 
     <!-- 3 · Mindful pause -->
     <string name="ui_pause_opening_in">Opening in %1$d</string>
-    <string name="ui_pause_not_now">Not now</string>
-    <string name="ui_pause_continue">Continue</string>
-    <!-- Short original lines, one picked at random per pause. Not quotes from anyone. -->
+    <!-- Short original lines (not quotes from anyone), shown in a shuffled order that goes through all of them before repeating. -->
     <string-array name="ui_pause_lines">
-        <item>Take a breath. The people you follow will still be here in three seconds.</item>
+        <item>Take a breath. The people you follow will still be here in a moment.</item>
         <item>You opened this on purpose. What did you come to see?</item>
         <item>Catch up with your people, then get back to your day.</item>
         <item>A short visit is still a good visit.</item>
         <item>Look up for a moment. Then decide.</item>
         <item>Check in on your friends, not on the feed.</item>
         <item>Say hello, see what\'s new, and leave while it still feels good.</item>
+        <item>Drink some water first. Seriously.</item>
+        <item>Who do you actually want to see today?</item>
+        <item>Your thumb isn\'t in charge. You are.</item>
+        <item>Five good minutes beat an hour of scrolling.</item>
+        <item>Is there someone you could just text instead?</item>
+        <item>Sit up, roll your shoulders back. Okay, go.</item>
+        <item>What were you doing before you picked up your phone?</item>
+        <item>Notice one thing around you that isn\'t a screen.</item>
+        <item>Come for your friends. Leave before it gets boring.</item>
+        <item>The best part of your day probably isn\'t in here.</item>
+        <item>One look, then back to life.</item>
+        <item>Remember when this was just photos of friends? It still is.</item>
+        <item>Breathe in for four. Out for four. There.</item>
+        <item>You can close this whenever you like. That\'s the whole trick.</item>
+        <item>Somebody nearby might like a chat more than a like.</item>
+        <item>Pick one thing to check, then put it down.</item>
+        <item>The feed ends. Throwback makes sure of it.</item>
+        <item>Go easy on yourself today.</item>
+        <item>Window open? Sky still there? Good.</item>
+        <item>Like, comment, leave. The classic.</item>
+        <item>Bored? That\'s allowed. Boredom is where ideas start.</item>
+        <item>Your morning, your evening, your rules.</item>
+        <item>See your people. Skip the noise.</item>
     </string-array>
     <!-- One-time hint on the feed: where Throwback's settings are -->
     <string name="ui_settings_hint_title">Throwback\'s settings</string>

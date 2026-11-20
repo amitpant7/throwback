@@ -132,6 +132,24 @@ internal class InstagramWebController(
         webView.webChromeClient = Chrome()
         installBridge()
         installTouchListener()
+        current = java.lang.ref.WeakReference(this)
+    }
+
+    /** Today's counts from the page (JSON, see PageDayStats), or null when the page can't say. */
+    fun dayStats(onResult: (String?) -> Unit) {
+        if (destroyed) return onResult(null)
+        webView.evaluateJavascript(
+            "(function(){try{return window.__throwback&&__throwback.dayStats?__throwback.dayStats():null}catch(e){return null}})()",
+        ) { raw ->
+            // The value comes back JSON-encoded: a quoted string, or null.
+            val text = try {
+                (kotlinx.serialization.json.Json.parseToJsonElement(raw ?: "null") as? kotlinx.serialization.json.JsonPrimitive)
+                    ?.takeIf { it.isString }?.content
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+            onResult(text)
+        }
     }
 
     // ------------------------------------------------------------------ driven by InstagramScreen
@@ -264,6 +282,7 @@ internal class InstagramWebController(
     fun destroy() {
         if (destroyed) return
         destroyed = true
+        if (current?.get() === this) current = null
         handler.removeCallbacksAndMessages(null)
         deliverFiles(null)
         injector.release()
@@ -574,6 +593,10 @@ internal class InstagramWebController(
     }
 
     companion object {
+        /** The live page (one at a time), for screens that read from it, such as "Your day". */
+        @Volatile
+        var current: java.lang.ref.WeakReference<InstagramWebController>? = null
+
         private const val MAX_LOGIN_REDIRECTS = 2
         private const val TAG = "ThrowbackWeb"
         private const val BRIDGE_OBJECT = "throwbackNative"

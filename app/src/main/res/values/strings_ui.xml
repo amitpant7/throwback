@@ -192,4 +192,35 @@
     <string name="ui_visit_title">Need the Instagram app?</string>
     <string name="ui_visit_body">To switch accounts or change Instagram\'s settings. Throwback lets you in for 5 minutes, then keeps you out again.</string>
     <string name="ui_visit_button">Open Instagram for 5 minutes</string>
+
+    <!-- Your day (stats) -->
+    <string name="ui_today_title">Your day</string>
+    <string name="ui_today_row_sub">Time spent, allowances left, what was removed</string>
+    <string name="ui_today_on_instagram">on Instagram today</string>
+    <string name="ui_today_limit_left">%1$s left of your daily limit</string>
+    <string name="ui_today_limit_reached">Daily limit reached</string>
+    <string name="ui_today_no_limit">No daily limit set</string>
+    <string name="ui_today_area_feed">Feed</string>
+    <string name="ui_today_area_stories">Stories</string>
+    <string name="ui_today_area_messages">Messages</string>
+    <string name="ui_today_area_explore">Explore</string>
+    <string name="ui_today_area_other">Profiles and posts</string>
+    <string name="ui_today_section_allowances">Left today</string>
+    <string name="ui_today_explore">Explore</string>
+    <string name="ui_today_explore_value">%1$s of %2$s left</string>
+    <string name="ui_today_explore_done">Done for today</string>
+    <string name="ui_today_reels">Reels in chats</string>
+    <string name="ui_today_reels_free">A few free swipes</string>
+    <string name="ui_today_reels_cooling">Free again in %1$s</string>
+    <string name="ui_today_discover">Discover posts</string>
+    <string name="ui_today_discover_value">%1$d of %2$d left</string>
+    <string name="ui_today_section_removed">Removed today</string>
+    <string name="ui_today_ads">Ads</string>
+    <string name="ui_today_suggested">Suggested posts</string>
+    <string name="ui_today_alerts">Instagram alerts kept away</string>
+    <string name="ui_today_no_page">Counts start once the feed has been open.</string>
+    <string name="ui_today_note">Counted on this phone only, reset at midnight.</string>
+    <string name="ui_today_minutes">%1$d min</string>
+    <string name="ui_today_under_minute">Under a minute</string>
+    <string name="ui_today_hours">%1$d h %2$d min</string>
 </resources>

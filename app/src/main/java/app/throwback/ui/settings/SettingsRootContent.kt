@@ -57,6 +57,7 @@ internal fun SettingsRootContent(
     onClose: () -> Unit,
     timeLimitScreen: @Composable (onClose: () -> Unit) -> Unit,
     startAt: SettingsStart,
+    todayScreen: @Composable (onClose: () -> Unit) -> Unit = {},
 ) {
     val colors = ThrowbackTheme.colors
     val context = LocalContext.current
@@ -105,6 +106,7 @@ internal fun SettingsRootContent(
                         push = push,
                         showMessage = showMessage,
                         timeLimitScreen = timeLimitScreen,
+                        todayScreen = todayScreen,
                     )
                 }
             }
@@ -130,6 +132,7 @@ private fun RouteContent(
     push: (SettingsRoute) -> Unit,
     showMessage: (String) -> Unit,
     timeLimitScreen: @Composable (onClose: () -> Unit) -> Unit,
+    todayScreen: @Composable (onClose: () -> Unit) -> Unit,
 ) {
     val padded = Modifier.fillMaxSize().statusBarsPadding()
     when (route) {
@@ -143,6 +146,7 @@ private fun RouteContent(
 
         // The timelimit area draws this screen (and handles its own insets).
         SettingsRoute.TimeLimit -> timeLimitScreen(back)
+        SettingsRoute.Today -> Box(padded) { todayScreen(back) }
 
         SettingsRoute.Messages -> Box(padded) {
             // Decide once which screen this entry shows, so turning the feature off (which also goes back)

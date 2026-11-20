@@ -149,4 +149,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     small card above the Home tab says long-press Home opens Throwback's settings (and mentions the
     profile icon and the section in Instagram's settings). Shown once; opening settings any other way
     also counts.
+33c. **Your day** (owner, 2026-11-20): first row in Settings. Time on Instagram today (split into
+    feed, stories, messages, Explore, profiles and posts), the daily limit left, Explore minutes left,
+    reels-in-chats cooldown, Discover posts left, and what was removed today (ads, suggested posts,
+    Instagram alerts). Counted on the phone only (page storage `__tb_day` + the app), reset at midnight.
 33. **Mockups:** https://claude.ai/artifact/JVunY8kiNTP8abRP43LSGV (private to the owner).

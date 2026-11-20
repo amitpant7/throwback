@@ -48,8 +48,15 @@ fun SettingsRoot(
     onClose: () -> Unit,
     timeLimitScreen: @Composable (onClose: () -> Unit) -> Unit,
     startAt: SettingsStart = SettingsStart.Home,
+    todayScreen: @Composable (onClose: () -> Unit) -> Unit = {},
 ) {
-    SettingsRootContent(onClose = onClose, timeLimitScreen = timeLimitScreen, startAt = startAt)
+    SettingsRootContent(onClose = onClose, timeLimitScreen = timeLimitScreen, startAt = startAt, todayScreen = todayScreen)
+}
+
+/** "Your day": time spent, allowances left, what Throwback removed today. */
+@Composable
+fun TodayScreen(stats: app.throwback.ui.today.TodayStats, onBack: () -> Unit) {
+    app.throwback.ui.today.TodayScreen(stats, onBack)
 }
 
 /** Optional mindful pause before Instagram loads: a short line and a 3-second countdown. */

@@ -5,6 +5,7 @@ import app.throwback.ui.SettingsStart
 /** Screens reachable inside SettingsRoot. */
 internal enum class SettingsRoute {
     Home,
+    Today,
     TimeLimit,
 
     /** Messages & calls: the wizard until it is finished, then the settings screen. */

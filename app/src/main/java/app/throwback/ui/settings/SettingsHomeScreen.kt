@@ -53,6 +53,13 @@ internal fun SettingsHomeScreen(prefs: UiPrefs, onBack: () -> Unit, onOpen: (Set
             SectionLabel(stringResource(R.string.ui_section_focus))
             TbCard {
                 NavRow(
+                    icon = R.drawable.ui_ic_usage,
+                    title = stringResource(R.string.ui_today_title),
+                    subtitle = stringResource(R.string.ui_today_row_sub),
+                    onClick = { onOpen(SettingsRoute.Today) },
+                )
+                CardDivider()
+                NavRow(
                     icon = R.drawable.ui_ic_clock,
                     title = stringResource(R.string.ui_time_limit_title),
                     subtitle = stringResource(R.string.ui_time_limit_sub),

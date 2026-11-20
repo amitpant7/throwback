@@ -116,6 +116,7 @@ fun AppRoot(
                 onClose = { settingsOpen = null },
                 startAt = start,
                 timeLimitScreen = { onClose -> TimeLimitSettingsScreen(app.timeLimit, onClose) },
+                todayScreen = { onClose -> TodayRoute(app.timeLimit, onClose) },
             )
         }
     }

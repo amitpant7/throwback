@@ -77,6 +77,16 @@ data class Hosts(
     val blockedUrls: List<String> = emptyList(),
 )
 
+/**
+ * The only hosts [Hosts.instagram] may name. Pinned in the app, so a rules edit can never put another
+ * site in Instagram's place (a new Instagram host needs an app update). The page script and the
+ * message bridge are limited to the same hosts (WebViewConfig.INSTAGRAM_ORIGINS).
+ */
+internal val INSTAGRAM_HOSTS: Set<String> = setOf("instagram.com", "www.instagram.com", "m.instagram.com")
+
+/** [Hosts.internal], [Hosts.login] and the link shims may only name these domains or their subdomains. */
+internal val META_DOMAINS: Set<String> = setOf("instagram.com", "facebook.com", "meta.com")
+
 @Serializable
 data class LinkShim(val host: String, val param: String)
 

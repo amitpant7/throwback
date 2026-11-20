@@ -22,11 +22,16 @@ class PageScriptTest {
 
     @Test
     fun `build substitutes mode, css and rules`() {
-        val script = PageScript.build("(function(c){})(${PageScript.CONFIG_TOKEN});", "a{color:red}", rules, WebMode.MESSAGES_ONLY)
+        val features = PageFeatures(createInApp = true, storyInApp = true, supportAsk = "again")
+        val script = PageScript.build("(function(c){})(${PageScript.CONFIG_TOKEN});", "a{color:red}", rules, WebMode.MESSAGES_ONLY, clock = null, features)
         assertFalse(PageScript.CONFIG_TOKEN in script)
         val json = script.removePrefix("(function(c){})(").removeSuffix(");")
         val config = Json.parseToJsonElement(json).jsonObject
         assertEquals("MESSAGES_ONLY", config["mode"]!!.jsonPrimitive.content)
+        // A new document starts with the app's features as they are now.
+        assertEquals("true", config["createInApp"]!!.jsonPrimitive.content)
+        assertEquals("true", config["storyInApp"]!!.jsonPrimitive.content)
+        assertEquals("again", config["supportAsk"]!!.jsonPrimitive.content)
         assertEquals("a{color:red}", config["css"]!!.jsonPrimitive.content)
         val encodedRules = config["rules"]!!.jsonObject
         assertEquals(rules.homeUrl, encodedRules["homeUrl"]!!.jsonPrimitive.content)
@@ -37,8 +42,14 @@ class PageScriptTest {
 
     @Test
     fun `partial config for live updates`() {
-        // The app's features flag always goes along (no trusted clock in unit tests).
-        assertEquals("""{"createInApp":false,"storyInApp":false,"supportAsk":null,"mode":"FULL"}""", PageScript.config(mode = WebMode.FULL, clock = null))
+        // Only what changed: the page keeps the rest.
+        assertEquals("""{"mode":"FULL"}""", PageScript.config(mode = WebMode.FULL))
+        // The page reads exactly these keys.
+        assertEquals(
+            """{"createInApp":true,"storyInApp":false,"supportAsk":"first"}""",
+            PageScript.config(features = PageFeatures(createInApp = true, supportAsk = "first")),
+        )
+        assertEquals("""{"createInApp":false,"storyInApp":false,"supportAsk":null}""", PageScript.config(features = PageFeatures()))
     }
 
     @Test
@@ -51,6 +62,46 @@ class PageScriptTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun `a template without the token is refused`() {
-        PageScript.build("no token", "", rules, WebMode.FULL)
+        PageScript.build("no token", "", rules, WebMode.FULL, clock = null, PageFeatures())
+    }
+
+    @Test
+    fun `the trusted clock goes along only when known, with the moment it was read`() {
+        val clock = PageClock.Reading(offsetMs = -1500, zoneOffsetMin = 60, day = 20412, nextDayAt = 1_763_683_200_000, readAt = 1_763_650_000_123)
+        assertEquals("""{"offset":-1500,"zoneMin":60,"day":20412,"nextAt":1763683200000,"at":1763650000123}""", clock.json().toString())
+
+        val withClock = Json.parseToJsonElement(PageScript.config(clock = clock.json())).jsonObject
+        assertEquals(clock.json(), withClock["clock"])
+        assertFalse("clock" in Json.parseToJsonElement(PageScript.config(mode = WebMode.FULL)).jsonObject)
+        val script = PageScript.build("(${PageScript.CONFIG_TOKEN})", "", rules, WebMode.FULL, clock = null, PageFeatures())
+        assertFalse("\"clock\"" in script)
+    }
+
+    @Test
+    fun `features change through one state, and the relay's own setter lands there too`() {
+        val before = PageFeatures.current.value
+        try {
+            PageFeatures.storyInApp = true // as relay.CallInApp does
+            assertEquals(true, PageFeatures.current.value.storyInApp)
+            PageFeatures.current.value = before.copy(storyInApp = false)
+            assertEquals(false, PageFeatures.storyInApp)
+        } finally {
+            PageFeatures.current.value = before
+        }
+    }
+
+    @Test
+    fun `no clock while the trusted one is unknown`() {
+        val previous = PageClock.provider
+        try {
+            PageClock.provider = null
+            assertEquals(null, PageClock.json())
+            PageClock.provider = { null } // the time limit hasn't loaded its saved state yet
+            assertEquals(null, PageClock.json())
+            PageClock.provider = { PageClock.Reading(0, 0, 1, 2, 3) }
+            assertEquals(3L, PageClock.json()!!["at"]!!.jsonPrimitive.content.toLong())
+        } finally {
+            PageClock.provider = previous
+        }
     }
 }

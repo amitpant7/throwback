@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112035,
+  "version": 2026112036,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -41,6 +41,8 @@
         "note": "Newer share links of the form /<user>/reel/<code>/." },
       { "pattern": "^/([A-Za-z0-9._]+)/reels/?$", "redirect": "/$1/", "kind": "reels",
         "note": "The Reels tab on a profile goes to the profile's posts instead." },
+      { "pattern": "^/([A-Za-z0-9._]+)/tagged/?$", "redirect": "/$1/", "kind": "hidden",
+        "note": "The Tagged tab on a profile (posts by other people) goes to the profile's posts instead." },
       { "pattern": "^/reels?(/|$)", "kind": "reels",
         "note": "The Reels tab and anything else under /reels/ or /reel/." },
       { "pattern": "^/explore/people(/|$)", "kind": "suggested",

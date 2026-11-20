@@ -1,6 +1,7 @@
 package app.throwback.web
 
 import java.io.File
+import android.annotation.SuppressLint
 import android.util.Log
 import app.throwback.BuildConfig
 import android.content.Context
@@ -17,7 +18,7 @@ internal class PageAssets(val template: String, val css: String) {
         @Volatile
         private var cached: PageAssets? = null
 
-        /** Already loaded (warmed up at app start), or null. */
+        /** Already loaded (MainActivity reads it as it starts), or null. */
         fun loadedOrNull(): PageAssets? = cached
 
         suspend fun load(context: Context): PageAssets = cached ?: withContext(Dispatchers.IO) {
@@ -32,9 +33,10 @@ internal class PageAssets(val template: String, val css: String) {
  * Puts the page script into Instagram documents.
  *
  * Preferred: WebViewCompat.addDocumentStartJavaScript, which runs it before any of Instagram's own
- * scripts in every www.instagram.com document (and nowhere else). WebViews too old for that get it
- * from onPageStarted and again from onPageFinished; the script ignores a second copy and just
- * reconfigures, so double injection is harmless.
+ * scripts in every document of an Instagram origin (WebViewConfig.INSTAGRAM_ORIGINS: instagram.com,
+ * www. and m.) and nowhere else. WebViews too old for that get it from onPageStarted and again from
+ * onPageFinished; the script ignores a second copy and just reconfigures, so double injection is
+ * harmless.
  */
 internal class ScriptInjector(private val webView: WebView) {
 
@@ -77,8 +79,9 @@ internal class ScriptInjector(private val webView: WebView) {
         webView.evaluateJavascript(js) { result -> onResult(result == "true") }
     }
 
+    @SuppressLint("RequiresFeature") // handler is only ever set where DOCUMENT_START_SCRIPT is supported
     fun release() {
-        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) handler?.remove()
+        handler?.remove()
         handler = null
     }
 }

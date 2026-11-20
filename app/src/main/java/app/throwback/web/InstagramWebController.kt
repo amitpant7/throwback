@@ -1,11 +1,11 @@
 package app.throwback.web
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -32,10 +32,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+import app.throwback.core.StartTrace
 import app.throwback.core.WebMode
 import app.throwback.web.rules.FilterRules
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import java.lang.ref.WeakReference
 
 /** A short message shown over the page. */
 internal enum class WebNotice { REELS, SUGGESTED, MESSAGES_ONLY, HIDDEN, NO_APP }
@@ -44,6 +50,9 @@ internal data class WebToast(val notice: WebNotice, val id: Long)
 
 /** A main-frame load failed. [retrying] while a retry is in flight. */
 internal data class LoadError(val offline: Boolean, val url: String?, val retrying: Boolean = false)
+
+/** The WebView's renderer process went away: it [crashed], or the system killed it (memory). */
+internal data class RendererGone(val crashed: Boolean)
 
 /**
  * Owns the single long-lived Instagram WebView and everything wired to it: settings, the page
@@ -55,44 +64,38 @@ internal class InstagramWebController(
     private val assets: PageAssets,
     initialMode: WebMode,
     initialHandledStartUrl: String?,
+    initialFeatures: PageFeatures,
 ) {
-    /** Callbacks into the composable (set on every composition). */
-    interface Host {
-        fun onLocationChanged(location: String, url: String)
-        fun onStartUrlHandled(url: String?)
-
-        /** Throwback's settings icon in the page was tapped. */
-        fun onOpenSettings()
-
-        /** The chat's call button: open the chat (with [user], else chat [thread]) in the Instagram app. */
-        fun onCallInApp(thread: String?, user: String?) {}
-
+    /** What the page asks of the app: InstagramScreen's callbacks, in one object. */
+    class Host(
+        /** The location changed: the path on Instagram, the full URL elsewhere; and the URL. */
+        val onLocationChanged: (location: String, url: String) -> Unit,
+        val onStartUrlHandled: (url: String?) -> Unit,
+        /** Throwback's settings were asked for (profile icon, Instagram's settings page, Home long-press). */
+        val onOpenSettings: () -> Unit,
+        /** The chat's call button: open the chat (with the user, else the chat thread) in the Instagram app. */
+        val onCallInApp: (thread: String?, user: String?) -> Unit,
         /** The reel allowance in Instagram's swipe viewer is used up. */
-        fun onReelLimit()
-
+        val onReelLimit: () -> Unit,
         /** The feed reached "You're all caught up". */
-        fun onCaughtUp() {}
-
+        val onCaughtUp: () -> Unit,
         /** "+" / "Your story" with the Instagram app connected. */
-        fun onCreateInApp(story: Boolean) {}
-
+        val onCreateInApp: (story: Boolean) -> Unit,
         /** "Open settings in the Instagram app". */
-        fun onSettingsInApp() {}
-
+        val onSettingsInApp: () -> Unit,
         /** "Your story" went to the website's upload (the app route is waiting). */
-        fun onStoryWeb() {}
-
+        val onStoryWeb: () -> Unit,
         /** The support line was shown at "You're all caught up". */
-        fun onSupportAskShown() {}
-
+        val onSupportAskShown: () -> Unit,
         /** "Say thanks" on the support line. */
-        fun onSupportThanks() {}
+        val onSupportThanks: () -> Unit,
+    )
 
-        /** Opens a picker; must eventually call [deliverFiles]. False if no picker could be opened. */
-        fun pickFiles(kind: PickKind, multiple: Boolean, documentIntent: Intent?): Boolean
-    }
-
+    /** The screen's latest callbacks (set on every composition). */
     var host: Host? = null
+
+    /** Opens a picker for a file input; must eventually call [deliverFiles]. False if none could open. */
+    var pickFiles: ((kind: PickKind, multiple: Boolean, documentIntent: Intent?) -> Boolean)? = null
 
     private val handler = Handler(Looper.getMainLooper())
     val webView: WebView = WebView(context)
@@ -112,13 +115,14 @@ internal class InstagramWebController(
     var refreshing by mutableStateOf(false)
         private set
     var toast by mutableStateOf<WebToast?>(null)
-    var rendererGone by mutableStateOf(false)
+
+    /** Set when the renderer process went away (then this controller is destroyed): whether it crashed. */
+    var rendererGone by mutableStateOf<RendererGone?>(null)
         private set
 
-    var mode: WebMode = initialMode
-        private set
-    var started = false
-        private set
+    private var mode: WebMode = initialMode
+    private var started = false
+    private var features: PageFeatures = initialFeatures
 
     private var rules: FilterRules? = null
     private var router: UrlRouter? = null
@@ -136,6 +140,11 @@ internal class InstagramWebController(
     private val revealRunnable = Runnable { reveal() }
     private val stopRefreshing = Runnable { refreshing = false }
 
+    /** The phone's clock, date or time zone changed: the page's day must follow the trusted clock. */
+    private val timeChanges = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) = refreshClock()
+    }
+
     init {
         WebViewConfig.apply(webView, context.resources.configuration.fontScale)
         val density = context.resources.displayMetrics.density
@@ -147,7 +156,13 @@ internal class InstagramWebController(
         webView.webChromeClient = Chrome()
         installBridge()
         installTouchListener()
-        current = java.lang.ref.WeakReference(this)
+        val timeActions = IntentFilter().apply {
+            addAction(Intent.ACTION_TIME_CHANGED)
+            addAction(Intent.ACTION_TIMEZONE_CHANGED)
+            addAction(Intent.ACTION_DATE_CHANGED)
+        }
+        ContextCompat.registerReceiver(context.applicationContext, timeChanges, timeActions, ContextCompat.RECEIVER_NOT_EXPORTED)
+        current = WeakReference(this)
     }
 
     /** Today's counts from the page (JSON, see PageDayStats), or null when the page can't say. */
@@ -158,7 +173,7 @@ internal class InstagramWebController(
         ) { raw ->
             // The value comes back JSON-encoded: a quoted string, or null.
             val text = try {
-                (kotlinx.serialization.json.Json.parseToJsonElement(raw ?: "null") as? kotlinx.serialization.json.JsonPrimitive)
+                (Json.parseToJsonElement(raw ?: "null") as? JsonPrimitive)
                     ?.takeIf { it.isString }?.content
             } catch (e: IllegalArgumentException) {
                 null
@@ -171,11 +186,11 @@ internal class InstagramWebController(
 
     /** New or updated rules: future pages get them at document start, the open page live. */
     fun applyRules(newRules: FilterRules) {
-        if (newRules == rules) return
+        if (destroyed || newRules == rules) return
         val hadRules = rules != null
         rules = newRules
         router = UrlRouter(newRules)
-        injector.install(PageScript.build(assets.template, assets.css, newRules, mode))
+        installScript(PageClock.json())
         if (hadRules && started) injector.configureLive(PageScript.config(rules = newRules)) {}
     }
 
@@ -184,15 +199,15 @@ internal class InstagramWebController(
      * home. Later calls: opens [startUrl] if it is a new deep link.
      */
     fun openOrStart(startUrl: String?, restoreUrl: String?) {
+        if (destroyed) return
         val router = router ?: return
         if (!started) {
             started = true
             val freshLink = startUrl?.takeIf { it != handledStartUrl }
             markStartHandled(startUrl)
-            // Logged out: go straight to Instagram's login form instead of its "Log in or sign up"
-            // landing page, which would need a second tap. A deep link still opens as asked.
-            val loggedIn = InstagramSession.refresh()
-            load(if (!loggedIn && freshLink == null) InstagramSession.LOGIN_URL else router.startUrl(freshLink ?: restoreUrl, mode))
+            // Logged out, home ("/") is Instagram's "Log in or sign up" page: reportLocation sends it
+            // on to the login form. Reading the login cookie here would hold up the first frame.
+            load(router.startUrl(freshLink ?: restoreUrl, mode))
             handler.postDelayed(revealRunnable, REVEAL_TIMEOUT_MS)
         } else if (startUrl != null && startUrl != handledStartUrl) {
             markStartHandled(startUrl)
@@ -219,18 +234,41 @@ internal class InstagramWebController(
 
     /** Switches FULL / MESSAGES_ONLY without reloading when the page script is present. */
     fun setMode(newMode: WebMode) {
-        if (newMode == mode) return
+        if (destroyed || newMode == mode) return
         mode = newMode
-        val rules = rules ?: return
-        injector.install(PageScript.build(assets.template, assets.css, rules, newMode))
+        if (rules == null) return
+        installScript(PageClock.json())
         if (!started) return
         injector.configureLive(PageScript.config(mode = newMode)) { handled ->
             if (!handled && !destroyed) enforceModeNatively()
         }
     }
 
+    /**
+     * The script for documents loaded from now on: rules, mode and features as they are now, and
+     * [clock]. Rebuilt only when one of them changes, and for a fresh clock at [onStart] and when the
+     * phone's time changes: never per navigation (it is ~180 KB).
+     */
+    private fun installScript(clock: JsonObject?) {
+        val rules = rules ?: return
+        injector.install(PageScript.build(assets.template, assets.css, rules, mode, clock, features))
+        scriptHasClock = clock != null
+    }
+
+    /** Whether the installed script carries a trusted clock (none while the time limit was still loading). */
+    private var scriptHasClock = false
+
+    /** A fresh trusted clock for the open page and for documents loaded from now on. */
+    private fun refreshClock() {
+        if (destroyed) return
+        val clock = PageClock.json() ?: return
+        installScript(clock)
+        if (started) injector.configureLive(PageScript.config(clock = clock)) {}
+    }
+
     /** Back: through the WebView history (skipping pages this mode doesn't show). False = nothing left. */
     fun goBack(): Boolean {
+        if (destroyed) return false
         val router = router ?: return false
         if (mode == WebMode.MESSAGES_ONLY) {
             val history = webView.copyBackForwardList()
@@ -259,6 +297,7 @@ internal class InstagramWebController(
     }
 
     fun retry() {
+        if (destroyed) return
         val failed = error ?: return
         val url = failed.url ?: router?.homeUrl(mode) ?: return
         failedUrl = null
@@ -272,18 +311,29 @@ internal class InstagramWebController(
     }
 
     fun onNightModeChanged(uiModeNight: Int) {
+        if (destroyed) return
         val previous = nightMode
         nightMode = uiModeNight
         if (previous != null && previous != uiModeNight) WebViewConfig.refreshColorScheme(webView.settings)
     }
 
+    /**
+     * In front: the WebView runs again. Back from the background, the page also gets a fresh trusted
+     * clock (time passed meanwhile); the first start needs none, the script was just built with one.
+     */
     fun onStart() {
+        if (destroyed) return
         webView.onResume()
         webView.resumeTimers()
+        if (wasStopped) refreshClock()
     }
+
+    private var wasStopped = false
 
     /** In the background: stop timers and animations (saves battery), keep the login. */
     fun onStop() {
+        if (destroyed) return
+        wasStopped = true
         webView.onPause()
         webView.pauseTimers()
         CookieManager.getInstance().flush()
@@ -295,28 +345,32 @@ internal class InstagramWebController(
     }
 
     /** The app's features changed (e.g. the Instagram app got connected): tell the page. */
-    fun pushFeatures() {
-        if (destroyed) return
+    fun setFeatures(value: PageFeatures) {
+        if (destroyed || value == features) return
+        features = value
         // Pages loaded from now on (the script was built before the app knew), and the page on screen.
-        rules?.let { injector.install(PageScript.build(assets.template, assets.css, it, mode)) }
-        if (started) injector.configureLive(PageScript.config()) {}
+        installScript(PageClock.json())
+        if (started) injector.configureLive(PageScript.config(features = value)) {}
     }
+
+    /**
+     * Kept for relay.CallInApp (another area), which still calls it after changing [PageFeatures]:
+     * the change already reaches the page through [PageFeatures.current], while Throwback is in front.
+     */
+    fun pushFeatures() = Unit
 
     private fun share(url: String) {
-        val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
-            .putExtra(android.content.Intent.EXTRA_TEXT, url)
-        try {
-            context.startActivity(android.content.Intent.createChooser(send, null).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
-        } catch (e: android.content.ActivityNotFoundException) {
-            Log.w(TAG, "no app to share with")
-        }
+        val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, url)
+        if (!startOutside(Intent.createChooser(send, null))) Log.w(TAG, "no app to share with")
     }
 
+    /** Detaches and destroys the WebView. Idempotent: also called when the renderer goes away. */
     fun destroy() {
         if (destroyed) return
         destroyed = true
         if (current?.get() === this) current = null
         handler.removeCallbacksAndMessages(null)
+        context.applicationContext.unregisterReceiver(timeChanges)
         deliverFiles(null)
         injector.release()
         CookieManager.getInstance().flush()
@@ -328,7 +382,7 @@ internal class InstagramWebController(
     // ------------------------------------------------------------------ navigation
 
     private fun load(url: String) {
-        app.throwback.core.StartTrace.mark("load")
+        StartTrace.mark("load")
         navigatingTo = url
         webView.loadUrl(url)
     }
@@ -338,10 +392,13 @@ internal class InstagramWebController(
         host?.onStartUrlHandled(url)
     }
 
-    /** @return true when the WebView must not load [url] itself. */
-    private fun handleNavigation(url: String, currentUrl: String?): Boolean {
+    /**
+     * @param userGesture a tap started it (or a server redirected one): only then may it open another app.
+     * @return true when the WebView must not load [url] itself.
+     */
+    private fun handleNavigation(url: String, currentUrl: String?, userGesture: Boolean): Boolean {
         val router = router ?: return false
-        return when (val d = router.decide(url, mode, currentUrl)) {
+        return when (val d = router.decide(url, mode, currentUrl, userGesture)) {
             UrlRouter.Decision.Load -> {
                 navigatingTo = url
                 false
@@ -357,6 +414,7 @@ internal class InstagramWebController(
 
     /** @return true if the original navigation was replaced or dropped. */
     private fun redirect(d: UrlRouter.Decision.Redirect): Boolean {
+        d.kind?.let { showNotice(noticeFor(it)) } // blocked content (reels, suggestions, messages only)
         if (loopGuard.allow(d.url)) {
             load(d.url)
             return true
@@ -384,42 +442,43 @@ internal class InstagramWebController(
 
     private fun openExternally(url: String) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)
-        if (!context.isActivity()) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        try {
-            context.startActivity(intent)
-        } catch (e: ActivityNotFoundException) {
-            showNotice(WebNotice.NO_APP)
-        } catch (e: SecurityException) {
-            showNotice(WebNotice.NO_APP)
-        }
+        if (!startOutside(intent)) showNotice(WebNotice.NO_APP)
     }
 
-    private fun Context.isActivity(): Boolean {
-        var c: Context? = this
-        while (c is ContextWrapper) {
-            if (c is Activity) return true
-            c = c.baseContext
-        }
-        return false
+    /** Starts another app's activity from the screen's activity. False when no app may take it. */
+    private fun startOutside(intent: Intent): Boolean = try {
+        context.startActivity(intent)
+        true
+    } catch (e: ActivityNotFoundException) {
+        false
+    } catch (e: SecurityException) {
+        false
     }
 
+    /**
+     * One report per location change: every load reports from onPageStarted, doUpdateVisitedHistory
+     * and the page's own `loc`, and reading the login cookie waits on another thread.
+     */
     private fun reportLocation(url: String?) {
         val router = router ?: return
         if (url.isNullOrEmpty() || url == "about:blank" || url.startsWith("data:")) return
         val location = router.locationFor(url)
+        if (location == lastLocation) return
+        lastLocation = location
         val loggedIn = InstagramSession.refresh()
-        // Logged out on the landing page (e.g. after logging out): show the login form directly.
-        // Capped, so a cookie we can't read can never cause a redirect loop.
-        if (!loggedIn && location == "/" && loginRedirects < MAX_LOGIN_REDIRECTS) {
+        if (loggedIn) {
+            loginRedirects = 0 // a later logout gets the login form again
+        } else if (location == "/" && loginRedirects < MAX_LOGIN_REDIRECTS) {
+            // Logged out on the landing page (the first start, or after logging out): show the login
+            // form directly. Capped, so a cookie that can't be read can never cause a redirect loop.
             loginRedirects++
             load(InstagramSession.LOGIN_URL)
             return
         }
-        if (location == lastLocation) return
-        lastLocation = location
         host?.onLocationChanged(location, url)
     }
 
+    /** Logged-out landings sent to the login form since the user was last seen logged in. */
     private var loginRedirects = 0
 
     // ------------------------------------------------------------------ readiness, errors, notices
@@ -465,32 +524,56 @@ internal class InstagramWebController(
         if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
             // Only Instagram's own top-level documents can reach the app.
             WebViewCompat.addWebMessageListener(webView, BRIDGE_OBJECT, WebViewConfig.INSTAGRAM_ORIGINS) { _, message, _, isMainFrame, _ ->
-                if (isMainFrame) onBridgeMessage(message.data)
+                if (isMainFrame) onBridgeMessage(message.data, trusted = true)
             }
         } else {
             webView.addJavascriptInterface(LegacyBridge(), LEGACY_BRIDGE_OBJECT)
         }
     }
 
-    /** For WebViews without WEB_MESSAGE_LISTENER. Visible to every page, so messages are checked on arrival. */
+    /**
+     * For WebViews without WEB_MESSAGE_LISTENER. Injected into every frame and only the top-level
+     * URL can be checked, so a frame could pretend to be the page: messages that open another app or
+     * start a pass are dropped here (see [BridgeMessage.opensOtherApp]).
+     */
     private inner class LegacyBridge {
         @JavascriptInterface
         fun postMessage(json: String?) {
             handler.post {
-                if (!destroyed && router?.isInstagram(webView.url) == true) onBridgeMessage(json)
+                if (!destroyed && router?.isInstagram(webView.url) == true) onBridgeMessage(json, trusted = false)
             }
         }
     }
 
-    private fun onBridgeMessage(json: String?) {
+    /** The current document's script has spoken (any message); reset when a new document starts. */
+    private var scriptSeen = false
+
+    /** The current document's first `loc` has arrived; reset when a new document starts. */
+    private var locSeen = false
+
+    /** @param trusted from Instagram's own top-level document (not the legacy bridge). */
+    private fun onBridgeMessage(json: String?, trusted: Boolean) {
         if (destroyed) return
-        when (val m = BridgeMessage.parse(json)) {
-            is BridgeMessage.Location -> reportLocation(m.url)
+        val m = BridgeMessage.parse(json) ?: return
+        if (!trusted && m.opensOtherApp) return
+        scriptSeen = true
+        when (m) {
+            is BridgeMessage.Location -> {
+                // A new document starts uncovered: cover it at once, not only at "ready" (seconds
+                // later), or its feed and day clocks count time under the pause or Settings.
+                if (!locSeen && covered) pushCovered()
+                locSeen = true
+                reportLocation(m.url)
+            }
             BridgeMessage.Ready -> {
                 requestReveal()
                 if (covered) pushCovered() // a new page starts uncovered
-                // Fresh trusted time for the page's daily counters (the phone's clock may have moved).
-                PageClock.json()?.let { injector.configureLive(PageScript.config(clock = it)) {} }
+                // Fresh trusted time for the page's daily counters (the phone's clock may have moved),
+                // and, once it is known, for the documents after this one too.
+                PageClock.json()?.let { clock ->
+                    if (!scriptHasClock) installScript(clock)
+                    injector.configureLive(PageScript.config(clock = clock)) {}
+                }
             }
             is BridgeMessage.Blocked -> showNotice(noticeFor(m.kind))
             is BridgeMessage.Touch -> {
@@ -508,7 +591,6 @@ internal class InstagramWebController(
             BridgeMessage.StoryWeb -> host?.onStoryWeb()
             BridgeMessage.SupportAskShown -> host?.onSupportAskShown()
             BridgeMessage.SupportThanks -> host?.onSupportThanks()
-            null -> Unit
         }
     }
 
@@ -552,11 +634,13 @@ internal class InstagramWebController(
 
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
             if (!request.isForMainFrame) return false
-            return handleNavigation(request.url.toString(), view.url)
+            return handleNavigation(request.url.toString(), view.url, userGesture = request.hasGesture() || request.isRedirect)
         }
 
         override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
             if (url != failedUrl) failedUrl = null
+            scriptSeen = false
+            locSeen = false
             injector.onPageEvent(router?.isInstagram(url) == true)
             reportLocation(url)
         }
@@ -574,7 +658,12 @@ internal class InstagramWebController(
             val instagram = router?.isInstagram(url) == true
             injector.onPageEvent(instagram)
             if (!contentShown) {
-                if (instagram) handler.postDelayed(revealRunnable, SCRIPT_READY_GRACE_MS) else requestReveal()
+                when {
+                    !instagram -> requestReveal()
+                    // A script that has spoken sends "ready" itself, when the page is really ready (it
+                    // waits for the first home post on purpose); REVEAL_TIMEOUT_MS still caps the wait.
+                    !scriptSeen -> handler.postDelayed(revealRunnable, SCRIPT_READY_GRACE_MS)
+                }
             }
         }
 
@@ -593,9 +682,11 @@ internal class InstagramWebController(
         }
 
         override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
-            // Without this the app would be killed. InstagramScreen replaces the WebView.
+            // Returning true keeps the app alive, but this WebView can't be used again: it is detached
+            // and destroyed now (as the Android docs ask), and InstagramScreen builds a new one.
             Log.w(TAG, "WebView renderer gone (crashed=${detail.didCrash()}); recreating")
-            rendererGone = true
+            destroy()
+            rendererGone = RendererGone(crashed = detail.didCrash())
             return true
         }
     }
@@ -617,7 +708,7 @@ internal class InstagramWebController(
                 null
             }
             val opened = try {
-                host?.pickFiles(kind, multiple, documentIntent) == true
+                pickFiles?.invoke(kind, multiple, documentIntent) == true
             } catch (e: ActivityNotFoundException) {
                 false
             }
@@ -634,7 +725,7 @@ internal class InstagramWebController(
     companion object {
         /** The live page (one at a time), for screens that read from it, such as "Your day". */
         @Volatile
-        var current: java.lang.ref.WeakReference<InstagramWebController>? = null
+        var current: WeakReference<InstagramWebController>? = null
 
         private const val MAX_LOGIN_REDIRECTS = 2
         private const val TAG = "ThrowbackWeb"
@@ -649,7 +740,7 @@ internal class InstagramWebController(
         /** After the visual-state request, in case its callback never comes. */
         private const val VISUAL_STATE_TIMEOUT_MS = 600L
 
-        /** After an Instagram page finished loading, wait this long for the script's "ready". */
+        /** After an Instagram page finished loading without a word from the script, wait this long for it. */
         private const val SCRIPT_READY_GRACE_MS = 3_000L
         private const val REFRESH_TIMEOUT_MS = 20_000L
 

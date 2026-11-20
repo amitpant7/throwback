@@ -9,6 +9,14 @@ import kotlinx.serialization.json.jsonObject
 
 /** Messages the page script (throwback.js) sends to the app, as `{"t": type, ...}` JSON strings. */
 internal sealed interface BridgeMessage {
+
+    /**
+     * Opens another app (the Instagram app, the share sheet) or starts a guard pass. Taken only from
+     * Instagram's own top-level documents: the legacy bridge, which every frame can call, drops these.
+     */
+    val opensOtherApp: Boolean
+        get() = this is CallInApp || this is CreateInApp || this is SettingsInApp || this is StoryWeb || this is Share
+
     /** The page's location changed (load, pushState, replaceState, back/forward). */
     data class Location(val url: String) : BridgeMessage
 
@@ -21,7 +29,10 @@ internal sealed interface BridgeMessage {
     /** A touch started; [atTop] says the page and the touched element are scrolled to the top. */
     data class Touch(val atTop: Boolean) : BridgeMessage
 
-    /** The user tapped Throwback's settings icon on their profile page. */
+    /**
+     * Open Throwback's settings: the icon on the user's own profile, Throwback's section on
+     * Instagram's settings page, or a long-press on Home.
+     */
     data object OpenSettings : BridgeMessage
 
     /**
@@ -60,7 +71,7 @@ internal sealed interface BridgeMessage {
     companion object {
         private val json = Json { ignoreUnknownKeys = true }
         private val THREAD = Regex("^\\d{5,40}$")
-        val SHARE_URL = Regex("^https://www\\.instagram\\.com/reel/[A-Za-z0-9_-]{5,40}/$")
+        private val SHARE_URL = Regex("^https://www\\.instagram\\.com/reel/[A-Za-z0-9_-]{5,40}/$")
         private val USER = Regex("^[A-Za-z0-9._]{1,30}$")
 
         fun parse(text: String?): BridgeMessage? {

@@ -186,4 +186,92 @@ class RulesParserTest {
     fun `bad hosts are rejected`() {
         assertRejected(TestRules.bundledWith { it.replace("\"instagram\": [\"instagram.com\",", "\"instagram\": [\"https://instagram.com\",") }, "bad host")
     }
+
+    // ---- Hosts are pinned in the app
+
+    @Test
+    fun `only Instagram's own hosts count as Instagram`() {
+        // A lookalike site as "Instagram", with the home page there: the WebView would show it chrome-less.
+        val lookalike = TestRules.bundledWith {
+            it.replace("\"instagram\": [\"instagram.com\",", "\"instagram\": [\"instagram-login.example\", \"instagram.com\",")
+                .replace("\"homeUrl\": \"https://www.instagram.com/\"", "\"homeUrl\": \"https://instagram-login.example/\"")
+        }
+        assertRejected(lookalike, "is not one of")
+        assertRejected(TestRules.bundledWith { it.replace("\"instagram\": [\"instagram.com\",", "\"instagram\": [\"*.instagram.com\",") }, "is not one of")
+    }
+
+    @Test
+    fun `other host lists stay under instagram, facebook and meta`() {
+        assertRejected(TestRules.bundledWith { it.replace("\"accountscenter.meta.com\"]", "\"accountscenter.meta.com\", \"instagram-login.example\"]") }, "is not under")
+        assertRejected(TestRules.bundledWith { it.replace("\"login\": [\"facebook.com\",", "\"login\": [\"*.example.com\", \"facebook.com\",") }, "is not under")
+        assertRejected(TestRules.bundledWith { it.replace("{ \"host\": \"l.instagram.com\", \"param\": \"u\" }", "{ \"host\": \"l.evil.example\", \"param\": \"u\" }") }, "is not under")
+        assertRejected(TestRules.bundledWith { it.replace("\"login\": [\"facebook.com\",", "\"login\": [\"evilfacebook.com\", \"facebook.com\",") }, "is not under")
+    }
+
+    @Test
+    fun `patterns the page's JavaScript reads differently are rejected`() {
+        // Valid Java, but JavaScript's RegExp rejects it: in the page every path would go to the inbox.
+        assertRejected(TestRules.bundledWith { it.replace("\"messagesOnly\": [\"^/direct(/|$)\"]", "\"messagesOnly\": [\"(?i)^/direct(/|$)\"]") }, "Java-only")
+        assertRejected(TestRules.bundledWith { it.replace("\"^/challenge(/|$)\",", "\"^/challenge(/|$)++\",") }, "Java-only")
+        assertRejected(TestRules.bundledWith { it.replace("\"^/challenge(/|$)\",", "\"^/(c+)+hallenge\",") }, "repeats a group")
+        assertRejected(TestRules.bundledWith { it.replace("\"channel\": \"^ig_alerts$\"", "\"channel\": \"^([a-z_]|[a-z])*$\"") }, "repeats a group")
+        assertRejected(TestRules.bundledWith { it.replace("\"channel\": \"^ig_alerts$\"", "\"channel\": \"[a-z_]+x\"") }, "too long")
+    }
+
+    // ---- Sections that used to be checked only with Explore present, and their new checks
+
+    @Test
+    fun `the Instagram app sections are checked without an explore section`() {
+        val noExplore = { s: String -> s.replace("\"explore\": {", "\"exploreOff\": {") }
+        assertTrue(RulesParser.parse(TestRules.bundledWith(noExplore)) is RulesParseResult.Valid)
+        assertRejected(TestRules.bundledWith { noExplore(it).replace("\"link\": \"instagram://share\"", "\"link\": \"https://example.com/\"") }, "appCreate.link")
+        assertRejected(TestRules.bundledWith { noExplore(it).replace("\"link\": \"instagram://settings\"", "\"link\": \"https://example.com/\"") }, "appSettings.link")
+    }
+
+    @Test
+    fun `screen patterns that match every screen are rejected`() {
+        listOf(".*", "x?", "(a|)", "^").forEach { blank ->
+            val forCreate = TestRules.bundledWith { it.replace("\"screens\": \"^instagram\\\\.features\\\\.creation\\\\.\"", "\"screens\": \"$blank\"") }
+            assertRejected(forCreate, "appCreate.screens: matches every screen")
+            val forSettings = TestRules.bundledWith {
+                it.replace("\"screens\": \"^com\\\\.instagram\\\\.urlhandlers\\\\.settings\\\\.\"", "\"screens\": \"$blank\"")
+            }
+            assertRejected(forSettings, "appSettings.screens: matches every screen")
+        }
+        assertRejected(TestRules.bundledWith { it.replace("\"screens\": \"^instagram\\\\.features\\\\.creation\\\\.\"", "\"screens\": \"\"") }, "pattern length")
+    }
+
+    @Test
+    fun `flow packages are package names, never Instagram's own`() {
+        val create = "\"flowPackages\": [\"com.samsung.android.permissioncontroller\","
+        assertRejected(TestRules.bundledWith { it.replace(create, "\"flowPackages\": [\"com.instagram.android\",") }, "is Instagram itself")
+        assertRejected(TestRules.bundledWith { it.replace(create, "\"flowPackages\": [\"com.instagram.lite\",") }, "is Instagram itself")
+        assertRejected(TestRules.bundledWith { it.replace(create, "\"flowPackages\": [\"not a package\",") }, "bad package name")
+        assertRejected(
+            TestRules.bundledWith { it.replace("\"flowPackages\": [\"com.android.chrome\",", "\"flowPackages\": [\"chrome\",") },
+            "appSettings.flowPackages: bad package name",
+        )
+    }
+
+    @Test
+    fun `the post container must be a single selector`() {
+        assertRejected(TestRules.bundledWith { it.replace("\"container\": \"article\"", "\"container\": \"article, div\"") }, "posts.container")
+        // Commas inside :is(), attribute values or quotes are part of one selector.
+        listOf("article:is(.a, .b)", "article[aria-label='a, b']", "div[data-x=\\\"1,2\\\"] article").forEach { one ->
+            val result = RulesParser.parse(TestRules.bundledWith { it.replace("\"container\": \"article\"", "\"container\": \"$one\"") })
+            assertTrue("$one: $result", result is RulesParseResult.Valid)
+        }
+        assertTrue(RulesValidator.hasTopLevelComma("a,b"))
+        assertTrue(RulesValidator.hasTopLevelComma("a:not(.x), b"))
+    }
+
+    @Test
+    fun `explore images can't leave Throwback's repository`() {
+        val base = "https://raw.githubusercontent.com/amitpant7/throwback"
+        listOf("$base/../evil/x.jpg", "$base/main/%2e%2e/%2E%2E/evil/x.jpg", "https://example.com/x.jpg").forEach { url ->
+            assertRejected(TestRules.bundledWith { it.replace("\"images\": []", "\"images\": [\"$url\"]") }, "explore.images")
+        }
+        val ok = RulesParser.parse(TestRules.bundledWith { it.replace("\"images\": []", "\"images\": [\"$base/main/design/calm.jpg\"]") })
+        assertTrue("$ok", ok is RulesParseResult.Valid)
+    }
 }

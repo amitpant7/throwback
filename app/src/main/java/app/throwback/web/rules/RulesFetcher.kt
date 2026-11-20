@@ -17,7 +17,10 @@ fun interface RulesFetcher {
     suspend fun fetch(url: String, etag: String?): FetchResult
 }
 
-/** Plain HttpURLConnection: no extra dependency, no cookies, no identifying headers. */
+/**
+ * Plain HttpURLConnection: no extra dependency, no cookies, and a fixed User-Agent instead of the
+ * default one (which names the Android version and the phone model).
+ */
 internal class HttpRulesFetcher(
     private val timeoutMillis: Int = 15_000,
     private val maxBytes: Int = 512 * 1024,
@@ -34,6 +37,7 @@ internal class HttpRulesFetcher(
             connection.readTimeout = timeoutMillis
             connection.useCaches = false
             connection.instanceFollowRedirects = true
+            connection.setRequestProperty("User-Agent", "Throwback")
             connection.setRequestProperty("Accept", "application/json")
             etag?.let { connection.setRequestProperty("If-None-Match", it) }
 

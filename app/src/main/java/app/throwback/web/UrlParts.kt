@@ -16,6 +16,9 @@ internal data class UrlParts(
     /** Raw query without '?', or "". */
     val query: String,
 ) {
+    /** This URL as https from its parts alone: no user info, port or fragment. What a checked link loads as. */
+    fun toHttps(): String = "https://$host$path" + if (query.isEmpty()) "" else "?$query"
+
     /** First value of a query parameter, percent-decoded. */
     fun queryParam(name: String): String? {
         if (query.isEmpty()) return null
@@ -28,7 +31,12 @@ internal data class UrlParts(
     }
 
     companion object {
-        private val URL = Regex("^([a-zA-Z][a-zA-Z0-9+.-]*):(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#.*)?$")
+        /**
+         * The authority ends at '/', '?', '#' and, as in Chromium for http(s), at '\'. Otherwise
+         * "https://instagram.computer\@instagram.com/" would look like instagram.com here while the
+         * WebView loads instagram.computer.
+         */
+        private val URL = Regex("^([a-zA-Z][a-zA-Z0-9+.-]*):(//([^/\\\\?#]*))?([^?#]*)(\\?([^#]*))?(#.*)?$")
 
         fun parse(url: String): UrlParts? {
             val m = URL.matchEntire(url.trim()) ?: return null
@@ -44,6 +52,12 @@ internal data class UrlParts(
             val path = if (hasAuthority && rawPath.isEmpty()) "/" else rawPath
             return UrlParts(scheme, host, path, m.groupValues[6])
         }
+
+        /**
+         * Backslashes and ASCII control characters: Chromium reads URLs holding them differently from
+         * [parse] (a backslash ends the host, tabs and newlines are dropped), so such URLs are never used.
+         */
+        fun hasAmbiguousChars(url: String): Boolean = url.any { it == '\\' || it < ' ' || it == '\u007f' }
 
         private fun decode(s: String): String = try {
             URLDecoder.decode(s, "UTF-8")

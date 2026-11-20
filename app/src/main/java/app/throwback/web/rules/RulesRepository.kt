@@ -21,12 +21,12 @@ import java.io.File
 import java.io.IOException
 
 /**
- * Where installed apps fetch the latest filter rules: the raw URL of filters/rules.json on the
- * default branch, e.g. "https://raw.githubusercontent.com/<owner>/<repo>/main/filters/rules.json".
- * Empty until the public repository exists; while empty the app never fetches and uses the
- * bundled rules (DECISIONS.md #5: nothing else leaves the phone).
+ * Where installed apps fetch the latest filter rules: filters/rules.json on the public repository's
+ * default branch, checked at most once a day (DECISIONS.md #5: nothing else leaves the phone). A copy
+ * that fails validation, has another schema or can't be fetched changes nothing: the app keeps its
+ * cached or bundled rules. Set it to "" to never fetch.
  */
-const val RULES_URL = ""
+const val RULES_URL = "https://raw.githubusercontent.com/amitpant7/throwback/main/filters/rules.json"
 
 /** How often the remote rules are checked (DECISIONS.md #10: at most once a day). */
 const val RULES_CHECK_INTERVAL_MILLIS = 24L * 60 * 60 * 1000
@@ -66,12 +66,20 @@ class RulesRepository internal constructor(
 
     private val mutex = Mutex()
 
+    /**
+     * Whether [load] found a valid downloaded copy. The stored ETag describes that copy: without it,
+     * a "not modified" answer would keep the app on its bundled rules for good.
+     */
+    @Volatile
+    private var cacheUsable = false
+
     /** Loads the best local rules. Cheap after the first call. */
     suspend fun load(): FilterRules = mutex.withLock {
         _rules.value?.let { return it }
         val chosen = withContext(io) {
             val bundled = RulesParser.parse(readBundled()).also { logInvalid("bundled", it) }.validOrNull()
             val cached = readCache()
+            cacheUsable = cached != null
             RulesSelection.choose(bundled, cached)
         } ?: FallbackRules.rules.also { Log.e(TAG, "No usable filter rules; using the built-in minimum") }
         _rules.value = chosen
@@ -81,27 +89,43 @@ class RulesRepository internal constructor(
     /** Checks the remote rules if a day has passed since the last check. Never throws. */
     suspend fun refreshIfDue() {
         if (rulesUrl.isBlank() || !rulesUrl.startsWith("https://")) return
-        val current = load()
-        val prefs = store.data.first()
-        if (!RulesSchedule.isFetchDue(prefs[KEY_LAST_CHECK], now())) return
-        // Record the attempt first: a failing server must not be retried on every launch.
-        store.edit { it[KEY_LAST_CHECK] = now() }
+        load()
+        try {
+            val prefs = store.data.first()
+            if (!RulesSchedule.isFetchDue(prefs[KEY_LAST_CHECK], now())) return
+            // An ETag without the copy it names goes (the cache is missing or invalid).
+            val etag = prefs[KEY_ETAG]?.takeIf { cacheUsable }
+            // Record the attempt first: a failing server must not be retried on every launch.
+            store.edit {
+                it[KEY_LAST_CHECK] = now()
+                if (etag == null) it.remove(KEY_ETAG)
+            }
+            when (val result = fetcher.fetch(rulesUrl, etag)) {
+                is FetchResult.NotModified -> Unit
+                is FetchResult.Failed -> Log.i(TAG, "Rules check failed: ${result.reason}")
+                is FetchResult.Fetched -> keepIfNewer(result)
+            }
+        } catch (e: IOException) { // DataStore's CorruptionException is one
+            Log.w(TAG, "Rules check skipped", e)
+        }
+    }
 
-        when (val result = fetcher.fetch(rulesUrl, prefs[KEY_ETAG])) {
-            is FetchResult.NotModified -> Unit
-            is FetchResult.Failed -> Log.i(TAG, "Rules check failed: ${result.reason}")
-            is FetchResult.Fetched -> {
-                when (val parsed = RulesParser.parse(result.body)) {
-                    is RulesParseResult.Invalid -> Log.w(TAG, "Remote rules rejected: ${parsed.errors.take(5)}")
-                    is RulesParseResult.Valid -> mutex.withLock {
-                        if (parsed.rules.version > current.version) {
-                            withContext(io) { writeCache(result.body) }
-                            _rules.value = parsed.rules
-                            Log.i(TAG, "Filter rules updated to ${parsed.rules.version}")
-                        }
+    /** Validates a downloaded copy (off the main thread) and keeps it if it is newer than the rules in use. */
+    private suspend fun keepIfNewer(result: FetchResult.Fetched) {
+        when (val parsed = withContext(io) { RulesParser.parse(result.body) }) {
+            is RulesParseResult.Invalid -> Log.w(TAG, "Remote rules rejected: ${parsed.errors.take(5)}")
+            is RulesParseResult.Valid -> {
+                val written = mutex.withLock {
+                    val inUse = _rules.value?.version ?: 0L
+                    if (parsed.rules.version <= inUse) return
+                    withContext(io) { writeCache(result.body) }.also { ok ->
+                        _rules.value = parsed.rules
+                        cacheUsable = ok
+                        Log.i(TAG, "Filter rules updated to ${parsed.rules.version}")
                     }
                 }
-                result.etag?.let { etag -> store.edit { it[KEY_ETAG] = etag } }
+                // Only an ETag whose copy is on disk: else "not modified" would stop updates for good.
+                if (written) result.etag?.let { etag -> store.edit { it[KEY_ETAG] = etag } }
             }
         }
     }
@@ -116,19 +140,18 @@ class RulesRepository internal constructor(
         return RulesParser.parse(text).also { logInvalid("cached", it) }.validOrNull()
     }
 
-    /** Write-then-rename, so a crash mid-write can never leave a half file behind. */
-    private fun writeCache(text: String) {
-        try {
-            cacheFile.parentFile?.mkdirs()
-            val tmp = File(cacheFile.parentFile, cacheFile.name + ".tmp")
-            tmp.writeText(text)
-            if (!tmp.renameTo(cacheFile)) {
-                cacheFile.delete()
-                tmp.renameTo(cacheFile)
-            }
-        } catch (e: IOException) {
-            Log.w(TAG, "Could not cache rules", e)
+    /** Write-then-rename, so a crash mid-write can never leave a half file behind. False if it failed. */
+    private fun writeCache(text: String): Boolean = try {
+        cacheFile.parentFile?.mkdirs()
+        val tmp = File(cacheFile.parentFile, cacheFile.name + ".tmp")
+        tmp.writeText(text)
+        tmp.renameTo(cacheFile) || run {
+            cacheFile.delete()
+            tmp.renameTo(cacheFile)
         }
+    } catch (e: IOException) {
+        Log.w(TAG, "Could not cache rules", e)
+        false
     }
 
     private fun RulesParseResult.validOrNull() = (this as? RulesParseResult.Valid)?.rules

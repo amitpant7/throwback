@@ -4,6 +4,7 @@ import app.throwback.core.WebMode
 import app.throwback.core.WebMode.FULL
 import app.throwback.core.WebMode.MESSAGES_ONLY
 import app.throwback.web.UrlRouter.Decision
+import app.throwback.web.rules.FallbackRules
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -49,6 +50,14 @@ class UrlRouterTest {
             "$ig/explore/", "$ig/explore/search/", "$ig/explore/tags/cats/", "$ig/accounts/activity/",
             "$ig/direct/inbox/", "$ig/direct/t/1234/", "$ig/accounts/edit/",
         ).forEach { assertEquals(it, Decision.Load, decide(it)) }
+    }
+
+    @Test
+    fun `a profile's tagged tab goes to the profile`() {
+        assertEquals(Decision.Redirect("$ig/some.user_1/", "hidden"), decide("$ig/some.user_1/tagged/"))
+        assertEquals(Decision.Redirect("$ig/some.user_1/", "hidden"), decide("$ig/some.user_1/tagged"))
+        assertEquals(Decision.Load, decide("$ig/some.user_1/"))
+        assertEquals(Decision.Load, decide("$ig/explore/tags/tagged/"))
     }
 
     @Test
@@ -150,6 +159,34 @@ class UrlRouterTest {
     }
 
     @Test
+    fun `app and store schemes do nothing even when the rules don't list them`() {
+        val bare = UrlRouter(FallbackRules.rules)
+        assertTrue(FallbackRules.rules.hosts.blockedUrls.isEmpty())
+        listOf("intent://instagram.com/#Intent;scheme=https;end", "INTENT:#Intent;end", "instagram://user?username=x", "market://details?id=x")
+            .forEach { assertEquals(it, Decision.Ignore, bare.decide(it, FULL, "$ig/")) }
+        assertEquals(Decision.External("mailto:a@b.c"), bare.decide("mailto:a@b.c", FULL, "$ig/"))
+    }
+
+    @Test
+    fun `a page can't open another app without a tap`() {
+        assertEquals(Decision.Ignore, router.decide("https://example.com/a", FULL, "$ig/", userGesture = false))
+        assertEquals(Decision.Ignore, router.decide("mailto:a@b.c", FULL, "$ig/", userGesture = false))
+        assertEquals(Decision.Ignore, router.decide("https://l.instagram.com/?u=https%3A%2F%2Fexample.com%2F", FULL, "$ig/", userGesture = false))
+        assertEquals(Decision.External("https://example.com/a"), router.decide("https://example.com/a", FULL, "$ig/", userGesture = true))
+        // Only leaving is held back: Instagram pages and redirects work as before.
+        assertEquals(Decision.Load, router.decide("$ig/p/X/", FULL, "$ig/", userGesture = false))
+        assertEquals(Decision.Redirect(home, "reels"), router.decide("$ig/reels/", FULL, "$ig/", userGesture = false))
+    }
+
+    @Test
+    fun `patterns only see the first 2 KB of a long URL`() {
+        val long = "$ig/p/X/" + "a".repeat(200_000)
+        assertEquals(Decision.Load, decide(long))
+        assertEquals(Decision.Redirect(home, "reels"), decide("$ig/reels/x/" + "a".repeat(200_000)))
+        assertFalse(router.allowsPullToRefresh("$ig/direct/inbox/" + "a".repeat(200_000)))
+    }
+
+    @Test
     fun `other schemes go to their apps`() {
         assertEquals(Decision.External("mailto:a@b.c"), decide("mailto:a@b.c"))
         assertEquals(Decision.External("tel:+123"), decide("tel:+123"))
@@ -158,6 +195,50 @@ class UrlRouterTest {
             decide("https://play.google.com/store/apps/details?id=org.example"),
         )
         assertEquals(Decision.Load, decide("about:blank"))
+    }
+
+    // ---- URLs Chromium reads differently
+
+    @Test
+    fun `a backslash ends the host, as in Chromium`() {
+        val trick = "https://instagram.computer\\@instagram.com/accounts/login/"
+        assertEquals("instagram.computer", UrlParts.parse(trick)!!.host)
+        assertEquals(Decision.Ignore, decide(trick))
+        assertEquals(Decision.Ignore, decide(trick, current = null))
+        assertEquals(home, router.startUrl(trick, FULL))
+        assertEquals(Decision.Ignore, decide("https://www.instagram.com\\p\\X\\"))
+    }
+
+    @Test
+    fun `link shim targets with an encoded backslash do nothing`() {
+        val shim = "https://l.instagram.com/?u=https%3A%2F%2Finstagram.computer%5C%40instagram.com%2Faccounts%2Flogin%2F&e=1"
+        assertEquals(Decision.Ignore, decide(shim))
+        assertEquals(Decision.Ignore, decide("https://l.instagram.com/?u=https%3A%2F%2Fwww.instagram.com%5Cp%2FX%2F"))
+        assertEquals(home, router.startUrl(shim, FULL))
+    }
+
+    @Test
+    fun `control characters make a URL do nothing`() {
+        listOf(
+            "https://www.instagram.com/p/X/\n", "https://evil.example\t@www.instagram.com/", "https://www.instagram.com/\u0000",
+            "https://www.instagram.com/\u007f", "https://l.instagram.com/?u=https%3A%2F%2Fwww.instagram.com%2F%0A",
+        ).forEach { assertEquals(it, Decision.Ignore, decide(it)) }
+        assertEquals(home, router.startUrl("https://www.instagram.com/p/X/\r", FULL))
+    }
+
+    @Test
+    fun `start urls and shim targets are rebuilt from their parts`() {
+        assertEquals("$ig/p/X/?a=1", router.startUrl("https://user:pw@www.instagram.com:443/p/X/?a=1#frag", FULL))
+        assertEquals("$ig/direct/inbox/", router.startUrl("$ig/direct/inbox/#", FULL))
+        assertEquals(
+            Decision.Redirect("$ig/p/X/?a=1", null),
+            decide("https://l.instagram.com/?u=https%3A%2F%2Fuser%40www.instagram.com%3A8443%2Fp%2FX%2F%3Fa%3D1%23f"),
+        )
+        // Only https Instagram pages start; anything else that would load goes home.
+        assertEquals(home, router.startUrl("javascript:alert(1)", FULL))
+        assertEquals(home, router.startUrl("about:blank", FULL))
+        assertEquals(home, router.startUrl("https://accountscenter.instagram.com/", FULL))
+        assertEquals(home, router.startUrl("https://www.facebook.com/login.php", FULL))
     }
 
     // ---- Start URLs, locations, pull to refresh

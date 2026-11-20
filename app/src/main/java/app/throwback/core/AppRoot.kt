@@ -1,7 +1,6 @@
 package app.throwback.core
 
 import app.throwback.web.WebReadiness
-import app.throwback.web.InstagramWebController
 import app.throwback.web.PageFeatures
 import app.throwback.ui.UiPrefs
 import app.throwback.ui.messages.MessagesOffState
@@ -42,7 +41,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import app.throwback.ThrowbackApp
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.timelimit.TimeLimitOverlay
@@ -62,6 +63,7 @@ import app.throwback.web.InstagramScreen
 import app.throwback.web.InstagramSession
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.launch
 
@@ -99,20 +101,17 @@ fun AppRoot(
     // With the Instagram app connected, "+" and "Your story" open its create screen: tell the page.
     val messagesConnected by UiPrefs.from(LocalContext.current).messagesSetupDone.collectAsStateWithLifecycle(initialValue = false)
     val featureContext = LocalContext.current.applicationContext
-    LaunchedEffect(messagesConnected) {
-        PageFeatures.createInApp = messagesConnected
-        // Re-checked every minute: a story pass becomes available again after its cooldown.
-        var first = true
-        while (true) {
-            val story = messagesConnected && CallInApp.storyAvailable(featureContext)
-            val support = SupportAsk.due(featureContext)
-            if (first || story != PageFeatures.storyInApp || support != PageFeatures.supportAsk) {
-                PageFeatures.storyInApp = story
-                PageFeatures.supportAsk = support
-                InstagramWebController.current?.get()?.pushFeatures()
-                first = false
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(messagesConnected, lifecycleOwner) {
+        // Re-checked every minute while Throwback is in front: a story pass becomes available again
+        // after its cooldown. The web layer passes each change on to the page.
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                val story = messagesConnected && CallInApp.storyAvailable(featureContext)
+                val support = SupportAsk.due(featureContext)
+                PageFeatures.current.update { it.copy(createInApp = messagesConnected, storyInApp = story, supportAsk = support) }
+                delay(60_000)
             }
-            kotlinx.coroutines.delay(60_000)
         }
     }
 
@@ -290,8 +289,7 @@ private fun MainScreen(
             onCreateInApp = { story ->
                 if (story) {
                     val result = CallInApp.story(context)
-                    PageFeatures.storyInApp = CallInApp.storyAvailable(context)
-                    InstagramWebController.current?.get()?.pushFeatures()
+                    PageFeatures.current.update { it.copy(storyInApp = CallInApp.storyAvailable(context)) }
                     val msg = when (result) {
                         CallInApp.StoryResult.OPENED -> R.string.story_in_app_hint
                         CallInApp.StoryResult.USED_UP -> R.string.story_in_app_used_up
@@ -304,7 +302,7 @@ private fun MainScreen(
             },
             onSupportAskShown = {
                 SupportAsk.markShown(context)
-                PageFeatures.supportAsk = null
+                PageFeatures.current.update { it.copy(supportAsk = null) }
             },
             onSupportThanks = onOpenSupport,
             onStoryWeb = {

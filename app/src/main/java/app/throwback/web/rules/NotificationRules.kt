@@ -73,10 +73,9 @@ const val DEFAULT_CALL_GRACE_SECONDS = 5
 /** Validation of the "notifications" section; called from [RulesValidator]. */
 internal object NotificationRulesValidator {
     private const val MAX_RULES = 100
-    private const val MAX_PATTERN = 300
-    private const val MAX_TEXT = 100
 
-    fun validate(rules: FilterRules, errors: MutableList<String>) {
+    /** [router] is the rules' own router, or null when the rest of the rules already failed. */
+    fun validate(rules: FilterRules, errors: MutableList<String>, router: UrlRouter?) {
         val n = rules.notifications ?: return
         fun check(ok: Boolean, message: () -> String) {
             if (!ok) errors += message()
@@ -88,45 +87,27 @@ internal object NotificationRulesValidator {
             check(listOf(m.channel, m.category, m.template, m.group, m.tag, m.ongoing).any { it != null }) {
                 "$where: matches everything (set at least one field)"
             }
-            listOfNotNull(m.channel, m.template, m.group, m.tag).forEach { checkPattern(it, where, errors) }
-            m.category?.let { check(it.isNotBlank() && it.length <= MAX_TEXT) { "$where: bad category" } }
+            listOfNotNull(m.channel, m.template, m.group, m.tag).forEach { RulePatterns.check(it, where, errors) }
+            m.category?.let { check(it.isNotBlank() && it.length <= RulePatterns.MAX_TEXT) { "$where: bad category" } }
         }
         check(n.unknown == UNKNOWN_CANCEL || n.unknown == UNKNOWN_KEEP) { "notifications.unknown: bad value '${n.unknown}'" }
         n.threadId?.let { t ->
             check(t.from in THREAD_ID_SOURCES) { "notifications.threadId.from: bad value '${t.from}'" }
-            if (checkPattern(t.pattern, "notifications.threadId.pattern", errors)) {
-                check(java.util.regex.Pattern.compile(t.pattern).matcher("").groupCount() >= 1) {
-                    "notifications.threadId.pattern needs a group"
-                }
+            RulePatterns.check(t.pattern, "notifications.threadId.pattern", errors)?.let {
+                check(it.toPattern().matcher("").groupCount() >= 1) { "notifications.threadId.pattern needs a group" }
             }
         }
         check(n.callGraceSeconds in 0..120) { "notifications.callGraceSeconds out of range" }
 
         // The activity page must be an Instagram page that the full mode actually shows.
-        if (errors.isEmpty()) {
+        if (router != null && errors.isEmpty()) {
             val parts = UrlParts.parse(n.activityUrl)
-            val router = UrlRouter(rules)
             check(parts != null && parts.scheme == "https" && router.isInstagramHost(parts.host)) {
                 "notifications.activityUrl is not an https Instagram URL"
             }
             check(router.decide(n.activityUrl, WebMode.FULL, currentUrl = null) == UrlRouter.Decision.Load) {
                 "notifications.activityUrl is not allowed in FULL mode"
             }
-        }
-    }
-
-    /** @return true when [pattern] is a usable regex. */
-    private fun checkPattern(pattern: String, where: String, errors: MutableList<String>): Boolean {
-        if (pattern.isEmpty() || pattern.length > MAX_PATTERN) {
-            errors += "$where: pattern length"
-            return false
-        }
-        return try {
-            Regex(pattern)
-            true
-        } catch (e: IllegalArgumentException) {
-            errors += "$where: invalid pattern '$pattern'"
-            false
         }
     }
 }

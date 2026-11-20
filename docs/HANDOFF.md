@@ -161,6 +161,9 @@ Highlights:
 - [ ] Design (later, owner): the reel poster (directions in the design canvas, recommended
       "A · Postcard") and the Explore "Enough for today…" card. Give both "stop" screens one visual
       style; today both are plain text versions.
+- [ ] Asset licence: `res/drawable-nodpi/ui_tip_rock.webp` (Rock show tip) is cropped from a
+      prism render supplied by the owner on 2026-11-20. Confirm its source and licence before the
+      Play release / public repo (credit it in About if required).
 - [ ] M5 (relay + guard), M6 (release).
 
 ## 5a. Ways into Throwback's settings (no button on the feed)

@@ -968,6 +968,7 @@
     if (card.parentNode !== list.parentNode || card.previousElementSibling !== list) {
       list.parentNode.insertBefore(card, list.nextSibling);
     }
+    maybeSupportLine(card);
     root.setAttribute(ATTR_FEED_END, '1');
   }
 
@@ -2353,6 +2354,7 @@
   }
 
   function saveDay() {
+    if (totals && totals.dirty) saveTotals();
     try {
       localStorage.setItem(DAY_KEY, JSON.stringify(dayRec));
     } catch (e) {
@@ -2387,6 +2389,79 @@
   function countRemoved(field) {
     var d = dayLog();
     d[field] = (d[field] || 0) + 1;
+    var t = totalsLog();
+    t[field] = (t[field] || 0) + 1;
+    t.dirty = true;
+  }
+
+  /*
+   * Removed ads and suggested posts since the last support ask (or first use), for the line in
+   * "You're all caught up" (owner, 2026-11-20: show what Throwback did, then "Say thanks").
+   */
+  var TOTALS_KEY = '__tb_totals';
+  var totals = null;
+
+  function totalsLog() {
+    if (!totals) {
+      try {
+        totals = JSON.parse(localStorage.getItem(TOTALS_KEY) || 'null');
+      } catch (e) {
+        totals = null;
+      }
+      if (!totals || typeof totals.since !== 'number') totals = { since: trustedNow(), ads: 0, sugg: 0 };
+    }
+    return totals;
+  }
+
+  function saveTotals() {
+    if (!totals) return;
+    totals.dirty = false;
+    try {
+      localStorage.setItem(TOTALS_KEY, JSON.stringify({ since: totals.since, ads: totals.ads || 0, sugg: totals.sugg || 0 }));
+    } catch (e) {
+      // Storage unavailable: counts last for this page only.
+    }
+  }
+
+  var SUPPORT_LINE_ID = '__tb_support_line';
+  var SUPPORT_MIN_REMOVED = 20;
+
+  function maybeSupportLine(card) {
+    var kind = state.supportAsk;
+    if (!kind || !card || card.querySelector('#' + SUPPORT_LINE_ID)) return;
+    var t = totalsLog();
+    var ads = t.ads || 0;
+    var sugg = t.sugg || 0;
+    if (ads + sugg < SUPPORT_MIN_REMOVED) return; // too little to show; try again another time
+    var days = Math.max(1, Math.round((trustedNow() - t.since) / 86400000));
+    var when = days <= 45 ? (kind === 'first' ? 'Your first month' : 'Your last month') : 'Your last ' + Math.round(days / 30) + ' months';
+    var fmt = function (n) { return n.toLocaleString(); };
+    var box = function (n, label) {
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 8px;' +
+        'border:1px solid rgba(128,128,128,.3);border-radius:14px"><span style="font-size:22px;font-weight:700;' +
+        'font-variant-numeric:tabular-nums">' + fmt(n) + '</span><span style="font-size:12px;opacity:.65">' + label + '</span></div>';
+    };
+    var line = document.createElement('div');
+    line.id = SUPPORT_LINE_ID;
+    line.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:18px;width:100%;max-width:320px';
+    line.innerHTML = '<div style="font-size:13px;opacity:.65">' + when + '</div>' +
+      '<div style="display:flex;gap:10px;width:100%">' + box(ads, 'ads removed') + box(sugg, 'suggested posts removed') + '</div>';
+    var thanks = document.createElement('a');
+    thanks.href = '#';
+    thanks.textContent = 'Say thanks \u2192';
+    thanks.style.cssText = 'font-weight:700;color:#2c8a5b;text-decoration:none;padding:6px 10px';
+    thanks.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      send({ t: 'supportThanks' });
+    }, true);
+    line.appendChild(thanks);
+    card.appendChild(line);
+    // Shown: the next ask counts from now; the app schedules it (2 months on).
+    state.supportAsk = null;
+    totals = { since: trustedNow(), ads: 0, sugg: 0 };
+    saveTotals();
+    send({ t: 'supportAskShown' });
   }
 
   function dayStats() {
@@ -3734,6 +3809,7 @@
   function applyFeatures(cfg) {
     if (cfg && typeof cfg.createInApp === 'boolean') state.createInApp = cfg.createInApp;
     if (cfg && typeof cfg.storyInApp === 'boolean') state.storyInApp = cfg.storyInApp;
+    if (cfg && 'supportAsk' in cfg) state.supportAsk = cfg.supportAsk === 'first' || cfg.supportAsk === 'again' ? cfg.supportAsk : null;
   }
 
   /** The app's trusted clock (see today()). */

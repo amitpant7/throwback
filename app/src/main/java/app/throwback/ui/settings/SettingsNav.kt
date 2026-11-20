@@ -28,6 +28,8 @@ internal object SettingsNav {
         SettingsStart.Home -> listOf(SettingsRoute.Home)
         // Opened from "Instagram app found": back from the wizard returns to Throwback, not to Settings.
         SettingsStart.MessagesAndCalls -> listOf(SettingsRoute.Messages)
+        // "Say thanks" in the feed: Support, with Back going to Settings.
+        SettingsStart.Support -> listOf(SettingsRoute.Home, SettingsRoute.Support)
     }
 
     fun push(stack: List<SettingsRoute>, route: SettingsRoute): List<SettingsRoute> =

@@ -32,6 +32,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     review card, at "You're all caught up", once the app is at least 30 days old and was used on 10
     different days. Google may choose not to show it; there is no second try and no "do you like it?"
     question first (Play policy). Builds not from Play do nothing.
+4c. **Support ask** (owner, 2026-11-20, design C with boxes): in "You're all caught up", after 1 month
+    of use, then every 2 months, never once the user has tipped: "Your first month" (later "Your last 2
+    months"), two minimal boxes with the ads and suggested posts removed since the last ask, and
+    "Say thanks →" (opens Support). Skipped when fewer than 20 were removed.
 5. **Privacy:** no analytics, no accounts, no server. Nothing leaves the phone except traffic to
    Instagram itself and a daily fetch of the public filter rules.
 6. **Disclaimer:** "Not affiliated with Instagram or Meta" on the store listing and the About screen.

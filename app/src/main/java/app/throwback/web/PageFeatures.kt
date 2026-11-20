@@ -9,4 +9,8 @@ internal object PageFeatures {
     /** "Your story" may open the Instagram app now (else the website's own story upload). */
     @Volatile
     var storyInApp: Boolean = false
+
+    /** The support line is due at "You're all caught up": "first", "again", or null. */
+    @Volatile
+    var supportAsk: String? = null
 }

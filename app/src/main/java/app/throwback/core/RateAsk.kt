@@ -17,6 +17,10 @@ object RateAsk {
     private const val MIN_DAYS = 30L
     private const val MIN_USE_DAYS = 10
 
+    /** The first day the app was used (epoch day), or null before the first start. */
+    fun firstUseDay(context: Context): Long? =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getLong("first", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }
+
     /** Pure rule, for tests. */
     internal fun due(firstDay: Long, today: Long, useDays: Int, asked: Boolean): Boolean =
         !asked && today - firstDay >= MIN_DAYS && useDays >= MIN_USE_DAYS

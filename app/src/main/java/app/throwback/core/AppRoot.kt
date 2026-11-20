@@ -106,8 +106,10 @@ fun AppRoot(
         var first = true
         while (true) {
             val story = messagesConnected && CallInApp.storyAvailable(featureContext)
-            if (first || story != PageFeatures.storyInApp) {
+            val support = SupportAsk.due(featureContext)
+            if (first || story != PageFeatures.storyInApp || support != PageFeatures.supportAsk) {
                 PageFeatures.storyInApp = story
+                PageFeatures.supportAsk = support
                 InstagramWebController.current?.get()?.pushFeatures()
                 first = false
             }
@@ -143,6 +145,7 @@ fun AppRoot(
                 onCloseApp = onCloseApp,
                 onOpenSettings = { settingsOpen = SettingsStart.Home },
                 onOpenMessagesSetup = { settingsOpen = SettingsStart.MessagesAndCalls },
+                onOpenSupport = { settingsOpen = SettingsStart.Support },
                 messagesRequests = messagesRequests,
             )
         }
@@ -178,6 +181,7 @@ private fun MainScreen(
     onCloseApp: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenMessagesSetup: () -> Unit,
+    onOpenSupport: () -> Unit,
     messagesRequests: Int = 0,
 ) {
     val timeLimit = app.timeLimit
@@ -302,6 +306,11 @@ private fun MainScreen(
                     Toast.makeText(context, R.string.create_in_app_failed, Toast.LENGTH_LONG).show()
                 }
             },
+            onSupportAskShown = {
+                SupportAsk.markShown(context)
+                PageFeatures.supportAsk = null
+            },
+            onSupportThanks = onOpenSupport,
             onStoryWeb = {
                 val text = CallInApp.storyWaitMinutes(context)?.let { m ->
                     context.resources.getQuantityString(R.plurals.story_web_wait, m, m)

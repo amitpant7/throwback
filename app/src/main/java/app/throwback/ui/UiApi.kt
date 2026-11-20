@@ -36,7 +36,7 @@ fun InstagramAppPrompt(onOpenMessagesSetup: () -> Unit, onDone: () -> Unit) {
     InstagramAppPromptContent(onOpenMessagesSetup = onOpenMessagesSetup, onDone = onDone)
 }
 
-enum class SettingsStart { Home, MessagesAndCalls }
+enum class SettingsStart { Home, MessagesAndCalls, Support }
 
 /**
  * Settings and everything reachable from it: Messages & calls wizard and settings, home-screen shortcut,

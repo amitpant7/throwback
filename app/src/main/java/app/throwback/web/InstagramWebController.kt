@@ -82,6 +82,12 @@ internal class InstagramWebController(
         /** "Your story" went to the website's upload (the app route is waiting). */
         fun onStoryWeb() {}
 
+        /** The support line was shown at "You're all caught up". */
+        fun onSupportAskShown() {}
+
+        /** "Say thanks" on the support line. */
+        fun onSupportThanks() {}
+
         /** Opens a picker; must eventually call [deliverFiles]. False if no picker could be opened. */
         fun pickFiles(kind: PickKind, multiple: Boolean, documentIntent: Intent?): Boolean
     }
@@ -503,6 +509,8 @@ internal class InstagramWebController(
             is BridgeMessage.CreateInApp -> host?.onCreateInApp(m.story)
             BridgeMessage.SettingsInApp -> host?.onSettingsInApp()
             BridgeMessage.StoryWeb -> host?.onStoryWeb()
+            BridgeMessage.SupportAskShown -> host?.onSupportAskShown()
+            BridgeMessage.SupportThanks -> host?.onSupportThanks()
             null -> Unit
         }
     }

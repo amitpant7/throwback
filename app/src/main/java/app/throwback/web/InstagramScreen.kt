@@ -93,6 +93,9 @@ fun InstagramScreen(
     onSettingsInApp: () -> Unit = {},
     /** "Your story" went to the website's upload (the app route is waiting). */
     onStoryWeb: () -> Unit = {},
+    /** The support line was shown / "Say thanks" was tapped. */
+    onSupportAskShown: () -> Unit = {},
+    onSupportThanks: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val repository = remember { RulesRepository.get(context) }
@@ -147,6 +150,8 @@ fun InstagramScreen(
             onCreateInApp = onCreateInApp,
             onSettingsInApp = onSettingsInApp,
             onStoryWeb = onStoryWeb,
+            onSupportAskShown = onSupportAskShown,
+            onSupportThanks = onSupportThanks,
             modifier = modifier,
         )
     }
@@ -174,6 +179,8 @@ private fun InstagramWebHost(
     onCreateInApp: (Boolean) -> Unit,
     onSettingsInApp: () -> Unit,
     onStoryWeb: () -> Unit,
+    onSupportAskShown: () -> Unit,
+    onSupportThanks: () -> Unit,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
@@ -218,6 +225,8 @@ private fun InstagramWebHost(
     val latestOnCreateInApp by rememberUpdatedState(onCreateInApp)
     val latestOnSettingsInApp by rememberUpdatedState(onSettingsInApp)
     val latestOnStoryWeb by rememberUpdatedState(onStoryWeb)
+    val latestOnSupportAskShown by rememberUpdatedState(onSupportAskShown)
+    val latestOnSupportThanks by rememberUpdatedState(onSupportThanks)
 
     // Photos and videos go through Android's photo picker; anything else through the file chooser.
     val pickOne = rememberLauncherForActivityResult(PickVisualMedia()) { uri ->
@@ -252,6 +261,10 @@ private fun InstagramWebHost(
             override fun onSettingsInApp() = latestOnSettingsInApp()
 
             override fun onStoryWeb() = latestOnStoryWeb()
+
+            override fun onSupportAskShown() = latestOnSupportAskShown()
+
+            override fun onSupportThanks() = latestOnSupportThanks()
 
             override fun pickFiles(kind: PickKind, multiple: Boolean, documentIntent: Intent?): Boolean {
                 val media = when (kind) {

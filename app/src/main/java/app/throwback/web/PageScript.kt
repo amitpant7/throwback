@@ -28,6 +28,7 @@ internal object PageScript {
         clock?.let { fields["clock"] = kotlinx.serialization.json.Json.parseToJsonElement(it) }
         fields["createInApp"] = JsonPrimitive(PageFeatures.createInApp)
         fields["storyInApp"] = JsonPrimitive(PageFeatures.storyInApp)
+        fields["supportAsk"] = JsonPrimitive(PageFeatures.supportAsk)
         mode?.let { fields["mode"] = JsonPrimitive(it.name) }
         css?.let { fields["css"] = JsonPrimitive(it) }
         rules?.let { fields["rules"] = RulesJson.encodeToJsonElement(FilterRules.serializer(), it) }

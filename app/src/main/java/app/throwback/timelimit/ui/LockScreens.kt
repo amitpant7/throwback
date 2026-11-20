@@ -140,7 +140,6 @@ internal fun LockOverlay(
     }
 }
 
-
 // ---- Mockup 8: time's up, 5-minute wait ---------------------------------------------------
 
 @Composable

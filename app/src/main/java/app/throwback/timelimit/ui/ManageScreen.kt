@@ -1,61 +1,39 @@
 package app.throwback.timelimit.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.R
 import app.throwback.core.LockState
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.CardDivider
-import app.throwback.core.ui.IconBullet
 import app.throwback.core.ui.NavRow
 import app.throwback.core.ui.SectionLabel
 import app.throwback.core.ui.SettingsScaffold
-import app.throwback.core.ui.TbBackButton
-import app.throwback.core.ui.TbButton
 import app.throwback.core.ui.TbCard
-import app.throwback.core.ui.TbTopBar
 import app.throwback.core.ui.longDurationText
 import app.throwback.core.ui.remainingText
 import app.throwback.timelimit.DefaultTimeLimitController
@@ -67,130 +45,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import kotlinx.coroutines.launch
-
-/** Settings → Daily time limit: first-time setup, or managing an existing limit. */
-@Composable
-internal fun TimeLimitSettings(controller: DefaultTimeLimitController, onClose: () -> Unit) {
-    val view by rememberLiveView(controller)
-    val ready by controller.ready.collectAsStateWithLifecycle()
-
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(ThrowbackTheme.colors.bg)
-            .windowInsetsPadding(WindowInsets.safeDrawing),
-    ) {
-        when {
-            !ready -> Unit // The saved state is still loading (a few milliseconds).
-            view.limitMinutes == null -> SetupScreen(controller, onClose)
-            else -> ManageScreen(controller, view, onClose)
-        }
-    }
-}
-
-// ---- Mockup 7: set up -----------------------------------------------------------------------
-
-@Composable
-private fun SetupScreen(controller: DefaultTimeLimitController, onClose: () -> Unit) {
-    val c = ThrowbackTheme.colors
-    val scope = rememberCoroutineScope()
-    var minutes by rememberSaveable { mutableIntStateOf(30) }
-    // The PIN is created only after "Turn on" (owner: an empty PIN box first was confusing), and it
-    // lives only in memory, never in saved instance state.
-    var creatingPin by remember { mutableStateOf(false) }
-    var busy by remember { mutableStateOf(false) }
-    var failed by remember { mutableStateOf(false) }
-
-    fun turnOn(p: String) {
-        scope.launch {
-            busy = true
-            val result = controller.setup(minutes, p)
-            busy = false
-            if (result == ActionResult.Done) onClose() else failed = true
-        }
-    }
-
-    BackHandler { if (creatingPin) creatingPin = false else onClose() }
-
-    if (creatingPin) {
-        CreatePinFlow(
-            headerTitle = stringResource(R.string.tl_title),
-            onBack = { creatingPin = false },
-            onCreated = { p ->
-                creatingPin = false
-                turnOn(p)
-            },
-        )
-        return
-    }
-
-    SettingsScaffold(
-        stringResource(R.string.tl_title),
-        onBack = onClose,
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 28.dp),
-        fillViewport = true,
-    ) {
-        SectionLabel(stringResource(R.string.tl_setup_step_minutes), topPadding = 0.dp)
-        LimitChoices(selected = minutes, onPick = { minutes = it })
-
-        Spacer(Modifier.height(18.dp))
-        TbCard(contentPadding = CardPadding, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            IconBullet(R.drawable.ic_lock, pluralStringResource(R.plurals.tl_rule_locks, minutes, minutes))
-            IconBullet(R.drawable.ic_clock, stringResource(R.string.tl_rule_extend))
-            IconBullet(R.drawable.ic_chat, stringResource(R.string.tl_rule_messages))
-            IconBullet(R.drawable.ic_shield, stringResource(R.string.tl_setup_pin_next))
-        }
-
-        Spacer(Modifier.weight(1f))
-        Spacer(Modifier.height(24.dp))
-        if (failed) {
-            AnnouncedText(stringResource(R.string.tl_error_generic), Modifier.fillMaxWidth().padding(bottom = 12.dp))
-        }
-        Text(
-            stringResource(R.string.tl_speed_bump),
-            style = MaterialTheme.typography.bodyLarge,
-            color = c.text,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 14.dp),
-        )
-        TbButton(
-            stringResource(R.string.tl_turn_on, minutes),
-            enabled = !busy,
-            onClick = { creatingPin = true },
-        )
-    }
-}
-
-/**
- * The 15/30/45/60 minute choice (mockup `.chip`; at least 48dp tall for touch). With a very large font
- * size a label wraps onto two lines and the chip grows, rather than being cut off.
- */
-@Composable
-private fun LimitChoices(selected: Int, onPick: (Int) -> Unit) {
-    val c = ThrowbackTheme.colors
-    Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Rules.LIMIT_CHOICES.forEach { m ->
-            val isSelected = m == selected
-            Box(
-                Modifier
-                    .weight(1f)
-                    .heightIn(min = 48.dp)
-                    .clip(RoundedCornerShape(percent = 50))
-                    .background(if (isSelected) c.accent else c.surface2)
-                    .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onPick(m) })
-                    .padding(horizontal = 4.dp, vertical = 6.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    stringResource(R.string.tl_minutes_chip, m),
-                    style = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
-                    color = if (isSelected) c.onAccent else c.text,
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
-    }
-}
 
 // ---- Manage an existing limit ---------------------------------------------------------------
 
@@ -213,7 +67,7 @@ private sealed interface Notice {
 }
 
 @Composable
-private fun ManageScreen(controller: DefaultTimeLimitController, view: TimeLimitView, onClose: () -> Unit) {
+internal fun ManageScreen(controller: DefaultTimeLimitController, view: TimeLimitView, onClose: () -> Unit) {
     val scope = rememberCoroutineScope()
     // Plain remember: ChangePinNew holds a PIN, which must never land in saved instance state.
     var page by remember { mutableStateOf<ManagePage>(ManagePage.Home) }
@@ -436,9 +290,6 @@ private fun ManageHome(
     }
 }
 
-/** Padding of the cards with free content on the limit screens (mockup `.card`). */
-private val CardPadding = PaddingValues(horizontal = 18.dp, vertical = 16.dp)
-
 @Composable
 private fun todayStatus(view: TimeLimitView): String = when (val state = view.lockState) {
     is LockState.Running -> stringResource(R.string.tl_time_left, remainingText(state.remainingMillis))
@@ -476,92 +327,6 @@ private fun PendingRow(text: String, onCancel: () -> Unit) {
         ) {
             Text(stringResource(R.string.tl_cancel), style = MaterialTheme.typography.labelLarge, color = c.accentText)
         }
-    }
-}
-
-/** "Turn off Messages & calls" while a limit is on: PIN, then it turns off tomorrow. */
-@Composable
-internal fun GuardOffPin(controller: DefaultTimeLimitController, onScheduled: () -> Unit, onBack: () -> Unit) {
-    // Live, so the 30-second pause after wrong PINs counts down and ends here too.
-    val view by rememberLiveView(controller)
-    var forgot by remember { mutableStateOf(false) }
-    BackHandler { if (forgot) forgot = false else onBack() }
-    if (forgot) {
-        ForgotPinScreen(controller, view, onBack = { forgot = false })
-    } else {
-        PinPrompt(
-            title = stringResource(R.string.tl_enter_pin_guard_off),
-            view = view,
-            onBack = onBack,
-            onForgot = { forgot = true },
-            check = { pin -> controller.scheduleGuardOff(pin) },
-            onSuccess = onScheduled,
-            subtitle = stringResource(R.string.tl_starts_tomorrow),
-        )
-    }
-}
-
-/**
- * PIN keypad for a protected action, with "Forgot PIN?" below. [check] runs the action with the PIN;
- * when it's done (or scheduled) [onSuccess] runs, or [onSuccessWithPin] with the PIN; otherwise the
- * digits clear and the reason shows. The settings screens show the time-limit top bar ([showHeader]);
- * the lock screen has a floating back arrow instead.
- */
-@Composable
-internal fun PinPrompt(
-    title: String,
-    view: TimeLimitView,
-    onBack: () -> Unit,
-    onForgot: () -> Unit,
-    check: suspend (String) -> ActionResult,
-    onSuccess: () -> Unit = {},
-    onSuccessWithPin: ((String) -> Unit)? = null,
-    eyebrow: String? = null,
-    subtitle: String? = null,
-    showHeader: Boolean = true,
-) {
-    val scope = rememberCoroutineScope()
-    var busy by remember { mutableStateOf(false) }
-    var attempt by remember { mutableIntStateOf(0) }
-    var lastResult by remember { mutableStateOf<ActionResult?>(null) }
-
-    Box(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize()) {
-            if (showHeader) TbTopBar(stringResource(R.string.tl_title), onBack)
-            PinEntry(
-                title = title,
-                eyebrow = eyebrow,
-                subtitle = subtitle,
-                message = if (busy) stringResource(R.string.tl_checking) else pinProblemText(lastResult, view.pinBlockedMillis),
-                enabled = !busy && view.pinBlockedMillis == 0L,
-                clearKey = attempt,
-                topPadding = if (showHeader) 16.dp else 64.dp,
-                onPin = { pin ->
-                    scope.launch {
-                        busy = true
-                        val result = check(pin)
-                        busy = false
-                        lastResult = result
-                        val ok = result == ActionResult.Done || result is ActionResult.Scheduled
-                        when {
-                            ok && onSuccessWithPin != null -> onSuccessWithPin(pin)
-                            ok -> onSuccess()
-                            else -> attempt++
-                        }
-                    }
-                },
-                footer = { ForgotPinLink(onForgot) },
-            )
-        }
-        if (!showHeader) TbBackButton(onBack, Modifier.padding(6.dp).align(Alignment.TopStart))
-    }
-}
-
-/** "Forgot PIN?" under a PIN keypad. */
-@Composable
-private fun ForgotPinLink(onForgot: () -> Unit) {
-    TextButton(onClick = onForgot, modifier = Modifier.heightIn(min = 48.dp)) {
-        Text(stringResource(R.string.tl_forgot_pin), style = MaterialTheme.typography.bodyMedium, color = ThrowbackTheme.colors.muted)
     }
 }
 

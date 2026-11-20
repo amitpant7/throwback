@@ -322,7 +322,7 @@
     } : null;
     var rv = rules.reelViewer;
     c.reelViewer = rv ? {
-      minSwipe: typeof rv.posterOnSwipeMin === 'number' ? rv.posterOnSwipeMin : 2,
+      minSwipe: typeof rv.posterOnSwipeMin === 'number' ? rv.posterOnSwipeMin : 1,
       maxSwipe: typeof rv.posterOnSwipeMax === 'number' ? rv.posterOnSwipeMax : 4,
       windowMs: (typeof rv.windowMinutes === 'number' ? rv.windowMinutes : 10) * 60000,
       cooldownMs: (typeof rv.cooldownMinutes === 'number' ? rv.cooldownMinutes : 60) * 60000
@@ -1186,7 +1186,7 @@
    * same and a vertical scroll-snap strip of videos opens (found on the owner's phone). Opening a
    * reel someone sent is fine; swiping on through more is the endless feed again. The opened reel is
    * free; swipes to other reels are counted (rules: reelViewer), across viewers, so closing and
-   * reopening doesn't reset it. The poster shows on a random swipe (2nd to 4th): the videos stop and
+   * reopening doesn't reset it. The poster shows on a random swipe (1st to 4th, so no number of swipes is safe): the videos stop and
    * the app shows its poster.
    * After the poster, no free swipes for the cooldown (an hour): opening other reels to get "3 more"
    * each time doesn't work. Swipes and the last poster time are stored, so a restart doesn't reset.

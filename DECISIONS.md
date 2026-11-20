@@ -48,8 +48,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     Instagram's loading spinner; "You're all caught up" only when only suggestions are left (20 hidden
     in a row, or nothing new for 10 s at the bottom). The next posts are loaded ahead for smooth scrolling.
 13f. **Reels sent in chats** (decided 2026-11-20): a reel opened from a chat plays in Instagram's
-    full-screen swipe viewer (same address). The opened reel is free; the poster shows on a random 2nd, 3rd
-    or 4th swipe to other reels (counted per 10 minutes, rules `reelViewer`), counted across viewers so reopening doesn't reset it. After the
+    full-screen swipe viewer (same address). The opened reel is free; the poster shows on a random 1st to 4th
+    swipe (so no number of swipes is safe) to other reels (counted per 10 minutes, rules `reelViewer`), counted across viewers so reopening doesn't reset it. After the
     poster has shown, no free swipes for an hour (each new trigger restarts the hour); stored on the
     device, so restarting doesn't reset it. Then the videos stop and a full-screen poster shows ("Thought you could cheat…? Nahhh…"), with "Back to
     chat". The poster's final design and an animated version with licensed music are in design.

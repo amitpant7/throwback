@@ -66,7 +66,7 @@ class RulesParserTest {
     fun `reel viewer limit is bundled and range-checked`() {
         val rv = TestRules.bundled.reelViewer
         assertNotNull(rv)
-        assertEquals(2, rv!!.posterOnSwipeMin)
+        assertEquals(1, rv!!.posterOnSwipeMin)
         assertEquals(4, rv.posterOnSwipeMax)
         assertEquals(60, rv.cooldownMinutes)
         assertRejected(TestRules.bundledWith { it.replace("\"windowMinutes\": 10", "\"windowMinutes\": 0") }, "windowMinutes")

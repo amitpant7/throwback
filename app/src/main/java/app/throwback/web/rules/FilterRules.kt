@@ -190,7 +190,7 @@ data class ReelViewerRules(
      * The poster shows on a random swipe between these (inclusive), picked each time a new count
      * starts, so it can't be predicted. The reel that was opened is free.
      */
-    val posterOnSwipeMin: Int = 2,
+    val posterOnSwipeMin: Int = 1,
     val posterOnSwipeMax: Int = 4,
     /** ... per this many minutes, so closing and reopening the viewer doesn't reset it. */
     val windowMinutes: Int = 10,

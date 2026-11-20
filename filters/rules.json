@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112036,
+  "version": 2026112037,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -76,6 +76,8 @@
       "note": "Reels tab found by its icon label, in case its link changes." },
     { "id": "people-links", "selector": "a[href^='/explore/people']", "on": "always", "style": "remove",
       "note": "'See all' suggested accounts." },
+    { "id": "tagged-tab", "selector": "a[href$='/tagged/']", "on": "always", "style": "remove",
+      "note": "A profile's Tagged tab (others' posts of that person: an endless feed). Its page is blocked too (paths.blocked)." },
     { "id": "app-links", "selector": "a[href^='intent:'], a[href^='instagram:'], a[href*='play.google.com/store/apps'], a[href*='apps.apple.com'], a[href*='itunes.apple.com']", "on": "always", "style": "remove",
       "note": "'Get the app' / 'Open in app' links and store badges." },
     { "id": "explore-tiles", "selector": "main a[href^='/p/'], main a[href^='/reel/']", "on": "explore", "style": "remove",

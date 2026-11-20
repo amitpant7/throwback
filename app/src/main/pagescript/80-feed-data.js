@@ -25,18 +25,18 @@
       var st = state.c.stories;
       if (st && containsAny(text, st.markers)) {
         try {
-          filterStoryData(out, st, 0);
+          filterStoryData(out, st);
         } catch (e) {}
       }
       if (onExploreOrSearch() && text.indexOf('"video_versions"') !== -1) {
         try {
-          learnClips(out, 0);
+          learnClips(out);
         } catch (e) {}
       }
       var fd = state.c.feedData;
       if (fd && containsAny(text, fd.connections)) {
         try {
-          filterFeedData(out, fd, 0);
+          filterFeedData(out, fd);
         } catch (e) {}
       }
       return out;
@@ -70,19 +70,12 @@
     }
   }
 
-  function filterFeedData(o, fd, depth) {
-    if (!o || typeof o !== 'object' || depth > 16) return;
-    if (Array.isArray(o)) {
-      for (var i = 0; i < o.length; i++) filterFeedData(o[i], fd, depth + 1);
-      return;
-    }
-    for (var k in o) {
-      if (!Object.prototype.hasOwnProperty.call(o, k)) continue;
-      var v = o[k];
-      if (!v || typeof v !== 'object') continue;
-      if (fd.connections.indexOf(k) !== -1 && Array.isArray(v.edges)) filterConnection(v, fd);
-      else filterFeedData(v, fd, depth + 1);
-    }
+  function filterFeedData(o, fd) {
+    walkJson(o, 16, function (k, v) {
+      if (fd.connections.indexOf(k) === -1 || !Array.isArray(v.edges)) return false;
+      filterConnection(v, fd);
+      return true;
+    });
   }
 
   function fieldIn(n, fields) {

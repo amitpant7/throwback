@@ -25,19 +25,12 @@
     return !!(u && u.protocol === 'https:' && isCdnHost(u.hostname));
   }
 
-  function learnClips(o, depth) {
-    if (!o || typeof o !== 'object' || depth > 14) return;
-    if (Array.isArray(o)) {
-      for (var i = 0; i < o.length; i++) learnClips(o[i], depth + 1);
-      return;
-    }
-    if (typeof o.code === 'string' && Array.isArray(o.video_versions) && o.video_versions.length) {
-      addClip(o);
-      return;
-    }
-    for (var k in o) {
-      if (Object.prototype.hasOwnProperty.call(o, k) && o[k] && typeof o[k] === 'object') learnClips(o[k], depth + 1);
-    }
+  function learnClips(o) {
+    walkJson(o, 14, function (k, v) {
+      if (typeof v.code !== 'string' || !Array.isArray(v.video_versions) || !v.video_versions.length) return false;
+      addClip(v);
+      return true;
+    });
   }
 
   /** The smallest version at least as wide as the screen (capped at 720 px), else the largest. */

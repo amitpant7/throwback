@@ -33,25 +33,17 @@
   var stories = newAhead();
   var feedAhead = newAhead();
 
-  function filterStoryData(o, st, depth) {
-    if (!o || typeof o !== 'object' || depth > 16) return;
-    if (Array.isArray(o)) {
-      for (var i = 0; i < o.length; i++) filterStoryData(o[i], st, depth + 1);
-      return;
-    }
-    for (var k in o) {
-      if (!Object.prototype.hasOwnProperty.call(o, k)) continue;
-      var v = o[k];
-      if (!v || typeof v !== 'object') continue;
+  function filterStoryData(o, st) {
+    walkJson(o, 16, function (k, v) {
       if (st.adKeys.indexOf(k) !== -1) {
         emptyLists(v, 0); // no story ads
-        continue;
+        return true;
       }
       if (k === 'items' && Array.isArray(v) && v.length && v[0] && (v[0].video_dash_manifest || v[0].video_versions || v[0].image_versions2)) {
         learnStoryItems(v);
       }
-      filterStoryData(v, st, depth + 1);
-    }
+      return false;
+    });
   }
 
   function emptyLists(o, depth) {

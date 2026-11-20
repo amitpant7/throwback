@@ -163,3 +163,21 @@
     return false;
   }
 
+  /**
+   * Walks parsed JSON down to maxDepth levels: visit(key, value) is called for every object or array
+   * inside it (key is the property name, or the index in an array); when visit returns true, the walk
+   * doesn't go into that value.
+   */
+  function walkJson(o, maxDepth, visit) {
+    (function walk(node, depth) {
+      if (depth > maxDepth) return;
+      var isArray = Array.isArray(node);
+      for (var k in node) {
+        if (!Object.prototype.hasOwnProperty.call(node, k)) continue;
+        var v = node[k];
+        if (!v || typeof v !== 'object') continue;
+        if (!visit(isArray ? +k : k, v)) walk(v, depth + 1);
+      }
+    })(o, 0);
+  }
+

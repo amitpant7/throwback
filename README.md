@@ -14,7 +14,7 @@ Free. Source available for personal use (see Licence). No accounts, no tracking.
 - The Explore grid for 5 minutes a day, then "Enough for today"
 - Reels sent to you in chats play, but swiping on to more reels is stopped after a few swipes
 - Optional daily time limit with a PIN, two 5-minute extensions a day, and a messages-only mode when locked
-- Optional Messages & calls: message and call alerts through the Instagram app, which stays installed
+- Optional connected Instagram app: calls, message alerts, and posting with Instagram's own editor; the app stays installed
   but out of reach. Calls ring and are answered there (a chat's call button starts one there);
   messages open in Throwback; other Instagram notifications are removed unless you switch them on
 - Optional mindful pause before opening
@@ -23,7 +23,7 @@ Free. Source available for personal use (see Licence). No accounts, no tracking.
 ## Opening Throwback's settings
 
 There's no Throwback button on the feed, so it looks exactly like Instagram. Open Throwback's settings
-(time limit, mindful pause, Messages & calls, shortcut, Support, About) any of these ways:
+(Instagram app, Your day, time limit, mindful pause, shortcut, Support, About) any of these ways:
 
 1. **Your profile:** the Throwback icon at the top right (where the Threads icon was).
 2. **Instagram's settings:** profile → gear → the **Throwback** section, right after "Your account".

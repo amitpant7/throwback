@@ -3,7 +3,7 @@
 A single-module Android app (Kotlin, Jetpack Compose). Instagram itself is shown in an
 Android WebView (instagram.com), with Throwback's filters injected as CSS and JavaScript.
 Everything else (onboarding, settings, time limit, lock screens, the reel poster) is native Compose.
-The optional Messages & calls feature adds two background parts: a notification listener (the
+The optional Instagram app feature ("Connected app" in Settings; code still says messages/relay) adds two background parts: a notification listener (the
 relay) and a foreground service (the guard).
 
 ```
@@ -124,7 +124,7 @@ The app talks to the page through `window.__throwback` (not enumerable, not writ
 | `storyStats()` | DevTools | Story look-ahead counters (learned, prefetched, served from memory, memory KB) |
 | `feedStats()` | DevTools | Feed look-ahead counters and the batch-size tweak (raised, refused, off) |
 
-## Messages & calls (`relay/`, `guard/`)
+## Instagram app, formerly Messages & calls (`relay/`, `guard/`)
 
 Nothing runs until the setup wizard is finished (`messages_setup_done` in `ui_prefs`).
 `relay.MessagesFeature.install()` (from `ThrowbackApp.onCreate`) starts or stops the guard to match

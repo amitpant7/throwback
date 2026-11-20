@@ -50,6 +50,17 @@ internal fun SettingsHomeScreen(prefs: UiPrefs, onBack: () -> Unit, onOpen: (Set
         ) {
             RemovesCard()
 
+            SectionLabel(stringResource(R.string.ui_section_notifications))
+            TbCard {
+                NavRow(
+                    icon = R.drawable.ui_ic_camera_app,
+                    title = stringResource(R.string.ui_messages_title),
+                    subtitle = stringResource(R.string.ui_messages_sub),
+                    value = stringResource(if (messagesDone) R.string.ui_messages_value_on else R.string.ui_messages_value_setup),
+                    onClick = { onOpen(SettingsRoute.Messages) },
+                )
+            }
+
             SectionLabel(stringResource(R.string.ui_section_focus))
             TbCard {
                 NavRow(
@@ -72,17 +83,6 @@ internal fun SettingsHomeScreen(prefs: UiPrefs, onBack: () -> Unit, onOpen: (Set
                     subtitle = stringResource(R.string.ui_pause_sub),
                     checked = mindfulPause,
                     onCheckedChange = { on -> prefs.write { setMindfulPause(on) } },
-                )
-            }
-
-            SectionLabel(stringResource(R.string.ui_section_notifications))
-            TbCard {
-                NavRow(
-                    icon = R.drawable.ui_ic_app_square,
-                    title = stringResource(R.string.ui_messages_title),
-                    subtitle = stringResource(R.string.ui_messages_sub),
-                    value = stringResource(if (messagesDone) R.string.ui_messages_value_on else R.string.ui_messages_value_setup),
-                    onClick = { onOpen(SettingsRoute.Messages) },
                 )
             }
 

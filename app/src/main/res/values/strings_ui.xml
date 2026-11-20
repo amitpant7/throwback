@@ -33,8 +33,8 @@
     <string name="ui_found_icon_description">Instagram app installed</string>
     <string name="ui_found_title">You still have the Instagram app</string>
     <string name="ui_found_body">It\'s the quickest way back to Reels. What do you want to do with it?</string>
-    <string name="ui_found_keep_title">Keep it for calls &amp; messages</string>
-    <string name="ui_found_keep_body">Hide it, get message and call alerts, and Throwback keeps you out of it.</string>
+    <string name="ui_found_keep_title">Connect it to Throwback</string>
+    <string name="ui_found_keep_body">For calls, message alerts and posting. Throwback keeps you out of everything else.</string>
     <string name="ui_found_remove_title">Remove it</string>
     <string name="ui_found_remove_body">Opens the app\'s page in Android Settings. Tap Uninstall there.</string>
     <string name="ui_found_later">Decide later</string>
@@ -113,7 +113,7 @@
     <string name="ui_status_ready_title">Ready</string>
     <string name="ui_status_ready_body">Messages come from Throwback. The Instagram app opens for calls and posting; anything else brings you back</string>
     <string name="ui_status_no_app_title">Instagram app not installed</string>
-    <string name="ui_status_no_app_body">Install it to get message and call alerts</string>
+    <string name="ui_status_no_app_body">Install it for calls, message alerts and posting</string>
     <string name="ui_status_incomplete_title">Setup not finished</string>
     <plurals name="ui_status_permissions_off">
         <item quantity="one">%d permission is still off</item>

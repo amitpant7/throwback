@@ -129,7 +129,7 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 24. The PIN is stored only as a salted PBKDF2 hash. The setup screen says "Write it down somewhere
     you won't see every day."
 
-## Messages & calls (optional, built after the first phone test)
+## Instagram app (optional; was "Messages & calls", renamed 2026-11-20 when posting was added)
 
 25. The real Instagram app stays installed (its icon is not hidden, see #28), only for notifications
     and calls; the guard (#27) keeps the user out of it.
@@ -139,12 +139,12 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 27. **Guard:** opening the real Instagram app outside a call shows "Use Throwback instead" and returns
     the user to Throwback. During a call it is allowed. Throwback itself opens the app with a short
     pass in two cases: a chat's call button (the mobile website has no calls) and "Open Instagram for
-    5 minutes" on the Messages & calls screen (switching accounts, Instagram's own settings).
+    5 minutes" on the Instagram app screen (switching accounts, Instagram's own settings).
 28. A 2-step setup wizard: install Instagram (via the Play Store), then grant the permissions
     (notification access, usage access, display over other apps; Android 13+ also asks to allow
     notifications). No "hide the icon" step: the guard sends the user back to Throwback anyway, and
     "Remove it" covers uninstalling (decided 2026-11-20). "Quiet the Instagram app" is not a step but
-    an optional tip on the Messages & calls screen ("For a quieter phone"), since the relay already
+    an optional tip on the Instagram app screen ("For a quieter phone"), since the relay already
     removes everything except messages and calls (owner, 2026-11-20).
 27a. **Passes into the real app are limited** (owner + red-team review, 2026-11-20).
     "Open Instagram for 5 minutes": once a day, not while the daily limit is reached, and the pass ends
@@ -153,7 +153,7 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     Instagram allowed, and call audio during that pass counts as an Instagram call).
     Explore's 5 minutes also cover hashtag, place and keyword-result grids (every page under /explore/).
 27b. **Turning the guard off follows the time-limit rule** (owner, 2026-11-20): while a daily limit
-    is on, "Turn off Messages & calls" needs the PIN and takes effect the next day ("Keep it on"
+    is on, "Disconnect the Instagram app" needs the PIN and takes effect the next day ("Keep it on"
     cancels it). Without a limit it is immediate (there is no PIN). If the limit itself is turned
     off, a scheduled guard turn-off becomes due with it. Not preventable in-app: force-stopping
     Throwback or revoking its permissions in Android settings (to look at: count the real app's time
@@ -164,6 +164,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     allows only creation screens (activity class `instagram.features.creation.*`, rules `appCreate`),
     with 3 s of grace while it opens and at most 30 minutes. Any other screen (the feed after
     posting, Reels) ends the pass and the guard brings the user back. Calls work as before.
+27d. **Name and place** (owner, 2026-11-20): Settings section "Connected app" (first, above Focus),
+    row "Instagram app · Calls, message alerts and posting · Connected".
 29. **Instagram app found:** after first login, if the Instagram app is installed, Throwback offers
     "Keep it for calls & messages", "Remove it" (opens Android Settings) or "Decide later".
 

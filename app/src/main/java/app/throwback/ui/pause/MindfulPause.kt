@@ -116,7 +116,11 @@ internal fun MindfulPauseContent(onContinue: () -> Unit, onNotNow: () -> Unit) {
                 )
             }
             Text(
-                stringResource(R.string.ui_pause_opening_in, PauseTiming.secondsLeft(elapsed)),
+                if (PauseTiming.isDone(elapsed)) {
+                    stringResource(R.string.ui_pause_almost)
+                } else {
+                    stringResource(R.string.ui_pause_opening_in, PauseTiming.secondsLeft(elapsed))
+                },
                 style = UiText.sub,
                 color = colors.muted,
             )

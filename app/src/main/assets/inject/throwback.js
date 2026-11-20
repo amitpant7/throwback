@@ -3558,8 +3558,21 @@
     } catch (e) {
       return;
     }
+    // The home feed is ready when its first post is there, not when only the top bar and Instagram's
+    // spinner are (on a slow connection that looked like an Instagram logo screen after the pause).
+    // The login form counts too; after HOME_READY_MAX_MS the page shows anyway.
+    if (pageActive('home') && !document.querySelector('main article, input[type="password"], #' + END_CARD_ID)) {
+      if (performance.now() < HOME_READY_MAX_MS) {
+        if (!state.homeReadyTimer) {
+          state.homeReadyTimer = setTimeout(checkReady, Math.max(0, HOME_READY_MAX_MS - performance.now()) + 50);
+        }
+        return;
+      }
+    }
     sendReady();
   }
+
+  var HOME_READY_MAX_MS = 8000;
 
   function sendReady() {
     if (state.readySent || state.leaving) return;

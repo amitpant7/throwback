@@ -190,6 +190,7 @@
 
     <!-- 3 · Mindful pause -->
     <string name="ui_pause_opening_in">Opening in %1$d</string>
+    <string name="ui_pause_almost">Almost there…</string>
     <!-- Short original lines (not quotes from anyone), shown in a shuffled order that goes through all of them before repeating. -->
     <string-array name="ui_pause_lines">
         <item>Take a breath. The people you follow will still be here in a moment.</item>

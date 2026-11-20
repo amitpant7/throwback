@@ -1,5 +1,6 @@
 package app.throwback.core
 
+import app.throwback.web.WebReadiness
 import app.throwback.web.InstagramWebController
 import app.throwback.web.PageFeatures
 import app.throwback.ui.UiPrefs
@@ -230,7 +231,17 @@ private fun MainScreen(
     }
     // Only time actually spent on Instagram counts: not while Throwback's own settings or the
     // mindful pause cover it, and not while the activity is paused.
-    val pauseShowing = mindfulPause == true && !pauseDone && deepLink == null
+    // After its 4 seconds the pause stays until the feed is ready underneath (at most 5 s more), so a
+    // slow connection shows "Almost there…" instead of Instagram's loading screen.
+    val pageShown by WebReadiness.firstPageShown.collectAsStateWithLifecycle()
+    var pauseOverdue by remember { mutableStateOf(false) }
+    LaunchedEffect(pauseDone) {
+        if (pauseDone) {
+            kotlinx.coroutines.delay(5_000)
+            pauseOverdue = true
+        }
+    }
+    val pauseShowing = mindfulPause == true && !(pauseDone && (pageShown || pauseOverdue)) && deepLink == null
     val onInstagram = mindfulPause != null && !pauseShowing && !settingsOpen
     var resumed by remember { mutableStateOf(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { resumed = true }

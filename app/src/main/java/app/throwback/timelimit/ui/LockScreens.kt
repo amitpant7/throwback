@@ -167,7 +167,7 @@ private fun TimesUpScreen(
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            stringResource(R.string.tl_times_up_body, view.budgetMinutes),
+            pluralStringResource(R.plurals.tl_times_up_body, view.budgetMinutes, view.budgetMinutes),
             style = leadStyle(),
             color = c.muted,
             textAlign = TextAlign.Center,
@@ -221,7 +221,12 @@ private fun TimesUpScreen(
 @Composable
 private fun ExtensionsLeft(left: Int) {
     val c = ThrowbackTheme.colors
-    val text = stringResource(R.string.tl_extensions_left, left, Rules.MAX_EXTENSIONS_PER_DAY)
+    val text = pluralStringResource(
+        R.plurals.tl_extensions_left,
+        Rules.MAX_EXTENSIONS_PER_DAY,
+        left,
+        Rules.MAX_EXTENSIONS_PER_DAY,
+    )
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),

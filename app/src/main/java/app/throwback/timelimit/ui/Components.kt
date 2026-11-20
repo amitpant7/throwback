@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.onClick
@@ -321,8 +322,12 @@ private fun PadKey(label: String, enabled: Boolean, onClick: () -> Unit, modifie
             .height(64.dp)
             .clip(RoundedCornerShape(32.dp))
             .background(ThrowbackTheme.colors.surface)
-            .clickable(enabled = enabled, role = Role.Button, onClickLabel = null, onClick = onClick)
-            .semantics { contentDescription = label },
+            .clearAndSetSemantics {
+                contentDescription = label
+                role = Role.Button
+                if (enabled) onClick { onClick(); true } else disabled()
+            }
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { content() }
 }

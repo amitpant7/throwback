@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -115,7 +116,7 @@ internal fun ForgotPinScreen(
                 if (reset != null && !reset.ready) {
                     val done = 1f - reset.remainingMillis.toFloat() / reset.totalMillis
                     val percent = (done * 100).toInt()
-                    val progressLabel = stringResource(R.string.tl_reset_progress_cd, percent)
+                    val progressLabel = pluralStringResource(R.plurals.tl_reset_progress_cd, percent, percent)
                     Box(
                         Modifier
                             .padding(top = 16.dp)

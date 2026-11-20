@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Auto Backup rules for Android 11 and lower (owned by the timelimit area; DECISIONS.md #23).
+    Only the time-limit DataStore is backed up, so a reinstall restores the limit, the PIN hash
+    and salt, today's usage and extensions, pending changes and a pending PIN reset.
+    Everything else, including the Instagram login and all WebView data, is never backed up.
+    Must stay in step with data_extraction_rules.xml and DataStoreStateStore.FILE_NAME.
+-->
 <full-backup-content>
     <include domain="file" path="datastore/timelimit.preferences_pb" />
 </full-backup-content>

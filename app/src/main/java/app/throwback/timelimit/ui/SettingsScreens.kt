@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -136,7 +137,7 @@ private fun SetupScreen(controller: DefaultTimeLimitController, onClose: () -> U
 
             Spacer(Modifier.height(18.dp))
             TlCard(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                IconLine(R.drawable.tl_ic_lock, stringResource(R.string.tl_rule_locks, minutes))
+                IconLine(R.drawable.tl_ic_lock, pluralStringResource(R.plurals.tl_rule_locks, minutes, minutes))
                 IconLine(R.drawable.tl_ic_clock, stringResource(R.string.tl_rule_extend))
                 IconLine(R.drawable.tl_ic_chat, stringResource(R.string.tl_rule_messages))
             }
@@ -283,7 +284,7 @@ private fun ManageScreen(controller: DefaultTimeLimitController, view: TimeLimit
             onTurnOff = { page = ManagePage.TurnOffPin },
         )
         is ManagePage.RaisePin -> PinPrompt(
-            title = stringResource(R.string.tl_enter_pin_raise, p.minutes),
+            title = pluralStringResource(R.plurals.tl_enter_pin_raise, p.minutes, p.minutes),
             view = view,
             onBack = { home() },
             onForgot = { page = ManagePage.Reset },
@@ -381,7 +382,13 @@ private fun ManageHome(
                 Text(todayStatus(view), style = MaterialTheme.typography.headlineSmall, color = c.text)
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    stringResource(R.string.tl_manage_summary, limit, view.extensionsUsed, Rules.MAX_EXTENSIONS_PER_DAY),
+                    pluralStringResource(
+                        R.plurals.tl_manage_summary,
+                        Rules.MAX_EXTENSIONS_PER_DAY,
+                        limit,
+                        view.extensionsUsed,
+                        Rules.MAX_EXTENSIONS_PER_DAY,
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = c.muted,
                 )
@@ -396,7 +403,7 @@ private fun ManageHome(
                     Eyebrow(stringResource(R.string.tl_pending_label, whenText(effective, view.today).uppercase()))
                     if (pendingLimit != null) {
                         PendingRow(
-                            text = pendingLimit.minutes?.let { stringResource(R.string.tl_pending_raise, it) }
+                            text = pendingLimit.minutes?.let { pluralStringResource(R.plurals.tl_pending_raise, it, it) }
                                 ?: stringResource(R.string.tl_pending_off),
                             onCancel = onCancelPendingLimit,
                         )
@@ -471,8 +478,8 @@ private fun todayStatus(view: TimeLimitView): String = when (val state = view.lo
 
 @Composable
 private fun noticeText(n: Notice): String = when (n) {
-    is Notice.Lowered -> stringResource(R.string.tl_notice_lowered, n.minutes)
-    is Notice.Raised -> stringResource(R.string.tl_notice_raise, n.minutes)
+    is Notice.Lowered -> pluralStringResource(R.plurals.tl_notice_lowered, n.minutes, n.minutes)
+    is Notice.Raised -> pluralStringResource(R.plurals.tl_notice_raise, n.minutes, n.minutes)
     Notice.TurnsOff -> stringResource(R.string.tl_notice_off)
     Notice.PinChanged -> stringResource(R.string.tl_notice_pin)
     Notice.PinReset -> stringResource(R.string.tl_notice_reset_done)
@@ -487,7 +494,7 @@ private fun whenText(date: LocalDate, today: LocalDate?): String =
 
 @Composable
 private fun ManageSection(text: String) {
-    SectionLabel(text, Modifier.padding(start = 2.dp, top = 22.dp).padding(bottom = 0.dp))
+    SectionLabel(text, Modifier.padding(start = 2.dp, top = 22.dp))
 }
 
 @Composable
@@ -585,7 +592,7 @@ private fun LowerLimitDialog(minutes: Int, onConfirm: () -> Unit, onDismiss: () 
         containerColor = c.surface,
         titleContentColor = c.text,
         textContentColor = c.muted,
-        title = { Text(stringResource(R.string.tl_lower_dialog_title, minutes), style = MaterialTheme.typography.titleLarge) },
+        title = { Text(pluralStringResource(R.plurals.tl_lower_dialog_title, minutes, minutes), style = MaterialTheme.typography.titleLarge) },
         text = { Text(stringResource(R.string.tl_lower_dialog_body), style = MaterialTheme.typography.bodyMedium) },
         confirmButton = {
             TextButton(onClick = onConfirm) {

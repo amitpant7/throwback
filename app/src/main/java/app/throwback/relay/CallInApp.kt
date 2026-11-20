@@ -41,6 +41,22 @@ internal object CallInApp {
         return false
     }
 
+    /** "Open Instagram for 5 minutes" (switch accounts, change its settings). */
+    const val VISIT_PASS_MS = 5 * 60_000L
+
+    /** Opens the Instagram app with a pass of [VISIT_PASS_MS]; false if it isn't installed. */
+    fun visit(context: Context): Boolean {
+        val pkg = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) } ?: return false
+        val launch = context.packageManager.getLaunchIntentForPackage(pkg) ?: return false
+        GuardPass.grant(SystemClock.elapsedRealtime(), VISIT_PASS_MS)
+        return try {
+            context.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            true
+        } catch (e: ActivityNotFoundException) {
+            false
+        }
+    }
+
     private fun isInstalled(context: Context, pkg: String): Boolean = try {
         context.packageManager.getPackageInfo(pkg, 0)
         true

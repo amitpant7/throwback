@@ -188,4 +188,8 @@
     <string name="ui_reel_poster_bored">Or just get bored.</string>
     <string name="ui_reel_poster_rule">A reel someone sends you, plus a few more. That\'s the deal.</string>
     <string name="ui_reel_poster_hint">Swipe back to return to your chat.</string>
+    <!-- Messages & calls: a short way into the real Instagram app (the guard lets it through) -->
+    <string name="ui_visit_title">Need the Instagram app?</string>
+    <string name="ui_visit_body">To switch accounts or change Instagram\'s settings. Throwback lets you in for 5 minutes, then keeps you out again.</string>
+    <string name="ui_visit_button">Open Instagram for 5 minutes</string>
 </resources>

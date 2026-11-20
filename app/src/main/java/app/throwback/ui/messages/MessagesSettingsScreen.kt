@@ -1,5 +1,8 @@
 package app.throwback.ui.messages
 
+import androidx.compose.ui.platform.LocalContext
+import app.throwback.ui.common.SecondaryButton
+import app.throwback.relay.CallInApp
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
@@ -99,6 +102,21 @@ internal fun MessagesSettingsScreen(
             )
 
             QuietTipCard(showMessage = showMessage, modifier = Modifier.padding(top = 18.dp))
+
+            // A deliberate, short way into the real app (switching accounts, its own settings).
+            val notInstalled = stringResource(R.string.ui_instagram_not_installed_message)
+            val context = LocalContext.current
+            TbCard(Modifier.padding(top = 16.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.ui_visit_title), style = UiText.rowStrong, color = colors.text)
+                    Text(stringResource(R.string.ui_visit_body), style = UiText.sub, color = colors.muted)
+                    SecondaryButton(
+                        stringResource(R.string.ui_visit_button),
+                        onClick = { if (!CallInApp.visit(context)) showMessage(notInstalled) },
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+            }
 
             QuietButton(
                 stringResource(R.string.ui_turn_off_messages),

@@ -45,6 +45,15 @@ android {
 // filters/rules.json at the repo root is the single source of truth for the filter rules.
 // It is bundled into the APK as a fallback; installed apps also fetch the latest copy from GitHub.
 val copyFilterRules by tasks.registering(Copy::class) {
+    // A broken rules file (e.g. merge-conflict markers) must fail the build, never ship: the app would
+    // silently fall back to its minimal built-in rules.
+    doFirst {
+        val text = rootProject.file("filters/rules.json").readText()
+        require(!Regex("^(<<<<<<<|=======|>>>>>>>)", RegexOption.MULTILINE).containsMatchIn(text)) {
+            "filters/rules.json contains merge-conflict markers"
+        }
+        groovy.json.JsonSlurper().parseText(text)
+    }
     from(rootProject.file("filters/rules.json"))
     into(layout.buildDirectory.dir("generated/filterAssets/filters"))
 }

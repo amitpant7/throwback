@@ -1353,7 +1353,7 @@
       reelEvent('opened');
       return; // the reel that was opened is free
     }
-    var now = Date.now();
+    var now = trustedNow();
     var log = reelLog();
     var cooling = log.poster && now - log.poster < rv.cooldownMs;
     log.swipes = log.swipes.filter(function (t) {
@@ -1951,7 +1951,7 @@
     var ex = state.c && state.c.explore;
     var rv = state.c && state.c.reelViewer;
     var log = reelLog();
-    var cool = rv && log.poster ? Math.max(0, log.poster + rv.cooldownMs - Date.now()) : 0;
+    var cool = rv && log.poster ? Math.max(0, log.poster + rv.cooldownMs - trustedNow()) : 0;
     var ds = discState();
     return JSON.stringify({
       areas: d.sec,
@@ -2784,8 +2784,45 @@
   // suggests the same post again after a restart, it counts against the allowance like any other.
   var discoveredKeys = {};
 
+  /*
+   * Trusted time (owner, 2026-11-20). The app passes how far its tamper-resistant clock is from the
+   * phone's, and the UTC offset of the time zone days are counted in (a new zone only counts from the
+   * next midnight). So changing the phone's clock or time zone neither starts a new day for the
+   * daily counters (Explore minutes, Discover, Your day) nor ends the chat-reel cooldown early. The
+   * day never goes backwards either. Without the app (tests) the phone's own clock is used.
+   */
+  var clock = { offset: 0, zoneMin: null, day: null, nextAt: 0 };
+  var LASTDAY_KEY = '__tb_lastday';
+  var lastDay = null;
+
+  function trustedNow() {
+    return Date.now() + clock.offset;
+  }
+
   function today() {
-    return new Date().toDateString();
+    var ms = trustedNow();
+    var zoneMin = clock.zoneMin === null ? -new Date(ms).getTimezoneOffset() : clock.zoneMin;
+    // The app's day while it lasts (it knows when the next one may start); after that, count on.
+    var n = clock.day !== null && ms < clock.nextAt ? clock.day : Math.floor((ms + zoneMin * 60000) / 86400000);
+    var local = new Date(n * 86400000);
+    if (!lastDay) {
+      try {
+        lastDay = JSON.parse(localStorage.getItem(LASTDAY_KEY) || 'null');
+      } catch (e) {
+        lastDay = null;
+      }
+    }
+    if (lastDay && typeof lastDay.n === 'number' && n < lastDay.n) return lastDay.key; // never backwards
+    var key = new Date(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()).toDateString();
+    if (!lastDay || lastDay.n !== n) {
+      lastDay = { n: n, key: key };
+      try {
+        localStorage.setItem(LASTDAY_KEY, JSON.stringify(lastDay));
+      } catch (e) {
+        // Storage unavailable: fine for this page.
+      }
+    }
+    return key;
   }
 
   function discState() {
@@ -3237,8 +3274,20 @@
 
   // ---------------------------------------------------------------- setup
 
+  /** The app's trusted clock (see today()). */
+  function applyClock(c) {
+    if (!c || typeof c.offset !== 'number' || typeof c.zoneMin !== 'number') return;
+    clock.offset = c.offset;
+    clock.zoneMin = c.zoneMin;
+    if (typeof c.day === 'number' && c.day > 0 && typeof c.nextAt === 'number') {
+      clock.day = c.day;
+      clock.nextAt = c.nextAt;
+    }
+  }
+
   function configure(cfg) {
     if (!cfg) return false;
+    applyClock(cfg.clock); // first: anything below may already ask which day it is
     var modeChanged = false;
     if (cfg.rules) {
       state.rules = cfg.rules;
@@ -3343,6 +3392,10 @@
     },
     /** Today's counts for the app's "Your day" screen (JSON string). */
     dayStats: dayStats,
+    /** The trusted clock the app passed (for tests over DevTools). */
+    clockInfo: function () {
+      return { offset: clock.offset, zoneMin: clock.zoneMin, day: clock.day, nextAt: clock.nextAt, now: trustedNow() };
+    },
     reelEvents: function () {
       return reels.events.slice();
     },
@@ -3367,6 +3420,7 @@
   }
 
   state.mode = config && config.mode === MODE_MESSAGES ? MODE_MESSAGES : MODE_FULL;
+  applyClock(config && config.clock); // before anything asks which day it is
   state.baseCss = (config && config.css) || '';
   state.path = location.pathname;
   if (config && config.rules) {

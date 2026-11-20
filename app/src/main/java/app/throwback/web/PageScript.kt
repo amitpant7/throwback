@@ -23,8 +23,9 @@ internal object PageScript {
     }
 
     /** The argument for `window.__throwback.configure(...)`; any part may be left out. */
-    fun config(rules: FilterRules? = null, css: String? = null, mode: WebMode? = null): String {
+    fun config(rules: FilterRules? = null, css: String? = null, mode: WebMode? = null, clock: String? = PageClock.json()): String {
         val fields = linkedMapOf<String, JsonElement>()
+        clock?.let { fields["clock"] = kotlinx.serialization.json.Json.parseToJsonElement(it) }
         mode?.let { fields["mode"] = JsonPrimitive(it.name) }
         css?.let { fields["css"] = JsonPrimitive(it) }
         rules?.let { fields["rules"] = RulesJson.encodeToJsonElement(FilterRules.serializer(), it) }

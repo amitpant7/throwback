@@ -16,5 +16,11 @@ class ThrowbackApp : Application() {
         super.onCreate()
         // Messages & calls: starts the guard if (and only if) the user finished its setup.
         MessagesFeature.install(this)
+        // The page's daily counters use the time limit's trusted clock, not the phone's.
+        app.throwback.web.PageClock.provider = {
+            (timeLimit as? app.throwback.timelimit.DefaultTimeLimitController)?.pageClock()?.let {
+                longArrayOf(it.offsetMs, it.zoneOffsetMin.toLong(), it.day, it.nextDayAt)
+            } ?: longArrayOf(0L, 0L, 0L, 0L)
+        }
     }
 }

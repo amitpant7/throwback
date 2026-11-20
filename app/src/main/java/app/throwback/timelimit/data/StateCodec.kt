@@ -48,6 +48,8 @@ internal object StateCodec {
         val anchor: StoredMoment? = null,
         val pendingGuardOff: String? = null,
         val guardOffDue: Boolean = false,
+        val zone: String? = null,
+        val dayStart: Long? = null,
     )
 
     @Serializable
@@ -78,6 +80,8 @@ internal object StateCodec {
         anchor = anchor?.toStored(),
         pendingGuardOff = pendingGuardOff?.toString(),
         guardOffDue = guardOffDue,
+        zone = zone,
+        dayStart = dayStart,
     )
 
     private fun Stored.toState() = TimeLimitState(
@@ -95,6 +99,8 @@ internal object StateCodec {
         anchor = anchor?.toMoment(),
         pendingGuardOff = pendingGuardOff?.let(LocalDate::parse),
         guardOffDue = guardOffDue,
+        zone = zone,
+        dayStart = dayStart,
     )
 
     private fun PinHash.toStored() = StoredPin(salt, hash, iterations)

@@ -455,6 +455,8 @@ internal class InstagramWebController(
             BridgeMessage.Ready -> {
                 requestReveal()
                 if (covered) pushCovered() // a new page starts uncovered
+                // Fresh trusted time for the page's daily counters (the phone's clock may have moved).
+                PageClock.json()?.let { injector.configureLive(PageScript.config(clock = it)) {} }
             }
             is BridgeMessage.Blocked -> showNotice(noticeFor(m.kind))
             is BridgeMessage.Touch -> {

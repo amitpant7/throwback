@@ -78,6 +78,13 @@ data class TimeLimitState(
     val pendingGuardOff: LocalDate? = null,
     /** The scheduled guard turn-off is due; the app turns Messages & calls off and clears this. */
     val guardOffDue: Boolean = false,
+    /**
+     * The time zone days are counted in (ZoneId). A new phone time zone is taken over only at the next
+     * midnight of this one, so switching to a zone where it's already tomorrow doesn't start a new day.
+     */
+    val zone: String? = null,
+    /** Trusted wall time when the current [day] began; a new day needs 23 h of real time after it. */
+    val dayStart: Long? = null,
 
     // Transient: not persisted.
     /** Open foreground interval, or null in the background. */
@@ -177,6 +184,9 @@ internal const val DAY = 24 * HOUR
 object Rules {
     val LIMIT_CHOICES = listOf(15, 30, 45, 60)
     const val EXTENSION_MINUTES = 5
+
+    /** Shortest real day (a daylight-saving day); a time-zone switch can't start days faster. */
+    const val MIN_DAY_MILLIS = 23 * 60 * 60 * 1000L
     const val EXTENSION_MILLIS = EXTENSION_MINUTES * MINUTE
     const val WAIT_MILLIS = 5 * MINUTE
     const val MAX_EXTENSIONS_PER_DAY = 2

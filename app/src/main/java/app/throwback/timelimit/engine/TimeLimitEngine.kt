@@ -1,5 +1,6 @@
 package app.throwback.timelimit.engine
 
+import java.time.ZoneId
 import app.throwback.core.LockState
 import app.throwback.core.WebMode
 import java.time.Instant
@@ -29,9 +30,9 @@ import kotlin.math.min
 class TimeLimitEngine {
 
     /** The time base for one call: the raw reading plus the trusted wall time derived from it. */
-    private class At(val reading: ClockReading, val wall: Long) {
+    private class At(val reading: ClockReading, val wall: Long, val zone: ZoneId) {
         val moment get() = Moment(reading.bootCount, reading.elapsedMillis, wall)
-        val date: LocalDate get() = Instant.ofEpochMilli(wall).atZone(reading.zone).toLocalDate()
+        val date: LocalDate get() = Instant.ofEpochMilli(wall).atZone(zone).toLocalDate()
     }
 
     // ---- Clock -----------------------------------------------------------------------------
@@ -46,14 +47,38 @@ class TimeLimitEngine {
         return if (abs(r.wallMillis - projected) <= Rules.CLOCK_RESYNC_TOLERANCE_MILLIS) r.wallMillis else projected
     }
 
-    private fun at(s: TimeLimitState, r: ClockReading) = At(r, trustedWall(s.anchor, r))
+    private fun at(s: TimeLimitState, r: ClockReading) = At(r, trustedWall(s.anchor, r), savedZone(s, r))
+
+    /** The zone days are counted in: the saved one, else (first use, or unreadable) the phone's. */
+    internal fun savedZone(s: TimeLimitState, r: ClockReading): ZoneId =
+        s.zone?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: r.zone
 
     /** Real time since [m]: monotonic within a boot, trusted wall time across reboots. */
     private fun millisSince(m: Moment, at: At): Long =
         if (sameBoot(m, at.reading)) at.reading.elapsedMillis - m.elapsedMillis
         else max(0L, at.wall - m.wallMillis)
 
-    private fun today(s: TimeLimitState, at: At): LocalDate = s.day?.let { maxOf(it, at.date) } ?: at.date
+    /**
+     * The day: never backwards, and a new one only once it is a new date in the saved zone and at
+     * least [Rules.MIN_DAY_MILLIS] of real time have passed since the current day began.
+     */
+    private fun today(s: TimeLimitState, at: At): LocalDate {
+        val d = s.day ?: return at.date
+        if (!at.date.isAfter(d)) return d
+        val start = s.dayStart ?: return at.date
+        return if (at.wall - start >= Rules.MIN_DAY_MILLIS) at.date else d
+    }
+
+    private fun startOf(day: LocalDate, at: At): Long = day.atStartOfDay(at.zone).toInstant().toEpochMilli()
+
+    /** For the page's daily counters: today, and the trusted time from which the next day may start. */
+    internal fun pageDay(s: TimeLimitState, r: ClockReading): Pair<LocalDate, Long> {
+        val at = at(s, r)
+        val today = today(s, at)
+        val next = startOf(today.plusDays(1), at)
+        val earliest = (s.dayStart ?: Long.MIN_VALUE / 2) + Rules.MIN_DAY_MILLIS
+        return today to maxOf(next, earliest)
+    }
 
     // ---- Keeping up with time --------------------------------------------------------------
 
@@ -65,7 +90,7 @@ class TimeLimitEngine {
 
     private fun sync(s: TimeLimitState, r: ClockReading): Pair<TimeLimitState, At> {
         val at = at(s, r)
-        var st = s.copy(anchor = at.moment)
+        var st = s.copy(anchor = at.moment, zone = s.zone ?: r.zone.id)
         st = account(st, at)
         st = rollover(st, at)
         st = applyPending(st, at)
@@ -90,10 +115,12 @@ class TimeLimitEngine {
 
     private fun rollover(s: TimeLimitState, at: At): TimeLimitState {
         val today = today(s, at)
-        if (s.day == today) return s
-        if (s.day == null) return s.copy(day = today)
+        if (s.day == today) return s.takeIf { it.dayStart != null } ?: s.copy(dayStart = startOf(today, at))
+        if (s.day == null) return s.copy(day = today, dayStart = startOf(today, at))
         return s.copy(
             day = today,
+            dayStart = startOf(today, at),
+            zone = at.reading.zone.id, // a new day: now the phone's current zone counts
             usedMillis = 0,
             extensionsUsed = 0,
             lockedAt = null,
@@ -116,7 +143,7 @@ class TimeLimitEngine {
 
     /** No limit any more: nothing protects a scheduled guard turn-off, so it is due at once. */
     private fun turnedOff(s: TimeLimitState) = TimeLimitState(
-        day = s.day, anchor = s.anchor, session = s.session,
+        day = s.day, anchor = s.anchor, session = s.session, zone = s.zone, dayStart = s.dayStart,
         guardOffDue = s.guardOffDue || s.pendingGuardOff != null,
     )
 
@@ -358,7 +385,7 @@ class TimeLimitEngine {
     }
 
     private fun untilMidnight(today: LocalDate, at: At): Long {
-        val midnight = today.plusDays(1).atStartOfDay(at.reading.zone).toInstant().toEpochMilli()
+        val midnight = today.plusDays(1).atStartOfDay(at.zone).toInstant().toEpochMilli()
         return max(0L, midnight - at.wall)
     }
 }

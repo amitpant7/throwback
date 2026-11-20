@@ -91,6 +91,12 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     request's `variant` to "following" (3x real posts, but chronological instead of Instagram's
     ranking; owner keeps the ranking). Look-ahead: photos/thumbnails of the next 7 posts into the
     disk cache, start of the next 3 videos (400 KB + 64 KB audio) in memory, cleared off the feed.
+13j. **One trusted clock** (owner, 2026-11-20): the daily limit and the page's daily counters
+    (Explore minutes, Discover, chat-reel cooldown, Your day) use the same tamper-resistant time:
+    the phone's since-boot stopwatch plus the last trusted time, and the time zone saved with it. A
+    new time zone counts only from the next midnight, and a new day needs at least 23 h of real time
+    after the last one began, so switching to a zone where it's already tomorrow gives nothing. The
+    page never goes back a day. Still open: clock forward + reboot (the stopwatch restarts at boot).
 14. **No toggles.** Throwback is minimal; there is no setting to bring distractions back.
     Settings shows a read-only "Throwback removes" list.
 15. Video captions and descriptions must never be hidden (a known complaint about a competitor).

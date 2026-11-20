@@ -125,6 +125,22 @@ internal class DefaultTimeLimitController(
 
     fun guardOffHandled() = update(Save.Now) { s, r -> engine.guardOffHandled(s, r) }
 
+    /**
+     * Trusted time for the page's own daily counters (Explore minutes, Discover, reel cooldown):
+     * how far the trusted wall time is from the phone's clock, and the saved zone's UTC offset then.
+     */
+    fun pageClock(): PageClockInfo = synchronized(lock) {
+        val r = clock.now()
+        val wall = engine.trustedWall(current.anchor, r)
+        val zone = engine.savedZone(current, r)
+        val offsetMin = zone.rules.getOffset(java.time.Instant.ofEpochMilli(wall)).totalSeconds / 60
+        val (day, nextAt) = engine.pageDay(current, r)
+        PageClockInfo(wall - System.currentTimeMillis(), offsetMin, day.toEpochDay(), nextAt)
+    }
+
+    /** See [pageClock]: [offsetMs] trusted minus phone clock; [day] epoch day; [nextDayAt] trusted ms. */
+    data class PageClockInfo(val offsetMs: Long, val zoneOffsetMin: Int, val day: Long, val nextDayAt: Long)
+
     /** Checks [pin] (counts towards the wrong-PIN block) without changing anything. */
     suspend fun verifyPin(pin: String): ActionResult = withPinCheck(pin) { s, r, ok -> engine.verifyPin(s, r, ok) }
 

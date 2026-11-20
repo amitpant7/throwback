@@ -313,6 +313,30 @@ class TimeLimitEngineTest {
     }
 
     @Test
+    fun `switching to a time zone where it's already tomorrow doesn't start a new day`() {
+        h.setup(30)
+        h.use(30 * MIN)
+        assertEquals(LockState.Locked, h.view().lockState)
+        val day = h.today
+        h.zone = java.time.ZoneId.of("Pacific/Kiritimati") // UTC+14: already tomorrow there
+        h.refresh()
+        assertEquals(day, h.s.day)
+        assertEquals(LockState.Locked, h.view().lockState)
+        // At the next real midnight (of the saved zone) the day changes and the new zone is taken over.
+        val saved = h.s.zone!!
+        h.zone = java.time.ZoneId.of(saved)
+        h.advanceToMidnight()
+        h.zone = java.time.ZoneId.of("Pacific/Kiritimati")
+        h.refresh()
+        assertEquals(day.plusDays(1), h.s.day)
+        assertEquals("Pacific/Kiritimati", h.s.zone)
+        // It's already the day after there, but not 23 h since this day began: no second new day.
+        h.moveClock(MIN)
+        h.refresh()
+        assertEquals(day.plusDays(1), h.s.day)
+    }
+
+    @Test
     fun `small clock corrections are followed`() {
         h.setup(15)
         h.moveClock(40 * SEC) // Network time correction.

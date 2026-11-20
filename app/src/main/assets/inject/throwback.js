@@ -65,6 +65,8 @@
   var styleEl = null;
   var styleCss = null; // what styleEl currently holds
   var dialogTries = typeof WeakMap === 'function' ? new WeakMap() : null;
+  var dialogChecked = typeof WeakMap === 'function' ? new WeakMap() : null;
+  var DIALOG_CHECK_MS = 500;
 
   // ---------------------------------------------------------------- bridge
 
@@ -940,7 +942,15 @@
     }
     applyClasses();
     send({ t: 'loc', url: href });
+    perfStart(state.path);
     state.bgDirty = true;
+    if (state.textScanSkipped && textScanActive()) {
+      // Back from DMs or stories: catch up on what changed while text scanning was off.
+      state.textScanSkipped = false;
+      scanAll();
+    } else if (!textScanActive()) {
+      state.textScanSkipped = true;
+    }
     schedulePass(true);
   }
 
@@ -1018,9 +1028,18 @@
     });
   }
 
+  /**
+   * Feed labels never occur in DMs or the story viewer, which change text constantly (typing,
+   * timestamps, progress): no text scanning there (pages 'direct' and 'stories' in the rules).
+   */
+  function textScanActive() {
+    return !pageActive('direct') && !pageActive('stories');
+  }
+
   function scanText(root) {
     var c = state.c;
     if (!c.labels.length && !c.modules.length && !c.markers.length) return;
+    if (!textScanActive()) return;
     var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
     var seen = new Set();
     var node;
@@ -1104,6 +1123,49 @@
       return;
     }
     post.setAttribute(ATTR_POST, id);
+  }
+
+  // ---------------------------------------------------------------- navigation timing
+
+  /*
+   * How long screens take to open (stories, messages): tap → address change → page settled (no DOM
+   * changes for PERF_SETTLE_MS). Page kinds and times only, kept in memory (last 30), read through
+   * DevTools with __throwback.perf(). Nothing is sent anywhere.
+   */
+  var PERF_SETTLE_MS = 300;
+  var perf = { lastTap: 0, rec: null, lastChange: 0, timer: 0, log: [] };
+
+  function pageKind(path) {
+    var c = state.c;
+    for (var i = 0; c && i < c.pages.length; i++) if (c.pages[i].re.test(path)) return c.pages[i].name;
+    return '/' + (path.split('/')[1] || '');
+  }
+
+  function perfStart(path) {
+    var now = performance.now();
+    var tap = now - perf.lastTap < 2000 ? perf.lastTap : now;
+    perf.rec = { page: pageKind(path), tapToUrl: Math.round(now - tap), tap: tap };
+    perf.lastChange = now;
+    perfCheck();
+  }
+
+  function perfChanged() {
+    if (perf.rec) perf.lastChange = performance.now();
+  }
+
+  function perfCheck() {
+    clearTimeout(perf.timer);
+    perf.timer = setTimeout(function () {
+      var rec = perf.rec;
+      if (!rec) return;
+      var idle = performance.now() - perf.lastChange;
+      if (idle < PERF_SETTLE_MS) return perfCheck();
+      rec.tapToSettled = Math.round(perf.lastChange - rec.tap);
+      delete rec.tap;
+      perf.log.push(rec);
+      if (perf.log.length > 30) perf.log.shift();
+      perf.rec = null;
+    }, PERF_SETTLE_MS);
   }
 
   // ---------------------------------------------------------------- feed data filter (option 1)
@@ -1426,6 +1488,19 @@
       var d = dialogs[i];
       var tries = dialogTries.get(d) || 0;
       if (tries >= c.dismissMaxAttempts) continue;
+      // Reading a dialog's text is costly (it may be a whole DM thread or story viewer): at most every 500 ms.
+      var now = Date.now();
+      if (now - (dialogChecked.get(d) || 0) < DIALOG_CHECK_MS) {
+        // Check it again once the wait is over, even if nothing else changes on the page by then.
+        if (!state.dialogRecheck) {
+          state.dialogRecheck = setTimeout(function () {
+            state.dialogRecheck = 0;
+            schedulePass(false);
+          }, DIALOG_CHECK_MS);
+        }
+        continue;
+      }
+      dialogChecked.set(d, now);
       var text = norm((d.textContent || '').slice(0, 4000));
       for (var j = 0; j < c.dialogs.length; j++) {
         var rule = c.dialogs[j];
@@ -1552,6 +1627,7 @@
   function sendReady() {
     if (state.readySent || state.leaving) return;
     state.readySent = true;
+    perf.log.push({ page: pageKind(location.pathname), fullLoadToReady: Math.round(performance.now()) });
     // Two frames: the filtered DOM is styled and laid out before the app reveals the WebView.
     raf(function () {
       raf(function () {
@@ -1647,6 +1723,7 @@
 
   function onMutations(records) {
     if (!state.c) return;
+    perfChanged();
     ensureStyle();
     watchRootClass();
     var root = document.documentElement;
@@ -1674,7 +1751,8 @@
         scanText(added[k]);
       }
     }
-    for (var t = 0; t < texts.length; t++) {
+    var scanTexts = textScanActive();
+    for (var t = 0; scanTexts && t < texts.length; t++) {
       if (texts[t].isConnected) checkTextElement(texts[t], 0);
     }
     // After the label checks, in the same task (before paint): reveal the posts that passed.
@@ -1746,6 +1824,9 @@
       });
     }, { passive: true });
     window.addEventListener('click', onClick, true);
+    window.addEventListener('pointerup', function () {
+      perf.lastTap = performance.now();
+    }, { capture: true, passive: true });
     document.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
     if (window.matchMedia) {
       var mq = matchMedia('(prefers-color-scheme: dark)');
@@ -1774,7 +1855,13 @@
     onLocation('start');
   }
 
-  var api = { configure: configure, version: 1 };
+  var api = {
+    configure: configure,
+    version: 1,
+    perf: function () {
+      return perf.log.slice();
+    }
+  };
   try {
     Object.defineProperty(window, '__throwback', { value: api, enumerable: false, configurable: false, writable: false });
   } catch (e) {

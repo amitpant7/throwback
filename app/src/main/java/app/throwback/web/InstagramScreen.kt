@@ -49,6 +49,7 @@ import app.throwback.core.WebMode
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.web.rules.FilterRules
 import app.throwback.web.rules.RulesRepository
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -82,8 +83,11 @@ fun InstagramScreen(
     val rules by repository.rules.collectAsStateWithLifecycle()
     var assets by remember { mutableStateOf<PageAssets?>(null) }
     LaunchedEffect(Unit) {
-        assets = PageAssets.load(context)
-        repository.load()
+        // Both read files from disk; in parallel, the first page starts sooner on a cold start.
+        coroutineScope {
+            launch { assets = PageAssets.load(context) }
+            launch { repository.load() }
+        }
     }
     val scope = rememberCoroutineScope()
     LifecycleEventEffect(Lifecycle.Event.ON_START) {

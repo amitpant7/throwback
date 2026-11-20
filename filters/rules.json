@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112007,
+  "version": 2026112008,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -61,7 +61,8 @@
     "home": "^/$",
     "explore": "^/explore/(search/)?$",
     "inbox": "^/direct/inbox/?$",
-    "direct": "^/direct(/|$)"
+    "direct": "^/direct(/|$)",
+    "stories": "^/stories/"
   },
 
   "readySelector": "main, nav, article, form, [role='main'], [role='dialog'], input[type='password'], [role='heading']",

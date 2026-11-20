@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.Network
+import android.os.SystemClock
 import android.util.Log
 import android.view.ViewGroup
 import androidx.activity.compose.BackHandler
@@ -121,11 +122,27 @@ fun InstagramScreen(
     var handledStartUrl by rememberSaveable { mutableStateOf<String?>(null) }
     // Bumped when the WebView's renderer dies, which replaces the WebView.
     var generation by remember { mutableIntStateOf(0) }
+    val crashes = remember { RendererCrashes(SystemClock::elapsedRealtime) }
+    var crashLoop by remember { mutableStateOf(false) }
 
     val loadedRules = rules
     val loadedAssets = assets
     if (loadedRules == null || loadedAssets == null) {
         LoadingCover(modifier)
+        return
+    }
+    if (crashLoop) {
+        // The renderer crashed three times in a row, soon after each other: stop and say so.
+        LaunchedEffect(Unit) { WebReadiness.markShown() }
+        WebErrorScreen(
+            LoadError(offline = false, url = null),
+            onRetry = {
+                crashes.reset()
+                crashLoop = false
+                generation++
+            },
+            modifier = modifier,
+        )
         return
     }
     key(generation) {
@@ -143,6 +160,16 @@ fun InstagramScreen(
             onOpenSettings = onOpenSettings,
             onCallInApp = onCallInApp,
             onRecreate = { generation++ },
+            onRendererGone = { crashed ->
+                when (crashes.onGone(crashed)) {
+                    RendererCrashes.Next.RESTORE -> generation++
+                    RendererCrashes.Next.HOME -> {
+                        lastUrl = null // the page it was on may be what crashes it
+                        generation++
+                    }
+                    RendererCrashes.Next.GIVE_UP -> crashLoop = true
+                }
+            },
             backEnabled = backEnabled,
             covered = covered,
             onReelLimit = onReelLimit,
@@ -172,6 +199,7 @@ private fun InstagramWebHost(
     onOpenSettings: () -> Unit,
     onCallInApp: (String?, String?) -> Unit,
     onRecreate: () -> Unit,
+    onRendererGone: (crashed: Boolean) -> Unit,
     backEnabled: Boolean,
     covered: Boolean,
     onReelLimit: () -> Unit,
@@ -308,8 +336,9 @@ private fun InstagramWebHost(
         if (!controller.goBack()) latestOnExitRequest()
     }
 
-    if (controller.rendererGone) {
-        LaunchedEffect(Unit) { onRecreate() }
+    // The renderer went away and the controller destroyed its WebView: InstagramScreen replaces it.
+    controller.rendererGone?.let { gone ->
+        LaunchedEffect(gone) { onRendererGone(gone.crashed) }
     }
 
     // The system bar areas take the page's own background, so the app looks edge to edge.

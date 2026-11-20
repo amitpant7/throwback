@@ -1,6 +1,6 @@
 package app.throwback
 
-import app.throwback.web.PageAssets
+import app.throwback.web.PageClock
 import app.throwback.web.rules.RulesRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -12,6 +12,7 @@ import android.app.Application
 import app.throwback.core.TimeLimitController
 import app.throwback.core.UiPreferences
 import app.throwback.relay.MessagesFeature
+import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.TimeLimitModule
 import app.throwback.ui.UiModule
 
@@ -26,17 +27,19 @@ class ThrowbackApp : Application() {
         warmUp()
         // Messages & calls: starts the guard if (and only if) the user finished its setup.
         MessagesFeature.install(this)
-        // The page's daily counters use the time limit's trusted clock, not the phone's.
-        app.throwback.web.PageClock.provider = {
-            (timeLimit as? app.throwback.timelimit.DefaultTimeLimitController)?.pageClock()?.let {
-                longArrayOf(it.offsetMs, it.zoneOffsetMin.toLong(), it.day, it.nextDayAt)
-            } ?: longArrayOf(0L, 0L, 0L, 0L)
+        // The page's daily counters use the time limit's trusted clock, not the phone's: only once
+        // its saved state is loaded (before that it would be the phone's own clock), else none.
+        PageClock.provider = {
+            (timeLimit as? DefaultTimeLimitController)?.takeIf { it.ready.value }?.pageClock()?.let {
+                PageClock.Reading(it.offsetMs, it.zoneOffsetMin, it.day, it.nextDayAt, readAt = System.currentTimeMillis())
+            }
         }
     }
 
     /**
-     * Cold start: read everything the first screen waits for (saved settings, filter rules, the page
-     * script) in the background right away, instead of one after another once the screen asks.
+     * Cold start: read what the first screen waits for (saved settings, filter rules) in the
+     * background right away, instead of one after another once the screen asks. The page script is
+     * read by MainActivity: this also runs for the guard, the relay and boot, which never show a page.
      * Measured on the emulator: the Instagram screen was composed ~400 ms after the activity started.
      */
     private fun warmUp() {
@@ -45,7 +48,6 @@ class ThrowbackApp : Application() {
             launch { runCatching { uiPreferences.onboardingDone.first() } }
             launch { runCatching { uiPreferences.mindfulPause.first() } }
             launch { runCatching { RulesRepository.get(context).load() } }
-            launch { runCatching { PageAssets.load(context) } }
             launch { runCatching { MessagesFeature.isSetUp(context) } }
         }
         timeLimit // creates the time limit now; it loads its saved state in the background

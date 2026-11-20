@@ -1,7 +1,9 @@
 package app.throwback.web
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BridgeMessageTest {
@@ -48,6 +50,20 @@ class BridgeMessageTest {
     @Test
     fun `reel limit message parses`() {
         assertEquals(BridgeMessage.ReelLimit, BridgeMessage.parse("""{"t":"reelLimit"}"""))
+    }
+
+    @Test
+    fun `messages that open another app or start a pass are marked`() {
+        // The legacy bridge (any frame can call it) drops these.
+        listOf(
+            """{"t":"callInApp","thread":"12345"}""", """{"t":"createInApp"}""", """{"t":"createInApp","kind":"story"}""",
+            """{"t":"settingsInApp"}""", """{"t":"storyWeb"}""", """{"t":"share","url":"https://www.instagram.com/reel/C1a2B3c4D5e/"}""",
+        ).forEach { assertTrue(it, BridgeMessage.parse(it)!!.opensOtherApp) }
+        listOf(
+            """{"t":"ready"}""", """{"t":"loc","url":"https://www.instagram.com/"}""", """{"t":"touch","top":true}""",
+            """{"t":"bg","c":"rgb(0, 0, 0)"}""", """{"t":"blocked","kind":"reels"}""", """{"t":"settings"}""", """{"t":"caughtUp"}""",
+            """{"t":"reelLimit"}""", """{"t":"supportAskShown"}""", """{"t":"supportThanks"}""",
+        ).forEach { assertFalse(it, BridgeMessage.parse(it)!!.opensOtherApp) }
     }
 
     @Test

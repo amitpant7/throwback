@@ -16,6 +16,7 @@ import app.throwback.web.InstagramWebController
 import app.throwback.web.PageDayStats
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
 /** "Your day": joins the page's counts, the time limit and the relay's count; refreshed every 2 s. */
@@ -58,9 +59,14 @@ internal fun TodayRoute(timeLimit: TimeLimitController, onClose: () -> Unit) {
     TodayScreen(stats, onBack = onClose)
 }
 
+/** The page's counts, or null. Bounded: a WebView whose renderer died never answers. */
 private suspend fun readPage(): PageDayStats? {
     val controller = InstagramWebController.current?.get() ?: return null
-    return suspendCancellableCoroutine { cont ->
-        controller.dayStats { text -> if (cont.isActive) cont.resume(PageDayStats.parse(text)) }
+    return withTimeoutOrNull(PAGE_READ_TIMEOUT_MS) {
+        suspendCancellableCoroutine { cont ->
+            controller.dayStats { text -> if (cont.isActive) cont.resume(PageDayStats.parse(text)) }
+        }
     }
 }
+
+private const val PAGE_READ_TIMEOUT_MS = 1_500L

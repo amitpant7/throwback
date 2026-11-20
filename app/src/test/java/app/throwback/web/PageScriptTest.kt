@@ -22,7 +22,7 @@ class PageScriptTest {
 
     @Test
     fun `build substitutes mode, css and rules`() {
-        val script = PageScript.build("(function(c){})(${PageScript.CONFIG_TOKEN});", "a{color:red}", rules, WebMode.MESSAGES_ONLY)
+        val script = PageScript.build("(function(c){})(${PageScript.CONFIG_TOKEN});", "a{color:red}", rules, WebMode.MESSAGES_ONLY, clock = null)
         assertFalse(PageScript.CONFIG_TOKEN in script)
         val json = script.removePrefix("(function(c){})(").removeSuffix(");")
         val config = Json.parseToJsonElement(json).jsonObject
@@ -51,6 +51,33 @@ class PageScriptTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun `a template without the token is refused`() {
-        PageScript.build("no token", "", rules, WebMode.FULL)
+        PageScript.build("no token", "", rules, WebMode.FULL, clock = null)
+    }
+
+    @Test
+    fun `the trusted clock goes along only when known, with the moment it was read`() {
+        val clock = PageClock.Reading(offsetMs = -1500, zoneOffsetMin = 60, day = 20412, nextDayAt = 1_763_683_200_000, readAt = 1_763_650_000_123)
+        assertEquals("""{"offset":-1500,"zoneMin":60,"day":20412,"nextAt":1763683200000,"at":1763650000123}""", clock.json().toString())
+
+        val withClock = Json.parseToJsonElement(PageScript.config(clock = clock.json())).jsonObject
+        assertEquals(clock.json(), withClock["clock"])
+        assertFalse("clock" in Json.parseToJsonElement(PageScript.config(mode = WebMode.FULL)).jsonObject)
+        val script = PageScript.build("(${PageScript.CONFIG_TOKEN})", "", rules, WebMode.FULL, clock = null)
+        assertFalse("\"clock\"" in script)
+    }
+
+    @Test
+    fun `no clock while the trusted one is unknown`() {
+        val previous = PageClock.provider
+        try {
+            PageClock.provider = null
+            assertEquals(null, PageClock.json())
+            PageClock.provider = { null } // the time limit hasn't loaded its saved state yet
+            assertEquals(null, PageClock.json())
+            PageClock.provider = { PageClock.Reading(0, 0, 1, 2, 3) }
+            assertEquals(3L, PageClock.json()!!["at"]!!.jsonPrimitive.content.toLong())
+        } finally {
+            PageClock.provider = previous
+        }
     }
 }

@@ -10,7 +10,6 @@
     <string name="ui_done_next">Done, next</string>
     <string name="ui_allow">Allow</string>
     <string name="ui_granted">Done</string>
-    <string name="ui_preview_note">Preview: message and call alerts arrive in a later version.</string>
     <string name="ui_settings_failed">Couldn\'t open Android settings.</string>
     <string name="ui_link_failed">Couldn\'t open the link.</string>
     <string name="ui_play_store_failed">Couldn\'t open the Play Store.</string>
@@ -106,11 +105,13 @@
     <!-- TalkBack for the Allow button, e.g. "Allow Usage access". -->
     <string name="ui_perm_allow_description">Allow %1$s</string>
     <string name="ui_perm_privacy">Throwback only looks at Instagram. Nothing is stored or sent anywhere.</string>
-    <string name="ui_perm_preview_note">Preview: message and call alerts arrive in a later version. Until then, Throwback won\'t appear in the notification access list.</string>
+    <string name="ui_perm_restricted_hint">Android says \"Restricted setting\"? Open Throwback\'s App info, tap ⋮ at the top, then \"Allow restricted settings\", and try again.</string>
+    <string name="ui_perm_app_info">Open App info</string>
+    <string name="ui_perm_post_denied">Throwback can\'t show notifications, so Instagram\'s own message notifications stay as they are. You can allow it later in Android\'s settings.</string>
 
     <!-- 17 · Messages & calls settings -->
     <string name="ui_status_ready_title">Ready</string>
-    <string name="ui_status_ready_body">Instagram app installed and all permissions granted</string>
+    <string name="ui_status_ready_body">Messages come from Throwback, and opening the Instagram app outside a call brings you back</string>
     <string name="ui_status_no_app_title">Instagram app not installed</string>
     <string name="ui_status_no_app_body">Install it to get message and call alerts</string>
     <string name="ui_status_incomplete_title">Setup not finished</string>

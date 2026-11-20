@@ -52,6 +52,8 @@ import app.throwback.ui.shouldOfferInstagramPrompt
 import app.throwback.web.InstagramScreen
 import app.throwback.web.InstagramSession
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.launch
 
 /**
@@ -69,6 +71,7 @@ fun AppRoot(
     onSplashHold: (Boolean) -> Unit,
     debugOpen: String? = null,
     settingsRequests: Int = 0,
+    messagesRequests: Int = 0,
 ) {
     val prefs = app.uiPreferences
     val onboardingDone by prefs.onboardingDone.collectAsStateWithLifecycle(initialValue = null)
@@ -101,6 +104,7 @@ fun AppRoot(
                 onCloseApp = onCloseApp,
                 onOpenSettings = { settingsOpen = SettingsStart.Home },
                 onOpenMessagesSetup = { settingsOpen = SettingsStart.MessagesAndCalls },
+                messagesRequests = messagesRequests,
             )
         }
 
@@ -124,6 +128,7 @@ private fun MainScreen(
     onCloseApp: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenMessagesSetup: () -> Unit,
+    messagesRequests: Int = 0,
 ) {
     val timeLimit = app.timeLimit
     val lockState by timeLimit.state.collectAsStateWithLifecycle()
@@ -157,6 +162,15 @@ private fun MainScreen(
         if (settingsOpen) {
             markSettingsHintShown(context)
             settingsHint = false
+        }
+    }
+
+    // A relayed message notification was tapped (Messages & calls): if the limit is locked, open
+    // messages-only mode instead of the lock screen. Waits briefly for the lock state on a cold start.
+    LaunchedEffect(messagesRequests) {
+        if (messagesRequests > 0) {
+            withTimeoutOrNull(LOCK_STATE_WAIT_MS) { timeLimit.state.first { it is LockState.Locked } }
+                ?.let { mode = WebMode.MESSAGES_ONLY }
         }
     }
 
@@ -293,3 +307,4 @@ private fun MessagesOnlyBar(onAskForMoreTime: () -> Unit, modifier: Modifier = M
 }
 
 private const val SETTINGS_HINT_DELAY_MS = 1500L
+private const val LOCK_STATE_WAIT_MS = 3000L

@@ -1,6 +1,11 @@
 package app.throwback.ui.messages
 
+import android.Manifest
+import android.os.Build
+import android.os.SystemClock
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
@@ -48,9 +53,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.guard.GuardPass
 import app.throwback.ui.common.CardDivider
 import app.throwback.ui.common.DoneLabel
-import app.throwback.ui.common.InfoNote
 import app.throwback.ui.common.LineIcon
 import app.throwback.ui.common.PillButton
 import app.throwback.ui.common.PrimaryButton
@@ -199,7 +204,6 @@ private fun InstallStep(onNext: () -> Unit, onNotNow: () -> Unit, showMessage: (
                 )
             }
         }
-        InfoNote(stringResource(R.string.ui_preview_note), Modifier.padding(top = 16.dp))
     }
 }
 
@@ -240,6 +244,8 @@ private fun QuietStep(onNext: () -> Unit, showMessage: (String) -> Unit) {
                 stringResource(R.string.ui_quiet_open_instagram),
                 onClick = {
                     val pkg = InstagramApp.installedPackage(context)
+                    // The guard (if already running) lets Throwback's own "open Instagram" through for a while.
+                    if (pkg != null) GuardPass.grant(SystemClock.elapsedRealtime())
                     when {
                         pkg == null -> showMessage(notInstalled)
                         !SystemScreens.launchApp(context, pkg) -> showMessage(openFailed)
@@ -304,11 +310,26 @@ private fun PermissionsStep(onNext: () -> Unit, showMessage: (String) -> Unit) {
     val context = LocalContext.current
     val state by rememberCheckedOnResume { MessagesSetupState.read(it) }
     val failed = stringResource(R.string.ui_settings_failed)
+    val postDenied = stringResource(R.string.ui_perm_post_denied)
+    // Android 13+: Throwback's own message notifications need the notification permission. Asked on
+    // Finish, the moment Throwback starts posting them; finishing doesn't depend on the answer (the
+    // relay keeps Instagram's own notifications while Throwback can't post).
+    val askPost = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (!granted) showMessage(postDenied)
+        onNext()
+    }
+    val finish = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !Permissions.canPostNotifications(context)) {
+            askPost.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            onNext()
+        }
+    }
 
     StepLayout(
         step = WizardStep.Permissions,
         title = stringResource(R.string.ui_perm_title),
-        buttons = { PrimaryButton(stringResource(R.string.ui_finish), onClick = onNext) },
+        buttons = { PrimaryButton(stringResource(R.string.ui_finish), onClick = finish) },
     ) {
         Text(stringResource(R.string.ui_perm_body), style = UiText.lead, color = colors.muted)
         Spacer(Modifier.height(16.dp))
@@ -344,7 +365,21 @@ private fun PermissionsStep(onNext: () -> Unit, showMessage: (String) -> Unit) {
             LineIcon(R.drawable.ui_ic_shield, size = 18.dp, tint = colors.muted)
             Text(stringResource(R.string.ui_perm_privacy), style = UiText.sub, color = colors.muted)
         }
-        InfoNote(stringResource(R.string.ui_perm_preview_note), Modifier.padding(top = 16.dp))
+        // Android 13+ blocks notification access for apps installed outside an app store until the
+        // user allows "restricted settings" in App info (APKs from GitHub Releases).
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !state.notificationAccess) {
+            Text(
+                stringResource(R.string.ui_perm_restricted_hint),
+                style = UiText.sub,
+                color = colors.muted,
+                modifier = Modifier.padding(top = 14.dp, start = 4.dp, end = 4.dp),
+            )
+            QuietButton(
+                stringResource(R.string.ui_perm_app_info),
+                onClick = { if (!SystemScreens.openOwnAppDetails(context)) showMessage(failed) },
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
     }
 }
 

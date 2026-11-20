@@ -11,6 +11,12 @@
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- Messages & calls: Throwback's own message notifications (Android 13+ asks the user), the
+         guard's foreground service, and restarting it after a reboot. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Android 11+ only lets us see these apps if we name them (used for "Instagram app found"). -->
     <queries>
@@ -52,5 +58,40 @@
                 <data android:host="instagram.com" />
             </intent-filter>
         </activity>
+
+        <!-- Messages & calls relay (app.throwback.relay): only Android can bind it, and only after the
+             user grants notification access. It reads the Instagram apps' notifications only. -->
+        <service
+            android:name=".relay.RelayListenerService"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!-- Messages & calls guard (app.throwback.guard). targetSdk 34+ needs a foreground service type.
+             None of the specific types fits (it is not dataSync, mediaPlayback, location, phoneCall…):
+             it watches which app is in front so the hidden Instagram app can't be used outside calls,
+             a digital-wellbeing use that Play lists under specialUse. The subtype text is what Play
+             review reads; the Play Console declaration must say the same (docs/PLAY_POLICY.md). -->
+        <service
+            android:name=".guard.GuardService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Digital wellbeing: while the user has turned on Messages and calls, detects when the Instagram app is opened outside a call and returns the user to Throwback." />
+        </service>
+
+        <receiver
+            android:name=".guard.BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

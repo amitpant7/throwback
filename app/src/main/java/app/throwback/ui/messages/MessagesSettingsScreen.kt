@@ -27,7 +27,6 @@ import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.ui.ExtraNotification
 import app.throwback.ui.UiPrefs
 import app.throwback.ui.common.CardDivider
-import app.throwback.ui.common.InfoNote
 import app.throwback.ui.common.LineIcon
 import app.throwback.ui.common.PillButton
 import app.throwback.ui.common.QuietButton
@@ -70,7 +69,6 @@ internal fun MessagesSettingsScreen(
                 .navigationBarsPadding(),
         ) {
             StatusCard(state.status, onFinishSetup)
-            InfoNote(stringResource(R.string.ui_preview_note), Modifier.padding(top = 12.dp))
 
             SectionLabel(stringResource(R.string.ui_always_on))
             TbCard {

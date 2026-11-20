@@ -37,12 +37,15 @@ internal data class MessagesSetupState(
     val notificationAccess: Boolean,
     val usageAccess: Boolean,
     val drawOverlays: Boolean,
+    /** Throwback may post notifications (Android 13+ asks; always true before). */
+    val postNotifications: Boolean = true,
 ) {
     val instagramInstalled: Boolean get() = instagramPackage != null
 
     val permissionsGranted: Int get() = listOf(notificationAccess, usageAccess, drawOverlays).count { it }
 
-    val permissionsMissing: Int get() = PERMISSION_COUNT - permissionsGranted
+    /** The three special permissions of the wizard's step 3, plus Android 13's notification permission. */
+    val permissionsMissing: Int get() = PERMISSION_COUNT - permissionsGranted + (if (postNotifications) 0 else 1)
 
     val status: MessagesStatus
         get() = when {
@@ -59,6 +62,7 @@ internal data class MessagesSetupState(
             notificationAccess = Permissions.hasNotificationAccess(context),
             usageAccess = Permissions.hasUsageAccess(context),
             drawOverlays = Permissions.canDrawOverlays(context),
+            postNotifications = Permissions.canPostNotifications(context),
         )
     }
 }
@@ -91,4 +95,9 @@ internal object Permissions {
     }
 
     fun canDrawOverlays(context: Context): Boolean = Settings.canDrawOverlays(context)
+
+    /** Android 13+ runtime permission for Throwback's own notifications (relayed messages). */
+    fun canPostNotifications(context: Context): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 }

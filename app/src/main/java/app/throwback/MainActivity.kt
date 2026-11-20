@@ -10,6 +10,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import app.throwback.core.AppRoot
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.relay.RelayLinks
+import app.throwback.relay.RelayNotifier
 
 /** Owned by integration. */
 class MainActivity : ComponentActivity() {
@@ -19,6 +21,9 @@ class MainActivity : ComponentActivity() {
 
     /** Bumped each time the "Throwback settings" shortcut opens the app. */
     private val settingsRequests = mutableIntStateOf(0)
+
+    /** Bumped each time a relayed message notification opens the app (messages-only mode if locked). */
+    private val messagesRequests = mutableIntStateOf(0)
 
     /** Set by AppRoot: keep the splash up until the first screen is ready (no flash of unfiltered Instagram). */
     @Volatile
@@ -30,6 +35,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         deepLink.value = intent.instagramUrl()
         if (intent.action == ACTION_OPEN_SETTINGS) settingsRequests.intValue++
+        if (intent.action == RelayNotifier.ACTION_OPEN_MESSAGES) messagesRequests.intValue++
         // Test builds only: `adb shell am start -n app.throwback/.MainActivity --es debug_open settings`
         // (or messages) opens Settings directly, so screens can be checked without an Instagram login.
         val debugOpen = if (BuildConfig.DEBUG) intent.getStringExtra("debug_open") else null
@@ -43,6 +49,7 @@ class MainActivity : ComponentActivity() {
                     onSplashHold = { holdSplash = it },
                     debugOpen = debugOpen,
                     settingsRequests = settingsRequests.intValue,
+                    messagesRequests = messagesRequests.intValue,
                 )
             }
         }
@@ -50,8 +57,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intent.instagramUrl()?.let { deepLink.value = it }
+        // A repeat of the same link (two message notifications for the inbox) must open it again.
+        intent.instagramUrl()?.let { deepLink.value = RelayLinks.repeatable(it, deepLink.value) }
         if (intent.action == ACTION_OPEN_SETTINGS) settingsRequests.intValue++
+        if (intent.action == RelayNotifier.ACTION_OPEN_MESSAGES) messagesRequests.intValue++
     }
 
     private fun Intent.instagramUrl(): String? =

@@ -3,6 +3,7 @@ package app.throwback
 import android.app.Application
 import app.throwback.core.TimeLimitController
 import app.throwback.core.UiPreferences
+import app.throwback.relay.MessagesFeature
 import app.throwback.timelimit.TimeLimitModule
 import app.throwback.ui.UiModule
 
@@ -10,4 +11,10 @@ import app.throwback.ui.UiModule
 class ThrowbackApp : Application() {
     val timeLimit: TimeLimitController by lazy { TimeLimitModule.create(this) }
     val uiPreferences: UiPreferences by lazy { UiModule.create(this) }
+
+    override fun onCreate() {
+        super.onCreate()
+        // Messages & calls: starts the guard if (and only if) the user finished its setup.
+        MessagesFeature.install(this)
+    }
 }

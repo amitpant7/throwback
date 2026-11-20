@@ -3,9 +3,11 @@ package app.throwback.ui.common
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.ComponentName
 import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -14,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import app.throwback.relay.RelayListenerService
 
 /**
  * Opens Android and Play Store screens. Every function returns false instead of crashing when
@@ -36,11 +39,24 @@ internal object SystemScreens {
     fun openUrl(context: Context, url: String): Boolean =
         context.tryStart(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE))
 
-    fun openNotificationAccess(context: Context): Boolean =
-        context.tryStart(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) || openOwnDetails(context)
+    /** Android 11+: straight to Throwback's own switch; older: the list of apps. */
+    fun openNotificationAccess(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val detail = Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS).putExtra(
+                Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME,
+                ComponentName(context, RelayListenerService::class.java).flattenToString(),
+            )
+            if (context.tryStart(detail)) return true
+        }
+        return context.tryStart(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) || openOwnDetails(context)
+    }
 
+    /** Android 10+ opens Throwback's own page when given the package; otherwise the list of apps. */
     fun openUsageAccess(context: Context): Boolean =
-        context.tryStart(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) || openOwnDetails(context)
+        context.tryStart(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS, Uri.parse("package:${context.packageName}"))) ||
+            context.tryStart(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) || openOwnDetails(context)
+
+    fun openOwnAppDetails(context: Context): Boolean = openOwnDetails(context)
 
     fun openOverlaySettings(context: Context): Boolean =
         context.tryStart(

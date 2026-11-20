@@ -51,7 +51,7 @@ data class TodayStats(
     val adsRemoved: Int? = null,
     val suggestionsRemoved: Int? = null,
     /** Instagram alerts the relay removed today; null when Messages & calls isn't set up. */
-    val alertsKept: Int? = null,
+    val alertsRemoved: Int? = null,
     /** The connected Instagram app today; null when it isn't connected. */
     val instagramApp: InstagramAppDay? = null,
 ) {
@@ -142,9 +142,9 @@ internal fun TodayScreen(stats: TodayStats, onBack: () -> Unit) {
             CountRow(stringResource(R.string.ui_today_ads), stats.adsRemoved)
             CardDivider()
             CountRow(stringResource(R.string.ui_today_suggested), stats.suggestionsRemoved)
-            if (stats.alertsKept != null) {
+            if (stats.alertsRemoved != null) {
                 CardDivider()
-                CountRow(stringResource(R.string.ui_today_alerts), stats.alertsKept)
+                CountRow(stringResource(R.string.ui_today_alerts), stats.alertsRemoved)
             }
         }
         Text(

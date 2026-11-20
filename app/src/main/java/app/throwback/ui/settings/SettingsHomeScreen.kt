@@ -41,7 +41,7 @@ internal fun SettingsHomeScreen(values: HomeValues, prefs: UiPrefs, onBack: () -
     SettingsScaffold(stringResource(R.string.ui_settings_title), onBack = onBack) {
         RemovesCard()
 
-        SectionLabel(stringResource(R.string.ui_section_notifications))
+        SectionLabel(stringResource(R.string.ui_section_connect))
         TbCard {
             NavRow(
                 icon = R.drawable.ic_camera_app,
@@ -63,7 +63,7 @@ internal fun SettingsHomeScreen(values: HomeValues, prefs: UiPrefs, onBack: () -
             CardDivider()
             NavRow(
                 icon = R.drawable.ic_clock,
-                title = stringResource(R.string.ui_time_limit_title),
+                title = stringResource(R.string.tl_title),
                 subtitle = stringResource(R.string.ui_time_limit_sub),
                 onClick = { onOpen(SettingsRoute.TimeLimit) },
             )

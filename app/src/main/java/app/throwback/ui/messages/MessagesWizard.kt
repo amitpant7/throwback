@@ -123,7 +123,7 @@ private fun StepLayout(
             } else {
                 stringResource(R.string.ui_wizard_step, step.number, WizardStep.COUNT)
             }
-            // Decorative: the "Step n of 4" text right below says the same thing to TalkBack.
+            // Decorative: the "Step 1 of 2" text right below says the same thing to TalkBack.
             StepBars(current = step.number, total = WizardStep.COUNT)
             Text(label, style = UiText.sub, color = colors.muted, modifier = Modifier.padding(top = 10.dp, bottom = 18.dp))
             Text(
@@ -206,8 +206,6 @@ private fun InstallStep(onNext: () -> Unit, onNotNow: () -> Unit, showMessage: (
 }
 
 // ---------------------------------------------------------------------------------- step 2
-
-// ---------------------------------------------------------------------------------- step 3
 
 @Composable
 private fun PermissionsStep(onNext: () -> Unit, showMessage: (String) -> Unit) {

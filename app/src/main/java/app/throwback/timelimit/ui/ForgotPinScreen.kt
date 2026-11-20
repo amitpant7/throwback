@@ -108,7 +108,8 @@ internal fun ForgotPinScreen(
                     sub = stringResource(R.string.tl_reset_until)
                 }
             }
-            Column(Modifier.clearAndSetSemantics { contentDescription = "$label. $big $sub" }) {
+            val description = stringResource(R.string.tl_reset_card_cd, label, big, sub)
+            Column(Modifier.clearAndSetSemantics { contentDescription = description }) {
                 Eyebrow(label)
                 Spacer(Modifier.height(8.dp))
                 Text(big, style = UiText.countdown(38), color = c.text)

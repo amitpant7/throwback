@@ -68,12 +68,16 @@
     </plurals>
     <string name="tl_granted_last">That was your last extension today.</string>
     <string name="tl_granted_lock_again">We\'ll lock again in 5 minutes.</string>
+    <!-- The two lines under "5 more minutes": tl_granted_left (or tl_granted_last), then tl_granted_lock_again. -->
+    <string name="tl_granted_body">%1$s\n%2$s</string>
     <string name="tl_back_to_feed">Back to feed</string>
 
     <!-- Locked until midnight (mockup 10) -->
     <string name="tl_done_title">That\'s it for today</string>
     <string name="tl_done_body">Both extensions are used.\nThrowback opens again at midnight.</string>
     <string name="tl_until_unlock">until it unlocks</string>
+    <!-- TalkBack for the box under "That's it for today", e.g. "6h 42m until it unlocks". -->
+    <string name="tl_until_unlock_cd">%1$s until it unlocks</string>
     <string name="tl_calls_note">Calls still ring, and messages stay open.</string>
 
     <!-- Forgot PIN (mockup 12) -->
@@ -92,6 +96,8 @@
     <string name="tl_reset_start">Start 3-day reset</string>
     <string name="tl_reset_cancel">Cancel reset</string>
     <string name="tl_reset_set_new">Set a new PIN</string>
+    <!-- TalkBack for the reset card: its label, the big number and the line under it. -->
+    <string name="tl_reset_card_cd">%1$s. %2$s %3$s</string>
     <plurals name="tl_reset_progress_cd">
         <item quantity="one">%1$d percent of the wait done</item>
         <item quantity="other">%1$d percent of the wait done</item>

@@ -25,12 +25,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,16 +42,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.ui.UiPrefs
-import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.TbButton
 import app.throwback.core.ui.TbButtonStyle
-import app.throwback.ui.common.SystemScreens
+import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.ThrowbackLogo
 import app.throwback.core.ui.UiText
+import app.throwback.ui.UiPrefs
+import app.throwback.ui.common.SystemScreens
 import app.throwback.ui.messages.InstagramApp
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 
 /**
  * First launch. The "Instagram app found" choice is shown after login (InstagramAppPromptContent).

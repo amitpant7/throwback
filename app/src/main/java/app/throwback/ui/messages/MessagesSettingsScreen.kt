@@ -143,7 +143,7 @@ internal fun MessagesSettingsScreen(
 
         if (pendingOff != null) {
             Text(
-                stringResource(R.string.ui_messages_off_pending),
+                stringResource(R.string.ui_messages_off_scheduled),
                 style = UiText.body14,
                 color = colors.muted,
                 modifier = Modifier.padding(start = 6.dp, top = 18.dp),

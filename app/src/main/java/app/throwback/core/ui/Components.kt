@@ -53,13 +53,12 @@ import app.throwback.core.theme.ThrowbackTheme
 
 private val ButtonShape = RoundedCornerShape(14.dp)
 
-/** The Throwback logo: the rewind mark on an accent-coloured rounded square (placeholder art). */
+/** The Throwback logo (owner, 2026-11-20): the rounded mint tile with the portal, arrow and figure. Decorative. */
 @Composable
-internal fun ThrowbackLogo(size: Dp, modifier: Modifier = Modifier, contentDescription: String? = null) {
-    // The final logo (owner, 2026-11-20): the rounded mint tile with the portal, arrow and figure.
+internal fun ThrowbackLogo(size: Dp, modifier: Modifier = Modifier) {
     Image(
         painter = painterResource(R.drawable.tb_logo),
-        contentDescription = contentDescription,
+        contentDescription = null,
         modifier = modifier.size(size),
     )
 }
@@ -204,7 +203,7 @@ internal fun DoneLabel(text: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** Four-segment progress indicator used at the top of each wizard step. */
+/** Step progress at the top of each wizard step: one segment per step, filled up to [current]. */
 @Composable
 internal fun StepBars(current: Int, total: Int, modifier: Modifier = Modifier) {
     val colors = ThrowbackTheme.colors

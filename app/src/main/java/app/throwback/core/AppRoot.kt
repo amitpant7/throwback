@@ -298,7 +298,7 @@ private fun MainScreen(
             backEnabled = !settingsOpen && !pauseShowing && !reelPoster,
             covered = settingsOpen || pauseShowing || lockShowing || reelPoster,
             onReelLimit = { reelPoster = true },
-            // A calm, positive moment: after a week of use, Google Play's rating card (asked once).
+            // A calm, positive moment: after a month (30 days, 10 days of use), Google Play's rating card, asked once.
             onCaughtUp = { (context as? android.app.Activity)?.let { RateAsk.onGoodMoment(it) } },
             onCreateInApp = { story ->
                 if (story) {
@@ -335,8 +335,9 @@ private fun MainScreen(
             modifier = if (lockShowing || pauseShowing || reelPoster) Modifier.clearAndSetSemantics {} else Modifier,
         )
 
-        // No Throwback button on the feed (owner's decision): Settings opens from the app icon's
-        // long-press shortcut. Only the time-limit chip shows, top-centre, on the logged-in home feed.
+        // No Throwback button on the feed (owner's decision): Settings opens from the page (profile icon,
+        // Instagram's settings page, long-press on Home) and the app icon's long-press shortcut
+        // (DECISIONS 33a). Only the time-limit chip shows, top-centre, on the logged-in home feed.
         val onHomeFeed = path == "/" || path.isEmpty()
         if (loggedIn && onHomeFeed && mode == WebMode.FULL && !pauseShowing) {
             TimeRemainingChip(timeLimit, Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 10.dp))

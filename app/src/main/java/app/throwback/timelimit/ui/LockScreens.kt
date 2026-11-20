@@ -289,7 +289,7 @@ private fun GrantedScreen(view: TimeLimitView, onContinue: () -> Unit) {
         )
         Spacer(Modifier.height(12.dp))
         AnnouncedText(
-            leftText + "\n" + stringResource(R.string.tl_granted_lock_again),
+            stringResource(R.string.tl_granted_body, leftText, stringResource(R.string.tl_granted_lock_again)),
             style = UiText.lead,
             color = c.muted,
         )
@@ -320,9 +320,10 @@ private fun DoneForTodayScreen(phase: LockPhase.DoneForToday, onOpenMessagesOnly
         Spacer(Modifier.height(40.dp))
         val until = hoursMinutesText(phase.untilMidnightMillis)
         val untilLabel = stringResource(R.string.tl_until_unlock)
+        val untilDescription = stringResource(R.string.tl_until_unlock_cd, until)
         // A card as wide as its text, not the full width.
         TbCard(
-            Modifier.width(IntrinsicSize.Max).clearAndSetSemantics { contentDescription = "$until $untilLabel" },
+            Modifier.width(IntrinsicSize.Max).clearAndSetSemantics { contentDescription = untilDescription },
             contentPadding = PaddingValues(horizontal = 28.dp, vertical = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {

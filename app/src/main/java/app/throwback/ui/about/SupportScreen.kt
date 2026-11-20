@@ -53,23 +53,27 @@ import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.UiText
 import app.throwback.ui.common.SystemScreens
 
-/** Tip tiers (DECISIONS.md #4). Each icon is one drawable so the artwork can be swapped later. */
-private enum class Tip(@DrawableRes val icon: Int, @StringRes val label: Int, @StringRes val line: Int, @StringRes val price: Int) {
-    Beer(R.drawable.ui_tip_beer, R.string.ui_tip_beer, R.string.ui_tip_beer_line, R.string.ui_tip_beer_price),
-    RockShow(R.drawable.ui_tip_rock, R.string.ui_tip_rock, R.string.ui_tip_rock_line, R.string.ui_tip_rock_price),
-    Gta6(R.drawable.ui_tip_gta, R.string.ui_tip_gta, R.string.ui_tip_gta_line, R.string.ui_tip_gta_price),
+/**
+ * Tip tiers (DECISIONS.md #4), in dollars until Google Play billing supplies local prices (the
+ * currency is the one string ui_tip_currency). Each icon is one drawable so the artwork can be swapped.
+ */
+private enum class Tip(@DrawableRes val icon: Int, @StringRes val label: Int, @StringRes val line: Int, val amount: Int) {
+    Beer(R.drawable.ui_tip_beer, R.string.ui_tip_beer, R.string.ui_tip_beer_line, 3),
+    RockShow(R.drawable.ui_tip_rock, R.string.ui_tip_rock, R.string.ui_tip_rock_line, 10),
+    Gta6(R.drawable.ui_tip_gta, R.string.ui_tip_gta, R.string.ui_tip_gta_line, 25),
 }
 
 /**
  * Support Throwback (design A "list rows", owner 2026-11-20): one row per tip with its icon, a line
- * and the price, plus "Whatever you want" ($50 / $100 / $200: Play needs fixed prices). Prices are
- * placeholders until Google Play billing supplies the local ones.
+ * and the price, plus "Whatever you want", a typed amount. Prices are placeholders until Google Play
+ * billing supplies the local ones.
  */
 @Composable
 internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
     val colors = ThrowbackTheme.colors
     val context = LocalContext.current
     val tipsSoon = stringResource(R.string.ui_tips_soon)
+    val currency = stringResource(R.string.ui_tip_currency)
     val linkFailed = stringResource(R.string.ui_link_failed)
     val open: (String) -> Unit = { url -> if (!SystemScreens.openUrl(context, url)) showMessage(linkFailed) }
     val focus = LocalFocusManager.current
@@ -98,7 +102,7 @@ internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                     name = stringResource(tip.label),
                     line = stringResource(tip.line),
                     onClick = { showMessage(tipsSoon) },
-                ) { PricePill(stringResource(tip.price)) }
+                ) { PricePill(stringResource(R.string.ui_tip_price, currency, tip.amount)) }
             }
             CardDivider()
             TipRow(
@@ -132,7 +136,7 @@ internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                             .padding(horizontal = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("$", style = UiText.row15.copy(fontWeight = FontWeight.Bold), color = colors.muted)
+                        Text(currency, style = UiText.row15.copy(fontWeight = FontWeight.Bold), color = colors.muted)
                         androidx.compose.foundation.text.BasicTextField(
                             value = amount,
                             onValueChange = { t -> amount = t.filter { it.isDigit() }.take(4) },
@@ -167,7 +171,11 @@ internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                     ) {
                         Box(Modifier.padding(horizontal = 18.dp), contentAlignment = Alignment.Center) {
                             Text(
-                                if (value != null) stringResource(R.string.ui_tip_any_button, value) else stringResource(R.string.ui_tip_any_button_empty),
+                                if (value != null) {
+                                    stringResource(R.string.ui_tip_any_button, stringResource(R.string.ui_tip_price, currency, value))
+                                } else {
+                                    stringResource(R.string.ui_tip_any_button_empty)
+                                },
                                 style = UiText.row15.copy(fontWeight = FontWeight.ExtraBold),
                             )
                         }

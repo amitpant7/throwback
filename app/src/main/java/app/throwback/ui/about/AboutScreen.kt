@@ -31,10 +31,7 @@ import app.throwback.core.ui.ValueRow
 import app.throwback.ui.common.SystemScreens
 import app.throwback.web.rules.RulesRepository
 
-/**
- * Links shown on About & support.
- * PLACEHOLDERS: the public repository doesn't exist yet. Replace OWNER/REPO before release.
- */
+/** Links shown on About & support. */
 internal object AboutLinks {
     const val REPO_URL = "https://github.com/amitpant7/throwback"
     const val PRIVACY_POLICY_URL = "$REPO_URL/blob/main/PRIVACY.md"

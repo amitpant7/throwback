@@ -52,7 +52,7 @@ internal fun TodayRoute(timeLimit: TimeLimitController, onClose: () -> Unit) {
         discoverMax = p?.discoverMax ?: 0,
         adsRemoved = p?.adsRemoved,
         suggestionsRemoved = p?.suggestionsRemoved,
-        alertsKept = alerts,
+        alertsRemoved = alerts,
         instagramApp = appDay,
     )
     TodayScreen(stats, onBack = onClose)

@@ -48,11 +48,10 @@
     <string name="ui_removes_ads">Ads</string>
     <string name="ui_removes_note">Your feed and stories, from the people you follow. These are always on. That\'s the point.</string>
     <string name="ui_section_focus">Focus</string>
-    <string name="ui_time_limit_title">Daily time limit</string>
     <string name="ui_time_limit_sub">Lock Throwback after a set time each day</string>
     <string name="ui_pause_title">Mindful pause</string>
     <string name="ui_pause_sub">A short pause before Instagram opens</string>
-    <string name="ui_section_notifications">Connect</string>
+    <string name="ui_section_connect">Connect</string>
     <string name="ui_messages_title">Instagram</string>
     <string name="ui_messages_sub">Calls, message alerts, posting</string>
     <string name="ui_messages_value_setup">Set up</string>
@@ -134,7 +133,6 @@
     <string name="ui_notify_live_videos">Live videos</string>
     <string name="ui_notify_footer">Everything you leave off is removed before you see it.</string>
     <string name="ui_turn_off_messages">Disconnect Instagram</string>
-    <string name="ui_messages_off_pending">Instagram disconnects tomorrow.</string>
     <string name="ui_messages_off_keep">Keep it on</string>
     <string name="ui_messages_off_scheduled">Instagram disconnects tomorrow.</string>
     <string name="ui_messages_off_cancelled">Instagram stays connected.</string>
@@ -165,14 +163,14 @@
     <string name="ui_tip_beer_line">A cold one, on you</string>
     <string name="ui_tip_rock_line">Toward a gig ticket</string>
     <string name="ui_tip_gta_line">Toward the next big game</string>
-    <!-- Placeholders until Google Play billing supplies the local prices. -->
-    <string name="ui_tip_beer_price">$3</string>
-    <string name="ui_tip_rock_price">$10</string>
-    <string name="ui_tip_gta_price">$25</string>
+    <!-- The currency, in this one place, until Google Play billing supplies the local prices. -->
+    <string name="ui_tip_currency">$</string>
+    <!-- A price: the currency, then the amount, e.g. "$3". -->
+    <string name="ui_tip_price">%1$s%2$d</string>
     <string name="ui_tip_any">Whatever you want</string>
     <string name="ui_tip_any_line">Type any amount</string>
     <string name="ui_tip_any_hint">Any amount</string>
-    <string name="ui_tip_any_button">Tip $%1$d</string>
+    <string name="ui_tip_any_button">Tip %1$s</string>
     <string name="ui_tip_any_button_empty">Tip</string>
     <string name="ui_support_fine">Paid through Google Play. Prices shown in your currency.</string>
     <string name="ui_support_how">How tips work</string>

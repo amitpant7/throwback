@@ -56,12 +56,12 @@ import app.throwback.timelimit.engine.Rules
 
 /** Four dots, filled for each digit typed. */
 @Composable
-internal fun PinDots(filled: Int, modifier: Modifier = Modifier, gap: Dp = 18.dp) {
+internal fun PinDots(filled: Int, modifier: Modifier = Modifier) {
     val c = ThrowbackTheme.colors
     val description = stringResource(R.string.tl_pin_progress_cd, filled)
     Row(
         modifier.clearAndSetSemantics { contentDescription = description },
-        horizontalArrangement = Arrangement.spacedBy(gap),
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
     ) {
         repeat(Rules.PIN_LENGTH) { i ->
             Box(Modifier.size(16.dp).clip(CircleShape).background(if (i < filled) c.text else c.surface2))

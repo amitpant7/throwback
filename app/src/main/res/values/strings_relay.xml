@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Messages & calls relay and guard (app.throwback.relay, app.throwback.guard). -->
+<resources>
+    <!-- Notification channels (shown in Android's notification settings for Throwback). -->
+    <string name="relay_channel_messages">Messages</string>
+    <string name="relay_channel_messages_description">Instagram messages, passed on by Throwback. Tap to open the chat in Throwback.</string>
+    <string name="relay_channel_activity">Likes, comments and follows</string>
+    <string name="relay_channel_activity_description">The Instagram notification types you switched on in Settings → Messages &amp; calls.</string>
+    <string name="relay_channel_guard">Protection</string>
+    <string name="relay_channel_guard_description">The small, silent notification Android needs while Throwback watches for the Instagram app.</string>
+
+    <!-- Relayed notifications. Sender and text are copied from Instagram's notification when it has them. -->
+    <string name="relay_new_message">New message</string>
+    <string name="relay_missed_call">Missed call</string>
+    <string name="relay_new_activity">New activity</string>
+
+    <!-- Guard -->
+    <string name="guard_notification_title">Throwback is protecting you</string>
+    <string name="guard_notification_text">Opening the Instagram app brings you back to Throwback, except during calls.</string>
+    <string name="guard_cover_title">Use Throwback instead</string>
+    <string name="guard_cover_body">The Instagram app is only for calls. Taking you back…</string>
+</resources>

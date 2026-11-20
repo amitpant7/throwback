@@ -77,7 +77,6 @@
     <string name="ui_install_button">Install</string>
     <string name="ui_install_button_description">Install the Instagram app from the Play Store</string>
 
-    <string name="ui_quiet_path">Profile → Menu → Notifications</string>
     <string name="ui_quiet_row_messages">Messages</string>
     <string name="ui_quiet_row_calls">Calls</string>
     <string name="ui_quiet_row_posts">Posts, stories and comments</string>
@@ -87,10 +86,10 @@
     <string name="ui_quiet_row_from_instagram">From Instagram</string>
     <string name="ui_quiet_keep_on">Keep on</string>
     <string name="ui_quiet_turn_off">Turn off</string>
-    <string name="ui_quiet_open_instagram">Open Instagram\'s settings</string>
-    <!-- Optional tip on the Messages & calls screen (was setup step 2). %1$s is ui_quiet_path, in bold. -->
+    <string name="ui_quiet_open_instagram">Open notification settings for Instagram</string>
+    <!-- Optional tip on the Messages & calls screen (was setup step 2). -->
     <string name="ui_quiet_tip_title">For a quieter phone (optional)</string>
-    <string name="ui_quiet_tip_body">Throwback already removes everything except messages and calls. You can also turn the rest off in the Instagram app itself: %1$s.</string>
+    <string name="ui_quiet_tip_body">Throwback already removes everything except messages and calls. You can also switch the rest off for the Instagram app in your phone\'s notification settings.</string>
     <string name="ui_quiet_tip_show">Show what to turn off</string>
     <string name="ui_quiet_tip_hide">Hide</string>
 

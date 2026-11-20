@@ -1,6 +1,5 @@
 package app.throwback.ui.messages
 
-import android.os.SystemClock
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,13 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.guard.GuardPass
 import app.throwback.ui.common.CardDivider
 import app.throwback.ui.common.SecondaryButton
 import app.throwback.ui.common.SystemScreens
@@ -64,19 +60,7 @@ internal fun QuietTipCard(showMessage: (String) -> Unit, modifier: Modifier = Mo
     TbCard(modifier) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.ui_quiet_tip_title), style = UiText.rowStrong, color = colors.text)
-            val path = stringResource(R.string.ui_quiet_path)
-            val body = stringResource(R.string.ui_quiet_tip_body, path)
-            val start = body.indexOf(path)
-            Text(
-                buildAnnotatedString {
-                    append(body)
-                    if (start >= 0) {
-                        addStyle(SpanStyle(color = colors.text, fontWeight = FontWeight.SemiBold), start, start + path.length)
-                    }
-                },
-                style = UiText.sub,
-                color = colors.muted,
-            )
+            Text(stringResource(R.string.ui_quiet_tip_body), style = UiText.sub, color = colors.muted)
             Text(
                 stringResource(if (open) R.string.ui_quiet_tip_hide else R.string.ui_quiet_tip_show),
                 style = UiText.body14Strong,
@@ -110,12 +94,13 @@ internal fun QuietTipCard(showMessage: (String) -> Unit, modifier: Modifier = Mo
             SecondaryButton(
                 stringResource(R.string.ui_quiet_open_instagram),
                 onClick = {
+                    // Android's own notification settings for Instagram: every category with a switch,
+                    // one tap away (Instagram's in-app menus move around). Not the Instagram app itself,
+                    // so the guard isn't involved.
                     val pkg = InstagramApp.installedPackage(context)
-                    // The guard (if running) lets Throwback's own "open Instagram" through for a while.
-                    if (pkg != null) GuardPass.grant(SystemClock.elapsedRealtime())
                     when {
                         pkg == null -> showMessage(notInstalled)
-                        !SystemScreens.launchApp(context, pkg) -> showMessage(openFailed)
+                        !SystemScreens.openAppNotificationSettings(context, pkg) -> showMessage(openFailed)
                     }
                 },
                 modifier = Modifier.padding(16.dp),

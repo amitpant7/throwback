@@ -36,6 +36,15 @@ internal object SystemScreens {
         return context.tryStart(intent)
     }
 
+    /**
+     * Android's notification settings for another app (its notification categories with on/off
+     * switches). Falls back to that app's details page.
+     */
+    fun openAppNotificationSettings(context: Context, packageName: String): Boolean =
+        context.tryStart(
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName),
+        ) || openAppDetails(context, packageName)
+
     fun openUrl(context: Context, url: String): Boolean =
         context.tryStart(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE))
 

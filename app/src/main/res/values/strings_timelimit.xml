@@ -169,4 +169,5 @@
         <item quantity="other">%d seconds of Throwback left today</item>
     </plurals>
     <string name="tl_setup_pin_next">Next you\'ll create a 4-digit PIN. Turning the limit off, raising it or changing the PIN later needs it.</string>
+    <string name="tl_key_confirm">Confirm PIN</string>
 </resources>

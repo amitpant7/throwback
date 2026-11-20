@@ -291,22 +291,40 @@ internal fun PinDots(filled: Int, modifier: Modifier = Modifier, gap: Dp = 18.dp
     }
 }
 
-/** 3x4 number pad (mockup 9). Its own keys, so the PIN never passes through a keyboard app. */
+/**
+ * 3x4 number pad (mockup 9). Its own keys, so the PIN never passes through a keyboard app. Bottom row
+ * ⌫ 0 ✓, the layout people know from Android's lock screen and payment apps (owner: no empty key).
+ */
 @Composable
-internal fun PinPad(onDigit: (Char) -> Unit, onDelete: () -> Unit, enabled: Boolean, modifier: Modifier = Modifier) {
+internal fun PinPad(
+    onDigit: (Char) -> Unit,
+    onDelete: () -> Unit,
+    onConfirm: () -> Unit,
+    canType: Boolean,
+    canDelete: Boolean,
+    canConfirm: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val c = ThrowbackTheme.colors
     val digitStyle = MaterialTheme.typography.headlineSmall.copy(fontSize = 26.sp, fontWeight = FontWeight.Medium)
     val deleteLabel = stringResource(R.string.tl_key_delete)
+    val confirmLabel = stringResource(R.string.tl_key_confirm)
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        listOf("123", "456", "789", " 0<").forEach { row ->
+        listOf("123", "456", "789", "<0>").forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                 row.forEach { key ->
                     when (key) {
-                        ' ' -> Spacer(Modifier.weight(1f))
-                        '<' -> PadKey(deleteLabel, enabled, onDelete, Modifier.weight(1f)) {
-                            TlIcon(R.drawable.tl_ic_backspace, size = 26.dp, tint = ThrowbackTheme.colors.text)
+                        '<' -> PadKey(deleteLabel, canDelete, onDelete, Modifier.weight(1f)) {
+                            TlIcon(R.drawable.tl_ic_backspace, size = 26.dp, tint = if (canDelete) c.text else c.muted)
                         }
-                        else -> PadKey(key.toString(), enabled, { onDigit(key) }, Modifier.weight(1f)) {
-                            Text(key.toString(), style = digitStyle, color = ThrowbackTheme.colors.text)
+                        '>' -> PadKey(
+                            confirmLabel, canConfirm, onConfirm, Modifier.weight(1f),
+                            background = if (canConfirm) c.accent else c.surface,
+                        ) {
+                            TlIcon(R.drawable.tl_ic_check, size = 26.dp, tint = if (canConfirm) c.onAccent else c.muted)
+                        }
+                        else -> PadKey(key.toString(), canType, { onDigit(key) }, Modifier.weight(1f)) {
+                            Text(key.toString(), style = digitStyle, color = c.text)
                         }
                     }
                 }
@@ -316,12 +334,19 @@ internal fun PinPad(onDigit: (Char) -> Unit, onDelete: () -> Unit, enabled: Bool
 }
 
 @Composable
-private fun PadKey(label: String, enabled: Boolean, onClick: () -> Unit, modifier: Modifier, content: @Composable () -> Unit) {
+private fun PadKey(
+    label: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    background: androidx.compose.ui.graphics.Color = ThrowbackTheme.colors.surface,
+    content: @Composable () -> Unit,
+) {
     Box(
         modifier
             .height(64.dp)
             .clip(RoundedCornerShape(32.dp))
-            .background(ThrowbackTheme.colors.surface)
+            .background(background)
             .clearAndSetSemantics {
                 contentDescription = label
                 role = Role.Button
@@ -333,8 +358,8 @@ private fun PadKey(label: String, enabled: Boolean, onClick: () -> Unit, modifie
 }
 
 /**
- * Title, dots and number pad. Calls [onPin] once four digits are in; the digits stay on screen
- * until [clearKey] changes (the caller bumps it after a wrong PIN).
+ * Title, dots and number pad. Calls [onPin] when ✓ is pressed with four digits in; the digits stay on
+ * screen until [clearKey] changes (the caller bumps it after a wrong PIN).
  */
 @Composable
 internal fun PinEntry(
@@ -373,14 +398,12 @@ internal fun PinEntry(
             if (message != null) AnnouncedText(message)
         }
         PinPad(
-            onDigit = { d ->
-                if (digits.length < Rules.PIN_LENGTH) {
-                    digits += d
-                    if (digits.length == Rules.PIN_LENGTH) onPin(digits)
-                }
-            },
+            onDigit = { d -> if (digits.length < Rules.PIN_LENGTH) digits += d },
             onDelete = { digits = digits.dropLast(1) },
-            enabled = enabled && digits.length < Rules.PIN_LENGTH,
+            onConfirm = { if (digits.length == Rules.PIN_LENGTH) onPin(digits) },
+            canType = enabled && digits.length < Rules.PIN_LENGTH,
+            canDelete = enabled && digits.isNotEmpty(),
+            canConfirm = enabled && digits.length == Rules.PIN_LENGTH,
         )
         Spacer(Modifier.weight(1f))
         footer()

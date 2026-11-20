@@ -120,6 +120,11 @@ object RulesValidator {
             }
             check(fd.endAfterEmptyPages in 1..20) { "feedData.endAfterEmptyPages out of range" }
         }
+        rules.stories?.let { st ->
+            (st.connections + st.adKeys).forEach { check(FIELD.matches(it)) { "stories: bad field '$it'" } }
+            check(st.prefetchAhead in 0..10) { "stories.prefetchAhead out of range" }
+            check(st.prefetchKB in 0..2048) { "stories.prefetchKB out of range" }
+        }
         rules.reelViewer?.let { rv ->
             check(rv.posterOnSwipeMin in 1..50 && rv.posterOnSwipeMax in rv.posterOnSwipeMin..50) {
                 "reelViewer.posterOnSwipe range out of range"

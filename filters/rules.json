@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112012,
+  "version": 2026112013,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -168,6 +168,13 @@
     "posterOnSwipeMax": 4,
     "windowMinutes": 10,
     "cooldownMinutes": 60
+  },
+  "stories": {
+    "note": "Seen on the owner's phone 2026-11-20: stories come from /graphql/query (PolarisStoriesV3ReelPageGallery[Pagination]Query, key xdt_api__v1__feed__reels_media__connection) in batches covering upcoming people; story ads come separately (PolarisStoriesV3AdsPoolQuery, key xdt_injected_story_units) and are emptied. Videos are fetched in pieces (bytestart/byteend). Look-ahead keeps the first prefetchKB of the next prefetchAhead videos in memory and hands them to the player.",
+    "connections": ["xdt_api__v1__feed__reels_media__connection", "xdt_api__v1__feed__reels_media"],
+    "adKeys": ["xdt_injected_story_units"],
+    "prefetchAhead": 3,
+    "prefetchKB": 400
   },
   "dismissMaxAttempts": 40
 }

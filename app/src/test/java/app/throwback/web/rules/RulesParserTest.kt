@@ -73,6 +73,17 @@ class RulesParserTest {
     }
 
     @Test
+    fun `stories rules are bundled and range-checked`() {
+        val st = TestRules.bundled.stories
+        assertNotNull(st)
+        assertTrue("xdt_injected_story_units" in st!!.adKeys)
+        assertEquals(3, st.prefetchAhead)
+        assertEquals(400, st.prefetchKB)
+        assertRejected(TestRules.bundledWith { it.replace("\"prefetchKB\": 400", "\"prefetchKB\": 99999") }, "prefetchKB")
+        assertRejected(TestRules.bundledWith { it.replace("\"xdt_injected_story_units\"", "\"bad key!\"") }, "bad field")
+    }
+
+    @Test
     fun `built-in fallback rules are valid`() {
         assertEquals(emptyList<String>(), RulesValidator.validate(FallbackRules.rules))
     }

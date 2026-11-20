@@ -58,6 +58,12 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     swipe removes the poster, leaving you in the chat. After a poster, no free swipes for an hour
     (each new poster restarts the hour), stored on the device so a restart doesn't reset it. The
     poster's final design and an animated version with licensed music are in design.
+13g. **Stories** (decided 2026-11-20): story ads are removed from Instagram's data (key
+    `xdt_injected_story_units`). Look-ahead to avoid the dark screen between stories: the first
+    400 KB (plus a little audio) of the next 3 story videos are kept in memory and handed to the
+    player; photo stories ahead go to the browser's disk cache. The current story comes from the
+    address (/stories/<user>/<id>/). Memory stays under ~2 MB and is cleared on leaving stories;
+    off with Data Saver; no extra logged-in requests; nothing is marked seen (rules `stories`).
 14. **No toggles.** Throwback is minimal; there is no setting to bring distractions back.
     Settings shows a read-only "Throwback removes" list.
 15. Video captions and descriptions must never be hidden (a known complaint about a competitor).

@@ -53,6 +53,8 @@ data class FilterRules(
     val feedData: FeedDataRules? = null,
     /** Limit on swiping through reels in Instagram's full-screen viewer (null: no limit). */
     val reelViewer: ReelViewerRules? = null,
+    /** Stories: ads removed from Instagram's data, and a small look-ahead for the next videos (null: off). */
+    val stories: StoryRules? = null,
 )
 
 @Serializable
@@ -183,6 +185,18 @@ data class FeedDataRules(
 /** Matches when the value at [path] (dot-separated) is present, or equals [equals] as text. */
 @Serializable
 data class FieldTest(val path: String, val equals: String? = null, val present: Boolean? = null)
+
+@Serializable
+data class StoryRules(
+    /** Keys of story data in Instagram's JSON (where story items are learned from). */
+    val connections: List<String> = emptyList(),
+    /** Keys of story-ad data; their lists are emptied before the page uses them. */
+    val adKeys: List<String> = emptyList(),
+    /** How many upcoming story videos to look ahead (0: none). */
+    val prefetchAhead: Int = 3,
+    /** How much of each upcoming video's start to keep in memory, in KB. */
+    val prefetchKB: Int = 400,
+)
 
 @Serializable
 data class ReelViewerRules(

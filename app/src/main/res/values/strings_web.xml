@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the Instagram screen (web area). -->
+<resources>
+    <string name="web_loading">Loading</string>
+    <string name="web_refreshing">Refreshing</string>
+
+    <string name="web_offline_title">You\'re offline</string>
+    <string name="web_offline_body">Connect to the internet and Throwback will pick up where you left off.</string>
+    <string name="web_error_title">This page didn\'t load</string>
+    <string name="web_error_body">Something went wrong on the way. Check your connection and try again.</string>
+    <string name="web_retry">Try again</string>
+
+    <string name="web_notice_reels">Reels are hidden in Throwback</string>
+    <string name="web_notice_suggested">Suggestions are hidden in Throwback</string>
+    <string name="web_notice_messages_only">Only messages are open right now</string>
+    <string name="web_notice_hidden">Throwback hides this page</string>
+    <string name="web_notice_no_app">No app can open this link</string>
+</resources>

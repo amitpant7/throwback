@@ -113,4 +113,30 @@ class NotificationClassifierTest {
     fun `every rules kind maps to a classifier kind`() {
         app.throwback.web.rules.NOTIFICATION_KINDS.forEach { assertTrue(it, NotificationKind.fromRule(it) != null) }
     }
+
+    @Test
+    fun `bundled rules sort Instagram's real channels (read from the owner's phone)`() {
+        val bundled = NotificationClassifier(app.throwback.web.TestRules.bundled.notifications)
+        val expected = mapOf(
+            "ig_direct_video_chat" to NotificationKind.CALL,
+            "ig_direct" to NotificationKind.MESSAGE,
+            "ig_direct_requests" to NotificationKind.MESSAGE,
+            "ig_likes" to NotificationKind.LIKES,
+            "ig_comment_likes" to NotificationKind.LIKES,
+            "ig_likes_and_comments_on_photos_of_you" to NotificationKind.LIKES,
+            "ig_heads_up_comments" to NotificationKind.COMMENTS,
+            "ig_new_followers" to NotificationKind.FOLLOWS,
+            "ig_connections" to NotificationKind.FOLLOWS,
+            "ig_private_user_follow_request" to NotificationKind.FOLLOWS,
+            "ig_mentions_in_bio" to NotificationKind.MENTIONS,
+            "ig_photos_of_you" to NotificationKind.MENTIONS,
+            "ig_live_videos" to NotificationKind.LIVE,
+            "ig_highlights" to NotificationKind.OTHER,
+            "ig_first_posts_and_stories" to NotificationKind.OTHER,
+            "ig_shopping_drops" to NotificationKind.OTHER,
+            "ig_view_counts" to NotificationKind.OTHER,
+            "uploads" to NotificationKind.OTHER,
+        )
+        expected.forEach { (channel, kind) -> assertEquals(channel, kind, bundled.classify(facts(channel = channel))) }
+    }
 }

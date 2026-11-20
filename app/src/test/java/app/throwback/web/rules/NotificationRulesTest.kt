@@ -17,13 +17,17 @@ class NotificationRulesTest {
         assertTrue("expected an error containing '$expectedFragment', got $errors", errors.any { expectedFragment in it })
     }
 
-    private fun withClassify(entries: String) = TestRules.bundledWith { it.replace("\"classify\": []", "\"classify\": [$entries]") }
+    /** The bundled rules with their classify table replaced by [entries]. */
+    private fun withClassify(entries: String) =
+        TestRules.bundledWith { it.replace(Regex("\"classify\": \\[.*?\\],"), "\"classify\": [$entries],") }
 
     @Test
     fun `bundled rules have a conservative notifications section`() {
         val n = TestRules.bundled.notifications
         assertNotNull(n)
-        assertTrue("no guessed channel ids until checked on a phone", n!!.classify.isEmpty())
+        // Filled from the owner's phone (Instagram's channel list), calls first and never guessed.
+        assertEquals("call", n!!.classify.first().kind)
+        assertEquals("^ig_direct_video_chat$", n.classify.first().channel)
         assertEquals(UNKNOWN_CANCEL, n.unknown)
         assertNull(n.threadId)
         assertEquals("https://www.instagram.com/accounts/activity/", n.activityUrl)

@@ -332,7 +332,7 @@ data class AppSettingsRules(
     /** Regex on the activity class: Instagram's settings screens (no time limit there). */
     val screens: String,
     /** Minutes in total the app's other screens (e.g. Accounts Center, which shares the feed's screen) may show. */
-    val otherScreenMinutes: Int = 5,
+    val otherScreenMinutes: Int = 0,
     /** Apps that settings open on the way (e.g. Chrome's in-app pages); they don't end the pass. */
     val flowPackages: List<String> = emptyList(),
 )

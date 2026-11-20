@@ -217,7 +217,7 @@ class GuardService : Service() {
                     val cls = tracker.currentClass
                     if (cls != null && (screens == null || !screens.containsMatchIn(cls))) {
                         GuardPass.outsideMillis += POLL_MS
-                        if (GuardPass.outsideMillis > (rules?.otherScreenMinutes ?: 5) * 60_000L) {
+                        if (GuardPass.outsideMillis > (rules?.otherScreenMinutes ?: 0) * 60_000L) {
                             Log.i(TAG, "settings pass: time outside the settings screens is up")
                             GuardPass.end()
                         }

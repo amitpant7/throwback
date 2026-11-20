@@ -173,7 +173,7 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 27e. **Instagram app settings** (owner, 2026-11-20): with Instagram connected, a row at the very end
     of Instagram's settings page, "Open settings in the Instagram app", opens the app's Settings and
     activity (`instagram://settings`). Settings screens (`com.instagram.urlhandlers.settings.*`): no
-    time limit. Other app screens (Accounts Center shares the feed's screen): 5 minutes in total.
+    time limit. Instagram's main screen (the feed; Back out of settings lands there, and Accounts Center opens there too) is never allowed during this pass (owner, 2026-11-20: Back to the feed was a loophole); Accounts Center is on Instagram's website.
     Leaving Instagram ends the pass (pickers and Chrome's in-app pages excepted). Rules `appSettings`.
 29. **Instagram app found:** after first login, if the Instagram app is installed, Throwback offers
     "Keep it for calls & messages", "Remove it" (opens Android Settings) or "Decide later".

@@ -9,8 +9,9 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 2. **Codename:** Throwback. The public app name and logo are chosen later; the current logo is a placeholder.
 3. **Repository:** public on GitHub, licensed GPL-3.0, so nobody can repackage it as a closed paid app.
 4. **Money:** free, with optional tips through Google Play Billing (no paid features). The tip tiers in
-   the mockup are Beer / Rock show / GTA 6, all with original icons. Before the Play release, recheck
-   using third-party names as product names.
+   the mockup are Beer / Rock show / GTA 6. Beer and GTA 6 have original icons; Rock show uses a prism
+   image supplied by the owner (source and licence to confirm before release). Before the Play
+   release, recheck using third-party names as product names.
 5. **Privacy:** no analytics, no accounts, no server. Nothing leaves the phone except traffic to
    Instagram itself and a daily fetch of the public filter rules.
 6. **Disclaimer:** "Not affiliated with Instagram or Meta" on the store listing and the About screen.
@@ -109,12 +110,15 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 
 ## Messages & calls (optional, built after the first phone test)
 
-25. The real Instagram app stays installed but hidden, only for notifications and calls.
+25. The real Instagram app stays installed (its icon is not hidden, see #28), only for notifications
+    and calls; the guard (#27) keeps the user out of it.
 26. **Relay:** calls ring normally and are answered in the real app. Message notifications are replaced
     by Throwback's own, which open the Throwback inbox (or messages-only mode when locked). Other
     notification types are per-type toggles, all off by default.
 27. **Guard:** opening the real Instagram app outside a call shows "Use Throwback instead" and returns
-    the user to Throwback. During a call it is allowed.
+    the user to Throwback. During a call it is allowed. Throwback itself opens the app with a short
+    pass in two cases: a chat's call button (the mobile website has no calls) and "Open Instagram for
+    5 minutes" on the Messages & calls screen (switching accounts, Instagram's own settings).
 28. A 2-step setup wizard: install Instagram (via the Play Store), then grant the permissions
     (notification access, usage access, display over other apps; Android 13+ also asks to allow
     notifications). No "hide the icon" step: the guard sends the user back to Throwback anyway, and

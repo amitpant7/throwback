@@ -28,7 +28,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -102,7 +101,6 @@ internal fun OnboardingFlowContent(onFinished: () -> Unit, onOpenMessagesSetup: 
 @Composable
 private fun WelcomeScreen(onLogIn: () -> Unit) {
     val colors = ThrowbackTheme.colors
-    val onLogInState by rememberUpdatedState(onLogIn)
     Column(
         Modifier
             .fillMaxSize()
@@ -136,7 +134,7 @@ private fun WelcomeScreen(onLogIn: () -> Unit) {
             FeatureGrid()
             Spacer(Modifier.height(24.dp))
         }
-        PrimaryButton(stringResource(R.string.ui_onb_login), onClick = { onLogInState() })
+        PrimaryButton(stringResource(R.string.ui_onb_login), onClick = onLogIn)
         Text(
             stringResource(R.string.ui_onb_note),
             style = UiText.fine,

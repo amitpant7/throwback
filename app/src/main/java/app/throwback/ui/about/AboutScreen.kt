@@ -103,7 +103,7 @@ internal fun AboutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                     )
                     Text(
                         stringResource(R.string.ui_support_body),
-                        style = UiText.body14.copy(lineHeight = UiText.lead.lineHeight),
+                        style = UiText.body14,
                         color = colors.muted,
                         modifier = Modifier.padding(top = 6.dp, bottom = 14.dp),
                     )

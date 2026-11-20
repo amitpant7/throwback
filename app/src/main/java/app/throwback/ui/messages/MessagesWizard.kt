@@ -40,7 +40,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
@@ -127,7 +126,8 @@ private fun StepLayout(
             } else {
                 stringResource(R.string.ui_wizard_step, step.number, WizardStep.COUNT)
             }
-            StepBars(current = step.number, total = WizardStep.COUNT, modifier = Modifier.semantics { contentDescription = label })
+            // Decorative: the "Step n of 4" text right below says the same thing to TalkBack.
+            StepBars(current = step.number, total = WizardStep.COUNT)
             Text(label, style = UiText.sub, color = colors.muted, modifier = Modifier.padding(top = 10.dp, bottom = 18.dp))
             Text(
                 title,

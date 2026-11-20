@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- First-launch illustration: a small stack of instant photos. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="342dp" android:height="210dp"
+    android:width="171dp" android:height="105dp"
     android:viewportWidth="342" android:viewportHeight="210">
     <group android:pivotX="102" android:pivotY="102" android:rotation="-8">
         <path android:fillColor="#000000" android:fillAlpha="0.12"

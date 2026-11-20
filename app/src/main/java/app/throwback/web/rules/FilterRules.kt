@@ -49,6 +49,8 @@ data class FilterRules(
     val dismissMaxAttempts: Int = 40,
     /** Where Throwback adds its own section to Instagram's settings page (null: no section). */
     val settingsSection: SettingsSectionRules? = null,
+    /** Filtering of Instagram's feed data before the page draws it (null: off, page filtering only). */
+    val feedData: FeedDataRules? = null,
 )
 
 @Serializable
@@ -151,6 +153,34 @@ data class SettingsSectionRules(
     /** Section headings (any language) after whose section Throwback's section goes, e.g. "Your account". */
     val after: List<String>,
 )
+
+@Serializable
+data class FeedDataRules(
+    /** Keys of feed connections (objects with `edges[].node`) in Instagram's JSON data. */
+    val connections: List<String>,
+    /** Field of a feed node holding the post. */
+    val mediaField: String = "media",
+    /** Node fields that, when set, mark an ad. Never kept. */
+    val adNodeFields: List<String> = emptyList(),
+    /** Node fields holding a suggested post (the post is at `<field>.<mediaField>`). Discovery may keep a few. */
+    val suggestionNodeFields: List<String> = emptyList(),
+    /** Node fields marking other units (suggested accounts, surveys). Never kept. */
+    val dropNodeFields: List<String> = emptyList(),
+    /** Post tests marking an ad. Never kept. */
+    val adMedia: List<FieldTest> = emptyList(),
+    /** Post tests marking a post from someone you don't follow. Discovery may keep a few. */
+    val suggestedMedia: List<FieldTest> = emptyList(),
+    /** Node fields marking Instagram's own "You're all caught up" point. */
+    val endMarkerFields: List<String> = emptyList(),
+    /** End the feed at Instagram's marker (true) or only when only suggestions are left (false). */
+    val endAtMarker: Boolean = false,
+    /** This many pages in a row without a post from someone you follow = the end. */
+    val endAfterEmptyPages: Int = 3,
+)
+
+/** Matches when the value at [path] (dot-separated) is present, or equals [equals] as text. */
+@Serializable
+data class FieldTest(val path: String, val equals: String? = null, val present: Boolean? = null)
 
 @Serializable
 data class NavRules(val links: String, val minLinks: Int = 3)

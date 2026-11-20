@@ -45,6 +45,24 @@ class RulesParserTest {
     }
 
     @Test
+    fun `bundled rules filter feed data by node kind`() {
+        val fd = TestRules.bundled.feedData
+        assertNotNull(fd)
+        assertTrue("xdt_api__v1__feed__timeline__connection" in fd!!.connections)
+        assertEquals(listOf("ad"), fd.adNodeFields)
+        assertTrue("explore_story" in fd.suggestionNodeFields)
+        // friendship_status.following is unreliable on the real feed: it must not hide posts.
+        assertTrue(fd.suggestedMedia.none { it.path.contains("following") })
+    }
+
+    @Test
+    fun `broken feed data rules are rejected`() {
+        assertRejected(TestRules.bundledWith { it.replace("\"suggestionNodeFields\": [\"explore_story\"]", "\"suggestionNodeFields\": [\"explore story\"]") }, "bad field")
+        assertRejected(TestRules.bundledWith { it.replace("{\"path\": \"ad_id\", \"present\": true}", "{\"path\": \"ad_id\"}") }, "exactly one of")
+        assertRejected(TestRules.bundledWith { it.replace("\"endAfterEmptyPages\": 3", "\"endAfterEmptyPages\": 0") }, "endAfterEmptyPages")
+    }
+
+    @Test
     fun `built-in fallback rules are valid`() {
         assertEquals(emptyList<String>(), RulesValidator.validate(FallbackRules.rules))
     }

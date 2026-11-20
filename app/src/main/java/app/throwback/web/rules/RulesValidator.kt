@@ -17,6 +17,8 @@ object RulesValidator {
     private val ID = Regex("^[a-z0-9][a-z0-9-]{0,40}$")
     private val PAGE_NAME = Regex("^[a-z][a-z0-9-]{0,30}$")
     private val HOST = Regex("^(\\*\\.)?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$")
+    private val FIELD = Regex("^[A-Za-z_][A-Za-z0-9_]{0,80}$")
+    private val FIELD_PATH = Regex("^[A-Za-z_][A-Za-z0-9_]{0,80}(\\.[A-Za-z_][A-Za-z0-9_]{0,80}){0,6}$")
     private val KINDS = Regex("^[a-zA-Z][a-zA-Z0-9-]{0,30}$")
 
     private const val MAX_PATTERN = 300
@@ -108,6 +110,16 @@ object RulesValidator {
             check(n.minLinks in 2..10) { "nav.minLinks out of range" }
         }
         checkSelector(rules.readySelector, "readySelector", errors)
+        rules.feedData?.let { fd ->
+            checkTexts(fd.connections, "feedData.connections", errors)
+            val fields = fd.connections + fd.adNodeFields + fd.suggestionNodeFields + fd.dropNodeFields + fd.endMarkerFields + fd.mediaField
+            fields.forEach { check(FIELD.matches(it)) { "feedData: bad field '$it'" } }
+            (fd.adMedia + fd.suggestedMedia).forEach { t ->
+                check(FIELD_PATH.matches(t.path)) { "feedData: bad path '${t.path}'" }
+                check((t.equals != null) != (t.present != null)) { "feedData: '${t.path}' needs exactly one of equals/present" }
+            }
+            check(fd.endAfterEmptyPages in 1..20) { "feedData.endAfterEmptyPages out of range" }
+        }
         rules.settingsSection?.let { ss ->
             checkPattern(ss.path, "settingsSection.path", errors)
             checkTexts(ss.after, "settingsSection.after", errors)

@@ -156,22 +156,30 @@ Highlights:
 All of them end in `AppRoot` opening `SettingsRoot`. Test builds can also use
 `adb shell am start -n app.throwback/.MainActivity --es debug_open settings`.
 
-## 5c. How the feed bottom works (`throwback.js` `updateEndCard()`)
+## 5c. How the home feed is filtered (`throwback.js`)
 
-Instagram's ranked home feed comes in waves: posts from people you follow, then a long run of
-suggestions (hidden by Throwback), then older followed posts. Its list is virtualized: unrendered posts
-stand in as a large `padding-bottom` on the list. Throwback therefore uses two latched states, cleared
-only when a genuinely new real post appears:
+Two layers, decided 2026-11-20 after hiding drawn posts caused flicker:
 
-- **At the bottom** (`html[data-tb-feedgap]`): only hidden posts follow the last real post, which is
-  within 2 screens. The list's reserved padding is removed (no blank space, and Instagram's "load more"
-  point moves closer, so the next batch loads early); Instagram's own spinner shows while it loads.
-- **Ended** (`html[data-tb-feedend]`): at the bottom with 20 hidden posts in a row, or nothing new loaded
-  for 10 s while the bottom is on screen. "You're all caught up" card, spinner hidden.
+1. **Data filter (`installDataFilter`, rules `feedData`).** Instagram's page loads the feed as JSON pages
+   (`/graphql/query`, `PolarisFeedRootPaginationCachedQuery`, connection
+   `xdt_api__v1__feed__timeline__connection`). Each edge's node holds exactly one of `media` (followed),
+   `explore_story` (suggested; post at `explore_story.media`) or `ad`. `JSON.parse` and `Response.json`
+   are wrapped at document start; ads and suggestions are removed from the data before Instagram's code
+   sees it, so they are never drawn. The discovery allowance (DECISIONS 13b) keeps a few suggestions.
+   After 3 pages in a row with no followed post, `page_info.has_next_page` is set to false: Instagram
+   stops loading and "You're all caught up" shows right after the last post (exact end).
+   No extra requests: only data the page already downloaded is filtered.
+   `friendship_status.following` is NOT reliable (false on some followed-feed posts) and is not used.
+   Verified on the owner's phone: 0 posts needed hiding on screen over ~40,000 px of scrolling.
+2. **Hide until approved (`approvePost`, safety net).** On the home feed every `article` is hidden by
+   CSS until checked: it is revealed (`data-tb-ok`) in the same mutation callback that checks its
+   labels, before the frame paints. This covers the first batch, which is built into the page HTML,
+   and anything the data filter misses.
 
-Also: images of the next 4 real posts below the screen load early, and the WebView pre-rasters
-off-screen content (`WebViewConfig`). Discovery (DECISIONS 13b) lets a few suggestions through; see
-`allowDiscovery()`.
+Fallback bottom logic (`updateEndCard`) still handles hidden posts left in the DOM: two latched
+states, `data-tb-feedgap` (reserved space removed, Instagram's spinner shows) and `data-tb-feedend`
+(20 hidden in a row or 10 s idle at the bottom). Images of the next 4 real posts load early, and the
+WebView pre-rasters off-screen content.
 
 ## 5b. Ideas for later (owner)
 

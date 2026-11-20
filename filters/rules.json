@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112006,
+  "version": 2026112007,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -147,6 +147,19 @@
     "note": "Throwback adds its own section (opens Throwback's settings) to Instagram's settings page, right after the section with one of these headings.",
     "path": "^/accounts/settings/?$",
     "after": ["Your account", "Dein Konto", "Votre compte", "Tu cuenta", "Sua conta", "Il tuo account"]
+  },
+  "feedData": {
+    "note": "Removes ads and suggestions from Instagram's feed DATA before the page draws it (no flicker, exact end). Page filtering stays as the safety net. Checked on a real phone 2026-11-20: feed pages come from /graphql/query (PolarisFeedRootPaginationCachedQuery) as edges whose node has exactly one of media (followed), explore_story (suggested; post at explore_story.media) or ad. friendship_status.following is NOT reliable (false on some followed-feed posts), so it is not used.",
+    "connections": ["xdt_api__v1__feed__timeline__connection"],
+    "mediaField": "media",
+    "adNodeFields": ["ad"],
+    "suggestionNodeFields": ["explore_story"],
+    "dropNodeFields": ["suggested_users", "bloks_netego", "inline_survey"],
+    "adMedia": [{"path": "ad_id", "present": true}],
+    "suggestedMedia": [],
+    "endMarkerFields": ["end_of_feed_demarcator"],
+    "endAtMarker": false,
+    "endAfterEmptyPages": 3
   },
   "dismissMaxAttempts": 40
 }

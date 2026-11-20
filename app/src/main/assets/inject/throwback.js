@@ -35,6 +35,7 @@
   var KIND_MESSAGES = 'messagesOnly';
   var ATTR = 'data-tb'; // space-separated ids of the hide / hideText rules that matched
   var ATTR_POST = 'data-tb-post'; // a feed item removed whole (ad, suggestion)
+  var ATTR_OK = 'data-tb-ok'; // a home-feed post checked and allowed (posts are hidden until then)
   var ATTR_NAV = 'data-tb-nav'; // a navigation bar
   var ATTR_SLOT = 'data-tb-slot'; // a navigation slot whose only button is hidden
   var ATTR_EXPLORE = 'data-tb-explore'; // a block of the Explore grid
@@ -304,6 +305,19 @@
     c.explore = ex && validSelector(ex.keep) && validSelector(ex.items) ? { on: ex.on || 'explore', keep: ex.keep, items: ex.items } : null;
     var nav = rules.nav;
     c.nav = nav && validSelector(nav.links) ? { links: nav.links, minLinks: nav.minLinks || 3 } : null;
+    var fd = rules.feedData;
+    c.feedData = fd && fd.connections && fd.connections.length ? {
+      connections: fd.connections.slice(),
+      mediaField: fd.mediaField || 'media',
+      adNodes: fd.adNodeFields || [],
+      suggestionNodes: fd.suggestionNodeFields || [],
+      dropNodes: fd.dropNodeFields || [],
+      adMedia: fd.adMedia || [],
+      suggestedMedia: fd.suggestedMedia || [],
+      endMarkers: fd.endMarkerFields || [],
+      endAtMarker: !!fd.endAtMarker,
+      endAfterEmptyPages: typeof fd.endAfterEmptyPages === 'number' ? fd.endAfterEmptyPages : 3
+    } : null;
     var ss = rules.settingsSection;
     var ssRe = ss && toRegex(ss.path);
     c.settingsSection = ssRe && ss.after && ss.after.length ? { re: ssRe, after: textSet(ss.after) } : null;
@@ -339,6 +353,9 @@
       out.push(scopeFor(h.on) + ' [' + ATTR + '~="' + h.id + '"]' + HIDE);
     });
     out.push('[' + ATTR_POST + ']' + HIDE);
+    // Home feed: every post stays hidden until Throwback has checked it (approvePost), so a suggestion
+    // or ad can never flash on screen. The check runs before the frame paints.
+    out.push('html.tb-full.tb-on-home main ' + c.postContainer + ':not([' + ATTR_OK + ']):not([' + ATTR_DISCOVER + '])' + HIDE);
     out.push('[' + ATTR_SLOT + ']' + HIDE);
     out.push('[' + ATTR_THREADS + ']' + HIDE);
     // Discovery posts get a small tag so you always know it's not someone you follow.
@@ -658,6 +675,16 @@
     if (!list || visible === 0) {
       clearFeedBottom();
       return;
+    }
+    // The data filter knows the exact end (only suggestions left): the card goes right after the last post.
+    if (feedDataState.ended) {
+      state.dataEnd = true;
+      showEndCard(list);
+      return;
+    }
+    if (state.dataEnd) {
+      state.dataEnd = false;
+      clearFeedBottom();
     }
     var now = Date.now();
     // Instagram's home feed comes in waves: posts from people you follow, then a long run of
@@ -1079,6 +1106,169 @@
     post.setAttribute(ATTR_POST, id);
   }
 
+  // ---------------------------------------------------------------- feed data filter (option 1)
+
+  /*
+   * Instagram's page downloads the feed as JSON pages of edges; each node holds a post from someone you
+   * follow ("media"), a suggested post ("explore_story") or an ad (rules: feedData). Throwback removes
+   * ads and suggestions from that data before Instagram's code sees it, so the page never draws them:
+   * no hiding afterwards, no flicker, correct scrolling. The first batch comes built into the page;
+   * it is parsed with JSON.parse too, and the page-level filter below stays as the safety net.
+   * Nothing extra is requested from Instagram: only data the page already downloaded is filtered.
+   */
+  var feedDataState = { emptyPages: 0, sinceDiscovery: 0, cursors: {}, ended: false };
+  var dataFilterInstalled = false;
+
+  function installDataFilter() {
+    if (dataFilterInstalled) return;
+    dataFilterInstalled = true;
+    var nativeParse = JSON.parse;
+    var parse = function parse(text, reviver) {
+      var out = nativeParse.apply(JSON, arguments);
+      var fd = state.c && state.c.feedData;
+      if (fd && typeof text === 'string' && text.length > 200 && out && typeof out === 'object') {
+        for (var i = 0; i < fd.connections.length; i++) {
+          if (text.indexOf(fd.connections[i]) === -1) continue;
+          try {
+            filterFeedData(out, fd, 0);
+          } catch (e) {
+            // Never break Instagram's own parsing; the page-level filter still applies.
+          }
+          break;
+        }
+      }
+      return out;
+    };
+    try {
+      JSON.parse = parse;
+    } catch (e) {
+      return;
+    }
+    // fetch() responses read with .json() bypass JSON.parse; route them through it.
+    if (window.Response && Response.prototype && typeof Response.prototype.json === 'function') {
+      Response.prototype.json = function () {
+        return this.text().then(function (t) {
+          return JSON.parse(t);
+        });
+      };
+    }
+  }
+
+  function filterFeedData(o, fd, depth) {
+    if (!o || typeof o !== 'object' || depth > 16) return;
+    if (Array.isArray(o)) {
+      for (var i = 0; i < o.length; i++) filterFeedData(o[i], fd, depth + 1);
+      return;
+    }
+    for (var k in o) {
+      if (!Object.prototype.hasOwnProperty.call(o, k)) continue;
+      var v = o[k];
+      if (!v || typeof v !== 'object') continue;
+      if (fd.connections.indexOf(k) !== -1 && Array.isArray(v.edges)) filterConnection(v, fd);
+      else filterFeedData(v, fd, depth + 1);
+    }
+  }
+
+  function fieldIn(n, fields) {
+    for (var i = 0; i < fields.length; i++) if (n[fields[i]] != null) return fields[i];
+    return null;
+  }
+
+  function valueAt(o, path) {
+    var parts = path.split('.');
+    for (var i = 0; i < parts.length && o != null; i++) o = o[parts[i]];
+    return o;
+  }
+
+  function anyTest(o, tests) {
+    for (var i = 0; i < tests.length; i++) {
+      var t = tests[i];
+      var v = valueAt(o, t.path);
+      if (t.present != null ? (v != null) === !!t.present : v != null && String(v) === t.equals) return true;
+    }
+    return false;
+  }
+
+  function filterConnection(conn, fd) {
+    var info = conn.page_info;
+    var cursor = info && info.end_cursor;
+    // The same page can be parsed more than once (cache, re-render): count it only the first time.
+    var fresh = !cursor || !feedDataState.cursors[cursor];
+    if (cursor) feedDataState.cursors[cursor] = 1;
+    var kept = [];
+    var followed = 0;
+    var endAt = false;
+    for (var i = 0; i < conn.edges.length; i++) {
+      var e = conn.edges[i];
+      var n = e && e.node;
+      if (!n || typeof n !== 'object') {
+        kept.push(e);
+        continue;
+      }
+      if (fieldIn(n, fd.endMarkers)) {
+        if (fd.endAtMarker) {
+          endAt = true;
+          break;
+        }
+        continue; // Instagram's mid-feed "caught up" marker; Throwback shows its own at the real end
+      }
+      if (fieldIn(n, fd.adNodes) || fieldIn(n, fd.dropNodes)) continue;
+      var sField = fieldIn(n, fd.suggestionNodes);
+      var media = sField ? n[sField] && n[sField][fd.mediaField] : n[fd.mediaField];
+      if (media && typeof media === 'object' && anyTest(media, fd.adMedia)) continue;
+      if (sField || (media && anyTest(media, fd.suggestedMedia))) {
+        if (media && dataDiscovery(media, fresh)) kept.push(e);
+        continue;
+      }
+      kept.push(e);
+      if (media) {
+        followed++;
+        if (fresh) feedDataState.sinceDiscovery++;
+      }
+    }
+    conn.edges = kept;
+    if (fresh) feedDataState.emptyPages = followed > 0 ? 0 : feedDataState.emptyPages + 1;
+    var ended = endAt || feedDataState.emptyPages >= fd.endAfterEmptyPages;
+    // Only suggestions are left: tell Instagram there are no more pages, so it stops loading.
+    if (ended && info) info.has_next_page = false;
+    if (fresh) {
+      feedDataState.ended = ended;
+      if (state.c) schedulePass(false);
+    }
+  }
+
+  /** A suggested post from the data: kept when the discovery allowance has room (or it was kept before). */
+  function dataDiscovery(media, fresh) {
+    var key = typeof media.code === 'string' ? media.code : null;
+    var d = discState();
+    if (key && discoveredKeys[key]) return true;
+    if (!fresh || state.mode === MODE_MESSAGES || feedDataState.ended) return false;
+    var kind = media.media_type === 2 || media.product_type === 'clips' ? 'video' : 'photo';
+    if (!takeDiscovery(d, kind, feedDataState.sinceDiscovery >= DISCOVER.spacing, key)) return false;
+    feedDataState.sinceDiscovery = 0;
+    return true;
+  }
+
+  // ---------------------------------------------------------------- hide until approved (option 2)
+
+  /** Allows home-feed posts in root that have been checked (their header rendered, no ad/suggestion label). */
+  function approvePosts(root) {
+    if (!state.c || state.mode === MODE_MESSAGES || !pageActive('home') || !root) return;
+    var sel = state.c.postContainer + ':not([' + ATTR_OK + '])';
+    if (root.nodeType === 1 && root.matches(sel)) approvePost(root);
+    if (root.querySelectorAll) {
+      var posts = root.querySelectorAll(sel);
+      for (var i = 0; i < posts.length; i++) approvePost(posts[i]);
+    }
+  }
+
+  function approvePost(p) {
+    if (p.hasAttribute(ATTR_OK) || p.hasAttribute(ATTR_POST) || p.hasAttribute(ATTR_DISCOVER)) return;
+    // Until its header (profile link) has rendered, a post can't be checked: it waits, hidden.
+    if (!p.querySelector('a[href]')) return;
+    p.setAttribute(ATTR_OK, '1');
+  }
+
   // ---------------------------------------------------------------- discovery
 
   /*
@@ -1092,6 +1282,9 @@
   var ATTR_DISCOVER = 'data-tb-discover';
   var DISCOVER = { windowSec: 300, perDay: 20, spacing: 8, storageKey: '__tb_discover' };
   var disc = null;
+  // Posts let through on this page, so a re-render keeps them. Deliberately not stored: when Instagram
+  // suggests the same post again after a restart, it counts against the allowance like any other.
+  var discoveredKeys = {};
 
   function today() {
     return new Date().toDateString();
@@ -1106,7 +1299,7 @@
       }
     }
     if (!disc || disc.date !== today()) {
-      disc = { date: today(), count: 0, feedSec: 0, win: -1, video: 0, photo: 0, keys: [] };
+      disc = { date: today(), count: 0, feedSec: 0, win: -1, video: 0, photo: 0 };
     }
     return disc;
   }
@@ -1131,7 +1324,19 @@
     if (document.documentElement.hasAttribute(ATTR_FEED_END)) return false;
     var d = discState();
     var key = postKey(post);
-    if (key && d.keys.indexOf(key) >= 0) return true; // already shown today
+    if (key && discoveredKeys[key]) return true; // already let through on this page (or by the data filter)
+    var kind = post.querySelector('video') ? 'video' : 'photo';
+    // Spread out: enough posts from people you follow since the previous discovery (or the top).
+    var followed = 0;
+    for (var s = post.previousElementSibling; s; s = s.previousElementSibling) {
+      if (s.hasAttribute(ATTR_DISCOVER)) break;
+      if (s.tagName === 'ARTICLE' && !s.hasAttribute(ATTR_POST)) followed++;
+    }
+    return takeDiscovery(d, kind, followed >= DISCOVER.spacing, key);
+  }
+
+  /** The shared allowance: 1 video and 1 photo per 5 minutes of feed time, 20 a day, spaced out. */
+  function takeDiscovery(d, kind, spacedOut, key) {
     if (d.count >= DISCOVER.perDay) return false;
     var win = Math.floor(d.feedSec / DISCOVER.windowSec);
     if (win !== d.win) {
@@ -1139,18 +1344,10 @@
       d.video = 0;
       d.photo = 0;
     }
-    var kind = post.querySelector('video') ? 'video' : 'photo';
-    if (d[kind] >= 1) return false;
-    // Spread out: enough posts from people you follow since the previous discovery (or the top).
-    var followed = 0;
-    for (var s = post.previousElementSibling; s; s = s.previousElementSibling) {
-      if (s.hasAttribute(ATTR_DISCOVER)) break;
-      if (s.tagName === 'ARTICLE' && !s.hasAttribute(ATTR_POST)) followed++;
-    }
-    if (followed < DISCOVER.spacing) return false;
+    if (d[kind] >= 1 || !spacedOut) return false;
     d[kind]++;
     d.count++;
-    if (key) d.keys.push(key);
+    if (key) discoveredKeys[key] = 1;
     saveDisc();
     return true;
   }
@@ -1407,6 +1604,7 @@
     if (!document.documentElement) return;
     scanHide(document.documentElement);
     scanText(document.documentElement);
+    approvePosts(document.documentElement);
     schedulePass(true);
   }
 
@@ -1422,6 +1620,7 @@
       fixViewport();
       updateProfileEntry();
       updateSettingsSection();
+      approvePosts(document.querySelector('main'));
       updateEndCard();
       dismissDialogs();
       applyExplore();
@@ -1478,6 +1677,20 @@
     for (var t = 0; t < texts.length; t++) {
       if (texts[t].isConnected) checkTextElement(texts[t], 0);
     }
+    // After the label checks, in the same task (before paint): reveal the posts that passed.
+    if (pageActive('home') && state.mode !== MODE_MESSAGES) {
+      var postSel = state.c.postContainer;
+      for (var a = 0; a < added.length; a++) {
+        if (!added[a].isConnected) continue;
+        approvePosts(added[a]);
+        var host = added[a].parentElement && added[a].parentElement.closest(postSel);
+        if (host) approvePost(host);
+      }
+      for (var b = 0; b < texts.length; b++) {
+        var hostT = texts[b].isConnected && texts[b].closest(postSel);
+        if (hostT) approvePost(hostT);
+      }
+    }
     if (added.length || texts.length) schedulePass(false);
   }
 
@@ -1491,6 +1704,7 @@
       state.c = compile(cfg.rules);
     }
     if (!state.c) return false;
+    installDataFilter();
     if (typeof cfg.css === 'string') state.baseCss = cfg.css;
     if (cfg.mode && cfg.mode !== state.mode) {
       state.mode = cfg.mode === MODE_MESSAGES ? MODE_MESSAGES : MODE_FULL;
@@ -1576,6 +1790,7 @@
     state.css = buildCss(state.c, state.baseCss);
     ensureStyle();
     applyClasses();
+    installDataFilter(); // before Instagram's own scripts parse any feed data
     start();
   }
 })(__THROWBACK_CONFIG__);

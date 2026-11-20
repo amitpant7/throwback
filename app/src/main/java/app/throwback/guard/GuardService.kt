@@ -1,5 +1,6 @@
 package app.throwback.guard
 
+import android.media.AudioManager
 import android.app.Service
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
@@ -56,6 +57,9 @@ class GuardService : Service() {
     private val tracker = ForegroundTracker()
     private var lastQueryEnd = 0L
     private var lastCoverAt: Long? = null
+
+    /** Last time the phone's audio was in call mode (MODE_IN_CALL / MODE_IN_COMMUNICATION). */
+    private var callAudioAt: Long? = null
     private var coverShownAt = 0L
     private lateinit var overlay: GuardOverlay
 
@@ -148,6 +152,12 @@ class GuardService : Service() {
             if (overlay.showing && (fg == packageName || now - coverShownAt > COVER_MAX_MS) && now - coverShownAt > COVER_MIN_MS) {
                 overlay.hide()
             }
+            // A running voice/video call (Instagram's included) puts the audio in call mode; the call
+            // notification goes away once the call is answered, so this keeps the call allowed.
+            val audioMode = (getSystemService(AUDIO_SERVICE) as AudioManager).mode
+            if (audioMode == AudioManager.MODE_IN_CALL || audioMode == AudioManager.MODE_IN_COMMUNICATION) {
+                callAudioAt = now
+            }
             val action = GuardPolicy.decide(
                 foreground = fg,
                 watched = RelayDebug.watchedPackages(),
@@ -156,6 +166,7 @@ class GuardService : Service() {
                 graceMillis = graceMillis,
                 allowUntil = GuardPass.allowUntil,
                 lastCoverAt = lastCoverAt,
+                callAudioAt = callAudioAt,
             )
             if (action == GuardAction.COVER) cover(now)
             delay(POLL_MS)

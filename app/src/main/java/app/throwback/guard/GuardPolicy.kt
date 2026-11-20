@@ -43,6 +43,9 @@ internal object GuardPolicy {
      *        guard does nothing at all: a call must never be blocked (DECISIONS.md #20).
      * @param allowUntil Throwback itself opened the Instagram app (setup) and allows it until then.
      * @param lastCoverAt when the guard last covered the app, or null.
+     * @param callAudioAt the last time the phone's audio was in call mode (a voice/video call is
+     *        running), or null. Instagram shows no notification once a call is answered (seen on the
+     *        owner's phone), so the call notification alone ended the call too early.
      */
     fun decide(
         foreground: String?,
@@ -52,10 +55,12 @@ internal object GuardPolicy {
         graceMillis: Long,
         allowUntil: Long = 0L,
         lastCoverAt: Long? = null,
+        callAudioAt: Long? = null,
     ): GuardAction = when {
         foreground == null || foreground !in watched -> GuardAction.NONE
         !calls.listenerConnected -> GuardAction.NONE
         calls.inCallOrGrace(now, graceMillis) -> GuardAction.NONE
+        callAudioAt != null && now - callAudioAt in 0..graceMillis -> GuardAction.NONE
         now < allowUntil -> GuardAction.NONE
         lastCoverAt != null && now - lastCoverAt in 0 until COVER_COOLDOWN_MS -> GuardAction.NONE
         else -> GuardAction.COVER

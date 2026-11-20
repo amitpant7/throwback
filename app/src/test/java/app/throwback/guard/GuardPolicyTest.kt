@@ -84,4 +84,17 @@ class GuardPolicyTest {
         t.onEvent(ForegroundTracker.ACTIVITY_RESUMED, null)
         assertNull(t.current)
     }
+
+    @Test
+    fun `an answered call (call audio, no notification) is never covered`() {
+        val noCall = CallSnapshot(listenerConnected = true)
+        fun decide(now: Long, audioAt: Long?) = GuardPolicy.decide(
+            foreground = InstagramPackages.APP, watched = InstagramPackages.ALL, now = now,
+            calls = noCall, graceMillis = 5_000L, callAudioAt = audioAt,
+        )
+        assertEquals(GuardAction.NONE, decide(now = 100_000L, audioAt = 100_000L)) // call running
+        assertEquals(GuardAction.NONE, decide(now = 104_000L, audioAt = 100_000L)) // just hung up: grace
+        assertEquals(GuardAction.COVER, decide(now = 106_000L, audioAt = 100_000L)) // call over
+        assertEquals(GuardAction.COVER, decide(now = 106_000L, audioAt = null))
+    }
 }

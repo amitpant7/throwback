@@ -13,8 +13,10 @@ import app.throwback.guard.ForegroundTracker.Companion.ACTIVITY_STOPPED
 import app.throwback.relay.RelayDebug
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.TimeLimitModule
+import app.throwback.ui.messages.Permissions
 import java.time.LocalDate
 import kotlin.math.max
+import kotlin.math.min
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -94,13 +96,18 @@ internal object GuardHeartbeat {
         val last = p.getLong(KEY, 0L)
         val now = System.currentTimeMillis()
         if (now - last in 0 until STALE_MS) return
+        // Without usage access Android returns no events (not an error): keep the beat, count later.
+        if (!Permissions.hasUsageAccess(context)) return
         val limit = TimeLimitModule.create(context) as? DefaultTimeLimitController ?: return
         withTimeoutOrNull(LOAD_WAIT_MS) { limit.ready.first { it } } ?: return
         if (limit.currentLockState() != LockState.Disabled) {
             val today = limit.trustedTime() ?: return
-            // Only today's time counts. Midnight of the trusted day, on the phone's clock (the events').
+            // Only today's time counts: from midnight of the trusted day, on the phone's clock (the
+            // events'). Taken as is, or moved by the phone's clock's offset from the trusted time,
+            // whichever is earlier: the offset is wrong while the trusted time lags (after a reboot,
+            // before network time), the plain value while the phone's clock is set wrong.
             val midnight = LocalDate.ofEpochDay(today.epochDay).atStartOfDay(today.zone).toInstant().toEpochMilli()
-            val from = max(last, midnight + (now - today.wallMillis))
+            val from = max(last, min(midnight, midnight + (now - today.wallMillis)))
             if (from < now) {
                 val events = read(context, from - READ_BEFORE_MS, now) ?: return
                 val millis = AppTime.inFront(events, RelayDebug.watchedPackages(), from, now)
@@ -113,7 +120,7 @@ internal object GuardHeartbeat {
         beat(context, now) // counted up to now
     }
 
-    /** The watched apps' activity events, or null without usage access. */
+    /** The watched apps' activity events, or null if Android won't give them. */
     private fun read(context: Context, begin: Long, end: Long): List<ActivityEvent>? {
         val usm = context.getSystemService(UsageStatsManager::class.java) ?: return null
         val events = try {

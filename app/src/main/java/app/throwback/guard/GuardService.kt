@@ -42,6 +42,7 @@ import app.throwback.web.rules.DEFAULT_CALL_GRACE_SECONDS
 import app.throwback.web.rules.FilterRules
 import app.throwback.web.rules.RulesRepository
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -90,8 +91,7 @@ class GuardService : Service() {
     /** Last time the phone's audio was in call mode for an Instagram call. */
     private var callAudioAt: Long? = null
 
-    /** When an Instagram call notification was last seen, and whether the call audio is that call. */
-    private var lastInstagramCallAt: Long? = null
+    /** Whether the call audio is an Instagram call. */
     private val callAudio = CallAudioLink()
 
     /** Since when the notification listener is disconnected, and the last rebind request. */
@@ -258,13 +258,13 @@ class GuardService : Service() {
             val watched = RelayDebug.watchedPackages()
             val instagramOnScreen = tracker.onScreen(watched)
             val calls = CallState.tracker.state.value
-            if (calls.inCall) lastInstagramCallAt = now
             followListener(calls, now)
             val audioMode = getSystemService(AudioManager::class.java)?.mode
             val inCallAudio = audioMode == AudioManager.MODE_IN_CALL || audioMode == AudioManager.MODE_IN_COMMUNICATION
             // Call audio keeps Instagram allowed only if it is an Instagram call (see CallAudioLink):
-            // its call notification was seen within IG_CALL_LINK_MS, or the call started in Instagram.
-            val igCallRecently = lastInstagramCallAt?.let { now - it < IG_CALL_LINK_MS } == true
+            // its call notification was seen within IG_CALL_LINK_MS (the relay notes when it went, also
+            // with the screen off), or the call started in Instagram.
+            val igCallRecently = calls.inCall || calls.lastCallEndedAt?.let { now - it in 0 until IG_CALL_LINK_MS } == true
             if (callAudio.update(inCallAudio, tracker.current in watched, igCallRecently)) callAudioAt = now
             if (GuardPass.active(now)) followPass(now, tracker.current, calls, inCallAudio)
             val action = GuardPolicy.decide(
@@ -286,6 +286,7 @@ class GuardService : Service() {
                     overlay.hide()
                     noCoverUntil = now + GuardPolicy.STEP_ASIDE_MS
                     windowLeftOpen = true
+                    queryFrom = null // and checks from scratch, in case an event was missed
                 }
                 GuardAction.NONE -> Unit
             }
@@ -295,8 +296,15 @@ class GuardService : Service() {
 
     private fun poll(usm: UsageStatsManager) {
         val end = System.currentTimeMillis()
-        // First run, or the clock moved back: look back a while to learn what is on screen now.
-        val begin = queryFrom?.takeIf { it <= end }?.coerceAtLeast(end - LOOK_BACK_MS) ?: (end - LOOK_BACK_MS)
+        val from = queryFrom?.takeIf { it <= end }
+        val begin = if (from != null) {
+            max(from, end - LOOK_BACK_MS)
+        } else {
+            // First run, the clock moved back, or a check from scratch: what is on screen now is
+            // rebuilt from the last hour (not added on top, or an old screen could seem still open).
+            tracker.clear()
+            end - LOOK_BACK_MS
+        }
         val events = try {
             usm.queryEvents(begin, end)
         } catch (e: RuntimeException) {
@@ -368,15 +376,13 @@ class GuardService : Service() {
      * and only a short wait follows.
      */
     private fun leftInstagram(now: Long) {
-        if (GuardPass.kind == GuardPass.Kind.STORY && PassRules.storyLeftEarly(
-                sinceGrant = now - GuardPass.grantedAt,
-                cameraOffMillis = GuardPass.outsideMillis,
-                freeLeaveMillis = (rules().story?.freeLeaveMinutes ?: 3) * 60_000L,
-            )
-        ) {
-            CallInApp.storyLeftEarly(this)
-        }
-        GuardPass.end()
+        val leftEarly = GuardPass.kind == GuardPass.Kind.STORY && PassRules.storyLeftEarly(
+            sinceGrant = now - GuardPass.grantedAt,
+            cameraOffMillis = GuardPass.outsideMillis,
+            freeLeaveMillis = (rules().story?.freeLeaveMinutes ?: 3) * 60_000L,
+        )
+        // Only if this ended it: the relay may just have ended it as posted (and forgiven it).
+        if (GuardPass.endIfActive(now) && leftEarly) CallInApp.storyLeftEarly(this)
     }
 
     /**
@@ -466,10 +472,10 @@ class GuardService : Service() {
                 // or when Android restarts the sticky service, it starts again; meanwhile a
                 // notification says the guard is off (tap: Throwback opens and starts it).
                 Log.w(TAG, "guard could not start now: ${e.message}")
-                RelayNotifier.showGuardOff(context)
+                if (!running) RelayNotifier.showGuardOff(context)
             } catch (e: SecurityException) {
                 Log.w(TAG, "guard could not start: ${e.message}")
-                RelayNotifier.showGuardOff(context)
+                if (!running) RelayNotifier.showGuardOff(context)
             }
         }
 

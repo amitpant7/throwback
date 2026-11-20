@@ -7,10 +7,12 @@ import app.throwback.relay.CallSnapshot
  * service feeds it (type, package, class).
  *
  * [current] is the app last brought to the front (for the passes' bookkeeping). Being on screen is
- * followed per app: from an activity's RESUMED until its STOPPED or DESTROYED (Android 10+), so an
- * app in split screen, a pop-up window or picture-in-picture still counts. There it stays resumed,
- * or only pauses, and switching between windows logs nothing. Without STOPPED events (below
- * Android 10, [stopEvents] false) PAUSED ends it.
+ * followed per app, the way Android's own usage tracking does it (Android 10+): an activity is
+ * visible from its RESUMED, or a PAUSED (one can come back paused, e.g. a picture-in-picture window
+ * after the screen was off), until its STOPPED or DESTROYED. So an app in split screen, a pop-up
+ * window or picture-in-picture still counts: there it stays resumed, or only pauses, and switching
+ * between windows logs nothing. Without STOPPED events (below Android 10, [stopEvents] false)
+ * PAUSED ends it.
  */
 internal class ForegroundTracker(private val stopEvents: Boolean = true) {
     var current: String? = null
@@ -20,24 +22,30 @@ internal class ForegroundTracker(private val stopEvents: Boolean = true) {
     var currentClass: String? = null
         private set
 
-    /** The visible activities (classes) of each app. */
-    private val visible = HashMap<String, MutableSet<String>>()
+    /**
+     * The visible activities (classes) of each app; true while that screen was resumed after its
+     * last pause. Events don't say which instance of a screen they are about, and a screen opened
+     * from the same screen (A1 paused, A2 resumed, then A1 stopped) must stay visible.
+     */
+    private val visible = HashMap<String, HashMap<String, Boolean>>()
 
     fun onEvent(type: Int, packageName: String?, className: String? = null) {
         packageName ?: return
+        val screen = className.orEmpty()
         when (type) {
             ACTIVITY_RESUMED -> {
                 current = packageName
                 currentClass = className
-                visible.getOrPut(packageName) { HashSet() }.add(className.orEmpty())
+                visible.getOrPut(packageName) { HashMap() }[screen] = true
             }
             ACTIVITY_PAUSED -> {
                 leftFront(packageName, className)
-                if (!stopEvents) hidden(packageName, className)
+                if (stopEvents) visible.getOrPut(packageName) { HashMap() }[screen] = false else hidden(packageName, screen)
             }
             ACTIVITY_STOPPED, ACTIVITY_DESTROYED -> {
+                if (visible[packageName]?.get(screen) == true) return // an older instance of a screen resumed since
                 leftFront(packageName, className)
-                hidden(packageName, className)
+                hidden(packageName, screen)
             }
         }
     }
@@ -45,7 +53,7 @@ internal class ForegroundTracker(private val stopEvents: Boolean = true) {
     /** Whether any of [packages] is on screen, in front or not. */
     fun onScreen(packages: Set<String>): Boolean = packages.any { !visible[it].isNullOrEmpty() }
 
-    /** The screen went off: nothing is on screen; the events replayed from then on rebuild it. */
+    /** Start over (the screen went off, or a check from scratch): the events replayed next rebuild it. */
     fun clear() {
         visible.clear()
         current = null
@@ -59,10 +67,10 @@ internal class ForegroundTracker(private val stopEvents: Boolean = true) {
         }
     }
 
-    private fun hidden(packageName: String, className: String?) {
-        val classes = visible[packageName] ?: return
-        classes.remove(className.orEmpty())
-        if (classes.isEmpty()) visible.remove(packageName)
+    private fun hidden(packageName: String, screen: String) {
+        val screens = visible[packageName] ?: return
+        screens.remove(screen)
+        if (screens.isEmpty()) visible.remove(packageName)
     }
 
     companion object {
@@ -214,6 +222,7 @@ internal object GuardPass {
     @Volatile
     var sawInstagram: Boolean = false
 
+    @Synchronized
     fun grant(now: Long, durationMs: Long, kind: Kind) {
         grantedAt = now
         outsideMillis = 0L
@@ -224,8 +233,20 @@ internal object GuardPass {
 
     fun active(now: Long): Boolean = now < allowUntil
 
+    @Synchronized
     fun end() {
         allowUntil = 0L
+    }
+
+    /**
+     * Ends the pass if it still runs; true only for the one caller that ended it. The guard (left
+     * early) and the relay (posted) can both see a story pass end: only one may forgive it.
+     */
+    @Synchronized
+    fun endIfActive(now: Long): Boolean {
+        if (!active(now)) return false
+        allowUntil = 0L
+        return true
     }
 }
 

@@ -220,6 +220,54 @@ class GuardPolicyTest {
     }
 
     @Test
+    fun `a picture-in-picture window that comes back paused after the screen was off is on screen`() {
+        val t = ForegroundTracker()
+        val reels = "com.instagram.clips.ClipsPipActivity"
+        t.onEvent(ACTIVITY_RESUMED, ig, reels)
+        t.onEvent(ACTIVITY_PAUSED, ig, reels)
+        t.onEvent(ACTIVITY_RESUMED, launcher, "Launcher")
+        t.onEvent(ACTIVITY_STOPPED, ig, reels) // screen off: everything stops
+        t.clear() // and the guard starts over from the events since
+        t.onEvent(ACTIVITY_RESUMED, launcher, "Launcher") // unlocked
+        t.onEvent(ACTIVITY_PAUSED, ig, reels) // the small window is back: paused, never resumed
+        assertTrue(t.onScreen(watched))
+        assertEquals(launcher, t.current)
+    }
+
+    @Test
+    fun `a screen opened from the same screen stays on screen when the first one stops`() {
+        val t = ForegroundTracker()
+        val modal = "com.instagram.modal.ModalActivity"
+        t.onEvent(ACTIVITY_RESUMED, ig, modal) // a profile
+        t.onEvent(ACTIVITY_PAUSED, ig, modal)
+        t.onEvent(ACTIVITY_RESUMED, ig, modal) // another profile, a second instance of the same screen
+        t.onEvent(ACTIVITY_STOPPED, ig, modal) // the first one stops
+        assertTrue(t.onScreen(watched))
+        assertEquals(ig, t.current)
+        // Back: the second one goes, the first one is resumed again.
+        t.onEvent(ACTIVITY_PAUSED, ig, modal)
+        t.onEvent(ACTIVITY_RESUMED, ig, modal)
+        t.onEvent(ACTIVITY_STOPPED, ig, modal)
+        t.onEvent(ACTIVITY_DESTROYED, ig, modal)
+        assertTrue(t.onScreen(watched))
+        assertEquals(ig, t.current)
+        // Home.
+        t.onEvent(ACTIVITY_PAUSED, ig, modal)
+        t.onEvent(ACTIVITY_RESUMED, launcher, "Launcher")
+        t.onEvent(ACTIVITY_STOPPED, ig, modal)
+        assertFalse(t.onScreen(watched))
+    }
+
+    @Test
+    fun `a pass ends, and is forgiven, only once`() {
+        GuardPass.grant(now, 60_000, GuardPass.Kind.STORY)
+        assertTrue(GuardPass.endIfActive(now + 1)) // e.g. the guard: left early
+        assertFalse(GuardPass.endIfActive(now + 2)) // the relay's "posted" a moment later: not again
+        GuardPass.grant(now, 60_000, GuardPass.Kind.STORY)
+        assertFalse(GuardPass.endIfActive(now + 60_000)) // ran out by itself
+    }
+
+    @Test
     fun `below Android 10 a pause ends it (there are no stop events)`() {
         val t = ForegroundTracker(stopEvents = false)
         t.onEvent(ACTIVITY_RESUMED, ig, feed)

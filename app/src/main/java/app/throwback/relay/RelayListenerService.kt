@@ -213,15 +213,16 @@ class RelayListenerService : NotificationListenerService() {
 
     /** Instagram started posting (a story or post made through a pass): the pass has done its job. */
     private fun endPassWhenPosting(facts: NotificationFacts) {
-        if (!GuardPass.active(SystemClock.elapsedRealtime())) return
+        val now = SystemClock.elapsedRealtime()
+        if (!GuardPass.active(now)) return
         val kind = GuardPass.kind
         if (kind != GuardPass.Kind.STORY && kind != GuardPass.Kind.CREATE) return
         val pattern = RulesRepository.get(this).rules.value?.appCreate?.story?.postingChannels ?: return
         val channel = facts.channelId ?: return
         if (facts.packageName in InstagramPackages.ALL && runCatching { Regex(pattern).containsMatchIn(channel) }.getOrDefault(false)) {
             Log.i(TAG, "Instagram is posting: pass ends")
-            GuardPass.end()
-            if (kind == GuardPass.Kind.STORY) CallInApp.storyPosted(this)
+            // Forgiven only if this ended it (the guard may just have ended it for leaving Instagram).
+            if (GuardPass.endIfActive(now) && kind == GuardPass.Kind.STORY) CallInApp.storyPosted(this)
         }
     }
 }

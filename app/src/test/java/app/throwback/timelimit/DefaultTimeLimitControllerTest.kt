@@ -128,11 +128,11 @@ class DefaultTimeLimitControllerTest {
         assertEquals(loaded + 1, store.saves) // every 15 minutes
         c.onBackground()
         runCurrent()
-        assertEquals(loaded + 1, store.saves)
+        assertEquals(loaded + 2, store.saves) // and on leaving (a reboot counts on from it)
         // Real changes still go at once.
         c.setup(15, "1234")
         runCurrent()
-        assertEquals(loaded + 2, store.saves)
+        assertEquals(loaded + 3, store.saves)
     }
 
     @Test

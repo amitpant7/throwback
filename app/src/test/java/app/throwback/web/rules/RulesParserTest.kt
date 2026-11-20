@@ -84,6 +84,16 @@ class RulesParserTest {
     }
 
     @Test
+    fun `feed batch size and look-ahead are bundled and range-checked`() {
+        val fd = TestRules.bundled.feedData!!
+        assertEquals(24, fd.pageSize)
+        assertTrue(fd.paginationQueries.any { it.startsWith("PolarisFeedRootPaginationCachedQuery") })
+        assertEquals(7, fd.lookAheadPosts)
+        assertEquals(3, fd.lookAheadVideos)
+        assertRejected(TestRules.bundledWith { it.replace("\"pageSize\": 24", "\"pageSize\": 500") }, "pageSize")
+    }
+
+    @Test
     fun `built-in fallback rules are valid`() {
         assertEquals(emptyList<String>(), RulesValidator.validate(FallbackRules.rules))
     }

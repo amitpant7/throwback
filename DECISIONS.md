@@ -64,6 +64,12 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     player; photo stories ahead go to the browser's disk cache. The current story comes from the
     address (/stories/<user>/<id>/). Memory stays under ~3 MB and is cleared on leaving stories;
     off with Data Saver; no extra logged-in requests; nothing is marked seen (rules `stories`).
+13h. **Feed loading** (decided 2026-11-20): Instagram's own feed request asks for 24 entries instead
+    of 12 (its `first`; measured: 12 asked, ~10 returned, ~2 real posts after filtering, 4.5 s per
+    request). Owner chose 24. If Instagram refuses the bigger batch, back to 12 for the session.
+    Look-ahead: photos/thumbnails of the next 7 posts into the disk cache, start of the next 3
+    videos (400 KB + 64 KB audio) in memory, cleared off the feed. A 7-post buffer nudge is pending
+    measurement of how many real posts stay loaded ahead (`__throwback.feedStats()`).
 14. **No toggles.** Throwback is minimal; there is no setting to bring distractions back.
     Settings shows a read-only "Throwback removes" list.
 15. Video captions and descriptions must never be hidden (a known complaint about a competitor).

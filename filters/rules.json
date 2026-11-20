@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112014,
+  "version": 2026112015,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -160,7 +160,12 @@
     "suggestedMedia": [],
     "endMarkerFields": ["end_of_feed_demarcator"],
     "endAtMarker": false,
-    "endAfterEmptyPages": 3
+    "endAfterEmptyPages": 3,
+    "pageSize": 24,
+    "paginationQueries": ["PolarisFeedRootPaginationCachedQuery_subscribe", "PolarisFeedRootPaginationCachedQuery"],
+    "lookAheadPosts": 7,
+    "lookAheadVideos": 3,
+    "videoKB": 400
   },
   "reelViewer": {
     "note": "A reel opened from a chat plays in Instagram's full-screen swipe viewer (same address, a vertical scroll-snap strip of videos). The opened reel is free; the poster shows on a random swipe between posterOnSwipeMin and posterOnSwipeMax (picked each time a new count starts; swipes count within windowMinutes), then the viewer stops. After the poster, no free swipes for cooldownMinutes (stored on the device, so restarting doesn't reset it).",

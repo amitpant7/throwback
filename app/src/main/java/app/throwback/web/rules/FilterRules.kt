@@ -180,6 +180,19 @@ data class FeedDataRules(
     val endAtMarker: Boolean = false,
     /** This many pages in a row without a post from someone you follow = the end. */
     val endAfterEmptyPages: Int = 3,
+    /**
+     * Entries Instagram's own feed request asks for (its `first`), raised so each request brings more
+     * posts from people you follow after filtering. 0: unchanged.
+     */
+    val pageSize: Int = 0,
+    /** Friendly names of the feed requests whose `first` may be raised to [pageSize]. */
+    val paginationQueries: List<String> = emptyList(),
+    /** Look-ahead: photos (and video thumbnails) of this many upcoming posts go into the disk cache. */
+    val lookAheadPosts: Int = 0,
+    /** ... and the start of this many upcoming videos is kept in memory. */
+    val lookAheadVideos: Int = 0,
+    /** How much of each upcoming video's start to keep, in KB. */
+    val videoKB: Int = 400,
 )
 
 /** Matches when the value at [path] (dot-separated) is present, or equals [equals] as text. */

@@ -119,6 +119,11 @@ object RulesValidator {
                 check((t.equals != null) != (t.present != null)) { "feedData: '${t.path}' needs exactly one of equals/present" }
             }
             check(fd.endAfterEmptyPages in 1..20) { "feedData.endAfterEmptyPages out of range" }
+            check(fd.pageSize == 0 || fd.pageSize in 12..50) { "feedData.pageSize out of range" }
+            fd.paginationQueries.forEach { check(FIELD.matches(it)) { "feedData: bad query name '$it'" } }
+            check(fd.lookAheadPosts in 0..20) { "feedData.lookAheadPosts out of range" }
+            check(fd.lookAheadVideos in 0..10) { "feedData.lookAheadVideos out of range" }
+            check(fd.videoKB in 0..2048) { "feedData.videoKB out of range" }
         }
         rules.stories?.let { st ->
             (st.connections + st.adKeys).forEach { check(FIELD.matches(it)) { "stories: bad field '$it'" } }

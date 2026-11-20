@@ -318,7 +318,12 @@
       suggestedMedia: fd.suggestedMedia || [],
       endMarkers: fd.endMarkerFields || [],
       endAtMarker: !!fd.endAtMarker,
-      endAfterEmptyPages: typeof fd.endAfterEmptyPages === 'number' ? fd.endAfterEmptyPages : 3
+      endAfterEmptyPages: typeof fd.endAfterEmptyPages === 'number' ? fd.endAfterEmptyPages : 3,
+      pageSize: typeof fd.pageSize === 'number' ? fd.pageSize : 0,
+      paginationQueries: fd.paginationQueries || [],
+      lookAheadPosts: typeof fd.lookAheadPosts === 'number' ? fd.lookAheadPosts : 0,
+      lookAheadVideos: typeof fd.lookAheadVideos === 'number' ? fd.lookAheadVideos : 0,
+      videoKB: typeof fd.videoKB === 'number' ? fd.videoKB : 400
     } : null;
     var stR = rules.stories;
     c.stories = stR ? {
@@ -757,6 +762,7 @@
 
   /** Images of the next few real posts below the screen load now instead of when scrolled to. */
   function warmUpcoming(list) {
+    noteFeedPosition(list);
     var n = 0;
     var vh = window.innerHeight;
     for (var a = list.firstElementChild; a && n < LOOKAHEAD_POSTS; a = a.nextElementSibling) {
@@ -966,6 +972,11 @@
       stories.current = -1;
     } else {
       noteStoryLocation();
+    }
+    if (!pageActive('home')) {
+      feedAhead.store = {};
+      feedAhead.images = {};
+      feedAhead.current = -1;
     }
     state.bgDirty = true;
     if (state.textScanSkipped && textScanActive()) {
@@ -1607,10 +1618,14 @@
       var media = sField ? n[sField] && n[sField][fd.mediaField] : n[fd.mediaField];
       if (media && typeof media === 'object' && anyTest(media, fd.adMedia)) continue;
       if (sField || (media && anyTest(media, fd.suggestedMedia))) {
-        if (media && dataDiscovery(media, fresh)) kept.push(e);
+        if (media && dataDiscovery(media, fresh)) {
+          kept.push(e);
+          learnFeedMedia(media);
+        }
         continue;
       }
       kept.push(e);
+      learnFeedMedia(media);
       if (media) {
         followed++;
         if (fresh) feedDataState.sinceDiscovery++;
@@ -1653,10 +1668,17 @@
    */
   var nativeFetch = null;
   var STORY_AUDIO_BYTES = 64 * 1024;
-  var stories = {
-    items: [], ids: {}, store: {}, images: {}, height: 0, imgWidth: 0, current: -1,
-    stats: { learned: 0, prefetched: 0, hits: 0, failed: 0, images: 0 }
-  };
+  // A look-ahead state: items in viewing order, what is kept in memory (store) or was sent to the
+  // disk cache (images), the quality/size Instagram uses, and where the user is. One for stories,
+  // one for the home feed; each is cleared when leaving its page.
+  function newAhead() {
+    return {
+      items: [], ids: {}, store: {}, images: {}, height: 0, imgWidth: 0, current: -1,
+      stats: { learned: 0, prefetched: 0, hits: 0, failed: 0, images: 0 }
+    };
+  }
+  var stories = newAhead();
+  var feedAhead = newAhead();
 
   function filterStoryData(o, st, depth) {
     if (!o || typeof o !== 'object' || depth > 16) return;
@@ -1767,24 +1789,26 @@
     return out;
   }
 
-  /** A story photo loaded on the page: learn the size Instagram shows (not our own look-ahead loads). */
+  /** A photo loaded on the page: learn the size Instagram shows (not our own look-ahead loads). */
   function noteStoryImage(path) {
-    if (stories.images[path]) return;
-    for (var i = stories.items.length - 1; i >= 0; i--) {
-      var cands = stories.items[i].cands;
-      for (var c = 0; c < cands.length; c++) {
-        if (cands[c].path !== path) continue;
-        if (cands[c].width) stories.imgWidth = cands[c].width;
-        return;
+    [stories, feedAhead].forEach(function (la) {
+      if (la.images[path]) return;
+      for (var i = la.items.length - 1; i >= 0; i--) {
+        var cands = la.items[i].cands;
+        for (var c = 0; c < cands.length; c++) {
+          if (cands[c].path !== path) continue;
+          if (cands[c].width) la.imgWidth = cands[c].width;
+          return;
+        }
       }
-    }
+    });
   }
 
   function watchStoryImages() {
     if (!window.PerformanceObserver) return;
     try {
       new PerformanceObserver(function (list) {
-        if (!state.c || !state.c.stories || !pageActive('stories')) return;
+        if (!state.c || !(pageActive('stories') || pageActive('home'))) return;
         list.getEntries().forEach(function (e) {
           if (e.initiatorType !== 'img') return;
           var u = parseUrl(e.name);
@@ -1797,21 +1821,21 @@
   }
 
   /** The photo size closest to what Instagram showed last (else to the screen width). */
-  function pickImage(cands) {
-    var target = stories.imgWidth || Math.round(window.innerWidth * (window.devicePixelRatio || 1));
+  function pickImage(la, cands) {
+    var target = la.imgWidth || Math.round(window.innerWidth * (window.devicePixelRatio || 1));
     return cands.slice().sort(function (a, b) {
       return Math.abs(a.width - target) - Math.abs(b.width - target);
     })[0];
   }
 
   /** Into the browser's disk cache (not memory): Instagram's own image then loads from there. */
-  function prefetchImage(c) {
-    if (!c || stories.images[c.path]) return;
-    stories.images[c.path] = 1;
+  function prefetchImage(la, c) {
+    if (!c || la.images[c.path]) return;
+    la.images[c.path] = 1;
     var img = new Image();
     img.decoding = 'async';
     img.onload = function () {
-      stories.stats.images++;
+      la.stats.images++;
     };
     img.src = c.url;
   }
@@ -1820,17 +1844,18 @@
     return /(^|\.)(cdninstagram\.com|fbcdn\.net)$/.test(u.hostname);
   }
 
-  /** The player asks for a piece of a video: note where we are, and hand it over from memory if we can. */
+  /** The player asks for a piece of a video: learn its quality, and hand it over from memory if we can. */
   function storyFetchHit(url) {
-    if (url.indexOf('bytestart=') === -1 || !state.c || !state.c.stories) return null;
+    if (url.indexOf('bytestart=') === -1 || !state.c) return null;
     var u = parseUrl(url);
     if (!u || !storyCdn(u)) return null;
     noteStoryPlaying(u.pathname);
-    var e = stories.store[u.pathname];
+    var la = stories.store[u.pathname] ? stories : feedAhead;
+    var e = la.store[u.pathname];
     var start = +u.searchParams.get('bytestart');
     var end = +u.searchParams.get('byteend');
     if (!e || !e.buf || !(start >= 0) || !(end >= start) || end >= e.buf.byteLength) return null;
-    stories.stats.hits++;
+    la.stats.hits++;
     return Promise.resolve(new Response(e.buf.slice(start, end + 1), {
       status: 200,
       headers: { 'Content-Type': e.audio ? 'audio/mp4' : 'video/mp4' }
@@ -1838,14 +1863,16 @@
   }
 
   function noteStoryPlaying(path) {
-    for (var i = stories.items.length - 1; i >= 0; i--) {
-      var reps = stories.items[i].reps;
-      for (var r = 0; r < reps.length; r++) {
-        if (reps[r].path !== path) continue;
-        if (!reps[r].audio && reps[r].height) stories.height = reps[r].height; // the quality the player picks
-        return;
+    [stories, feedAhead].forEach(function (la) {
+      for (var i = la.items.length - 1; i >= 0; i--) {
+        var reps = la.items[i].reps;
+        for (var r = 0; r < reps.length; r++) {
+          if (reps[r].path !== path) continue;
+          if (!reps[r].audio && reps[r].height) la.height = reps[r].height; // the quality the player picks
+          return;
+        }
       }
-    }
+    });
   }
 
   /** Keeps the start of the next few videos in memory; drops everything else. */
@@ -1863,12 +1890,12 @@
     if (!(conn && conn.saveData)) {
       for (var i = stories.current + 1; i <= stories.current + st.ahead && i < stories.items.length; i++) {
         if (stories.items[i].cands.length) {
-          prefetchImage(pickImage(stories.items[i].cands));
+          prefetchImage(stories, pickImage(stories, stories.items[i].cands));
           continue;
         }
-        pickReps(stories.items[i].reps).forEach(function (rp) {
+        pickReps(stories, stories.items[i].reps).forEach(function (rp) {
           wanted[rp.path] = 1;
-          if (!stories.store[rp.path]) prefetchPiece(rp, rp.audio ? Math.min(STORY_AUDIO_BYTES, st.bytes) : st.bytes);
+          if (!stories.store[rp.path]) prefetchPiece(stories, rp, rp.audio ? Math.min(STORY_AUDIO_BYTES, st.bytes) : st.bytes);
         });
       }
     }
@@ -1878,14 +1905,14 @@
   }
 
   /** The video version closest to what the player last used (else the smallest), plus one audio. */
-  function pickReps(reps) {
+  function pickReps(la, reps) {
     var videos = reps.filter(function (r) {
       return !r.audio;
     });
     var audio = reps.filter(function (r) {
       return r.audio;
     })[0];
-    var target = stories.height;
+    var target = la.height;
     videos.sort(function (a, b) {
       return target ? Math.abs(a.height - target) - Math.abs(b.height - target) : a.height - b.height;
     });
@@ -1894,30 +1921,159 @@
     return out;
   }
 
-  function prefetchPiece(rp, bytes) {
+  function prefetchPiece(la, rp, bytes) {
     if (!bytes) return;
     var entry = { audio: rp.audio, buf: null };
-    stories.store[rp.path] = entry;
+    la.store[rp.path] = entry;
     var url = rp.url + (rp.url.indexOf('?') === -1 ? '?' : '&') + 'bytestart=0&byteend=' + (bytes - 1);
     nativeFetch.call(window, url, { credentials: 'omit', mode: 'cors' }).then(function (res) {
       if (!res.ok) throw new Error('status ' + res.status);
       return res.arrayBuffer();
     }).then(function (ab) {
-      if (stories.store[rp.path] !== entry) return; // dropped meanwhile
+      if (la.store[rp.path] !== entry) return; // dropped meanwhile
       entry.buf = new Uint8Array(ab);
-      stories.stats.prefetched++;
+      la.stats.prefetched++;
     }).catch(function () {
-      stories.stats.failed++;
-      if (stories.store[rp.path] === entry) delete stories.store[rp.path];
+      la.stats.failed++;
+      if (la.store[rp.path] === entry) delete la.store[rp.path];
     });
   }
 
-  function storyMemoryKB() {
+  function memoryKB(la) {
     var b = 0;
-    Object.keys(stories.store).forEach(function (p) {
-      if (stories.store[p].buf) b += stories.store[p].buf.byteLength;
+    Object.keys(la.store).forEach(function (p) {
+      if (la.store[p].buf) b += la.store[p].buf.byteLength;
     });
     return Math.round(b / 1024);
+  }
+
+  // ---------------------------------------------------------------- feed: bigger batches, look-ahead
+
+  /*
+   * Feed (rules: feedData). Instagram's feed request asks for 12 entries (`first`); after removing
+   * ads and suggestions only ~2-3 real posts are left, so it keeps waiting on slow requests (4.5 s
+   * measured). Its own request is raised to pageSize (24): the same request at the same moment, with
+   * more entries. If Instagram ever answers that with an error, it goes back to 12 for the session.
+   * Look-ahead as in stories: photos/thumbnails of the next lookAheadPosts posts go into the disk
+   * cache; the start of the next lookAheadVideos videos is kept in memory (cleared off the feed).
+   */
+  var feedTweak = { off: false, raised: 0, refused: 0, minAhead: null };
+
+  var tweakInstalled = false;
+
+  function installRequestTweak() {
+    var X = window.XMLHttpRequest;
+    if (tweakInstalled || !X || !X.prototype) return;
+    tweakInstalled = true;
+    var open = X.prototype.open;
+    var send = X.prototype.send;
+    X.prototype.open = function (method, url) {
+      this.__tbUrl = String(url || '');
+      return open.apply(this, arguments);
+    };
+    X.prototype.send = function (body) {
+      var out = body;
+      try {
+        if (typeof body === 'string' && this.__tbUrl.indexOf('/graphql') !== -1) {
+          out = raiseFeedPage(body);
+          if (out !== body) {
+            var xhr = this;
+            xhr.addEventListener('load', function () {
+              var t = '';
+              try {
+                t = typeof xhr.responseText === 'string' ? xhr.responseText.slice(0, 300) : '';
+              } catch (e) {
+                t = '';
+              }
+              if (xhr.status !== 200 || /"errors"\s*:/.test(t)) {
+                feedTweak.off = true; // Instagram refused the bigger batch: back to its own size
+                feedTweak.refused++;
+              }
+            });
+          }
+        }
+      } catch (e) {
+        out = body;
+      }
+      return send.call(this, out);
+    };
+  }
+
+  function raiseFeedPage(body) {
+    var fd = state.c && state.c.feedData;
+    if (!fd || !fd.pageSize || feedTweak.off || state.mode === MODE_MESSAGES) return body;
+    var form = new URLSearchParams(body);
+    if (fd.paginationQueries.indexOf(form.get('fb_api_req_friendly_name') || '') === -1) return body;
+    var vars = JSON.parse(form.get('variables') || 'null');
+    if (!vars || typeof vars.first !== 'number' || vars.first >= fd.pageSize) return body;
+    vars.first = fd.pageSize;
+    form.set('variables', JSON.stringify(vars));
+    feedTweak.raised++;
+    return form.toString();
+  }
+
+  /** A post the data filter kept: remember it in feed order, with its photo sizes and video versions. */
+  function learnFeedMedia(media) {
+    if (!media || typeof media !== 'object') return;
+    var id = typeof media.code === 'string' ? media.code : null;
+    if (!id || feedAhead.ids[id]) return;
+    var first = media.carousel_media && media.carousel_media[0] ? media.carousel_media[0] : media;
+    feedAhead.ids[id] = 1;
+    feedAhead.items.push({ id: id, reps: storyReps(first), cands: storyImages(first) });
+    feedAhead.stats.learned++;
+    if (feedAhead.items.length > 400) feedAhead.items.splice(0, feedAhead.items.length - 400);
+  }
+
+  /** The post on screen (from the feed list) → look ahead from there. */
+  function noteFeedPosition(list) {
+    var fd = state.c && state.c.feedData;
+    if (!fd || !fd.lookAheadPosts || !list) return;
+    var vh = window.innerHeight;
+    for (var a = list.firstElementChild; a; a = a.nextElementSibling) {
+      if (a.tagName !== 'ARTICLE' || a.hasAttribute(ATTR_POST)) continue;
+      if (a.getBoundingClientRect().bottom < vh * 0.3) continue;
+      var key = postKey(a);
+      if (!key) return;
+      for (var i = feedAhead.items.length - 1; i >= 0; i--) {
+        if (feedAhead.items[i].id !== key) continue;
+        var ahead = feedAhead.items.length - 1 - i;
+        if (feedTweak.minAhead === null || ahead < feedTweak.minAhead) feedTweak.minAhead = ahead;
+        if (feedAhead.current !== i) {
+          feedAhead.current = i;
+          setTimeout(feedLookAhead, 0);
+        }
+        return;
+      }
+      return;
+    }
+  }
+
+  function feedLookAhead() {
+    var fd = state.c && state.c.feedData;
+    if (!fd || !nativeFetch || feedAhead.current < 0 || !pageActive('home')) return;
+    var conn = navigator.connection;
+    var wanted = {};
+    var now = feedAhead.items[feedAhead.current];
+    if (now) now.reps.forEach(function (rp) {
+      wanted[rp.path] = 1;
+    });
+    if (!(conn && conn.saveData)) {
+      var videos = 0;
+      var bytes = fd.videoKB * 1024;
+      for (var i = feedAhead.current + 1; i <= feedAhead.current + fd.lookAheadPosts && i < feedAhead.items.length; i++) {
+        var it = feedAhead.items[i];
+        if (it.cands.length) prefetchImage(feedAhead, pickImage(feedAhead, it.cands)); // photo, or a video's thumbnail
+        if (!it.reps.length || videos >= fd.lookAheadVideos) continue;
+        videos++;
+        pickReps(feedAhead, it.reps).forEach(function (rp) {
+          wanted[rp.path] = 1;
+          if (!feedAhead.store[rp.path]) prefetchPiece(feedAhead, rp, rp.audio ? Math.min(STORY_AUDIO_BYTES, bytes) : bytes);
+        });
+      }
+    }
+    Object.keys(feedAhead.store).forEach(function (path) {
+      if (!wanted[path]) delete feedAhead.store[path];
+    });
   }
 
   // ---------------------------------------------------------------- hide until approved (option 2)
@@ -2418,6 +2574,7 @@
     }
     if (!state.c) return false;
     installDataFilter();
+    installRequestTweak();
     if (typeof cfg.css === 'string') state.baseCss = cfg.css;
     if (cfg.mode && cfg.mode !== state.mode) {
       state.mode = cfg.mode === MODE_MESSAGES ? MODE_MESSAGES : MODE_FULL;
@@ -2514,7 +2671,14 @@
       var s = stories.stats;
       return { learned: s.learned, videosAhead: s.prefetched, videoPiecesFromMemory: s.hits, failed: s.failed,
         photosAhead: s.images, current: stories.current, videoHeight: stories.height, photoWidth: stories.imgWidth,
-        inMemoryKB: storyMemoryKB() };
+        inMemoryKB: memoryKB(stories) };
+    },
+    feedStats: function () {
+      var s = feedAhead.stats;
+      return { requestsRaised: feedTweak.raised, refused: feedTweak.refused, raiseOff: feedTweak.off,
+        postsLearned: s.learned, current: feedAhead.current, postsLoadedAhead: feedAhead.items.length - 1 - feedAhead.current,
+        fewestAheadSeen: feedTweak.minAhead, photosAhead: s.images, videosAhead: s.prefetched,
+        videoPiecesFromMemory: s.hits, failed: s.failed, inMemoryKB: memoryKB(feedAhead) };
     }
   };
   try {
@@ -2533,6 +2697,7 @@
     ensureStyle();
     applyClasses();
     installDataFilter(); // before Instagram's own scripts parse any feed data
+    installRequestTweak(); // before Instagram's scripts send any feed request
     start();
   }
 })(__THROWBACK_CONFIG__);

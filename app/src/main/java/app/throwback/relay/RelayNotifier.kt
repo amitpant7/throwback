@@ -78,11 +78,11 @@ internal object RelayNotifier {
         val category = if (target == RelayTarget.MESSAGES) NotificationCompat.CATEGORY_MESSAGE else NotificationCompat.CATEGORY_SOCIAL
         // On the lock screen only "New message" shows, never who or what.
         val public = NotificationCompat.Builder(context, channelFor(target))
-            .setSmallIcon(R.drawable.ic_throwback_mark)
+            .setSmallIcon(R.drawable.ic_stat_throwback)
             .setContentTitle(fallback)
             .build()
         val notification = NotificationCompat.Builder(context, channelFor(target))
-            .setSmallIcon(R.drawable.ic_throwback_mark)
+            .setSmallIcon(R.drawable.ic_stat_throwback)
             .setContentTitle(title)
             .apply { text?.let { setContentText(it).setStyle(NotificationCompat.BigTextStyle().bigText(it)) } }
             .setCategory(category)

@@ -54,27 +54,12 @@ private val ButtonShape = RoundedCornerShape(14.dp)
 /** The Throwback logo: the rewind mark on an accent-coloured rounded square (placeholder art). */
 @Composable
 internal fun ThrowbackLogo(size: Dp, modifier: Modifier = Modifier, contentDescription: String? = null) {
-    val colors = ThrowbackTheme.colors
-    Box(
-        modifier
-            .size(size)
-            .then(if (contentDescription != null) Modifier.semantics { this.contentDescription = contentDescription } else Modifier),
-        contentAlignment = Alignment.Center,
-    ) {
-        // Same proportions as the mockup SVG: a 30/32 square with a 9/32 corner radius.
-        Box(
-            Modifier
-                .size(size * (30f / 32f))
-                .clip(RoundedCornerShape(size * (9f / 32f)))
-                .background(colors.accent),
-        )
-        Image(
-            painter = painterResource(R.drawable.ic_throwback_mark),
-            contentDescription = null,
-            colorFilter = ColorFilter.tint(colors.onAccent),
-            modifier = Modifier.size(size),
-        )
-    }
+    // The final logo (owner, 2026-11-20): the rounded mint tile with the portal, arrow and figure.
+    Image(
+        painter = painterResource(R.drawable.tb_logo),
+        contentDescription = contentDescription,
+        modifier = modifier.size(size),
+    )
 }
 
 /** Line icon from the ui_ic_* set, tinted. Decorative unless [contentDescription] is given. */

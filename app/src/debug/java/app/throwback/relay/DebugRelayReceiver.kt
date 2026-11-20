@@ -37,7 +37,7 @@ class DebugRelayReceiver : BroadcastReceiver() {
                 val channel = RelayDebug.FAKE_CHANNEL_PREFIX + kind
                 nm.createNotificationChannel(NotificationChannel(channel, "Fake $kind (test build)", NotificationManager.IMPORTANCE_LOW))
                 val b = NotificationCompat.Builder(context, channel)
-                    .setSmallIcon(R.drawable.ic_throwback_mark)
+                    .setSmallIcon(R.drawable.ic_stat_throwback)
                     .setContentTitle(intent.getStringExtra("title") ?: "Test sender")
                     .setContentText(intent.getStringExtra("text") ?: "Test $kind (fake)")
                 when (kind) {

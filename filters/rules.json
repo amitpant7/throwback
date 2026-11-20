@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112026,
+  "version": 2026112027,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -136,7 +136,7 @@
     "screens": "^instagram\\.features\\.creation\\.",
     "flowPackages": ["com.samsung.android.permissioncontroller", "com.miui.securitycenter", "com.coloros.securitypermission"],
     "triggers": [
-      { "selector": "svg[aria-label='Plus icon'], svg[aria-label='New post']" },
+      { "selector": "svg[aria-label='Plus icon'], svg[aria-label='New post'], svg[aria-label='Create'], [aria-label='New post'], a[href^='/create/'], a[href='/create']" },
       { "text": ["Your story", "Deine Story", "Votre story", "Tu historia", "Seu story", "La tua storia"], "fileInput": true }
     ],
     "note": "With the Instagram app connected, '+' and 'Your story' open the app's create screen (better editor). The guard allows only its creation screens (activity class pattern); the feed after posting ends the pass. The link opened MediaCaptureActivity on the emulator (2026-11-20)."

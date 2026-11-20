@@ -284,8 +284,10 @@ internal class InstagramWebController(
 
     /** The app's features changed (e.g. the Instagram app got connected): tell the page. */
     fun pushFeatures() {
-        if (destroyed || !started) return
-        injector.configureLive(PageScript.config()) {}
+        if (destroyed) return
+        // Pages loaded from now on (the script was built before the app knew), and the page on screen.
+        rules?.let { injector.install(PageScript.build(assets.template, assets.css, it, mode)) }
+        if (started) injector.configureLive(PageScript.config()) {}
     }
 
     private fun share(url: String) {

@@ -8,7 +8,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
    follow (with stories), no Reels, no Explore grid, no suggested posts, no ads.
 2. **Name** (owner, 2026-11-20): **"Throwback: 2019 Mode"** on the Play Store (colon, the usual
    "name: what it is" pattern; 20 of Play's 30 characters). Under the icon it is just "Throwback"
-   (launchers cut longer names). The logo is still a placeholder.
+   (launchers cut longer names). **Logo** (owner, 2026-11-20): "Falling backwards": a figure
+   falling backwards in a night-sky portal formed by a rewind arrow, on brand mint #8FD1AD. Masters in
+   `design/logo/`; the launcher (adaptive + legacy + round), splash, in-app logo, guard cover and the
+   white notification icon (made from the mark) all use it.
 3. **Repository:** public on GitHub (github.com/amitpant7/throwback). **Licence: PolyForm Strict 1.0.0**
    (owner, 2026-11-20, replacing GPL-3.0): personal and other non-commercial use only, no
    redistribution, no published changes. Source-available, not open source (so no F-Droid). The

@@ -124,7 +124,7 @@ class GuardService : Service() {
             android.app.PendingIntent.FLAG_IMMUTABLE,
         )
         val notification = NotificationCompat.Builder(this, RelayNotifier.CHANNEL_GUARD)
-            .setSmallIcon(R.drawable.ic_throwback_mark)
+            .setSmallIcon(R.drawable.ic_stat_throwback)
             .setContentTitle(getString(R.string.guard_notification_title))
             .setContentText(getString(R.string.guard_notification_text))
             .setStyle(NotificationCompat.BigTextStyle().bigText(getString(R.string.guard_notification_text)))

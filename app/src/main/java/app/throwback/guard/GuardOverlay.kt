@@ -121,10 +121,9 @@ private fun Cover() {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
-            painterResource(R.drawable.ic_throwback_mark),
+            painterResource(R.drawable.tb_logo),
             contentDescription = null,
-            colorFilter = ColorFilter.tint(colors.accentText),
-            modifier = Modifier.size(64.dp),
+            modifier = Modifier.size(72.dp),
         )
         Spacer(Modifier.height(20.dp))
         Text(

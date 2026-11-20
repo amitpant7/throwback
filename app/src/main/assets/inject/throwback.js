@@ -1093,10 +1093,10 @@
     for (var i = 0; i < ac.triggers.length && !hit; i++) {
       var t = ac.triggers[i];
       if (t.selector) {
-        var el = e.target.closest('[role=button],button,a');
+        var el = e.target.closest('[role=button],[role=link],button,a');
         hit = !!(el && (el.matches(t.selector) || el.querySelector(t.selector)));
       } else if (t.text && t.text.length) {
-        var b = e.target.closest('[role=button],button');
+        var b = e.target.closest('[role=button],[role=link],button');
         hit = !!(b && t.text.indexOf((b.textContent || '').trim()) !== -1 && (!t.fileInput || b.querySelector('input[type=file]')));
       }
     }

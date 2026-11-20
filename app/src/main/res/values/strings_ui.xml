@@ -7,7 +7,6 @@
     <string name="ui_next">Next</string>
     <string name="ui_not_now">Not now</string>
     <string name="ui_finish">Finish</string>
-    <string name="ui_done_next">Done, next</string>
     <string name="ui_allow">Allow</string>
     <string name="ui_granted">Done</string>
     <string name="ui_settings_failed">Couldn\'t open Android settings.</string>
@@ -78,9 +77,6 @@
     <string name="ui_install_button">Install</string>
     <string name="ui_install_button_description">Install the Instagram app from the Play Store</string>
 
-    <string name="ui_quiet_title">Quiet the Instagram app</string>
-    <!-- %1$s is ui_quiet_path, shown in bold. -->
-    <string name="ui_quiet_body">Log in to the Instagram app once, then go to %1$s and set:</string>
     <string name="ui_quiet_path">Profile → Menu → Notifications</string>
     <string name="ui_quiet_row_messages">Messages</string>
     <string name="ui_quiet_row_calls">Calls</string>
@@ -91,8 +87,12 @@
     <string name="ui_quiet_row_from_instagram">From Instagram</string>
     <string name="ui_quiet_keep_on">Keep on</string>
     <string name="ui_quiet_turn_off">Turn off</string>
-    <string name="ui_quiet_footer">Throwback also removes anything that slips through, so this just keeps your phone extra quiet.</string>
     <string name="ui_quiet_open_instagram">Open Instagram\'s settings</string>
+    <!-- Optional tip on the Messages & calls screen (was setup step 2). %1$s is ui_quiet_path, in bold. -->
+    <string name="ui_quiet_tip_title">For a quieter phone (optional)</string>
+    <string name="ui_quiet_tip_body">Throwback already removes everything except messages and calls. You can also turn the rest off in the Instagram app itself: %1$s.</string>
+    <string name="ui_quiet_tip_show">Show what to turn off</string>
+    <string name="ui_quiet_tip_hide">Hide</string>
 
     <string name="ui_perm_title">Three permissions</string>
     <string name="ui_perm_body">Each opens an Android settings screen. Turn Throwback on there, then come back.</string>

@@ -107,10 +107,12 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     notification types are per-type toggles, all off by default.
 27. **Guard:** opening the real Instagram app outside a call shows "Use Throwback instead" and returns
     the user to Throwback. During a call it is allowed.
-28. A 3-step setup wizard installs Instagram (via the Play Store), explains which Instagram
-    notifications to keep, and grants 3 permissions (notification access, usage access, display over
-    other apps). No "hide the icon" step: the guard sends the user back to Throwback anyway, and
-    "Remove it" covers uninstalling (decided 2026-11-20).
+28. A 2-step setup wizard: install Instagram (via the Play Store), then grant the permissions
+    (notification access, usage access, display over other apps; Android 13+ also asks to allow
+    notifications). No "hide the icon" step: the guard sends the user back to Throwback anyway, and
+    "Remove it" covers uninstalling (decided 2026-11-20). "Quiet the Instagram app" is not a step but
+    an optional tip on the Messages & calls screen ("For a quieter phone"), since the relay already
+    removes everything except messages and calls (owner, 2026-11-20).
 29. **Instagram app found:** after first login, if the Instagram app is installed, Throwback offers
     "Keep it for calls & messages", "Remove it" (opens Android Settings) or "Decide later".
 

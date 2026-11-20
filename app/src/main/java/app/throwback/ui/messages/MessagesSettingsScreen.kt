@@ -54,6 +54,7 @@ internal fun MessagesSettingsScreen(
     onBack: () -> Unit,
     onFinishSetup: () -> Unit,
     onTurnOff: () -> Unit,
+    showMessage: (String) -> Unit = {},
 ) {
     val colors = ThrowbackTheme.colors
     val state by rememberCheckedOnResume { MessagesSetupState.read(it) }
@@ -96,6 +97,8 @@ internal fun MessagesSettingsScreen(
                 color = colors.muted,
                 modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 10.dp),
             )
+
+            QuietTipCard(showMessage = showMessage, modifier = Modifier.padding(top = 18.dp))
 
             QuietButton(
                 stringResource(R.string.ui_turn_off_messages),

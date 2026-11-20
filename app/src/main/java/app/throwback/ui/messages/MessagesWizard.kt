@@ -69,9 +69,12 @@ import app.throwback.ui.common.TopBar
 import app.throwback.ui.common.UiText
 import app.throwback.ui.common.rememberCheckedOnResume
 
-/** The three steps of the Messages & calls setup (DECISIONS.md #28; the hide-icon step was dropped). */
+/**
+ * The two steps of the Messages & calls setup (DECISIONS.md #28). The hide-icon step was dropped;
+ * "Quiet the Instagram app" became an optional tip on the Messages & calls screen (owner, 2026-11-20).
+ */
 internal enum class WizardStep {
-    Install, Quiet, Permissions;
+    Install, Permissions;
 
     val number: Int get() = ordinal + 1
     fun next(): WizardStep? = entries.getOrNull(ordinal + 1)
@@ -107,7 +110,6 @@ internal fun MessagesWizard(onExit: () -> Unit, onFinish: () -> Unit, showMessag
         ) { current ->
             when (current) {
                 WizardStep.Install -> InstallStep(onNext = goNext, onNotNow = onExit, showMessage = showMessage)
-                WizardStep.Quiet -> QuietStep(onNext = goNext, showMessage = showMessage)
                 WizardStep.Permissions -> PermissionsStep(onNext = goNext, showMessage = showMessage)
             }
         }
@@ -216,91 +218,6 @@ private fun BulletPoint(@DrawableRes icon: Int, @StringRes text: Int) {
 }
 
 // ---------------------------------------------------------------------------------- step 2
-
-private class QuietRow(@StringRes val label: Int, val keepOn: Boolean)
-
-private val QUIET_ROWS = listOf(
-    QuietRow(R.string.ui_quiet_row_messages, keepOn = true),
-    QuietRow(R.string.ui_quiet_row_calls, keepOn = true),
-    QuietRow(R.string.ui_quiet_row_posts, keepOn = false),
-    QuietRow(R.string.ui_quiet_row_following, keepOn = false),
-    QuietRow(R.string.ui_quiet_row_live, keepOn = false),
-    QuietRow(R.string.ui_quiet_row_fundraisers, keepOn = false),
-    QuietRow(R.string.ui_quiet_row_from_instagram, keepOn = false),
-)
-
-@Composable
-private fun QuietStep(onNext: () -> Unit, showMessage: (String) -> Unit) {
-    val colors = ThrowbackTheme.colors
-    val context = LocalContext.current
-    val notInstalled = stringResource(R.string.ui_instagram_not_installed_message)
-    val openFailed = stringResource(R.string.ui_instagram_open_failed)
-
-    StepLayout(
-        step = WizardStep.Quiet,
-        title = stringResource(R.string.ui_quiet_title),
-        buttons = {
-            SecondaryButton(
-                stringResource(R.string.ui_quiet_open_instagram),
-                onClick = {
-                    val pkg = InstagramApp.installedPackage(context)
-                    // The guard (if already running) lets Throwback's own "open Instagram" through for a while.
-                    if (pkg != null) GuardPass.grant(SystemClock.elapsedRealtime())
-                    when {
-                        pkg == null -> showMessage(notInstalled)
-                        !SystemScreens.launchApp(context, pkg) -> showMessage(openFailed)
-                    }
-                },
-                modifier = Modifier.padding(bottom = 10.dp),
-            )
-            PrimaryButton(stringResource(R.string.ui_done_next), onClick = onNext)
-        },
-    ) {
-        val path = stringResource(R.string.ui_quiet_path)
-        val body = stringResource(R.string.ui_quiet_body, path)
-        val start = body.indexOf(path)
-        Text(
-            buildAnnotatedString {
-                append(body)
-                if (start >= 0) {
-                    addStyle(SpanStyle(color = colors.text, fontWeight = FontWeight.SemiBold), start, start + path.length)
-                }
-            },
-            style = UiText.lead,
-            color = colors.muted,
-        )
-        Spacer(Modifier.height(16.dp))
-        TbCard {
-            QUIET_ROWS.forEachIndexed { index, row ->
-                if (index > 0) CardDivider()
-                Row(
-                    Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Text(stringResource(row.label), style = UiText.row15, color = colors.text, modifier = Modifier.weight(1f))
-                    val tagBg = if (row.keepOn) colors.accent else colors.surface2
-                    val tagFg = if (row.keepOn) colors.onAccent else colors.text
-                    Text(
-                        stringResource(if (row.keepOn) R.string.ui_quiet_keep_on else R.string.ui_quiet_turn_off),
-                        style = UiText.fine.copy(fontWeight = FontWeight.SemiBold),
-                        color = tagFg,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(tagBg)
-                            .padding(horizontal = 8.dp, vertical = 3.dp),
-                    )
-                }
-            }
-        }
-        Text(
-            stringResource(R.string.ui_quiet_footer),
-            style = UiText.sub,
-            color = colors.muted,
-            modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 12.dp),
-        )
-    }
-}
 
 // ---------------------------------------------------------------------------------- step 3
 

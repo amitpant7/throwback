@@ -159,6 +159,7 @@ private fun RouteContent(
                         prefs.write { setMessagesSetupDone(false) }
                         back()
                     },
+                    showMessage = showMessage,
                 )
                 false -> Box(Modifier.navigationBarsPadding()) {
                     MessagesWizard(

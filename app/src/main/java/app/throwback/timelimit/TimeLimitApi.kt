@@ -31,7 +31,7 @@ object TimeLimitModule {
         }
 
     private fun build(app: Context): TimeLimitController = DefaultTimeLimitController(
-        clock = AndroidClock(app),
+        clock = AndroidClock.create(app),
         store = DataStoreStateStore.create(app),
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
         ioDispatcher = Dispatchers.IO,

@@ -3,7 +3,7 @@ package app.throwback.timelimit.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -49,17 +49,18 @@ internal fun RemainingChip(controller: TimeLimitController, modifier: Modifier =
         }
     }
     val fg = if (warning) c.onAccent else c.text
+    // At least 30dp tall, and taller with a large font size instead of cutting the text off.
     Row(
         modifier
-            .height(30.dp)
-            .clip(RoundedCornerShape(15.dp))
+            .heightIn(min = 30.dp)
+            .clip(RoundedCornerShape(percent = 50))
             .background(if (warning) c.accent else c.surface2)
-            .padding(horizontal = 10.dp)
+            .padding(horizontal = 10.dp, vertical = 4.dp)
             .clearAndSetSemantics { contentDescription = description },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         TlIcon(R.drawable.tl_ic_clock, size = 16.dp, tint = fg)
-        Text(text, style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"), color = fg)
+        Text(text, style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"), color = fg, maxLines = 1)
     }
 }

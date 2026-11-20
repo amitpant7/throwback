@@ -153,7 +153,10 @@ private fun SetupScreen(controller: DefaultTimeLimitController, onClose: () -> U
     }
 }
 
-/** The 15/30/45/60 minute choice (mockup `.chip`; 48dp tall for touch). */
+/**
+ * The 15/30/45/60 minute choice (mockup `.chip`; at least 48dp tall for touch). With a very large font
+ * size a label wraps onto two lines and the chip grows, rather than being cut off.
+ */
 @Composable
 private fun LimitChoices(selected: Int, onPick: (Int) -> Unit) {
     val c = ThrowbackTheme.colors
@@ -163,16 +166,18 @@ private fun LimitChoices(selected: Int, onPick: (Int) -> Unit) {
             Box(
                 Modifier
                     .weight(1f)
-                    .height(48.dp)
-                    .clip(RoundedCornerShape(24.dp))
+                    .heightIn(min = 48.dp)
+                    .clip(RoundedCornerShape(percent = 50))
                     .background(if (isSelected) c.accent else c.surface2)
-                    .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onPick(m) }),
+                    .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onPick(m) })
+                    .padding(horizontal = 4.dp, vertical = 6.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     stringResource(R.string.tl_minutes_chip, m),
                     style = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
                     color = if (isSelected) c.onAccent else c.text,
+                    textAlign = TextAlign.Center,
                 )
             }
         }

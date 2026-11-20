@@ -5,12 +5,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -38,15 +43,25 @@ import app.throwback.ui.common.UiText
 internal fun ReelPosterContent(onBack: () -> Unit, backEnabled: Boolean = true) {
     val colors = ThrowbackTheme.colors
     BackHandler(enabled = backEnabled, onBack = onBack)
-    Column(
+    BoxWithConstraints(
         Modifier
             .fillMaxSize()
             .background(colors.bg)
             // Takes the touches so they don't reach the page underneath. A plain click handler, not a
             // consume-everything pointer filter: that cancelled taps on children (a finger always moves).
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
-            .safeDrawingPadding()
-            .padding(horizontal = 28.dp, vertical = 24.dp),
+            .safeDrawingPadding(),
+    ) {
+        // Centred, and scrolls when it doesn't fit (large font sizes): the last line is the only way-out hint.
+        PosterText(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).heightIn(min = maxHeight))
+    }
+}
+
+@Composable
+private fun PosterText(modifier: Modifier) {
+    val colors = ThrowbackTheme.colors
+    Column(
+        modifier.padding(horizontal = 28.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.Center,
     ) {
         val big = TextStyle(fontFamily = Nunito, fontWeight = FontWeight.ExtraBold, fontSize = 32.sp, lineHeight = 38.sp)

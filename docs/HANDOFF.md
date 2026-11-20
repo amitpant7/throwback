@@ -157,8 +157,7 @@ Highlights:
       parallel startup loads.
 - [ ] Owner decisions: wizard step 2 ("Quiet the Instagram app": keep, optional tip, or remove);
       single reel from a link; /explore/people; hashtags/search; cookie auto-decline; "Copy page
-      info" debug action; a one-time hint about where Throwback's settings are; whether "caught up"
-      should stop at Instagram's own marker (`feedData.endAtMarker`, now false).
+      info" debug action; a one-time hint about where Throwback's settings are.
 - [ ] M5 (relay + guard), M6 (release).
 
 ## 5a. Ways into Throwback's settings (no button on the feed)

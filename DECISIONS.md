@@ -44,7 +44,9 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     messages and the story viewer use, and prefetches them when the feed is idle on later starts
     (skipped with Data Saver; no logged-in requests). Measured: inbox 1.0 s → 0.88 s, 0 files
     downloaded; repeat warm-ups come from cache.
-13c. **Feed bottom** (decided 2026-11-20): never blank space. Gaps between waves of followed posts show
+13c. **Feed bottom** (decided 2026-11-20): never blank space. "You're all caught up" appears only when only
+    suggestions are left, not at Instagram's own "seen all new posts" point (owner confirmed
+    2026-11-20; rules `feedData.endAtMarker` = false). Gaps between waves of followed posts show
     Instagram's loading spinner; "You're all caught up" only when only suggestions are left (20 hidden
     in a row, or nothing new for 10 s at the bottom). The next posts are loaded ahead for smooth scrolling.
 13f. **Reels sent in chats** (decided 2026-11-20): a reel opened from a chat plays in Instagram's

@@ -1333,6 +1333,23 @@
     return true;
   }
 
+  // ---------------------------------------------------------------- nothing plays while covered
+
+  /*
+   * While a Throwback screen (Settings, the lock, the pause, the reel poster) covers the page, nothing
+   * may keep playing underneath: what plays is paused, and anything that starts while covered is
+   * paused at once. Nothing is resumed afterwards; Instagram starts videos again itself on scroll.
+   */
+  function pauseAllMedia() {
+    var media = document.querySelectorAll('video, audio');
+    for (var i = 0; i < media.length; i++) if (!media[i].paused) media[i].pause();
+  }
+
+  function onCoveredPlay(e) {
+    var m = e.target;
+    if (state.covered && m && (m.tagName === 'VIDEO' || m.tagName === 'AUDIO')) m.pause();
+  }
+
   // ---------------------------------------------------------------- messages and stories warm-up
 
   /*
@@ -2121,6 +2138,7 @@
     }, { passive: true });
     window.addEventListener('click', onClick, true);
     document.addEventListener('play', onMediaPlay, true); // media events don't bubble; capture sees them
+    document.addEventListener('play', onCoveredPlay, true);
     window.addEventListener('pointerup', function () {
       perf.lastTap = performance.now();
     }, { capture: true, passive: true });
@@ -2162,6 +2180,7 @@
     setCovered: function (covered) {
       state.covered = !!covered;
       reelEvent('covered', { on: !!covered });
+      if (covered) pauseAllMedia();
       // Backup: when the poster goes away, a stopped viewer that is somehow still open gets closed.
       if (!covered) closeReelViewer();
     },

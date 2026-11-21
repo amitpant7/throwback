@@ -19,7 +19,7 @@ Free. Source available for personal use (see Licence). No accounts, no tracking.
   messages open in Throwback; other Instagram notifications are removed unless you switch them on
   (security and login alerts always come through)
 - A mindful pause before opening (on by default; can be turned off)
-- Make It Yours: your own home-screen name and icon for Throwback (unlocked by any tip)
+- Make It Yours: your own home-screen name and icon for Throwback
 
 ## Opening Throwback's settings
 
@@ -66,13 +66,13 @@ The debug APK is `app/build/outputs/apk/debug/app-debug.apk`. More in
 
 <!-- Personal story to be written with the author before release. -->
 
-## How tips work
+## Support
 
-Throwback is free. If you'd like to say thanks, Settings → Support Throwback offers three tips (A beer,
-A gig ticket, GTA 6). They're one-time payments made through Google Play in
-your own currency; Google keeps its fee and the rest goes to the developer. Any tip, once, unlocks
-Make It Yours (your own name and icon for Throwback on the home screen); tips also help keep the
-filters working as Instagram changes.
+Throwback is free, with nothing locked. Settings → Support Throwback → "Support me" opens the
+[support page](https://amitpant.com.np/throwback/support/) on the website; support there helps keep
+the filters working as Instagram changes. (In-app tips through Google Play are built but switched
+off: Google Play can't pay out to Nepal. See `throwback.playTips` in `gradle.properties` and
+DECISIONS.md #4e.)
 
 ## Licence
 

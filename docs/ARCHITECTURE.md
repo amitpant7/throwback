@@ -306,7 +306,7 @@ setup and the permissions. Notification access is checked for Throwback's listen
 | Where | What |
 |---|---|
 | DataStore `timelimit` | Time-limit state: limit, PIN hash and salt, usage, extensions, pending changes (**Auto Backup**) |
-| SharedPreferences `supporter` | Whether the user has tipped; unlocks Make It Yours (**Auto Backup**; Google Play also remembers the tips, and the app asks it at start) |
+| SharedPreferences `supporter` | Whether the user has tipped (builds with Google Play tips, #4e); there it unlocks Make It Yours (**Auto Backup**; Google Play also remembers the tips, and the app asks it at start). Without tips Make It Yours is free and this stays unset |
 | DataStore `ui_prefs` | Onboarding, pause, setup done, notification switches, hints (`AppPrefs`) |
 | DataStore `web` | Rules ETag and last check (the downloaded rules themselves: `files/filters/rules.json`) |
 | SharedPreferences `guard_passes`, `guard_heartbeat`, `relay_stats`, `rate_ask`, `support_ask`, `pause_lines` | Pass ledger, the guard's last beat, relay day counts, rating ask, support ask, the pause's line rotation |

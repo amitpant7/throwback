@@ -74,7 +74,7 @@ another device"), so never log the emulator out; don't like, follow or save with
 | `files/debug_clock` containing `<speed> [HH:MM]` | Time-limit clock runs faster; with `HH:MM` the day starts there. Delete it and `files/debug_clock_anchor` to return to real time |
 | `files/debug_noscript` | No page script: plain Instagram in the same WebView, as a baseline |
 | `am start … --es debug_open settings` or `messages` | Opens Settings or Connect › Instagram directly |
-| `am start … --ez debug_supporter true` | Acts as if a tip went through: unlocks Make It Yours (stays set) |
+| `am start … --ez debug_supporter true` | Acts as if a tip went through (stays set); matters only in builds with Google Play tips, where it unlocks Make It Yours |
 | `DebugRelayReceiver` broadcasts | Fake Instagram notifications; make the guard watch another app (see `app/src/debug/`) |
 
 APKs installed outside Google Play on Android 13+ get "App was denied access" (Android 15's wording)

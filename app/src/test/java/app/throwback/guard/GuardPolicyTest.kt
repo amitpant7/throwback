@@ -310,6 +310,25 @@ class GuardPolicyTest {
     }
 
     @Test
+    fun `leaving Instagram ends the pass without covering its screen while it stops`() {
+        val t = ForegroundTracker()
+        t.onEvent(ACTIVITY_RESUMED, ig, feed)
+        t.onEvent(ACTIVITY_PAUSED, ig, feed) // Home during a pass
+        t.onEvent(ACTIVITY_RESUMED, launcher, "Launcher")
+        // The guard sees the user leave (current) and ends the pass; Instagram is paused, not stopped.
+        val leftAt = now
+        val noCoverUntil = leftAt + GuardPolicy.LEAVING_MS
+        assertTrue(t.onScreen(watched))
+        assertEquals(GuardAction.NONE, decide(t.onScreen(watched), noCoverUntil = noCoverUntil))
+        t.onEvent(ACTIVITY_STOPPED, ig, feed)
+        now += 500
+        assertEquals(GuardAction.NONE, decide(t.onScreen(watched), noCoverUntil = noCoverUntil))
+        // Had it stayed on screen (picture-in-picture), it is covered after that moment.
+        now = noCoverUntil
+        assertEquals(GuardAction.COVER, decide(true, noCoverUntil = noCoverUntil))
+    }
+
+    @Test
     fun `a picture-in-picture window that comes back paused after the screen was off is on screen`() {
         val t = ForegroundTracker()
         val reels = "com.instagram.clips.ClipsPipActivity"

@@ -394,7 +394,9 @@ class GuardService : Service() {
             freeLeaveMillis = (rules().story?.freeLeaveMinutes ?: 3) * 60_000L,
         )
         // Only if this ended it: the relay may just have ended it as posted (and forgiven it).
-        if (GuardPass.endIfActive(now) && leftEarly) CallInApp.storyLeftEarly(this)
+        if (!GuardPass.endIfActive(now)) return
+        noCoverUntil = max(noCoverUntil, now + GuardPolicy.LEAVING_MS)
+        if (leftEarly) CallInApp.storyLeftEarly(this)
     }
 
     /**

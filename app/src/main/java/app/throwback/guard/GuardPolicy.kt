@@ -122,6 +122,13 @@ internal object GuardPolicy {
     const val STEP_ASIDE_MS = 2_500L
 
     /**
+     * No cover this long after leaving Instagram ended a pass: its screen is paused, still "on
+     * screen", until Android reports it stopped. Covering it then would take the user to Throwback
+     * instead of where they went (Home). A window left open (picture-in-picture) is covered after.
+     */
+    const val LEAVING_MS = 1_500L
+
+    /**
      * @param instagramOnScreen an Instagram app is on screen, in front or not (see ForegroundTracker).
      * @param calls the relay's call state. If the relay isn't connected, calls can't be seen, so the
      *        guard allows everything: a call must never be blocked (DECISIONS.md #20).

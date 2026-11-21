@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.core.ui.CardDivider
 import app.throwback.core.ui.TbButton
 import app.throwback.core.ui.TbButtonStyle
 import app.throwback.core.ui.TbIcon
@@ -124,6 +125,8 @@ private fun WelcomeScreen(onLogIn: () -> Unit) {
                 modifier = Modifier.padding(bottom = 20.dp),
             )
             FeatureGrid()
+            Box(Modifier.padding(vertical = 16.dp)) { CardDivider() }
+            AboutThrowbackRow()
             Spacer(Modifier.height(24.dp))
         }
         TbButton(stringResource(R.string.ui_onb_login), onClick = onLogIn)
@@ -150,27 +153,48 @@ private fun FeatureGrid() {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         items.chunked(2).forEach { pair ->
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                pair.forEach { (label, isKept) -> FeatureItem(label, isKept, Modifier.weight(1f)) }
+                pair.forEach { (label, isKept) ->
+                    if (isKept) {
+                        FeatureItem(
+                            label, R.drawable.ic_check, highlighted = true, Modifier.weight(1f),
+                            description = stringResource(R.string.ui_onb_kept_description, label),
+                        )
+                    } else {
+                        FeatureItem(label, R.drawable.ic_blocked, highlighted = false, Modifier.weight(1f))
+                    }
+                }
                 if (pair.size == 1) Spacer(Modifier.weight(1f))
             }
         }
     }
 }
 
+/** About Throwback itself, apart from the list above of what changes on Instagram. */
 @Composable
-private fun FeatureItem(label: String, kept: Boolean, modifier: Modifier) {
+private fun AboutThrowbackRow() {
+    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        FeatureItem(stringResource(R.string.ui_onb_collects_nothing), R.drawable.ic_shield, highlighted = true, Modifier.weight(1f))
+        FeatureItem(stringResource(R.string.ui_onb_code_public), R.drawable.ic_code, highlighted = true, Modifier.weight(1f))
+    }
+}
+
+/** One item: [highlighted] in the accent colour (kept, or about Throwback), else muted (removed). */
+@Composable
+private fun FeatureItem(
+    label: String,
+    @DrawableRes icon: Int,
+    highlighted: Boolean,
+    modifier: Modifier,
+    description: String = label,
+) {
     val colors = ThrowbackTheme.colors
-    val description = if (kept) stringResource(R.string.ui_onb_kept_description, label) else label
     Row(
         modifier.clearAndSetSemantics { contentDescription = description },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        TbIcon(
-            if (kept) R.drawable.ic_check else R.drawable.ic_blocked,
-            tint = if (kept) colors.accentText else colors.muted,
-        )
-        Text(label, style = UiText.body14, color = if (kept) colors.text else colors.muted)
+        TbIcon(icon, tint = if (highlighted) colors.accentText else colors.muted)
+        Text(label, style = UiText.body14, color = if (highlighted) colors.text else colors.muted)
     }
 }
 

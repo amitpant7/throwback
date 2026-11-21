@@ -311,7 +311,7 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
        "Recommended"; "Decide later" stays at the bottom).
     h. **No budget for browsing profiles or suggested accounts:** not worth the complexity.
     i. **Licence stays PolyForm Strict** (people may read the code, not publish copies), so the app
-       says "the code is public on GitHub", not "open source" (welcome screen's small print).
+       says "the code is public on GitHub", not "open source" (welcome screen; see t).
     j. **Releases on Google Play only** (#7).
     k. **"Open Instagram for 5 minutes" stays**, once a day (#27a).
     l. **The design canvas follows the app** (#33).
@@ -330,3 +330,7 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     s. **Code layout: dependencies go one way** (docs/ARCHITECTURE.md, "Code layers"). Moving the
        notification listener meant allowing Notification access once more after the update; accepted,
        since only test installs existed.
+    t. **The welcome screen has a row about Throwback itself** under the list of what changes on
+       Instagram: "Throwback collects nothing" (shield) and "Code is public" (`</>`). Not "no data
+       leaves your phone": Instagram still gets your Instagram activity. Kept apart from the "No
+       Reels" list so it doesn't read as if Instagram's own tracking were gone.

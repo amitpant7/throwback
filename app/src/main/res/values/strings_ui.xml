@@ -26,7 +26,9 @@
     <!-- TalkBack for the ticked items, e.g. "Stories, still here". -->
     <string name="ui_onb_kept_description">%1$s, still here</string>
     <string name="ui_onb_login">Log in to Instagram</string>
-    <string name="ui_onb_note">You log in on Instagram\'s own page. Throwback never sees your password.\nFree, and the code is public on GitHub. Not affiliated with Instagram or Meta.</string>
+    <string name="ui_onb_collects_nothing">Throwback collects nothing</string>
+    <string name="ui_onb_code_public">Code is public</string>
+    <string name="ui_onb_note">You log in on Instagram\'s own page. Throwback never sees your password.\nFree. Not affiliated with Instagram or Meta.</string>
 
     <!-- 1b · Instagram app found -->
     <string name="ui_found_icon_description">Instagram app installed</string>

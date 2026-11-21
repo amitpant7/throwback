@@ -5,7 +5,6 @@ import app.throwback.core.LockState
 import app.throwback.core.WebMode
 import java.time.Instant
 import java.time.LocalDate
-import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
@@ -18,10 +17,10 @@ import kotlin.math.min
  *   monotonic clock within a boot. Across a reboot the trusted wall clock is the only option.
  * - The engine keeps a "trusted" wall time. Network time (Android's own on 13+, else Instagram's
  *   server time) is used whenever there is one: the user can't set it. Otherwise, within a boot it
- *   is the last reading advanced by monotonic time, so moving the phone's clock (either way)
- *   changes nothing; small differences (time sync corrections) are followed. Right after a reboot
- *   without network time it counts only the time since boot on top of the last trusted time (the
- *   downtime is added once network time is back), so "clock forward + reboot" gains nothing.
+ *   is the last reading advanced by monotonic time, so moving the phone's clock (either way, by
+ *   any amount) changes nothing; network time does the corrections. Right after a reboot without
+ *   network time it counts only the time since boot on top of the last trusted time (the downtime
+ *   is added once network time is back), so "clock forward + reboot" gains nothing.
  * - The current day is the local date of the trusted time, but never earlier than the latest day
  *   seen, so moving the clock back can't reset usage.
  * - Usage only counts while a FULL-mode session is open, and any single counted interval is capped.
@@ -47,11 +46,11 @@ class TimeLimitEngine {
     internal fun trustedWall(anchor: Moment?, r: ClockReading): Long {
         r.networkMillis?.let { return it }
         if (anchor == null) return r.wallMillis
-        // Rebooted, so the stopwatch restarted: the last trusted time plus the time since boot, until
-        // network time arrives.
-        if (!sameBoot(anchor, r)) return anchor.wallMillis + r.elapsedMillis
-        val projected = anchor.wallMillis + (r.elapsedMillis - anchor.elapsedMillis)
-        return if (abs(r.wallMillis - projected) <= Rules.CLOCK_RESYNC_TOLERANCE_MILLIS) r.wallMillis else projected
+        // The phone's clock isn't followed even for small differences: the anchor moves with every
+        // reading, so repeated small nudges would add up. Within a boot the stopwatch since the anchor;
+        // rebooted, the stopwatch restarted: the time since boot, until network time arrives.
+        val since = if (sameBoot(anchor, r)) r.elapsedMillis - anchor.elapsedMillis else r.elapsedMillis
+        return anchor.wallMillis + since
     }
 
     private fun at(s: TimeLimitState, r: ClockReading) = At(r, trustedWall(s.anchor, r), savedZone(s, r))

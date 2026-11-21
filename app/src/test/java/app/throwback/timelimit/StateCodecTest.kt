@@ -95,7 +95,7 @@ class StateCodecTest {
     }
 
     @Test
-    fun `restore after a reboot (or on another phone) carries on by the wall clock`() {
+    fun `restore after a reboot (or on another phone) carries on from the saved time`() {
         val h = EngineHarness()
         h.setup(15)
         h.useUntilLocked()
@@ -113,6 +113,7 @@ class StateCodecTest {
         val wait = h.view().lock as LockPhase.Waiting
         assertTrue(wait.remainingMillis < 5 * MIN)
 
+        h.networkUp = true // Android's time sync, or Instagram's page.
         h.advanceToMidnight()
         h.refresh()
         assertEquals(LockState.Running(15 * MIN), h.view().lockState)

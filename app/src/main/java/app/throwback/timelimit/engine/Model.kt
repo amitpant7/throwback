@@ -205,9 +205,6 @@ object Rules {
     /** No single counted interval is longer than this, so a missed onBackground can't bill hours. */
     const val MAX_COUNTED_INTERVAL_MILLIS = 60 * SECOND
 
-    /** Wall-clock differences up to this are network time corrections and are followed; larger ones are ignored within a boot. */
-    const val CLOCK_RESYNC_TOLERANCE_MILLIS = 2 * MINUTE
-
     const val WRONG_PINS_BEFORE_BLOCK = 5
     const val PIN_BLOCK_MILLIS = 30 * SECOND
 }

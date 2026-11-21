@@ -360,11 +360,29 @@ class TimeLimitEngineTest {
     }
 
     @Test
-    fun `small clock corrections are followed`() {
+    fun `small clock nudges don't add up to a new day`() {
+        h.setup(30)
+        h.use(30 * MIN) // 09:30, locked.
+        repeat(500) { // 1:59 forward each time, over 16 hours in all: past midnight.
+            h.moveClock(2 * MIN - SEC)
+            h.refresh()
+        }
+        assertEquals(h.real, h.engine.trustedWall(h.s.anchor, h.reading()))
+        assertEquals(LockState.Locked, h.view().lockState)
+        assertEquals(LocalDateTime.of(2026, 11, 20, 0, 0).toLocalDate(), h.today)
+    }
+
+    @Test
+    fun `network time corrects the trusted time`() {
+        h.moveClock(MIN) // The phone's clock is a minute fast at the very first reading.
         h.setup(15)
-        h.moveClock(40 * SEC) // Network time correction.
+        assertEquals(h.real + MIN, h.s.anchor!!.wallMillis)
+        h.advance(HOUR)
         h.refresh()
-        assertEquals(h.wall, h.s.anchor!!.wallMillis)
+        assertEquals(h.real + MIN, h.s.anchor!!.wallMillis)
+        h.networkUp = true
+        h.refresh()
+        assertEquals(h.real, h.s.anchor!!.wallMillis)
     }
 
     // ---- Clock forward + reboot (network time) -----------------------------------------------

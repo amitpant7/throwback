@@ -60,7 +60,8 @@ class MainActivity : ComponentActivity() {
         // Test builds only: `adb shell am start -n app.throwback/.MainActivity --es debug_open settings`
         // (or messages) opens Settings directly, so screens can be checked without an Instagram login.
         val debugOpen = if (BuildConfig.DEBUG) intent.getStringExtra("debug_open") else null
-        // Test builds only: `--ez debug_supporter true` acts as if a tip went through (unlocks Make It Yours).
+        // Test builds only: `--ez debug_supporter true` acts as if a tip went through (in builds with
+        // Google Play tips it unlocks Make It Yours; in any build it ends the support ask).
         if (BuildConfig.DEBUG && intent.getBooleanExtra("debug_supporter", false)) Supporter.markTipped(this)
         // Google Play tips, in builds with them (#4e): owned ones unlock Make It Yours again after a reinstall.
         if (savedInstanceState == null) refreshTips(this)

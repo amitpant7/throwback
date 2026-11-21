@@ -38,7 +38,6 @@ android {
         targetSdk = 36
         versionCode = 4
         versionName = "0.2.0"
-        buildConfigField("boolean", "PLAY_TIPS", playTips.toString())
     }
 
     signingConfigs {

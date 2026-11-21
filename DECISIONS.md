@@ -226,10 +226,12 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     used to count). All passes are counted on the time limit's trusted clock, so changing the
     phone's date or time zone gives no extra passes (2026-11-20 review).
     Explore's 5 minutes also cover hashtag, place and keyword-result grids (every page under /explore/).
-27b. **Turning the guard off follows the time-limit rule** (owner, 2026-11-20): while a daily limit
-    is on, "Disconnect the Instagram app" needs the PIN and takes effect the next day ("Keep it on"
-    cancels it). Without a limit it is immediate (there is no PIN). If the limit itself is turned
-    off, a scheduled guard turn-off becomes due with it. Not preventable in-app: force-stopping
+27b. **Disconnecting Instagram takes 24 hours** (owner, 2026-11-21; was: the next day with a limit,
+    at once without one, which made "Disconnect" a way round everything). "Disconnect Instagram"
+    always takes effect 24 hours after it is asked for, on the trusted clock, with or without a
+    daily limit; a dialog says when, and the Instagram app stays covered until then. With a limit on
+    it also needs the PIN. "Keep it on" cancels it, without a PIN. Turning the limit off doesn't
+    move it. Not preventable in-app: force-stopping
     Throwback or revoking its permissions in Android settings. Since 2026-11-20, the real app's time
     while the guard was stopped is counted against the daily limit when Throwback next runs (call
     screens excepted, #20), and a notification says when the guard is off: Android stopped it and it
@@ -260,7 +262,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     notifications). No "hide the icon" step: the guard sends the user back to Throwback anyway, and
     "Remove it" covers uninstalling (decided 2026-11-20). "Quiet the Instagram app" is not a step but
     an optional tip on the Instagram app screen ("For a quieter phone"), since the relay already
-    removes everything except messages and calls (owner, 2026-11-20).
+    removes everything except messages and calls (owner, 2026-11-20). Reversed by #34bb: Instagram's
+    notifications must stay on (posting is seen through them), and the card asks for that.
 29. **Instagram app found:** after first login, if the Instagram app is installed, Throwback offers
     "Connect Instagram to Throwback" (Recommended, #34g), "Remove it" (opens Android Settings) or
     "Decide later".
@@ -269,8 +272,11 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 
 30. **Mindful pause:** **on by default** (owner, 2026-11-20: Instagram loads underneath, so it hides the
     page load), can be turned off in Settings. **4 seconds**, then "Almost there…" until the feed
-    underneath is ready (at most 5 s more); no buttons (Back still leaves). 30 short
-    original lines in a shuffled order that goes through all of them before repeating.
+    underneath is ready (at most 5 s more); no buttons (Back still leaves). Throwback's own short
+    lines and sourced quotes in a shuffled order that goes through all of them before repeating;
+    every line asks the reader something or nudges them to do something, never says what life is
+    (owner, 2026-11-21; quotes checked against their sources, old texts in public-domain
+    translations; #34ee for the tips).
 31. **Make It Yours** (owner, 2026-11-21; was "Add to home screen", then "Customize icon"): a home-screen shortcut with the
     user's own name and icon: the logo on the app colour, dark or light, a photo frame, or the user's
     own picture (cropped square, any picture; Throwback ships no Instagram name or logo, but the
@@ -404,6 +410,20 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
         Rules: `stories.addStory`; page script `27-add-story.js`.
     ee. **Your day and the pause** (owner, 2026-11-21): the story budget shows under "Left today" as
         time left, "8:40 of 10:00 left" with a bar (time, never a count: "1 of 10" would read as
-        stories), or "Used up · back in N min"; with the Instagram app connected only. Every 5th
-        mindful pause shows a tip instead of a line ("Long-press Home to open Throwback's
-        settings"; `ui_pause_tips`, `PauseLines.TIP_EVERY`).
+        stories), or "Used up · back in N min"; with the Instagram app connected only. Every 50th
+        mindful pause shows a tip instead of a line, at most 10 times per person ("Long-press Home
+        to open Throwback's settings"; `ui_pause_tips`, `PauseLines.TIP_EVERY`, `TIPS_MAX`).
+    ff. **Time in the Instagram app during a pass counts toward the daily limit** (2026-11-21, from
+        the code review: with no daily cap on story passes, passes were uncounted Instagram time).
+        Every pass except the call button's (calls never count, #20): the 5-minute visit, posting,
+        Instagram's settings and story passes. Passes still need the limit not to be reached when
+        they start; one that runs past it finishes.
+    gg. **Each story pass is charged exactly once, however it ends** (2026-11-21, from the code
+        review: a pass that ran out with the screen off, or died with Throwback, was never charged).
+        The open pass is saved in the ledger when it starts. Leaving or time up charges the time
+        spent; a posting notification made after the pass began charges the post; a pass that ran
+        out, was replaced by another pass, or was lost with Throwback is charged its time since it
+        opened, at most a whole pass. A call during a story pass ends it (the call takes over,
+        charged its time so far). A posting notification made before the pass began (an older
+        upload still posting) belongs to the pass that ended moments before, if any, never to the
+        new one. "Back to your Instagram call" doesn't use the call button's taps.

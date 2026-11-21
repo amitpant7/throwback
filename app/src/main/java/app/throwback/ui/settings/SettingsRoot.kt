@@ -207,21 +207,25 @@ private fun RouteContent(
             LaunchedEffect(done) { if (showSettings == null && done != null) showSettings = done }
             val offState = messagesOff.state()
             val context = LocalContext.current
+            val scope = rememberCoroutineScope()
             when (showSettings) {
                 null -> Unit
                 true -> MessagesSettingsScreen(
                     prefs = prefs,
                     onBack = back,
                     onFinishSetup = { push(SettingsRoute.MessagesWizard) },
+                    // Confirmed in the screen's dialog: it happens 24 hours from now (#27b).
                     onTurnOff = {
                         if (offState.limitOn) {
-                            push(SettingsRoute.MessagesOffPin) // PIN, then it turns off tomorrow
+                            push(SettingsRoute.MessagesOffPin) // PIN first
                         } else {
-                            prefs.write { setMessagesSetupDone(false) }
-                            back()
+                            scope.launch {
+                                messagesOff.schedule()
+                                showMessage(context.getString(R.string.ui_messages_off_scheduled))
+                            }
                         }
                     },
-                    pendingOff = offState.pendingDate,
+                    pendingOff = offState.offAt,
                     onCancelPendingOff = {
                         messagesOff.cancel()
                         showMessage(context.getString(R.string.ui_messages_off_cancelled))

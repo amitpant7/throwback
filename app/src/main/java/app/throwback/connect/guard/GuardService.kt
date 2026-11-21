@@ -23,7 +23,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
-import app.throwback.BuildConfig
 import app.throwback.R
 import app.throwback.connect.CallInApp
 import app.throwback.connect.CallSnapshot
@@ -37,7 +36,6 @@ import app.throwback.connect.relay.RelayNotifier
 import app.throwback.core.OpenThrowback
 import app.throwback.core.prefs.AppPrefs
 import app.throwback.timelimit.TimeLimitModule
-import app.throwback.web.rules.AppStoryRules
 import app.throwback.web.rules.DEFAULT_CALL_GRACE_SECONDS
 import app.throwback.web.rules.FilterRules
 import app.throwback.web.rules.RulesRepository
@@ -98,7 +96,7 @@ class GuardService : Service() {
     private var listenerDownSince: Long? = null
     private var lastRebindAt = 0L
 
-    /** When the cover went up, and until when it stays away after stepping aside. */
+    /** When the cover went up; until when not to try again after the overlay couldn't show. */
     private var coverShownAt = 0L
     private var noCoverUntil = 0L
 
@@ -270,6 +268,7 @@ class GuardService : Service() {
             if (CallState.appCall.value != appCall) CallState.appCall.value = appCall
             if (igCallAudio || appCall) callAudioAt = now
             if (GuardPass.active(now)) followPass(now, tracker.current, calls, igCallAudio || appCall, callScreenShown)
+            CallInApp.settleOpenStory(this) // a story pass that ran out or was replaced is charged now
             val grace = rules().callGraceMillis // read each time: a rules update applies at once
             val callSigns = CallAudioLink.isCallAudio(audioMode) || callScreenShown || appCall
             val inCall = GuardPolicy.inCall(now, calls, grace, callAudioAt, callSigns)
@@ -377,15 +376,23 @@ class GuardService : Service() {
             GuardPass.Kind.VISIT -> Unit
             GuardPass.Kind.CREATE -> if (inInstagram) createPass(now)
             GuardPass.Kind.SETTINGS -> if (inInstagram) settingsPass(now)
-            GuardPass.Kind.STORY -> if (inInstagram) storyPass(now)
+            GuardPass.Kind.STORY -> when {
+                // A call takes over: the pass ends, charged its time so far (calls never count, #20).
+                callRunning -> if (GuardPass.endIfActive(now)) CallInApp.storyEnded(this, GuardPass.inFrontFor(now))
+                inInstagram -> storyPass(now)
+            }
         }
     }
 
-    /** "Your day": time the Instagram app is in front during a pass (calls aren't passes). */
+    /**
+     * Time the Instagram app is in front during a pass: "Your day", and the daily limit (owner's rule
+     * that the limit is a limit on Instagram, #34ff); not the call button's pass (calls never count).
+     */
     private fun countAppTime() {
         unsavedAppMillis += POLL_MS
         if (unsavedAppMillis >= 10_000L) {
             CallInApp.addAppTime(this, unsavedAppMillis)
+            if (GuardPass.kind != GuardPass.Kind.CALL) TimeLimitModule.create(this).addOutsideUsage(unsavedAppMillis)
             unsavedAppMillis = 0L
         }
     }
@@ -394,16 +401,10 @@ class GuardService : Service() {
     private fun leftInstagram(now: Long) {
         val story = GuardPass.kind == GuardPass.Kind.STORY
         val spent = GuardPass.inFrontFor(now)
-        // Only if this ended it: the relay may just have ended it as posted (and charged the post).
-        if (!GuardPass.endIfActive(now)) return
-        if (story) CallInApp.storyEnded(this, spent)
+        GuardPass.endIfActive(now)
+        if (story) CallInApp.storyEnded(this, spent) // nothing if the relay just charged it as posted
     }
 
-    /**
-     * The call button's pass ends once an Instagram call runs (its notification, or call audio linked
-     * to Instagram): the call then keeps its screen allowed by itself. Another app's call doesn't end
-     * it (a WhatsApp call already running, or call audio left on, used to end it at once).
-     */
     /**
      * The call button's pass ends once a call runs and its call screen is up; the call then keeps
      * its screens allowed. Not before the screen: tapping call while a call already runs is the way
@@ -446,9 +447,10 @@ class GuardService : Service() {
     private fun storyPass(now: Long) {
         val spent = GuardPass.inFrontFor(now)
         if (spent < CallInApp.storyMinutes(this) * 60_000L) return
+        if (!GuardPass.endIfActive(now)) return
         Log.i(TAG, "story pass: time is up")
-        storyTimeUp = true
-        if (GuardPass.endIfActive(now)) CallInApp.storyEnded(this, spent)
+        storyTimeUp = true // the cover follows at the next check (Instagram is in front)
+        CallInApp.storyEnded(this, spent)
     }
 
     /** Covers Instagram and brings Throwback to the front; the cover stays while Instagram is on screen. */
@@ -536,7 +538,6 @@ class GuardService : Service() {
         /** Android screens Instagram opens on the way (`appCreate.flowPackages`; for settings also `appSettings.flowPackages`). */
         val createFlow: Set<String> = source?.appCreate?.flowPackages.orEmpty().toSet()
         val settingsFlow: Set<String> = createFlow + source?.appSettings?.flowPackages.orEmpty()
-        val story: AppStoryRules? = source?.appCreate?.story
     }
 
     private fun rules(): GuardRules {

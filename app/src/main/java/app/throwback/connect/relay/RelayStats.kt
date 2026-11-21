@@ -8,8 +8,8 @@ import java.time.LocalDate
  * Daily counts of Instagram's notifications, counts only (never which one or what it said), kept for
  * 14 days:
  * - received from its "Instagram" group (everything except messages and calls), so the Connect ›
- *   Instagram screen can suggest turning that group off at the source (Android doesn't let Throwback
- *   read another app's notification switches, but this shows they're on);
+ *   Instagram screen can tell whether that group is on, as it must be (#34bb: posting is seen through
+ *   it). Android doesn't let Throwback read another app's notification switches;
  * - removed by the relay, for "Your day" (alerts the user switched on and got are not removed).
  */
 internal object RelayStats {

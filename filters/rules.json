@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "version": 2026112103,
-  "updated": "2026-11-20",
+  "version": 2026112104,
+  "updated": "2026-11-21",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
     "schema: bump ONLY for breaking changes (older apps then ignore the file). version: must increase on every edit (yyyymmddNN); apps keep the copy with the highest version.",
@@ -229,12 +229,11 @@
     "prefetchAhead": 5,
     "prefetchKB": 400,
     "addStory": {
-      "yourStory": ["Your story", "Deine Story", "Votre story", "Tu historia", "Seu story", "La tua storia"],
       "ownPlus": "input[type=file], svg[aria-label='Plus icon']",
-      "menuButton": "header a[href='#']",
+      "menuButton": "header a[href='#'] svg[aria-label='Home']",
       "menuItem": "[role=dialog] [role=button], [role=dialog] button",
       "storyItem": ["Story", "Historia", "Storia"],
-      "note": "Instagram's website shows its '+' on 'Your story' only with no story up; after that the bubble opens the story and more come from the top bar's '+' menu (Post / Story). Seen on the emulator 2026-11-21: the menu's 'Story' item reads 'StoryStory' (label twice); its upload input only works after 'Story' was chosen in the menu (clicking the hidden input directly did nothing). Throwback adds its own '+' when ownPlus is missing."
+      "note": "Instagram's website shows its '+' on 'Your story' only with no story up; after that the bubble opens the story and more come from the top bar's '+' menu (Post / Story). Seen on the emulator 2026-11-21: the menu's 'Story' item reads 'StoryStory' (label twice); its upload input only works after 'Story' was chosen in the menu (clicking the hidden input directly did nothing). Throwback adds its own '+' when ownPlus is missing. The 'Your story' labels are the appCreate story trigger's text (yourStory here overrides them). menuButton is the top-bar '+' icon (labelled 'Home'); its link is clicked."
     }
   },
   "notifications": {

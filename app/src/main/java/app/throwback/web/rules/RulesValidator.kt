@@ -171,9 +171,11 @@ object RulesValidator {
                 check(st.link.startsWith("instagram://")) { "appCreate.story.link must be an instagram:// link" }
                 check(st.editMinutes in 1..15) { "appCreate.story.editMinutes out of range" }
                 check(st.budgetMinutes in 1..120) { "appCreate.story.budgetMinutes out of range" }
-                check(st.postMinutes in 0..st.budgetMinutes) { "appCreate.story.postMinutes out of range" }
-                check(st.lockMinutes in 0..240) { "appCreate.story.lockMinutes out of range" }
-                // Any notification on a matching channel counts as "posted" (the pass is forgiven).
+                // A rules file must not be able to switch the budget off: a post costs something, and
+                // using it up locks for a while (#34cc; the daily cap it replaced bounded this before).
+                check(st.postMinutes in 1..st.budgetMinutes) { "appCreate.story.postMinutes out of range" }
+                check(st.lockMinutes in 5..240) { "appCreate.story.lockMinutes out of range" }
+                // A notification on a matching channel counts as a post (charged postMinutes, not the time).
                 checkNarrow(st.postingChannels, "appCreate.story.postingChannels", "notification channel", errors)
             }
         }
@@ -202,7 +204,7 @@ object RulesValidator {
             check(st.prefetchAhead in 0..10) { "stories.prefetchAhead out of range" }
             check(st.prefetchKB in 0..2048) { "stories.prefetchKB out of range" }
             st.addStory?.let { a ->
-                checkTexts(a.yourStory, "stories.addStory.yourStory", errors)
+                if (a.yourStory.isNotEmpty()) checkTexts(a.yourStory, "stories.addStory.yourStory", errors)
                 checkTexts(a.storyItem, "stories.addStory.storyItem", errors)
                 checkSelector(a.ownPlus, "stories.addStory.ownPlus", errors)
                 checkSelector(a.menuButton, "stories.addStory.menuButton", errors)

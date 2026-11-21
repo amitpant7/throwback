@@ -278,29 +278,35 @@ class RelayListenerService : NotificationListenerService() {
                 fullScreenIntent = n.fullScreenIntent != null,
                 title = extras?.getCharSequence(Notification.EXTRA_TITLE),
                 text = extras?.getCharSequence(Notification.EXTRA_TEXT),
+                whenMillis = n.`when`,
             )
         }
     }
 
     /**
-     * Instagram's posting notification: it ends a story or create pass, and a story pass costs the
-     * fixed post amount (#34cc), also one the user left moments before the notification came.
+     * Instagram's posting notification (channels in the rules, or their default). A create pass that
+     * began before the notification was made ends; the story budget decides which story pass it
+     * belongs to, if any (CallInApp.storyPosted: an older upload or a progress update counts for none).
      */
     private fun endPassWhenPosting(facts: NotificationFacts) {
-        val pattern = RulesRepository.get(this).rules.value?.appCreate?.story?.postingChannels ?: return
+        if (facts.packageName !in InstagramPackages.ALL) return
         val channel = facts.channelId ?: return
-        if (facts.packageName !in InstagramPackages.ALL || !runCatching { Regex(pattern).containsMatchIn(channel) }.getOrDefault(false)) return
+        if (postingChannels()?.containsMatchIn(channel) != true) return
         val now = SystemClock.elapsedRealtime()
-        if (!GuardPass.active(now)) {
-            CallInApp.storyPosted(this, passWasRunning = false) // a story pass that ended just before, if any
-            return
+        val madeAt = if (facts.whenMillis > 0) now - (System.currentTimeMillis() - facts.whenMillis) else now
+        if (GuardPass.kind == GuardPass.Kind.CREATE && GuardPass.active(now) && madeAt >= GuardPass.grantedAt - 2_000L) {
+            Log.i(TAG, "Instagram is posting: the create pass ends")
+            GuardPass.endIfActive(now)
         }
-        val kind = GuardPass.kind
-        if (kind != GuardPass.Kind.STORY && kind != GuardPass.Kind.CREATE) return
-        Log.i(TAG, "Instagram is posting: pass ends")
-        // Charged as a post only if this ended it (the guard may just have ended it, charging its time:
-        // storyPosted then finds it as just ended).
-        val endedHere = GuardPass.endIfActive(now)
-        if (kind == GuardPass.Kind.STORY) CallInApp.storyPosted(this, passWasRunning = endedHere)
+        CallInApp.storyPosted(this, facts.whenMillis)
     }
+
+    /** The posting channels' pattern, compiled once per pattern (null if it doesn't compile). */
+    private fun postingChannels(): Regex? {
+        val pattern = CallInApp.storyRules(this).postingChannels
+        postingRegex?.let { (p, r) -> if (p == pattern) return r }
+        return runCatching { Regex(pattern) }.getOrNull().also { postingRegex = pattern to it }
+    }
+
+    private var postingRegex: Pair<String, Regex?>? = null
 }

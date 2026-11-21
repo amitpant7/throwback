@@ -144,7 +144,14 @@
     <string name="ui_notify_footer">Everything you leave off is removed before you see it.</string>
     <string name="ui_turn_off_messages">Disconnect Instagram</string>
     <string name="ui_messages_off_keep">Keep it on</string>
-    <string name="ui_messages_off_scheduled">Instagram disconnects tomorrow.</string>
+    <!-- Disconnecting takes effect 24 hours later (DECISIONS.md #27b). %1$s: a time, e.g. "10:40 PM". -->
+    <string name="ui_messages_off_scheduled">Instagram disconnects in 24 hours.</string>
+    <string name="ui_messages_off_today">Instagram disconnects today at %1$s.</string>
+    <string name="ui_messages_off_tomorrow">Instagram disconnects tomorrow at %1$s.</string>
+    <string name="ui_messages_off_on">Instagram disconnects %1$s.</string>
+    <string name="ui_messages_off_dialog_title">Disconnect Instagram?</string>
+    <string name="ui_messages_off_dialog_body">It happens 24 hours from now, tomorrow at %1$s. Until then the Instagram app stays covered, as it is now. You can cancel any time before.</string>
+    <string name="ui_messages_off_dialog_confirm">Disconnect in 24 hours</string>
     <string name="ui_messages_off_cancelled">Instagram stays connected.</string>
 
     <!-- 5 · Make It Yours (was Add to home screen) -->
@@ -180,8 +187,65 @@
     <!-- 3 · Mindful pause -->
     <string name="ui_pause_opening_in">Opening in %1$d</string>
     <string name="ui_pause_almost">Almost there…</string>
-    <!-- Now and then the pause shows a tip instead of a line (owner, 2026-11-21; PauseLines.TIP_EVERY). -->
+    <!-- Now and then the pause shows a tip instead of a line (owner, 2026-11-21; PauseLines.TIP_EVERY, TIPS_MAX). -->
     <string name="ui_pause_tip">Tip</string>
+    <!--
+      Sourced quotes for the pause, "text|attribution" (owner, 2026-11-21): each one asks the reader
+      something or nudges them to do something, never says what life is. Each was checked against its
+      source (original text, Wikiquote's sourced section or Quote Investigator); old texts in
+      public-domain translations.
+    -->
+    <string-array name="ui_pause_quotes" translatable="false">
+        <item>What is this life if, full of care,\nWe have no time to stand and stare.|W. H. Davies, “Leisure” (1911)</item>
+        <item>Dost thou love Life? then do not squander Time; for that’s the Stuff Life is made of.|Benjamin Franklin, Poor Richard (1746)</item>
+        <item>Let us spend one day as deliberately as Nature, and not be thrown off the track by every nutshell and mosquito’s wing that falls on the rails.|Henry David Thoreau, Walden (1854)</item>
+        <item>Why should we live with such hurry and waste of life?|Henry David Thoreau, Walden (1854)</item>
+        <item>As if you could kill time without injuring eternity.|Henry David Thoreau, Walden (1854)</item>
+        <item>The question is not what you look at, but what you see.|Henry David Thoreau, Journal (1851)</item>
+        <item>Live in each season as it passes; breathe the air, drink the drink, taste the fruit, and resign yourself to the influences of each.|Henry David Thoreau, Journal (1853)</item>
+        <item>Try to be one of the people on whom nothing is lost!|Henry James, “The Art of Fiction” (1884)</item>
+        <item>Stop this day and night with me and you shall possess the origin of all poems|Walt Whitman, “Song of Myself” (1855)</item>
+        <item>Why should not we also enjoy an original relation to the universe?|Ralph Waldo Emerson, Nature (1836)</item>
+        <item>Write it on your heart that every day is the best day in the year.|Ralph Waldo Emerson, “Works and Days” (1870)</item>
+        <item>Leave this military hurry and adopt the pace of Nature. Her secret is patience.|Ralph Waldo Emerson, “Education” (1883)</item>
+        <item>What man can you show me who places any value on his time, who reckons the worth of each day, who understands that he is dying daily?|Seneca, Letters to Lucilius, tr. Richard M. Gummere (1917)</item>
+        <item>Therefore, my dear Lucilius, begin at once to live, and count each separate day as a separate life.|Seneca, Letters to Lucilius, tr. Richard M. Gummere (1925)</item>
+        <item>You need a change of soul rather than a change of climate.|Seneca, Letters to Lucilius, tr. Richard M. Gummere (1917)</item>
+        <item>Do not act as if thou wert going to live ten thousand years.|Marcus Aurelius, Meditations, tr. George Long (1862)</item>
+        <item>No longer talk at all about the kind of man that a good man ought to be, but be such.|Marcus Aurelius, Meditations, tr. George Long (1862)</item>
+        <item>First, say to yourself what you would be; and then do what you have to do.|Epictetus, Discourses, tr. Thomas W. Higginson (1890)</item>
+        <item>Practise yourself, for Heaven’s sake, in little things, and thence proceed to greater.|Epictetus, Discourses, tr. Thomas W. Higginson (1865)</item>
+        <item>If I am not for myself who is for me? and being for my own self what am I? If not now when?|Hillel, Pirkei Avot, tr. Charles Taylor (1897)</item>
+        <item>In the moment of our talking, envious time has ebb’d away. Seize the present; trust to-morrow e’en as little as you may.|Horace, Odes, tr. John Conington (1863)</item>
+        <item>Remember then: there is only one time that is important—Now!|Leo Tolstoy, “Three Questions”, tr. Louise and Aylmer Maude (1906)</item>
+        <item>Go into yourself.|Rainer Maria Rilke, Letters to a Young Poet, tr. M. D. Herter Norton (1934)</item>
+        <item>Live the questions now.|Rainer Maria Rilke, Letters to a Young Poet, tr. M. D. Herter Norton (1934)</item>
+        <item>All we have to decide is what to do with the time that is given us.|J. R. R. Tolkien, The Fellowship of the Ring (1954)</item>
+        <item>Tell me, what is it you plan to do with your one wild and precious life?|Mary Oliver, “The Summer Day” (1990)</item>
+        <item>Instructions for living a life: Pay attention. Be astonished. Tell about it.|Mary Oliver, “Sometimes” (2008)</item>
+        <item>Be joyful though you have considered all the facts.|Wendell Berry, “Manifesto: The Mad Farmer Liberation Front” (1973)</item>
+        <item>Practice resurrection.|Wendell Berry, “Manifesto: The Mad Farmer Liberation Front” (1973)</item>
+        <item>Ask the questions that have no answers.|Wendell Berry, “Manifesto: The Mad Farmer Liberation Front” (1973)</item>
+        <item>So, friends, every day do something that won’t compute.|Wendell Berry, “Manifesto: The Mad Farmer Liberation Front” (1973)</item>
+        <item>If something is boring after two minutes, try it for four. If still boring, try it for eight, sixteen, thirty-two, and so on.|John Cage, Silence (1961)</item>
+        <item>I urge you to please notice when you are happy, and exclaim or murmur or think at some point, “If this isn’t nice, I don’t know what is.”|Kurt Vonnegut, “Knowing What’s Nice” (2003)</item>
+        <item>Get busy living or get busy dying.|Stephen King, “Rita Hayworth and Shawshank Redemption” (1982)</item>
+        <item>Life moves pretty fast. If you don’t stop and look around once in a while, you could miss it.|Ferris Bueller’s Day Off (1986)</item>
+        <item>Carpe diem. Seize the day, boys. Make your lives extraordinary.|Dead Poets Society (1989)</item>
+        <item>Look for the helpers. You will always find people who are helping.|Fred Rogers, on his mother’s advice</item>
+        <item>Be Here Now|Ram Dass, book title (1971)</item>
+        <item>Don’t Just Do Something, Sit There|Sylvia Boorstein, book title (1996)</item>
+        <item>What Would You Do If You Weren’t Afraid?|Spencer Johnson, Who Moved My Cheese? (1998)</item>
+        <item>If today were the last day of my life, would I want to do what I am about to do today?|Steve Jobs, Stanford commencement address (2005)</item>
+        <item>Almost everything will work again if you unplug it for a few minutes, including you.|Anne Lamott, TED (2017)</item>
+        <item>If you’re not saying “HELL YEAH!” about something, say no.|Derek Sivers, sive.rs (2009)</item>
+        <item>Be a mystery, not a demographic.|Matt Haig, Notes on a Nervous Planet (2018)</item>
+        <item>How would you spend your days differently if you didn’t care so much about seeing your actions reach fruition?|Oliver Burkeman, Four Thousand Weeks (2021)</item>
+        <item>In which areas of life are you still holding back until you feel like you know what you’re doing?|Oliver Burkeman, Four Thousand Weeks (2021)</item>
+        <item>What would this look like if it were easy?|Tim Ferriss, The Tim Ferriss Show (2016)</item>
+    </string-array>
+    <!-- Under a quote: its author and source. -->
+    <string name="ui_pause_quote_by">— %1$s</string>
     <string-array name="ui_pause_tips">
         <item>Long-press Home to open Throwback\'s settings.</item>
     </string-array>
@@ -190,32 +254,32 @@
         <item>Take a breath. The people you follow will still be here in a moment.</item>
         <item>You opened this on purpose. What did you come to see?</item>
         <item>Catch up with your people, then get back to your day.</item>
-        <item>A short visit is still a good visit.</item>
+        <item>Could this be a short visit today?</item>
         <item>Look up for a moment. Then decide.</item>
         <item>Check in on your friends, not on the feed.</item>
         <item>Say hello, see what\'s new, and leave while it still feels good.</item>
         <item>Drink some water first. Seriously.</item>
         <item>Who do you actually want to see today?</item>
-        <item>Your thumb isn\'t in charge. You are.</item>
-        <item>Five good minutes beat an hour of scrolling.</item>
+        <item>Who\'s in charge today: you, or your thumb?</item>
+        <item>Would five good minutes be enough today?</item>
         <item>Is there someone you could just text instead?</item>
         <item>Sit up, roll your shoulders back. Okay, go.</item>
         <item>What were you doing before you picked up your phone?</item>
         <item>Notice one thing around you that isn\'t a screen.</item>
         <item>Come for your friends. Leave before it gets boring.</item>
-        <item>The best part of your day probably isn\'t in here.</item>
+        <item>What\'s been the best part of your day so far?</item>
         <item>One look, then back to life.</item>
         <item>Remember when this was just photos of friends? It still is.</item>
         <item>Breathe in for four. Out for four. There.</item>
-        <item>You can close this whenever you like. That\'s the whole trick.</item>
-        <item>Somebody nearby might like a chat more than a like.</item>
+        <item>Close it whenever you like. That\'s the whole trick.</item>
+        <item>Is someone nearby who\'d like a chat more than a like?</item>
         <item>Pick one thing to check, then put it down.</item>
-        <item>The feed ends. Throwback makes sure of it.</item>
+        <item>When you reach the end of the feed, let that be the end.</item>
         <item>Go easy on yourself today.</item>
         <item>Window open? Sky still there? Good.</item>
         <item>Like, comment, leave. The classic.</item>
-        <item>Bored? That\'s allowed. Boredom is where ideas start.</item>
-        <item>Your morning, your evening, your rules.</item>
+        <item>Bored? Stay with it for a minute. What idea turns up?</item>
+        <item>Your morning, your evening: what are your rules?</item>
         <item>See your people. Skip the noise.</item>
     </string-array>
     <!-- One-time hint on the feed: where Throwback's settings are -->
@@ -269,7 +333,7 @@
     <string name="ui_today_suggested">Suggested posts</string>
     <string name="ui_today_alerts">Instagram alerts kept away</string>
     <string name="ui_today_no_page">Counts start once the feed has been open.</string>
-    <string name="ui_today_note">Counted on this phone only, reset at midnight.</string>
+    <string name="ui_today_note">Counted on this phone only, reset at midnight. Story time starts again after its 30-minute wait.</string>
     <!-- While an Instagram call runs (DECISIONS.md #34x). -->
     <string name="ui_call_return">Back to your Instagram call</string>
 </resources>

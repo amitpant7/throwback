@@ -4,10 +4,12 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.core.net.toUri
 import app.throwback.R
 import app.throwback.web.PageFeatures
+import app.throwback.web.rules.AppStoryRules
 import app.throwback.web.rules.RulesRepository
 import kotlinx.coroutines.flow.update
 
@@ -16,11 +18,12 @@ import kotlinx.coroutines.flow.update
  * #27e, #27f). How often each can be used is kept in [PassLedger], on the time limit's trusted clock.
  *
  * Calls start in the Instagram app: its mobile website has no call buttons (only the desktop site
- * does). The chat's call button opens that chat in the app with a short pass; once the call runs,
- * the guard allows it by its call audio, and after hanging up it sends the user back to Throwback.
+ * does). The chat's call button opens that chat in the app with a short pass; once the call runs and
+ * its call screen is up the pass ends and the call keeps its own screens allowed (#34y); after
+ * hanging up the guard sends the user back to Throwback.
  */
 internal object CallInApp {
-    /** Long enough to tap call; the running call itself is then allowed by its audio. */
+    /** Long enough to tap call; the running call then keeps its screens allowed by itself. */
     const val PASS_MS = 15_000L
 
     /** The call button's outcome and what to tell the user (NOT_READY: the time limit's clock, which counts the taps, is still loading). */
@@ -39,12 +42,13 @@ internal object CallInApp {
     var lastChat: Pair<String?, String?>? = null
         private set
 
-    fun open(context: Context, thread: String?, user: String? = null): Result {
+    /** [countTap] false: the way back to a running call ("Back to your Instagram call"), not limited. */
+    fun open(context: Context, thread: String?, user: String? = null, countTap: Boolean = true): Result {
         val pkg = InstagramPackages.installed(context) ?: return Result.NO_APP
         // Instagram not connected: no guard, so no pass and nothing to count (still loading: count).
         val guarded = MessagesFeature.setUpNow != false
         val now = if (guarded) PassLedger.now(context) ?: return Result.NOT_READY else null
-        if (now != null && !PassLedger.read(context).callAllowed(now.wallMillis)) return Result.LIMITED
+        if (now != null && countTap && !PassLedger.read(context).callAllowed(now.wallMillis)) return Result.LIMITED
         // ig.me/m/<username> opens a chat with that person from whichever account the Instagram app
         // uses (a chat id only exists in one account); the chat id is for group chats.
         val byUser = user?.let { Intent(Intent.ACTION_VIEW, "https://ig.me/m/$it".toUri()).setPackage(pkg) }
@@ -58,7 +62,7 @@ internal object CallInApp {
                 // Only once Instagram really opens.
                 if (now != null) {
                     GuardPass.grant(SystemClock.elapsedRealtime(), PASS_MS, GuardPass.Kind.CALL)
-                    PassLedger.update(context) { it.callTapped(now.wallMillis) }
+                    if (countTap) PassLedger.update(context) { it.callTapped(now.wallMillis) }
                 }
                 return Result.OPENED
             }
@@ -147,14 +151,15 @@ internal object CallInApp {
         return if (minutes > 0) res.getQuantityString(R.plurals.story_web_wait, minutes, minutes) else res.getString(R.string.story_web_ready)
     }
 
-    private fun storyRules(context: Context) = RulesRepository.get(context).rules.value?.appCreate?.story
+    /** The rules' story numbers, or their defaults (5 / 10 / 2 / 30 minutes, the posting channels). */
+    fun storyRules(context: Context): AppStoryRules = RulesRepository.get(context).rules.value?.appCreate?.story ?: AppStoryRules()
 
     /** Minutes of Instagram one story pass gives. */
-    fun storyMinutes(context: Context) = storyRules(context)?.editMinutes ?: 5
+    fun storyMinutes(context: Context) = storyRules(context).editMinutes
 
-    private fun storyBudgetMillis(context: Context) = (storyRules(context)?.budgetMinutes ?: 10) * 60_000L
-    private fun storyPostMillis(context: Context) = (storyRules(context)?.postMinutes ?: 2) * 60_000L
-    private fun storyLockMillis(context: Context) = (storyRules(context)?.lockMinutes ?: 30) * 60_000L
+    private fun storyBudgetMillis(context: Context) = storyRules(context).budgetMinutes * 60_000L
+    private fun storyPostMillis(context: Context) = storyRules(context).postMinutes * 60_000L
+    private fun storyLockMillis(context: Context) = storyRules(context).lockMinutes * 60_000L
 
     /**
      * Whether "Your story" can open the Instagram app now (else the website's story upload). Only
@@ -202,59 +207,125 @@ internal object CallInApp {
 
     /**
      * "Your story": the Instagram app with a STORY pass of [storyMinutes] (the guard ends it then, or
-     * when the user leaves Instagram). Charged when it ends ([storyEnded], [storyPosted]); while the
-     * story budget is locked, the website's own upload instead (DECISIONS.md #34cc).
+     * when the user leaves Instagram). The pass is recorded as open in the ledger and charged once,
+     * when it closes ([storyEnded], [storyPosted], [settleOpenStory]); while the story budget is
+     * locked, the website's own upload instead (DECISIONS.md #34cc).
      */
     fun story(context: Context): StoryResult {
         val pkg = InstagramPackages.installed(context) ?: return StoryResult.NO_APP
         val now = PassLedger.now(context) ?: return StoryResult.NOT_READY
         if (PassLedger.locked(context) == true) return StoryResult.LOCKED
+        settleOpenStory(context) // a pass that ended without being charged counts first
         if (!PassLedger.read(context).storyAllowed(now.wallMillis)) return StoryResult.WAIT
-        val link = storyRules(context)?.link ?: "instagram://story-camera"
-        if (!start(context, Intent(Intent.ACTION_VIEW, link.toUri()).setPackage(pkg))) return StoryResult.NO_APP
-        // A little longer than the pass itself: the guard ends it after its minutes in Instagram,
-        // which start once Instagram is in front, not at the tap.
-        GuardPass.grant(SystemClock.elapsedRealtime(), (storyMinutes(context) + 1) * 60_000L, GuardPass.Kind.STORY)
-        lastStoryEnd = null
+        if (!start(context, Intent(Intent.ACTION_VIEW, storyRules(context).link.toUri()).setPackage(pkg))) return StoryResult.NO_APP
+        synchronized(this) {
+            // A little longer than the pass itself: the guard ends it after its minutes in Instagram,
+            // which start once Instagram is in front, not at the tap.
+            GuardPass.grant(SystemClock.elapsedRealtime(), (storyMinutes(context) + 1) * 60_000L, GuardPass.Kind.STORY)
+            openedElapsed = SystemClock.elapsedRealtime()
+            storyMaybeOpen = true
+            PassLedger.update(context) { it.storyOpened(now.wallMillis) }
+        }
         return StoryResult.OPENED
     }
 
     /**
-     * A story pass ended without a post (left, or its minutes ran out): charged the time spent in
-     * Instagram. Remembered for a moment, since Instagram's posting notification can come just after.
+     * The guard: the story pass ended without a post (left Instagram, its minutes ran out, a call
+     * came): charged [spentMillis]. Nothing if it was already charged (posted).
      */
+    @Synchronized
     fun storyEnded(context: Context, spentMillis: Long) {
         val now = PassLedger.now(context) ?: return
-        val before = PassLedger.read(context)
-        lastStoryEnd = StoryEnd(SystemClock.elapsedRealtime(), before.storyUsedMillis, before.storyLockUntil)
-        PassLedger.update(context) { it.storyCharged(now.wallMillis, spentMillis, storyBudgetMillis(context), storyLockMillis(context)) }
-        storyAvailabilityChanged(context)
+        closeOpenStory(context, now.wallMillis, spentMillis)
     }
 
     /**
-     * Instagram is posting: the story pass that is running (the caller ended it), or one that ended
-     * moments before ([LATE_POST_MS]), costs the fixed post amount instead of its time.
+     * Called by the guard on every check: a story pass that is open in the ledger but no longer
+     * running (it ran out, another pass replaced it, or Throwback was stopped during it) is charged
+     * its time since it opened, at most a whole pass: how it was used can't be known.
      */
-    fun storyPosted(context: Context, passWasRunning: Boolean) {
+    @Synchronized
+    fun settleOpenStory(context: Context) {
+        if (storyMaybeOpen == false) return
+        if (GuardPass.kind == GuardPass.Kind.STORY && GuardPass.active(SystemClock.elapsedRealtime())) return
         val now = PassLedger.now(context) ?: return
-        val late = lastStoryEnd?.takeIf { SystemClock.elapsedRealtime() - it.at <= LATE_POST_MS }
-        if (!passWasRunning && late == null) return
-        lastStoryEnd = null
-        PassLedger.update(context) { book ->
-            val base = if (late != null) book.copy(storyUsedMillis = late.usedBefore, storyLockUntil = late.lockBefore) else book
-            base.storyCharged(now.wallMillis, storyPostMillis(context), storyBudgetMillis(context), storyLockMillis(context))
+        val openAt = PassLedger.read(context).storyOpenAt
+        if (openAt == null) {
+            storyMaybeOpen = false
+            return
         }
+        Log.i(TAG, "a story pass ended without being charged: charged its time")
+        closeOpenStory(context, now.wallMillis, (now.wallMillis - openAt).coerceIn(0L, storyMinutes(context) * 60_000L))
+    }
+
+    /**
+     * Instagram's posting notification ([madeAtWall]: the notification's own time, phone clock). Made
+     * after the open pass began, it is that pass's post: the pass closes, charged the post amount.
+     * Made earlier, or with no pass open, it is a post from the pass that ended moments before
+     * ([LATE_POST_MS]: the user left while it was posting), which is then charged the post instead of
+     * its time. Otherwise (an older upload, a progress update) it is ignored.
+     */
+    @Synchronized
+    fun storyPosted(context: Context, madeAtWall: Long) {
+        val now = PassLedger.now(context) ?: return
+        val nowElapsed = SystemClock.elapsedRealtime()
+        val madeAt = if (madeAtWall > 0) nowElapsed - (System.currentTimeMillis() - madeAtWall) else nowElapsed
+        val book = PassLedger.read(context)
+        val opened = openedElapsed
+        val forOpenPass = book.storyOpenAt != null && (opened == null || madeAt >= opened - POST_CLOCK_SLACK_MS)
+        val late = lastStoryEnd?.takeIf { nowElapsed - it.at <= LATE_POST_MS }
+        when {
+            forOpenPass -> {
+                if (GuardPass.kind == GuardPass.Kind.STORY) GuardPass.endIfActive(nowElapsed)
+                closeOpenStory(context, now.wallMillis, storyPostMillis(context), posted = true)
+            }
+            // Nothing was charged since that pass: undo its time, charge the post instead.
+            late != null && book.storyUsedMillis == late.usedAfter && book.storyLockUntil == late.lockAfter -> {
+                lastStoryEnd = null
+                PassLedger.update(context) {
+                    it.copy(storyUsedMillis = late.usedBefore, storyLockUntil = late.lockBefore)
+                        .storyCharged(now.wallMillis, storyPostMillis(context), storyBudgetMillis(context), storyLockMillis(context))
+                }
+                storyAvailabilityChanged(context)
+            }
+        }
+    }
+
+    /** Charges and closes the open story pass (the caller holds the lock); a pass without a post is remembered for a late post. */
+    private fun closeOpenStory(context: Context, wall: Long, cost: Long, posted: Boolean = false) {
+        storyMaybeOpen = false
+        openedElapsed = null
+        val before = PassLedger.read(context)
+        if (before.storyOpenAt == null) return
+        val budget = storyBudgetMillis(context)
+        val lock = storyLockMillis(context)
+        PassLedger.update(context) { it.storyClosed(wall, cost, budget, lock) }
+        val after = before.storyClosed(wall, cost, budget, lock)
+        lastStoryEnd = if (posted) null else StoryEnd(SystemClock.elapsedRealtime(), before.storyUsedMillis, before.storyLockUntil, after.storyUsedMillis, after.storyLockUntil)
         storyAvailabilityChanged(context)
     }
 
-    /** The last story pass that ended without a post: when (elapsed ms), and the budget before its charge. */
-    private class StoryEnd(val at: Long, val usedBefore: Long, val lockBefore: Long?)
+    /** A story pass that ended without a post: when (elapsed ms), and the budget before and after its charge. */
+    private class StoryEnd(val at: Long, val usedBefore: Long, val lockBefore: Long?, val usedAfter: Long, val lockAfter: Long?)
 
-    @Volatile
+    /** Guarded by this object's lock. */
     private var lastStoryEnd: StoryEnd? = null
+
+    /** Whether a story pass may be open in the ledger (null: not looked since the process started). */
+    @Volatile
+    private var storyMaybeOpen: Boolean? = null
+
+    /** When this process opened the current story pass (elapsed ms), to match posting notifications to it. */
+    @Volatile
+    private var openedElapsed: Long? = null
 
     /** Instagram's posting notification may come this long after the user left the editor. */
     private const val LATE_POST_MS = 90_000L
+
+    /** The phone's clock and the elapsed clock can disagree by this much. */
+    private const val POST_CLOCK_SLACK_MS = 2_000L
+
+    private const val TAG = "ThrowbackPasses"
 
     /** Tells the page whether "Your story" opens the app now (only with the Instagram app connected). */
     fun storyAvailabilityChanged(context: Context) {

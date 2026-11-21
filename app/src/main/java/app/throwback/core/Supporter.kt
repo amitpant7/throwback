@@ -2,7 +2,6 @@ package app.throwback.core
 
 import android.content.Context
 import androidx.core.content.edit
-import app.throwback.BuildConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,14 +20,6 @@ object Supporter {
 
     /** The current value, kept up to date while the app runs. */
     fun tipped(context: Context): StateFlow<Boolean> = flow(context).asStateFlow()
-
-    /**
-     * Whether Make It Yours is unlocked: by a tip in builds with Google Play tips; for everyone in
-     * builds without them, where nothing in the app can unlock it (DECISIONS.md #4e).
-     */
-    fun makeItYours(context: Context): StateFlow<Boolean> = if (BuildConfig.PLAY_TIPS) tipped(context) else FREE
-
-    private val FREE: StateFlow<Boolean> = MutableStateFlow(true).asStateFlow()
 
     /** Called once Google Play billing confirms a tip (and by test builds, see MainActivity). */
     fun markTipped(context: Context) {

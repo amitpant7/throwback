@@ -1,6 +1,7 @@
 package app.throwback.ui.pause
 
 import android.content.Context
+import android.content.res.Resources
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -68,30 +69,25 @@ internal fun MindfulPauseScreen(onContinue: () -> Unit, onBack: () -> Unit, back
     val context = LocalContext.current
     val continueNow by rememberUpdatedState(onContinue)
 
-    // The next line of the shuffled order kept on the device, or now and then a tip. Read and saved
-    // off the main thread (the feed is loading underneath), so it shows a frame or two after the
-    // pause, together with its mark.
-    var pick by rememberSaveable { mutableStateOf<Int?>(null) } // a line's index, or -1 - a tip's
+    // The next of the shuffled lines and quotes kept on the device, or now and then a tip. Read and
+    // saved off the main thread (the feed is loading underneath), so it shows a frame or two after
+    // the pause, together with its mark.
+    var pick by rememberSaveable { mutableStateOf<Int?>(null) } // see PauseLines.next
     LaunchedEffect(Unit) {
         if (pick == null) {
             val app = context.applicationContext
             val res = app.resources
             pick = withContext(Dispatchers.IO) {
-                PauseLines.next(app, res.getStringArray(R.array.ui_pause_lines).size, res.getStringArray(R.array.ui_pause_tips).size)
+                PauseLines.next(
+                    app,
+                    res.getStringArray(R.array.ui_pause_lines).size + res.getStringArray(R.array.ui_pause_quotes).size,
+                    res.getStringArray(R.array.ui_pause_tips).size,
+                )
             }
         }
     }
     val resources = context.resources
-    val isTip = (pick ?: 0) < 0
-    val line = remember(pick) {
-        pick?.let { p ->
-            if (p < 0) {
-                resources.getStringArray(R.array.ui_pause_tips).let { it[(-1 - p).coerceIn(it.indices)] }
-            } else {
-                resources.getStringArray(R.array.ui_pause_lines).let { it[p.coerceIn(it.indices)] }
-            }
-        }
-    }
+    val shown = remember(pick) { pick?.let { PauseLines.text(resources, it) } }
 
     // Only the progress bar reads the time every frame (while drawing); the countdown text changes once
     // a second, so the screen recomposes five times rather than every frame.
@@ -121,15 +117,22 @@ internal fun MindfulPauseScreen(onContinue: () -> Unit, onBack: () -> Unit, back
             Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
         ) {
-            if (line != null && isTip) {
-                TbIcon(R.drawable.ic_info, size = 40.dp, tint = colors.accent)
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(stringResource(R.string.ui_pause_tip), style = UiText.sub, color = colors.accentText)
-                    Text(line, style = UiText.pauseLine, color = colors.text)
+            when {
+                shown == null -> Unit
+                shown.tip -> {
+                    TbIcon(R.drawable.ic_info, size = 40.dp, tint = colors.accent)
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(stringResource(R.string.ui_pause_tip), style = UiText.sub, color = colors.accentText)
+                        Text(shown.text, style = UiText.pauseLine, color = colors.text)
+                    }
                 }
-            } else if (line != null) {
-                TbIcon(R.drawable.ic_quote, size = 40.dp, tint = colors.accent)
-                Text(line, style = UiText.pauseLine, color = colors.text)
+                else -> {
+                    TbIcon(R.drawable.ic_quote, size = 40.dp, tint = colors.accent)
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Text(shown.text, style = UiText.pauseLine, color = colors.text)
+                        shown.by?.let { Text(stringResource(R.string.ui_pause_quote_by, it), style = UiText.sub, color = colors.muted) }
+                    }
+                }
             }
         }
 
@@ -151,29 +154,54 @@ internal fun MindfulPauseScreen(onContinue: () -> Unit, onBack: () -> Unit, back
 }
 
 /**
- * The pause lines in a shuffled order that goes through all of them before any repeats (owner:
- * "people will get bored"). Every [TIP_EVERY]th pause shows a tip instead (owner, 2026-11-21: e.g.
- * long-press Home for Throwback's settings), the tips in turn. Order and positions are kept on the
- * device.
+ * What the pause shows: Throwback's own lines and sourced quotes (`ui_pause_lines` then
+ * `ui_pause_quotes`, each "text|attribution"), in a shuffled order that goes through all of them
+ * before any repeats (owner: "people will get bored"). Every [TIP_EVERY]th pause shows a tip
+ * instead, at most [TIPS_MAX] times in all (owner, 2026-11-21: "long-press Home" for Throwback's
+ * settings, rarely). Order and counts are kept on the device.
  */
 internal object PauseLines {
     private const val PREFS = "pause_lines"
-    const val TIP_EVERY = 5
+    const val TIP_EVERY = 50
+    const val TIPS_MAX = 10
 
-    /** Whether pause number [shown] (0 for the first) is a tip's turn: the 5th, 10th, … Pure, for tests. */
-    fun tipTurn(shown: Int): Boolean = shown % TIP_EVERY == TIP_EVERY - 1
+    /** Whether pause number [shown] (0 for the first, counted modulo [TIP_EVERY]) is a tip's turn. Pure, for tests. */
+    fun tipTurn(shown: Int, tipsShown: Int): Boolean = tipsShown < TIPS_MAX && shown % TIP_EVERY == TIP_EVERY - 1
 
-    /** What the next pause shows: a line's index, or -1 - i for tip i. */
-    fun next(context: Context, lineCount: Int, tipCount: Int): Int {
+    /** A pause's text: a tip, or a line or quote ([by]: the quote's attribution). */
+    class Shown(val text: String, val by: String?, val tip: Boolean)
+
+    /** What the next pause shows: an index into the lines and quotes together, or -1 - i for tip i. */
+    fun next(context: Context, count: Int, tipCount: Int): Int {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val shown = prefs.getInt("shown", 0)
-        prefs.edit { putInt("shown", (shown + 1) % TIP_EVERY) }
-        if (tipCount > 0 && tipTurn(shown)) {
-            val tip = prefs.getInt("tip", 0) % tipCount
-            prefs.edit { putInt("tip", tip + 1) }
-            return -1 - tip
+        val tipsShown = prefs.getInt("tipsShown", 0)
+        prefs.edit {
+            putInt("shown", (shown + 1) % TIP_EVERY)
+            remove("tip") // the tip rotation before tips were capped
         }
-        return nextLine(context, lineCount)
+        if (tipCount > 0 && tipTurn(shown, tipsShown)) {
+            prefs.edit { putInt("tipsShown", tipsShown + 1) }
+            return -1 - tipsShown % tipCount
+        }
+        return nextLine(context, count)
+    }
+
+    /** The text for [pick] (from [next]). */
+    fun text(res: Resources, pick: Int): Shown {
+        if (pick < 0) return res.getStringArray(R.array.ui_pause_tips).let { Shown(it[(-1 - pick).coerceIn(it.indices)], null, tip = true) }
+        val lines = res.getStringArray(R.array.ui_pause_lines)
+        if (pick < lines.size) return Shown(lines[pick], null, tip = false)
+        val quotes = res.getStringArray(R.array.ui_pause_quotes)
+        if (quotes.isEmpty()) return Shown(lines[pick.coerceIn(lines.indices)], null, tip = false)
+        val (text, by) = splitQuote(quotes[(pick - lines.size).coerceIn(quotes.indices)])
+        return Shown(text, by, tip = false)
+    }
+
+    /** "text|attribution" → text and attribution (null without a "|"). Pure, for tests. */
+    fun splitQuote(item: String): Pair<String, String?> {
+        val bar = item.lastIndexOf('|')
+        return if (bar < 0) item.trim() to null else item.substring(0, bar).trim() to item.substring(bar + 1).trim().ifEmpty { null }
     }
 
     private fun nextLine(context: Context, count: Int): Int {

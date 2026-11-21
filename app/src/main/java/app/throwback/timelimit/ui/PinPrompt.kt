@@ -27,7 +27,7 @@ import app.throwback.timelimit.TimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.TimeLimitView
 
-/** "Disconnect Instagram" while a limit is on: PIN, then it disconnects tomorrow. */
+/** "Disconnect Instagram" while a limit is on: the PIN, then it disconnects 24 hours later (#27b). */
 @Composable
 internal fun GuardOffPin(controller: TimeLimitController, onScheduled: () -> Unit, onBack: () -> Unit) {
     // Live, so the 30-second pause after wrong PINs counts down and ends here too.
@@ -44,7 +44,7 @@ internal fun GuardOffPin(controller: TimeLimitController, onScheduled: () -> Uni
             onForgot = { forgot = true },
             check = { pin -> controller.scheduleGuardOff(pin) },
             onSuccess = onScheduled,
-            subtitle = stringResource(R.string.tl_starts_tomorrow),
+            subtitle = stringResource(R.string.tl_guard_off_in_24h),
         )
     }
 }

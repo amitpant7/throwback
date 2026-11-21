@@ -7,7 +7,7 @@ package app.throwback.connect
  */
 internal object GuardPass {
     enum class Kind {
-        /** The chat's call button: ends once an Instagram call runs (the call itself keeps its screen allowed). */
+        /** The chat's call button: ends once a call runs and its call screen is up (the call then keeps its screens). */
         CALL,
 
         /** "Open Instagram for 5 minutes". */

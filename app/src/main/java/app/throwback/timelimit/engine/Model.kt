@@ -84,10 +84,11 @@ data class TimeLimitState(
     /** Last clock reading, used to tell real time passing from the wall clock being changed. */
     val anchor: Moment? = null,
     /**
-     * Disconnecting the Instagram app (turning its guard off) while a limit is on: needs the PIN and
-     * takes effect the next day, like turning the limit off (owner, 2026-11-20).
+     * "Disconnect Instagram" (turning its guard off) happens at this trusted time: always 24 hours
+     * after it was asked for, with or without a daily limit (owner, 2026-11-21, DECISIONS.md #27b: an
+     * instant disconnect would be a way round everything). With a limit on, asking needs the PIN.
      */
-    val pendingGuardOff: LocalDate? = null,
+    val guardOffAt: Long? = null,
     /** The scheduled guard turn-off is due; the app disconnects the Instagram app and clears this. */
     val guardOffDue: Boolean = false,
     /**
@@ -174,8 +175,8 @@ data class TimeLimitView(
     val pendingPinEffective: LocalDate? = null,
     val pinReset: PinResetStatus? = null,
     val pinBlockedMillis: Long = 0,
-    /** The Instagram app is disconnected on this day (scheduled with the PIN). */
-    val pendingGuardOff: LocalDate? = null,
+    /** When "Disconnect Instagram" takes effect (trusted wall millis), if asked for. */
+    val guardOffAt: Long? = null,
     /** That day has come: the app should disconnect the Instagram app now. */
     val guardOffDue: Boolean = false,
 ) {
@@ -203,6 +204,8 @@ object Rules {
     const val WAIT_MILLIS = 5 * MINUTE
     const val MAX_EXTENSIONS_PER_DAY = 2
     const val PIN_RESET_MILLIS = 3 * DAY
+    /** "Disconnect Instagram" takes effect this long after it was asked for. */
+    const val GUARD_OFF_DELAY_MILLIS = DAY
     const val PIN_LENGTH = 4
 
     /** No single counted interval is longer than this, so a missed onBackground can't bill hours. */

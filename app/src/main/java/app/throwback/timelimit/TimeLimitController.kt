@@ -171,8 +171,12 @@ internal class TimeLimitController(
 
     fun cancelPendingLimit() = update(Save.Now) { s, r -> engine.cancelPendingLimit(s, r) }
 
-    /** Disconnects the Instagram app the next day (PIN). */
-    suspend fun scheduleGuardOff(pin: String): ActionResult = withPinCheck(pin) { s, r, ok -> engine.scheduleGuardOff(s, r, ok) }
+    /** "Disconnect Instagram" in 24 hours; [pin] is needed (and checked) only while a daily limit is on. */
+    suspend fun scheduleGuardOff(pin: String? = null): ActionResult {
+        if (!loaded) return NOT_READY
+        return if (pin == null) act { s, r -> engine.scheduleGuardOff(s, r, pinOk = null) }
+        else withPinCheck(pin) { s, r, ok -> engine.scheduleGuardOff(s, r, ok) }
+    }
 
     fun cancelGuardOff() = update(Save.Now) { s, r -> engine.cancelGuardOff(s, r) }
 

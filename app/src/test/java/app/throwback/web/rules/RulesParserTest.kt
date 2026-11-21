@@ -103,10 +103,22 @@ class RulesParserTest {
     }
 
     @Test
+    fun `the story plus parses, and a bad selector is rejected`() {
+        val add = TestRules.bundled.stories!!.addStory!!
+        assertTrue(add.yourStory.isEmpty()) // the appCreate story trigger's text is used
+        assertTrue("Story" in add.storyItem)
+        assertRejected(TestRules.bundledWith { it.replace("\"ownPlus\": \"input[type=file], svg[aria-label='Plus icon']\"", "\"ownPlus\": \"\"") }, "ownPlus")
+        assertRejected(TestRules.bundledWith { it.replace("\"storyItem\": [\"Story\", \"Historia\", \"Storia\"]", "\"storyItem\": []") }, "storyItem")
+    }
+
+    @Test
     fun `story budget numbers are range-checked`() {
         assertRejected(TestRules.bundledWith { it.replace("\"budgetMinutes\": 10", "\"budgetMinutes\": 600") }, "budgetMinutes")
         assertRejected(TestRules.bundledWith { it.replace("\"postMinutes\": 2", "\"postMinutes\": 11") }, "postMinutes")
         assertRejected(TestRules.bundledWith { it.replace("\"lockMinutes\": 30", "\"lockMinutes\": -1") }, "lockMinutes")
+        // A rules file can't switch the budget off: no free posts, no lock of nothing.
+        assertRejected(TestRules.bundledWith { it.replace("\"postMinutes\": 2", "\"postMinutes\": 0") }, "postMinutes")
+        assertRejected(TestRules.bundledWith { it.replace("\"lockMinutes\": 30", "\"lockMinutes\": 0") }, "lockMinutes")
     }
 
     @Test

@@ -72,7 +72,7 @@ import androidx.core.graphics.drawable.IconCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.R
 import app.throwback.core.OpenThrowback
-import app.throwback.core.Supporter
+import app.throwback.core.makeItYours
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.SectionLabel
 import app.throwback.core.ui.TbButton
@@ -143,7 +143,7 @@ internal fun ShortcutScreen(onBack: () -> Unit, onOpenSupport: () -> Unit, showM
     val colors = ThrowbackTheme.colors
     val context = LocalContext.current
     val focus = LocalFocusManager.current
-    val unlocked by Supporter.makeItYours(context).collectAsStateWithLifecycle()
+    val unlocked by makeItYours(context).collectAsStateWithLifecycle()
     val defaultName = stringResource(R.string.ui_shortcut_default_name)
     var name by rememberSaveable { mutableStateOf(defaultName) }
     var style by rememberSaveable { mutableStateOf(ShortcutStyle.App) }

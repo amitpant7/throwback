@@ -20,7 +20,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.R
-import app.throwback.core.Supporter
+import app.throwback.core.makeItYours
 import app.throwback.core.prefs.AppPrefs
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.CardDivider
@@ -83,7 +83,7 @@ internal fun SettingsHomeScreen(values: HomeValues, prefs: AppPrefs, onBack: () 
 
         SectionLabel(stringResource(R.string.ui_section_app))
         TbCard {
-            val iconUnlocked by Supporter.makeItYours(LocalContext.current).collectAsStateWithLifecycle()
+            val iconUnlocked by makeItYours(LocalContext.current).collectAsStateWithLifecycle()
             NavRow(
                 icon = R.drawable.ic_add_home,
                 title = stringResource(R.string.ui_shortcut_title),

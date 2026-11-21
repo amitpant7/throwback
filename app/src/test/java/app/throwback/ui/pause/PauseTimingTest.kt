@@ -32,8 +32,15 @@ class PauseTimingTest {
     }
 
     @Test
-    fun `every fifth pause is a tip`() {
-        val turns = (0 until 10).filter { PauseLines.tipTurn(it) }
-        assertEquals(listOf(4, 9), turns)
+    fun `a tip every 50th pause, at most 10 in all`() {
+        assertEquals(listOf(49), (0 until 50).filter { PauseLines.tipTurn(it, tipsShown = 0) })
+        assertTrue(PauseLines.tipTurn(49, tipsShown = 9))
+        assertFalse(PauseLines.tipTurn(49, tipsShown = 10))
+    }
+
+    @Test
+    fun `a quote item splits into its text and attribution`() {
+        assertEquals("Life is long if you know how to use it." to "Seneca", PauseLines.splitQuote("Life is long if you know how to use it.|Seneca"))
+        assertEquals("Just a line." to null, PauseLines.splitQuote("Just a line."))
     }
 }

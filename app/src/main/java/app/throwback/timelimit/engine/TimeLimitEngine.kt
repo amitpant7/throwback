@@ -158,17 +158,17 @@ class TimeLimitEngine {
                 st = if (p.minutes == null) turnedOff(st) else st.copy(limitMinutes = p.minutes, pendingLimit = null)
             }
         }
-        st.pendingGuardOff?.let { if (!it.isAfter(today)) st = st.copy(pendingGuardOff = null, guardOffDue = true) }
+        st.guardOffAt?.let { if (at.wall >= it) st = st.copy(guardOffAt = null, guardOffDue = true) }
         return st
     }
 
-    /** No limit any more: nothing protects a scheduled guard turn-off, so it is due at once. */
-    private fun turnedOff(s: TimeLimitState) = withoutLimit(s).copy(guardOffDue = s.guardOffDue || s.pendingGuardOff != null)
+    /** No limit any more. A scheduled disconnect keeps its time: its 24 hours don't depend on the limit. */
+    private fun turnedOff(s: TimeLimitState) = withoutLimit(s)
 
     /**
      * [s] with the limit and everything that belongs to it reset (PIN, today's use, locks, pending
-     * changes, a PIN reset). The clock (anchor, day, its start and zone), the session and a due guard
-     * turn-off stay: dropping them would let the day restart or forget the turn-off.
+     * changes, a PIN reset). The clock (anchor, day, its start and zone), the session and a scheduled
+     * or due disconnect stay: dropping them would let the day restart or move the disconnect.
      */
     private fun withoutLimit(s: TimeLimitState) = s.copy(
         limitMinutes = null,
@@ -181,7 +181,6 @@ class TimeLimitEngine {
         pinResetRequestedAt = null,
         wrongPinAttempts = 0,
         pinBlockedAt = null,
-        pendingGuardOff = null,
         grantShowing = false,
     )
 
@@ -265,17 +264,20 @@ class TimeLimitEngine {
         }
     }
 
-    /** Disconnecting the Instagram app while a limit is on: needs the PIN, takes effect tomorrow. */
-    fun scheduleGuardOff(s: TimeLimitState, r: ClockReading, pinOk: Boolean): Outcome {
+    /**
+     * "Disconnect Instagram": it happens [Rules.GUARD_OFF_DELAY_MILLIS] from now on the trusted clock,
+     * with or without a limit. With a limit on it needs the PIN ([pinOk] null: not given yet, which
+     * isn't a wrong attempt). Asking again keeps the time already set.
+     */
+    fun scheduleGuardOff(s: TimeLimitState, r: ClockReading, pinOk: Boolean? = null): Outcome {
         val (st, at) = sync(s, r)
-        if (!st.enabled) return Outcome(st, ActionResult.NotAllowed("No limit set"))
-        return withPin(st, at, pinOk) { ok ->
-            val effective = ok.day!!.plusDays(1)
-            Outcome(ok.copy(pendingGuardOff = effective), ActionResult.Scheduled(effective))
-        }
+        if (st.guardOffAt != null || st.guardOffDue) return Outcome(st, ActionResult.Done)
+        val schedule = { ok: TimeLimitState -> Outcome(ok.copy(guardOffAt = at.wall + Rules.GUARD_OFF_DELAY_MILLIS), ActionResult.Done) }
+        return if (st.enabled) withPin(st, at, pinOk, schedule) else schedule(st)
     }
 
-    fun cancelGuardOff(s: TimeLimitState, r: ClockReading): TimeLimitState = sync(s, r).first.copy(pendingGuardOff = null)
+    /** Keeping the Instagram app connected after all: no PIN (it is the stricter choice). */
+    fun cancelGuardOff(s: TimeLimitState, r: ClockReading): TimeLimitState = sync(s, r).first.copy(guardOffAt = null)
 
     /** The app has disconnected the Instagram app. */
     fun guardOffHandled(s: TimeLimitState, r: ClockReading): TimeLimitState = sync(s, r).first.copy(guardOffDue = false)
@@ -387,7 +389,7 @@ class TimeLimitEngine {
 
     /** What the UI should show. Call it with a state that was just refreshed with the same reading. */
     fun view(s: TimeLimitState, r: ClockReading): TimeLimitView {
-        val limit = s.limitMinutes ?: return TimeLimitView.Disabled.copy(guardOffDue = s.guardOffDue)
+        val limit = s.limitMinutes ?: return TimeLimitView.Disabled.copy(guardOffAt = s.guardOffAt, guardOffDue = s.guardOffDue)
         val at = at(s, r)
         val today = today(s, at)
         val extensionsLeft = max(0, Rules.MAX_EXTENSIONS_PER_DAY - s.extensionsUsed)
@@ -413,7 +415,7 @@ class TimeLimitEngine {
             remainingMillis = remaining,
             extensionsUsed = s.extensionsUsed,
             extensionsLeft = extensionsLeft,
-            pendingGuardOff = s.pendingGuardOff,
+            guardOffAt = s.guardOffAt,
             guardOffDue = s.guardOffDue,
             lock = phase,
             pendingLimit = s.pendingLimit,

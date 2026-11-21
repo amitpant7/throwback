@@ -98,6 +98,7 @@
         return selector || text ? { selector: selector, text: text, kind: t.kind, fileInput: !!t.fileInput } : null;
       }).filter(Boolean)
     } : null;
+    if (c.appCreate) c.appCreate.hasStory = c.appCreate.triggers.some(function (t) { return t.kind === 'story'; });
     var nav = rules.nav;
     c.nav = nav && validSelector(nav.links) ? { links: nav.links, minLinks: nav.minLinks || 3 } : null;
     var fd = rules.feedData;
@@ -126,11 +127,16 @@
       ahead: typeof stR.prefetchAhead === 'number' ? stR.prefetchAhead : 3,
       bytes: (typeof stR.prefetchKB === 'number' ? stR.prefetchKB : 400) * 1024
     } : null;
+    // The "Your story" labels: the rules' own list, else the story trigger's text (one list to keep).
     var asR = stR && stR.addStory;
+    var storyLabels = asR && Array.isArray(asR.yourStory) && asR.yourStory.length ? asR.yourStory :
+      ((ac && ac.triggers) || []).reduce(function (all, t) {
+        return t && t.kind === 'story' && Array.isArray(t.text) ? all.concat(t.text) : all;
+      }, []);
     c.addStory = asR && validSelector(asR.menuButton) && validSelector(asR.menuItem) && validSelector(asR.ownPlus) &&
-      Array.isArray(asR.yourStory) && Array.isArray(asR.storyItem) ? {
-        yourStory: asR.yourStory,
-        storyItem: asR.storyItem,
+      storyLabels.length && Array.isArray(asR.storyItem) && asR.storyItem.length ? {
+        yourStory: textSet(storyLabels),
+        storyItem: textSet(asR.storyItem),
         menuButton: asR.menuButton,
         menuItem: asR.menuItem,
         ownPlus: asR.ownPlus

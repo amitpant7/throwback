@@ -3,7 +3,6 @@ package app.throwback.connect
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import app.throwback.connect.guard.PassRules
 import app.throwback.core.LockState
 import app.throwback.timelimit.TimeLimitModule
 import app.throwback.timelimit.engine.TrustedTime
@@ -24,6 +23,12 @@ internal data class PassBook(
     val storyUsedMillis: Long = 0,
     /** The story budget ran out: no story pass through the app before this (the website's upload meanwhile). */
     val storyLockUntil: Long? = null,
+    /**
+     * The story pass that is open (trusted ms when it opened), until it is charged. Kept on disk, so a
+     * pass is charged exactly once however it ends: left, time up, posted, run out, replaced by
+     * another pass, or Throwback stopped (then at most its full length, CallInApp.settleOpenStory).
+     */
+    val storyOpenAt: Long? = null,
     /** When the chat's call button opened Instagram (the last hour is enough). */
     val callTaps: List<Long> = emptyList(),
     /** "Your day": [appMillis] of the Instagram app in front during passes on [appDay]. */
@@ -56,6 +61,12 @@ internal data class PassBook(
 
     /** Story time used now (none while locked or after a lock: the lock starts the budget again). */
     fun storyUsed(now: Long): Long = if (storyAllowed(now)) storyUsedMillis else 0L
+
+    fun storyOpened(now: Long) = copy(storyOpenAt = now)
+
+    /** The open story pass closes, costing [millis]; nothing without an open pass (already charged). */
+    fun storyClosed(now: Long, millis: Long, budgetMillis: Long, lockMillis: Long): PassBook =
+        if (storyOpenAt == null) this else storyCharged(now, millis, budgetMillis, lockMillis).copy(storyOpenAt = null)
 
     /** A story pass ended, costing [millis]; reaching [budgetMillis] locks story passes for [lockMillis]. */
     fun storyCharged(now: Long, millis: Long, budgetMillis: Long, lockMillis: Long): PassBook {
@@ -127,6 +138,7 @@ internal object PassLedger {
             visitDay = p.longOrNull(VISIT_DAY),
             storyUsedMillis = p.getLong(STORY_USED, 0L),
             storyLockUntil = p.longOrNull(STORY_LOCK_UNTIL),
+            storyOpenAt = p.longOrNull(STORY_OPEN_AT),
             callTaps = p.getString(CALL_TAPS, null).orEmpty().split(',').mapNotNull { it.toLongOrNull() },
             appDay = p.longOrNull(APP_DAY),
             appMillis = p.getLong(APP_MILLIS, 0L),
@@ -145,6 +157,7 @@ internal object PassLedger {
             putOrRemove(VISIT_DAY, b.visitDay)
             putLong(STORY_USED, b.storyUsedMillis)
             putOrRemove(STORY_LOCK_UNTIL, b.storyLockUntil)
+            putOrRemove(STORY_OPEN_AT, b.storyOpenAt)
             OLD_STORY_KEYS.forEach { remove(it) } // the count-and-wait rule before #34cc
             putString(CALL_TAPS, b.callTaps.joinToString(","))
             putOrRemove(APP_DAY, b.appDay)
@@ -167,6 +180,7 @@ internal object PassLedger {
     private const val VISIT_DAY = "visitDay"
     private const val STORY_USED = "storyUsed"
     private const val STORY_LOCK_UNTIL = "storyLockUntil"
+    private const val STORY_OPEN_AT = "storyOpenAt"
     private val OLD_STORY_KEYS = listOf("storyDay", "storyCount", "storyWaitUntil")
     private const val CALL_TAPS = "callTaps"
     private const val APP_DAY = "appDay"

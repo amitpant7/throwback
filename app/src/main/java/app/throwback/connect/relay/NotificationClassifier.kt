@@ -23,6 +23,8 @@ internal data class NotificationFacts(
     val fullScreenIntent: Boolean = false,
     val title: CharSequence? = null,
     val text: CharSequence? = null,
+    /** The notification's own time (Notification.when, phone clock), 0 if unknown. */
+    val whenMillis: Long = 0L,
 )
 
 /** What an Instagram notification is. Names match the rules' "kind" values. */

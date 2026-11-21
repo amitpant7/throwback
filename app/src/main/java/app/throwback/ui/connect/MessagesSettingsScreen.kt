@@ -1,5 +1,7 @@
 package app.throwback.ui.connect
 
+import android.text.format.DateFormat
+import android.text.format.DateUtils
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
@@ -9,10 +11,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -39,6 +45,10 @@ import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.UiText
 import app.throwback.ui.common.rememberCheckedOnResume
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.util.Date
 
 /** Labels for the "Also notify me about" toggles, in the order shown. */
 @StringRes
@@ -58,8 +68,8 @@ internal fun MessagesSettingsScreen(
     onFinishSetup: () -> Unit,
     onTurnOff: () -> Unit,
     showMessage: (String) -> Unit = {},
-    /** A PIN-scheduled turn-off (daily limit on): shown instead of the turn-off link. */
-    pendingOff: java.time.LocalDate? = null,
+    /** When a requested disconnect happens (ms; shown instead of the disconnect link), or null. */
+    pendingOff: Long? = null,
     onCancelPendingOff: () -> Unit = {},
 ) {
     val colors = ThrowbackTheme.colors
@@ -144,7 +154,7 @@ internal fun MessagesSettingsScreen(
 
         if (pendingOff != null) {
             Text(
-                stringResource(R.string.ui_messages_off_scheduled),
+                disconnectWhen(pendingOff),
                 style = UiText.body14,
                 color = colors.muted,
                 modifier = Modifier.padding(start = 6.dp, top = 18.dp),
@@ -157,9 +167,11 @@ internal fun MessagesSettingsScreen(
                 textStyle = UiText.body14,
             )
         } else {
+            var confirm by rememberSaveable { mutableStateOf(false) }
+            if (confirm) DisconnectDialog(onConfirm = { confirm = false; onTurnOff() }, onDismiss = { confirm = false })
             TbButton(
                 stringResource(R.string.ui_turn_off_messages),
-                onClick = onTurnOff,
+                onClick = { confirm = true },
                 modifier = Modifier.padding(top = 18.dp, bottom = 16.dp),
                 style = TbButtonStyle.Quiet,
                 textStyle = UiText.body14,
@@ -218,6 +230,58 @@ private fun AlwaysOnRow(@DrawableRes icon: Int, @StringRes label: Int) {
             size = 20.dp,
             tint = colors.ok,
             contentDescription = stringResource(R.string.ui_always_on_description),
+        )
+    }
+}
+
+/**
+ * "Disconnect Instagram" takes effect 24 hours later (DECISIONS.md #27b), so the dialog says when,
+ * and that the Instagram app stays covered until then.
+ */
+@Composable
+private fun DisconnectDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    val c = ThrowbackTheme.colors
+    val context = LocalContext.current
+    val at = remember { System.currentTimeMillis() + 24 * 60 * 60 * 1000L }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = c.surface,
+        titleContentColor = c.text,
+        textContentColor = c.muted,
+        title = { Text(stringResource(R.string.ui_messages_off_dialog_title), style = MaterialTheme.typography.titleLarge) },
+        text = {
+            Text(
+                stringResource(R.string.ui_messages_off_dialog_body, DateFormat.getTimeFormat(context).format(Date(at))),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.ui_messages_off_dialog_confirm), color = c.accentText, style = MaterialTheme.typography.labelLarge)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.ui_messages_off_keep), color = c.text, style = MaterialTheme.typography.labelLarge)
+            }
+        },
+    )
+}
+
+/** "Instagram disconnects today/tomorrow at 10:40 PM" (or a weekday and time further out). */
+@Composable
+private fun disconnectWhen(at: Long): String {
+    val context = LocalContext.current
+    val zone = ZoneId.systemDefault()
+    val day = Instant.ofEpochMilli(at).atZone(zone).toLocalDate()
+    val today = LocalDate.now(zone)
+    val time = DateFormat.getTimeFormat(context).format(Date(at))
+    return when (day) {
+        today -> stringResource(R.string.ui_messages_off_today, time)
+        today.plusDays(1) -> stringResource(R.string.ui_messages_off_tomorrow, time)
+        else -> stringResource(
+            R.string.ui_messages_off_on,
+            DateUtils.formatDateTime(context, at, DateUtils.FORMAT_SHOW_WEEKDAY or DateUtils.FORMAT_SHOW_TIME or DateUtils.FORMAT_ABBREV_ALL),
         )
     }
 }

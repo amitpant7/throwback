@@ -115,8 +115,8 @@ fun AppRoot(
     val appContext = LocalContext.current.applicationContext
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(messagesConnected, lifecycleOwner) {
-        // Re-checked every minute while Throwback is in front: a story pass becomes available again
-        // after its cooldown. The web layer passes each change on to the page.
+        // Re-checked every minute while Throwback is in front: story passes become available again
+        // when the story budget's lock ends. The web layer passes each change on to the page.
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             while (true) {
                 val story = messagesConnected && CallInApp.storyAvailable(appContext)
@@ -188,11 +188,12 @@ fun AppRoot(
                         state = {
                             remember {
                                 app.timeLimit.view
-                                    .map { MessagesOffState(limitOn = it.limitMinutes != null, pendingDate = it.pendingGuardOff) }
+                                    .map { MessagesOffState(limitOn = it.limitMinutes != null, offAt = it.guardOffAt) }
                                     .distinctUntilChanged()
                             }.collectAsStateWithLifecycle(initialValue = MessagesOffState()).value
                         },
                         cancel = { app.timeLimit.cancelGuardOff() },
+                        schedule = { app.timeLimit.scheduleGuardOff() },
                         pinScreen = { onScheduled, onBack -> GuardOffPinScreen(app.timeLimit, onScheduled, onBack) },
                     )
                 },

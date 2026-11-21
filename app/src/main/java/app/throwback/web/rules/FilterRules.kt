@@ -255,7 +255,7 @@ data class StoryRules(
 
 @Serializable
 data class AddStoryRules(
-    /** The "Your story" bubble's label, per language. */
+    /** The "Your story" bubble's label, per language; empty: the appCreate story trigger's text. */
     val yourStory: List<String> = emptyList(),
     /** Inside the bubble: Instagram's own "+" or upload, there while the user has no story. */
     val ownPlus: String = "",
@@ -352,14 +352,14 @@ data class AppCreateRules(
     val triggers: List<AppCreateTrigger> = emptyList(),
     /** More system packages Instagram opens on the way (pickers on some phones); they don't end a pass. */
     val flowPackages: List<String> = emptyList(),
-    /** "Your story": the app's story camera (it lives in the app's main screen, with the feed). */
+    /** "Your story" through the app (its story camera is in its main screen, with the feed: #34cc). */
     val story: AppStoryRules? = null,
 )
 
 @Serializable
 data class AppStoryRules(
-    /** Opens the app's story camera. */
-    val link: String,
+    /** Opens the app for a story; it lands on the feed, and the user swipes right for the camera. */
+    val link: String = DEFAULT_STORY_LINK,
     /** Minutes of Instagram one story pass gives (DECISIONS.md #34cc). */
     val editMinutes: Int = 5,
     /** The story budget, in minutes: a post costs [postMinutes], a pass without one its exact time. */
@@ -409,3 +409,6 @@ data class AppSettingsRules(
     /** Apps that settings open on the way (e.g. Chrome's in-app pages); they don't end the pass. */
     val flowPackages: List<String> = emptyList(),
 )
+
+/** "Your story" in the Instagram app when the rules don't say. */
+const val DEFAULT_STORY_LINK = "instagram://story-camera"

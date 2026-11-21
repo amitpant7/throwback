@@ -40,8 +40,8 @@
         <item quantity="one">Story time is used up. Instagram\'s story editor is back in %d min.</item>
         <item quantity="other">Story time is used up. Instagram\'s story editor is back in %d min.</item>
     </plurals>
-    <string name="story_in_app_not_ready">One moment… then tap “Your story” again.</string>
-    <string name="story_web_ready">Instagram\'s story editor is ready again: tap “Your story” once more to use it.</string>
+    <string name="story_in_app_not_ready">One moment… then tap it again.</string>
+    <string name="story_web_ready">Instagram\'s story editor is ready again: tap once more to use it.</string>
     <string name="create_in_app_failed">Couldn\'t open the Instagram app.</string>
     <string name="create_in_app_used_up">You\'ve opened Instagram\'s post editor 10 times today. Back tomorrow.</string>
     <string name="settings_in_app_used_up">That\'s 5 visits to the Instagram app\'s settings today. Back tomorrow.</string>

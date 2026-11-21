@@ -88,6 +88,19 @@ class PassBookTest {
     }
 
     @Test
+    fun `an open story pass is charged exactly once`() {
+        val budget = 10 * m
+        val lock = 30 * m
+        var b = PassBook().storyOpened(noon)
+        assertEquals(noon, b.storyOpenAt)
+        b = b.storyClosed(noon + 3 * m, 3 * m, budget, lock) // left after 3 minutes
+        assertEquals(3 * m, b.storyUsed(noon + 3 * m))
+        assertEquals(null, b.storyOpenAt)
+        // A second close of the same pass (the relay's late notice, a settle) charges nothing.
+        assertEquals(b, b.storyClosed(noon + 4 * m, 2 * m, budget, lock))
+    }
+
+    @Test
     fun `story budget - five posts in a row reach it exactly`() {
         var b = PassBook()
         repeat(5) { b = b.storyCharged(noon, 2 * m, 10 * m, 30 * m) }

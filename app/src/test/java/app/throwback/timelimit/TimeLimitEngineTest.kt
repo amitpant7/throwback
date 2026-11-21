@@ -582,7 +582,7 @@ class TimeLimitEngineTest {
         h.setup(30)
         h.act { s, r -> h.engine.scheduleGuardOff(s, r, pinOk = true) }
         h.act { s, r -> h.engine.turnOff(s, r, pinOk = true) }
-        h.advanceToMidnight()
+        h.advance(24 * HOUR)
         h.refresh()
         assertEquals(LockState.Disabled, h.view().lockState)
         assertTrue(h.s.guardOffDue) // The app hasn't turned the guard off yet...
@@ -631,34 +631,58 @@ class TimeLimitEngineTest {
     }
 
     @Test
-    fun `disconnecting the Instagram app needs the PIN and takes effect the next day`() {
+    fun `disconnecting the Instagram app with a limit on needs the PIN and takes 24 hours`() {
         h.setup(30)
+        assertEquals(ActionResult.PinRequired, h.act { s, r -> h.engine.scheduleGuardOff(s, r) })
+        assertEquals(0, h.s.wrongPinAttempts) // not giving the PIN isn't a wrong attempt
         assertEquals(ActionResult.WrongPin(4), h.act { s, r -> h.engine.scheduleGuardOff(s, r, pinOk = false) })
-        assertEquals(ActionResult.Scheduled(h.today.plusDays(1)), h.act { s, r -> h.engine.scheduleGuardOff(s, r, pinOk = true) })
-        assertEquals(h.today.plusDays(1), h.view().pendingGuardOff)
-        assertFalse(h.view().guardOffDue)
+        val asked = h.wall
+        assertEquals(ActionResult.Done, h.act { s, r -> h.engine.scheduleGuardOff(s, r, pinOk = true) })
+        assertEquals(asked + 24 * HOUR, h.view().guardOffAt)
 
-        h.advanceToMidnight()
+        h.advanceToMidnight() // a new day isn't enough
+        h.refresh()
+        assertFalse(h.view().guardOffDue)
+        h.advance(asked + 24 * HOUR - h.wall)
         h.refresh()
         assertTrue(h.view().guardOffDue)
-        assertNull(h.view().pendingGuardOff)
+        assertNull(h.view().guardOffAt)
         h.s = h.engine.guardOffHandled(h.s, h.reading())
         assertFalse(h.view().guardOffDue)
     }
 
     @Test
-    fun `a scheduled guard turn-off can be cancelled, and is due at once when the limit goes`() {
+    fun `without a limit, disconnecting needs no PIN but still takes 24 hours`() {
+        val asked = h.wall
+        assertEquals(ActionResult.Done, h.act { s, r -> h.engine.scheduleGuardOff(s, r) })
+        assertEquals(asked + 24 * HOUR, h.view().guardOffAt)
+        h.advance(24 * HOUR - MIN)
+        h.refresh()
+        assertFalse(h.view().guardOffDue)
+        h.advance(MIN)
+        h.refresh()
+        assertTrue(h.view().guardOffDue)
+    }
+
+    @Test
+    fun `a scheduled disconnect can be cancelled, keeps its time when asked again, and outlives the limit`() {
         h.setup(30)
         h.act { s, r -> h.engine.scheduleGuardOff(s, r, pinOk = true) }
         h.s = h.engine.cancelGuardOff(h.s, h.reading())
-        assertNull(h.view().pendingGuardOff)
+        assertNull(h.view().guardOffAt)
 
         h.act { s, r -> h.engine.scheduleGuardOff(s, r, pinOk = true) }
-        h.act { s, r -> h.engine.turnOff(s, r, pinOk = true) } // both tomorrow; the limit goes first
+        val at = h.view().guardOffAt
+        h.advance(HOUR)
+        h.act { s, r -> h.engine.scheduleGuardOff(s, r, pinOk = true) } // asking again doesn't move it
+        assertEquals(at, h.view().guardOffAt)
+
+        h.act { s, r -> h.engine.turnOff(s, r, pinOk = true) } // the limit goes at midnight...
         h.advanceToMidnight()
         h.refresh()
         assertEquals(LockState.Disabled, h.view().lockState)
-        assertTrue(h.view().guardOffDue)
+        assertFalse(h.view().guardOffDue) // ...but the disconnect still waits for its 24 hours
+        assertEquals(at, h.view().guardOffAt)
     }
 
     @Test

@@ -31,8 +31,8 @@ internal object CallReturn {
     }
 
     /**
-     * Opens the call screen through Instagram's notification, else the call's chat (counted like a
-     * tap on the call button). OPENED, or what to tell the user.
+     * Opens the call screen through Instagram's notification, else the call's chat. A call runs, so
+     * this isn't counted as a call-button tap: getting back to a call is never limited (#20).
      */
     fun open(context: Context): CallInApp.Result {
         val action = RelayListenerService.callTapAction(CallState.tracker.state.value)
@@ -57,6 +57,6 @@ internal object CallReturn {
     /** The chat the call started from, else Instagram as it was (a call answered there). */
     private fun openChat(context: Context): CallInApp.Result {
         val (thread, user) = CallInApp.lastChat ?: (null to null)
-        return CallInApp.open(context, thread, user)
+        return CallInApp.open(context, thread, user, countTap = false)
     }
 }

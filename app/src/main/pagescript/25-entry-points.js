@@ -94,7 +94,7 @@
   }
 
   function settingsHeading(ss) {
-    var now = Date.now();
+    var now = performance.now(); // monotonic: the phone's clock can be set back
     if (settingsLook.path !== location.pathname) {
       settingsLook.path = location.pathname;
       settingsLook.since = now;

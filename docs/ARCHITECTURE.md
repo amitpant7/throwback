@@ -287,7 +287,8 @@ setup and the permissions. Notification access is checked for Throwback's listen
   added to the day's usage when Throwback next runs (call screens excepted). Call audio counts as
   Instagram's after an Instagram call notification, while one of its call screens shows, or when an
   internet call starts while Instagram is in front (never a phone call on its own, `CallAudioLink`).
-  A scheduled "Disconnect Instagram" takes effect by itself on the new day. During a call only
+  "Disconnect Instagram" takes effect by itself 24 hours after it was asked for (#27b; the PIN too
+  while a daily limit is on), on the trusted clock. During a call only
   Instagram's call screens (`appCall.screens`) may be active, once one has been seen in that call
   (`CallScreens`); until then all of Instagram is allowed, so a renamed call screen never cuts a call.
 - **Passes** (`PassLedger` on the trusted clock; `CallInApp` opens the app): call button (15 s, 15 taps
@@ -296,8 +297,10 @@ setup and the permissions. Notification access is checked for Throwback's listen
   10 minutes, 5 a day, not while locked), story (a story budget, #34cc: each pass is 5 minutes in
   Instagram, charged when it ends: 2 minutes if Instagram's posting notification shows, also up to
   90 s after leaving, else the exact time spent; 10 minutes of budget, then 30 minutes locked, when
-  "Your story" uses the website's upload; not while the daily limit is reached). Screen patterns that
-  fail or are missing allow nothing beyond a 3-second grace.
+  "Your story" uses the website's upload; not while the daily limit is reached). The open story pass
+  is saved in the ledger, so it is charged exactly once however it ends (#34gg). Time in the app
+  during any pass except the call button's counts toward the daily limit (#34ff). Screen patterns
+  that fail or are missing allow nothing beyond a 3-second grace.
 - Pure rules (`GuardPolicy`, `RelayRouting`, the classifier) are unit-tested; test builds can post
   fake notifications and watch another app (`RelayDebug`, `app/src/debug/`).
 

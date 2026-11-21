@@ -3,6 +3,7 @@ package app.throwback.ui.shortcut
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -40,9 +42,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -51,6 +53,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
@@ -64,16 +67,35 @@ import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.TbTopBar
 import app.throwback.core.ui.UiText
 
-/** Icon choices for the pinned shortcut (DECISIONS.md #31). */
+/**
+ * Icon choices for the pinned shortcut (DECISIONS.md #31): the adaptive [icon] given to the launcher,
+ * and its two layers, which the in-app previews draw, so a preview always matches the icon.
+ */
 internal enum class ShortcutStyle(
     @DrawableRes val icon: Int,
-    @DrawableRes val preview: Int,
+    @DrawableRes val foreground: Int,
+    @ColorRes val background: Int,
     @StringRes val label: Int,
 ) {
-    Sage(R.drawable.ui_shortcut_sage, R.drawable.ui_shortcut_sage_preview, R.string.ui_shortcut_icon_sage),
-    Dark(R.drawable.ui_shortcut_dark, R.drawable.ui_shortcut_dark_preview, R.string.ui_shortcut_icon_dark),
-    Light(R.drawable.ui_shortcut_light, R.drawable.ui_shortcut_light_preview, R.string.ui_shortcut_icon_light),
-    Photo(R.drawable.ui_shortcut_photo, R.drawable.ui_shortcut_photo_preview, R.string.ui_shortcut_icon_photo),
+    // ui_shortcut_sage keeps its name from before the logo, so shortcuts already pinned update in place.
+    App(R.drawable.ui_shortcut_sage, R.drawable.ui_shortcut_mark, R.color.ic_launcher_background, R.string.ui_shortcut_icon_app),
+    Dark(R.drawable.ui_shortcut_dark, R.drawable.ui_shortcut_mark, R.color.shortcut_bg_dark, R.string.ui_shortcut_icon_dark),
+    Light(R.drawable.ui_shortcut_light, R.drawable.ui_shortcut_mark_light, R.color.shortcut_bg_light, R.string.ui_shortcut_icon_light),
+    Photo(R.drawable.ui_shortcut_photo, R.drawable.ui_shortcut_photo_fg, R.color.shortcut_bg_photo, R.string.ui_shortcut_icon_photo),
+}
+
+/**
+ * [style]'s icon as a launcher shows it: the middle 72 of the layers' 108 dp (the rest is room for
+ * the launcher's mask and motion), on a rounded square.
+ */
+@Composable
+private fun ShortcutIcon(style: ShortcutStyle, size: Dp, modifier: Modifier = Modifier) {
+    Box(
+        modifier.size(size).clip(RoundedCornerShape(size * 0.28f)).background(colorResource(style.background)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(painterResource(style.foreground), contentDescription = null, modifier = Modifier.requiredSize(size * 1.5f))
+    }
 }
 
 internal object ShortcutLabel {
@@ -118,7 +140,7 @@ internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
     val focus = LocalFocusManager.current
     val defaultName = stringResource(R.string.ui_shortcut_default_name)
     var name by rememberSaveable { mutableStateOf(defaultName) }
-    var style by rememberSaveable { mutableStateOf(ShortcutStyle.Sage) }
+    var style by rememberSaveable { mutableStateOf(ShortcutStyle.App) }
     val label = ShortcutLabel.sanitize(name, defaultName)
     val requested = stringResource(R.string.ui_shortcut_requested)
     val unsupported = stringResource(R.string.ui_shortcut_unsupported)
@@ -138,12 +160,7 @@ internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Image(
-                    painter = painterResource(style.preview),
-                    contentDescription = null,
-                    contentScale = ContentScale.FillBounds,
-                    modifier = Modifier.size(72.dp).clip(RoundedCornerShape(20.dp)),
-                )
+                ShortcutIcon(style, 72.dp)
                 Text(label, style = UiText.body14, color = colors.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(stringResource(R.string.ui_shortcut_preview), style = UiText.fine, color = colors.muted)
             }
@@ -215,12 +232,7 @@ private fun IconOption(option: ShortcutStyle, selected: Boolean, onSelect: () ->
             .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
             .semantics { contentDescription = description },
     ) {
-        Image(
-            painter = painterResource(option.preview),
-            contentDescription = null,
-            contentScale = ContentScale.FillBounds,
-            modifier = Modifier.fillMaxSize(),
-        )
+        ShortcutIcon(option, 64.dp)
         // Selected: 2dp ring in the text colour. Unselected: a hairline, so the dark option
         // stays visible on the dark background.
         Box(

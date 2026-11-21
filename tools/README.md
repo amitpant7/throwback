@@ -34,6 +34,12 @@ export CDP_PORT=9333
 `memrun.sh` with the test-build switch `files/debug_noscript` (see `docs/HANDOFF.md`, Testing) gives
 the same run without Throwback's page script, as a baseline.
 
+## Icons
+
+`icons/shortcut_mark.py` writes the home-screen shortcut icons' foreground layers
+(`res/drawable/ui_shortcut_mark*.xml`) from the logo's mark, `design/logo/logo-mark-transparent.svg`.
+Run it from the repository root after changing the logo.
+
 ## Page script lint
 
 `tools/pagescript-lint.sh` joins the page script as the build does and runs ESLint on it as ES5

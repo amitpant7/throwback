@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Home-screen shortcut icon (photo). Used by ShortcutManagerCompat.requestPinShortcut. -->
+<!-- Home-screen shortcut icon (photo frame). Used by ShortcutManagerCompat.requestPinShortcut; the file name stays
+     the same across updates, so shortcuts already on the home screen take the new look. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background>
-        <color android:color="#9FC3A8" />
-    </background>
+    <background android:drawable="@color/shortcut_bg_photo" />
     <foreground android:drawable="@drawable/ui_shortcut_photo_fg" />
 </adaptive-icon>

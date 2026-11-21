@@ -142,7 +142,7 @@
     <string name="ui_shortcut_preview">Preview</string>
     <string name="ui_shortcut_name_label">Name</string>
     <string name="ui_shortcut_icon_label">Icon</string>
-    <string name="ui_shortcut_icon_sage">Sage icon</string>
+    <string name="ui_shortcut_icon_app">App icon</string>
     <string name="ui_shortcut_icon_dark">Dark icon</string>
     <string name="ui_shortcut_icon_light">Light icon</string>
     <string name="ui_shortcut_icon_photo">Photo frame icon</string>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Backgrounds of the home-screen shortcut icons (the app-icon option uses ic_launcher_background). -->
+<resources>
+    <color name="shortcut_bg_dark">#101513</color>
+    <color name="shortcut_bg_light">#EEF2EC</color>
+    <color name="shortcut_bg_photo">#9FC3A8</color>
+</resources>

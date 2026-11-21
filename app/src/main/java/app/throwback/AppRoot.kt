@@ -52,6 +52,7 @@ import app.throwback.timelimit.GuardOffPinScreen
 import app.throwback.timelimit.TimeLimitOverlay
 import app.throwback.timelimit.TimeLimitSettingsScreen
 import app.throwback.timelimit.TimeRemainingChip
+import app.throwback.ui.connect.CallReturnBar
 import app.throwback.ui.connect.MessagesOffHooks
 import app.throwback.ui.connect.MessagesOffState
 import app.throwback.ui.onboarding.InstagramAppPrompt
@@ -196,6 +197,9 @@ fun AppRoot(
                 },
             )
         }
+
+        // Over everything, Settings and the lock screen included: calls are never blocked (#34x).
+        CallReturnBar(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 8.dp))
     }
 }
 

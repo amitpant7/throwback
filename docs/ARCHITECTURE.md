@@ -172,7 +172,10 @@ script applies the same path rules to Instagram's in-page navigation. Details un
    Instagram call (only its call screens), or while a pass runs (only that pass's screens).
 3. Otherwise it covers the app (`GuardOverlay`, display over other apps) and brings Throwback to the
    front.
-4. If a permission it needs is turned off, it stops and says so in a notification; the tap opens
+4. During an Instagram call, the rest of Instagram is covered too; a call minimised to its chat
+   leaves the user in Throwback, where a "Back to your Instagram call" bar (`CallReturn`) opens the
+   call screen again through Instagram's call notification.
+5. If a permission it needs is turned off, it stops and says so in a notification; the tap opens
    Settings, where Connect › Instagram shows which permission.
 
 ### A pass (Instagram app connected)

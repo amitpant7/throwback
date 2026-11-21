@@ -1,6 +1,7 @@
 package app.throwback.connect.relay
 
 import android.app.Notification
+import android.app.PendingIntent
 import android.os.Process
 import android.os.SystemClock
 import android.service.notification.NotificationListenerService
@@ -8,6 +9,7 @@ import android.service.notification.StatusBarNotification
 import android.util.Log
 import app.throwback.BuildConfig
 import app.throwback.connect.CallInApp
+import app.throwback.connect.CallSnapshot
 import app.throwback.connect.CallState
 import app.throwback.connect.GuardPass
 import app.throwback.connect.InstagramPackages
@@ -68,10 +70,12 @@ class RelayListenerService : NotificationListenerService() {
     }
 
     override fun onListenerConnected() {
+        live = this
         events.trySend(Event.Connected(snapshotActive()))
     }
 
     override fun onListenerDisconnected() {
+        if (live === this) live = null
         CallState.tracker.onDisconnected(SystemClock.elapsedRealtime())
     }
 
@@ -86,6 +90,7 @@ class RelayListenerService : NotificationListenerService() {
     }
 
     override fun onDestroy() {
+        if (live === this) live = null
         scope.cancel()
         super.onDestroy()
     }
@@ -234,6 +239,26 @@ class RelayListenerService : NotificationListenerService() {
         private const val TAG = "ThrowbackRelay"
         private const val LABELS_TAG = "ThrowbackRelayLabels"
         private const val LOAD_WAIT_MS = 2_000L
+
+        /** The connected listener, for reading what shows now (CallReturn). */
+        @Volatile
+        private var live: RelayListenerService? = null
+
+        /**
+         * The tap action of an Instagram call notification showing now (ringing, or a call in
+         * progress), sure calls first; null if none shows or the listener isn't connected.
+         */
+        internal fun callTapAction(calls: CallSnapshot): PendingIntent? {
+            val service = live ?: return null
+            val showing = try {
+                service.activeNotifications.orEmpty()
+            } catch (e: RuntimeException) {
+                return null // not connected (SecurityException) or being (un)bound
+            }
+            return showing.filter { it.key in calls.activeCalls }
+                .sortedBy { it.key in calls.maybeCalls }
+                .firstNotNullOfOrNull { it.notification.contentIntent }
+        }
 
         /** Copies the fields the classifier and the relayed notification need; nothing is kept afterwards. */
         internal fun factsOf(sbn: StatusBarNotification): NotificationFacts {

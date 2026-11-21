@@ -345,3 +345,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
        three), and why.
     w. **No mindful pause on the very first launch** (owner, 2026-11-21): right after onboarding it
        stood between a new user and their first login; it starts with the next launch (#30).
+    x. **"Back to your Instagram call"** (owner's bug report, 2026-11-21): minimising a call went to its
+       chat, which the guard covers (call screens only, #34b), and left the user in Throwback with no
+       way back to the call. While an Instagram call runs, a bar at the top of Throwback (over
+       Settings and the lock screen too) opens the call screen again through Instagram's own call
+       notification; it shows only when that notification is there to open.

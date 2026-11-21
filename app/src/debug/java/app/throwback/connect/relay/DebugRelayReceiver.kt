@@ -3,9 +3,11 @@ package app.throwback.connect.relay
 import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
@@ -48,7 +50,13 @@ class DebugRelayReceiver : BroadcastReceiver() {
                             .addMessage("Test message (fake)", System.currentTimeMillis(), Person.Builder().setName("Test sender").build()),
                     )
                     "missed" -> b.setCategory("missed_call")
-                    "call" -> b.setCategory(NotificationCompat.CATEGORY_CALL).setOngoing(true)
+                    // Its tap opens Android's Settings, the usual stand-in for Instagram (guard_pkg).
+                    "call" -> b.setCategory(NotificationCompat.CATEGORY_CALL).setOngoing(true).setContentIntent(
+                        PendingIntent.getActivity(
+                            context, id, Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                            PendingIntent.FLAG_IMMUTABLE,
+                        ),
+                    )
                     "ongoing" -> b.setOngoing(true)
                     "unknown" -> b.setCategory(NotificationCompat.CATEGORY_SOCIAL)
                 }

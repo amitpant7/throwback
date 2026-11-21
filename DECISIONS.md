@@ -32,8 +32,13 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     Make It Yours (#4d). Renaming "GTA 6" and the prism image stay on the release list.
 4d. **One tip unlocks Make It Yours** (owner, 2026-11-21): any tip, once, unlocks the whole Make It
     Yours screen (#31) for good. Before that it can be tried out; its button leads to Support. The
-    flag is kept on the phone and in Auto Backup (`core/Supporter`), since tips are one-off purchases
-    Google Play doesn't list again. Until billing is set up nobody can unlock it (test builds can).
+    flag is kept on the phone and in Auto Backup (`core/Supporter`). Until billing is set up nobody
+    can unlock it (test builds can).
+    **With billing (plan, 2026-11-21):** Google Play remembers it, so a reinstall or a new phone on the
+    same Google account unlocks again without the backup. A tip isn't consumed right away: the latest
+    purchase of each tip product stays owned (acknowledged), and is consumed only just before the
+    same product is bought again, so one stays on record. At start the app asks Play for owned tips
+    (queryPurchasesAsync) and sets the flag. A refunded tip leaves the flag as it is.
 4a. **Rating ask** (owner, 2026-11-20): **once, after a month, never again.** Google Play's own in-app
     review card, at "You're all caught up", once the app is at least 30 days old and was used on 10
     different days. Google may choose not to show it; there is no second try and no "do you like it?"

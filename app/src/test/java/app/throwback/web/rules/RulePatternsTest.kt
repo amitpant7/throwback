@@ -68,6 +68,16 @@ class RulePatternsTest {
     }
 
     @Test
+    fun `more long repeats than an anchored pattern needs are refused by syntax alone`() {
+        // Android can't run the probes: there the syntax rules must keep slow patterns out by themselves.
+        listOf("^/.*/.*/.*x$", "^/explore/[a-z]*[a-z0-9]*[a-z_]*!x", "a+b+c", "[a-z]+/[a-z]*x", "^/a{1,500}b{3,}c+", "^/a+|b+")
+            .forEach { assertTrue(it, RulePatterns.syntaxProblem(it)?.contains("too long") == true) }
+        // Anchored with at most two long repeats, or unanchored with one: fine (the probes still run on the JVM).
+        listOf("^/[A-Za-z0-9._]+/reels?/([A-Za-z0-9_-]{9,})/?$", "^/(a+)/(b*)$", "[a-z]+/x", "(\\d+)", "^/a{2,20}b+c+", "(?<=/)x$")
+            .forEach { assertNull(it, RulePatterns.syntaxProblem(it)) }
+    }
+
+    @Test
     fun `length and compile errors`() {
         assertRefused("", "pattern length")
         assertRefused("a".repeat(RulePatterns.MAX_PATTERN + 1), "pattern length")

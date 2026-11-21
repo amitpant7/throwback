@@ -10,7 +10,8 @@ import app.throwback.web.UrlRouter
  * this returns no errors, so a broken edit on GitHub can never break installed apps.
  *
  * Besides syntax, it checks the invariants the app relies on: the home and messages URLs are
- * reachable in their own mode (otherwise every load would redirect forever), only Instagram's own
+ * reachable in their own mode (otherwise every load would redirect forever), messages-only mode
+ * keeps the feed out and full mode the Reels tab, only Instagram's own
  * hosts are treated as Instagram, patterns work the same in the page and stay cheap
  * ([RulePatterns]), selectors cannot break out of the generated CSS, and sizes stay small.
  */
@@ -219,6 +220,15 @@ object RulesValidator {
                 check(router.decide(url, mode, currentUrl = null) == UrlRouter.Decision.Load) {
                     "$url is not allowed in $mode mode (it would redirect forever)"
                 }
+            }
+            // And the modes keep what they promise: messages only (#19), and no Reels (#13).
+            val toInbox = UrlRouter.Decision.Redirect(rules.messagesUrl, UrlRouter.KIND_MESSAGES_ONLY)
+            check(router.decide(rules.homeUrl, WebMode.MESSAGES_ONLY, currentUrl = null) == toInbox) {
+                "messages-only mode would show ${rules.homeUrl}"
+            }
+            val reels = UrlParts.parse(rules.homeUrl)?.let { "https://${it.host}/reels/" }
+            check(reels != null && (router.decide(reels, WebMode.FULL, currentUrl = null) as? UrlRouter.Decision.Redirect)?.kind != null) {
+                "full mode would show the Reels tab"
             }
         }
         NotificationRulesValidator.validate(rules, errors, router)

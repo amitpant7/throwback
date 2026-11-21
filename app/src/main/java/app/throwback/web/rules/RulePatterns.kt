@@ -10,7 +10,8 @@ package app.throwback.web.rules
  * any input. The same rules apply to the patterns only Kotlin uses, so there is one set of rules.
  *
  * Cheap: the shapes that backtrack exponentially (a repeated group holding a quantifier or an
- * alternative) are refused by syntax, in every engine. Then each pattern runs on a few long probes
+ * alternative) are refused by syntax, in every engine, and so are patterns with more long repeats
+ * than an anchored pattern needs (see [MAX_COST_DEGREE]). Then each pattern runs on a few long probes
  * with a budget of character reads, which also catches slow polynomial patterns. That budget only
  * works where the regex engine reads through the CharSequence: on the JVM, so in the unit tests that
  * check filters/rules.json before it is published. Android's engine (ICU) copies the input and
@@ -56,13 +57,25 @@ internal object RulePatterns {
     private const val COSTLY = "takes too long on long input (anchor it with ^, avoid repeats that overlap)"
 
     /**
-     * Java-only syntax, or a repeated group (`*`, `+`, `{n,m}`) whose body holds a quantifier or an
+     * Without nested repeats a search costs at most about n^k reads on n characters, k being the long
+     * repeats (`*`, `+`, `{n,}`, more than [MAX_SHORT_REPEAT] copies) plus one when the pattern isn't
+     * anchored at the start (it is tried at every position). Patterns see at most 2 KB, so k = 2 is a
+     * few million reads at worst; k = 3 (`^/.*a.*b.*c`, `a+b+c`) could take minutes.
+     */
+    private const val MAX_COST_DEGREE = 2
+    private const val MAX_SHORT_REPEAT = 20
+
+    /**
+     * Java-only syntax; a repeated group (`*`, `+`, `{n,m}`) whose body holds a quantifier or an
      * alternative (`(a+)+`, `(?:a*b)*`, `(x{2,})+`, `(a|aa)+`, `(a?a)*`): the shapes that backtrack
-     * exponentially. Null when fine. Assumes [p] already compiles in Java.
+     * exponentially; or more long repeats than [MAX_COST_DEGREE] allows. Null when fine. Assumes [p]
+     * already compiles in Java.
      */
     internal fun syntaxProblem(p: String): String? {
         // For each open group: whether its body holds a quantifier or a '|'.
         val open = ArrayList<Boolean>()
+        var longRepeats = 0
+        var topLevelAlternative = false
         var inClass = false
         var afterGroup: Boolean? = null // right after ')': whether that group's body holds one
         var i = 0
@@ -112,15 +125,22 @@ internal object RulePatterns {
                         i++
                     }
                     '*', '+', '?', '{' -> {
-                        var end = if (c == '{') p.indexOf('}', i).let { if (it < 0) i else it } + 1 else i + 1
+                        val close = if (c == '{') p.indexOf('}', i).let { if (it < 0) i else it } else i
+                        var end = close + 1
                         if (p.getOrNull(end) == '?') end++ // lazy: fine in both
                         else if (p.getOrNull(end) == '+') return NOT_JS // possessive
                         if (c != '?' && afterGroup == true) return NESTED
                         if (open.isNotEmpty()) open[open.lastIndex] = true
+                        val long = when (c) {
+                            '*', '+' -> true
+                            '{' -> close > i && isLongRepeat(p.substring(i + 1, close))
+                            else -> false
+                        }
+                        if (long) longRepeats++
                         i = end
                     }
                     '|' -> {
-                        if (open.isNotEmpty()) open[open.lastIndex] = true
+                        if (open.isNotEmpty()) open[open.lastIndex] = true else topLevelAlternative = true
                         i++
                     }
                     else -> i++
@@ -128,7 +148,14 @@ internal object RulePatterns {
             }
             afterGroup = closedGroup
         }
-        return null
+        val anchored = p.startsWith("^") && !topLevelAlternative
+        return if (longRepeats + (if (anchored) 0 else 1) > MAX_COST_DEGREE) COSTLY else null
+    }
+
+    /** The inside of `{n}`, `{n,}` or `{n,m}`: whether it allows more than [MAX_SHORT_REPEAT] copies. */
+    private fun isLongRepeat(bounds: String): Boolean {
+        val most = bounds.substringAfter(',', missingDelimiterValue = bounds)
+        return most.isEmpty() || (most.trim().toIntOrNull() ?: Int.MAX_VALUE) > MAX_SHORT_REPEAT
     }
 
     // ------------------------------------------------------------------ cost

@@ -191,6 +191,18 @@ class RulesParserTest {
     }
 
     @Test
+    fun `messages-only rules must keep the feed out`() {
+        assertRejected(TestRules.bundledWith { it.replace("\"messagesOnly\": [\"^/direct(/|$)\"]", "\"messagesOnly\": [\"^/direct(/|$)\", \"^/\"]") }, "messages-only mode would show")
+        assertRejected(TestRules.bundledWith { it.replace("\"^/call(/|$)\"", "\"^/call(/|$)\", \"^/$\"") }, "messages-only mode would show")
+    }
+
+    @Test
+    fun `full mode rules must block the Reels tab`() {
+        assertRejected(TestRules.bundledWith { it.replace("\"pattern\": \"^/reels?(/|$)\"", "\"pattern\": \"^/reelz(/|$)\"") }, "would show the Reels tab")
+        assertRejected(TestRules.bundledWith { it.replace("\"^/call(/|$)\"", "\"^/call(/|$)\", \"^/reels/\"") }, "would show the Reels tab")
+    }
+
+    @Test
     fun `home must be an https Instagram URL`() {
         assertRejected(
             TestRules.bundledWith { it.replace("\"homeUrl\": \"https://www.instagram.com/\"", "\"homeUrl\": \"https://example.com/\"") },

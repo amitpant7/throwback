@@ -63,8 +63,9 @@ path rules for in-page navigation.
 
 **Rules.** `filters/rules.json` is bundled and fetched once a day from this repository
 (`RULES_URL`, HTTPS, 512 KB cap, ETag). A fetched file is used only if it validates and is newer.
-Validation pins the hosts to Instagram's, and accepts only regex patterns that behave the same in
-Java and JavaScript and can't backtrack catastrophically (`RulePatterns`).
+Validation pins the hosts to Instagram's, accepts only regex patterns that behave the same in
+Java and JavaScript and can't backtrack catastrophically (`RulePatterns`), and lets dialog rules
+press only dismiss buttons (`DismissLabels`).
 
 **Page → app** (`BridgeMessage`, JSON `{"t": …}` through `addWebMessageListener`, Instagram origins
 and the main frame only; old WebViews use a JavaScript interface that refuses the pass-granting types):

@@ -71,7 +71,15 @@
     }
     if (rule.clickSelector) {
       var x = dialog.querySelector(rule.clickSelector);
-      if (x) return closestWithin(x, 'button, [role="button"], a', 4) || x;
+      if (!x) return null;
+      var button = closestWithin(x, 'button, [role="button"], a', 4) || x;
+      // Only a dismiss button (DECISIONS.md #34d): the element's label must be one of the rule's
+      // texts, which the app accepts only from its list of dismiss labels. A selector alone can match anything.
+      var labelled = [x, button].some(function (e) {
+        var label = e.getAttribute('aria-label') || e.textContent;
+        return label && label.length <= 120 && rule.click.has(norm(label));
+      });
+      if (labelled) return button;
     }
     return null;
   }

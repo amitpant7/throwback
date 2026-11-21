@@ -156,7 +156,7 @@ editor screens (they can't render on the emulator).
 - [x] a. Suggested people in the home feed and on Discover people
 - [ ] b. Calls unlock only the call screen (allowed as before when it can't be recognised)
 - [ ] c. Offer to connect the Instagram app after turning a limit on
-- [ ] d. Remote rules tap only dismiss buttons
+- [x] d. Remote rules tap only dismiss buttons
 - [ ] e. Chat reel viewer detection and Close labels into the rules
 - [ ] f. Connect › Instagram setup mentions clones and work profiles
 

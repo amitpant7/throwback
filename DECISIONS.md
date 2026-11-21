@@ -270,8 +270,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
        allowed as before, so a call is never cut off.
     c. **Daily limit + unconnected Instagram app:** after turning a limit on, a one-time, skippable
        offer to connect the Instagram app so the limit covers it too.
-    d. **Remote rules may only tap dismiss buttons** (Close, Not now, Decline, Cancel and the like);
-       any other button a rules file names is ignored.
+    d. **Remote rules may only tap dismiss buttons** (Close, Not now, Decline, Cancel and the like,
+       a fixed list in the app, `DismissLabels`): a rules file naming any other button is refused
+       (the last good rules stay), and an element found by a rule's selector is pressed only when
+       its label is one of those.
     e. **The chat reel viewer's detection and its Close labels move into the rules**, so they can be
        fixed without an app update.
     f. **Clones:** the Connect › Instagram setup says that a second copy of Instagram (work profile,

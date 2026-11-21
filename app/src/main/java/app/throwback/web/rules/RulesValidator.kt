@@ -107,8 +107,9 @@ object RulesValidator {
         rules.dialogs.forEach { d ->
             check(ID.matches(d.id)) { "bad id '${d.id}'" }
             checkTexts(d.whenText, "dialogs.${d.id}.whenText", errors)
-            check(d.click.isNotEmpty() || d.clickSelector != null) { "dialogs.${d.id}: nothing to click" }
-            d.click.forEach { check(it.isNotBlank() && it.length <= RulePatterns.MAX_TEXT) { "dialogs.${d.id}: bad click text" } }
+            // A selector's element is pressed only when its label is one of these, so a rule needs them too.
+            check(d.click.isNotEmpty()) { "dialogs.${d.id}: nothing to click" }
+            d.click.forEach { check(it.length <= RulePatterns.MAX_TEXT && DismissLabels.allows(it)) { "dialogs.${d.id}: '$it' is not a dismiss button" } }
             d.clickSelector?.let { checkSelector(it, "dialogs.${d.id}.clickSelector", errors) }
         }
         check(rules.dismissMaxAttempts in 0..500) { "dismissMaxAttempts out of range" }

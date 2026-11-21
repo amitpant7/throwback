@@ -144,6 +144,14 @@ class RulesParserTest {
     }
 
     @Test
+    fun `dialog rules may only press dismiss buttons`() { // DECISIONS.md #34d
+        assertRejected(TestRules.bundledWith { it.replace("\"click\": [\"Not now\", \"Cancel\", \"Close\"]", "\"click\": [\"Not now\", \"Follow\"]") }, "not a dismiss button")
+        assertRejected(TestRules.bundledWith { it.replace("\"click\": [\"Not now\", \"Cancel\", \"Close\"]", "\"click\": [\"Accept all cookies\"]") }, "not a dismiss button")
+        // A selector alone could match any button: a rule needs dismiss labels for the page to check.
+        assertRejected(TestRules.bundledWith { it.replace("\"click\": [\"Not now\", \"Cancel\", \"Close\"],", "\"click\": [],") }, "nothing to click")
+    }
+
+    @Test
     fun `duplicate rule ids are rejected`() {
         assertRejected(TestRules.bundledWith { it.replace("\"id\": \"tagged-tab\"", "\"id\": \"reels-links\"") }, "duplicate rule id")
     }

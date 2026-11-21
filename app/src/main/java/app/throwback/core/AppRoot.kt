@@ -296,6 +296,7 @@ private fun MainScreen(
                         onOpenMessagesSetup()
                     }
                     CallInApp.Result.LIMITED -> Toast.makeText(context, R.string.call_too_many, Toast.LENGTH_LONG).show()
+                    CallInApp.Result.NOT_READY -> Toast.makeText(context, R.string.call_not_ready, Toast.LENGTH_SHORT).show()
                 }
             },
             // Back reaches the page only when nothing covers it (a layer's own Back comes first).

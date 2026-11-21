@@ -14,6 +14,7 @@ import app.throwback.relay.RelayDebug
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.TimeLimitModule
 import app.throwback.ui.messages.Permissions
+import app.throwback.web.rules.RulesRepository
 import java.time.LocalDate
 import kotlin.math.max
 import kotlin.math.min
@@ -30,14 +31,16 @@ internal object AppTime {
     /**
      * How long any of [watched] was in front between [from] and [to]: each activity from its RESUMED
      * to its PAUSED, STOPPED or DESTROYED, overlapping ones (split screen, Instagram and Lite) once.
-     * [events] are in time order and may start before [from], to know what was in front then.
+     * Screens matching [notCounted] (Instagram's call screens: calls never count, DECISIONS.md #20)
+     * are left out. [events] are in time order and may start before [from], to know what was in front then.
      */
-    fun inFront(events: List<ActivityEvent>, watched: Set<String>, from: Long, to: Long): Long {
+    fun inFront(events: List<ActivityEvent>, watched: Set<String>, from: Long, to: Long, notCounted: Regex? = null): Long {
         val open = HashSet<String>()
         var since = from
         var total = 0L
         for (e in events) {
             if (e.packageName !in watched) continue
+            if (notCounted != null && e.className?.let(notCounted::containsMatchIn) == true) continue
             val key = e.packageName + "/" + e.className.orEmpty()
             val t = e.time.coerceIn(from, to)
             when (e.type) {
@@ -118,7 +121,8 @@ internal object GuardHeartbeat {
             val from = max(last, min(midnight, midnight + (now - today.wallMillis)))
             if (from < now) {
                 val events = read(context, from - READ_BEFORE_MS, now) ?: return
-                val millis = AppTime.inFront(events, RelayDebug.watchedPackages(), from, now)
+                val callScreens = PassRules.screensPattern(RulesRepository.get(context).rules.value?.appCall?.screens)
+                val millis = AppTime.inFront(events, RelayDebug.watchedPackages(), from, now, notCounted = callScreens)
                 if (millis > 0) {
                     Log.i(TAG, "the guard was off: ${millis / 1000} s of the Instagram app count against today's limit")
                     limit.addOutsideUsage(millis)

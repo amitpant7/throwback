@@ -138,7 +138,7 @@ class RulesParserTest {
     @Test
     fun `selectors that could break out of the generated CSS are rejected`() {
         val json = TestRules.bundledWith {
-            it.replace("\"selector\": \"a[href$='/tagged/']\"", "\"selector\": \"a{} body{display:none\"")
+            it.replace("\"selector\": \"svg[aria-label='Reels']\"", "\"selector\": \"a{} body{display:none\"")
         }
         assertRejected(json, "forbidden character")
     }
@@ -158,8 +158,14 @@ class RulesParserTest {
     }
 
     @Test
+    fun `the Explore player's like and save may only press Like and Save`() { // DECISIONS.md #13i, #34d
+        assertRejected(TestRules.bundledWith { it.replace("\"like\": [\"Like\",", "\"like\": [\"Follow\",") }, "not one of its labels")
+        assertRejected(TestRules.bundledWith { it.replace("\"save\": [\"Save\",", "\"save\": [\"Like\",") }, "not one of its labels")
+    }
+
+    @Test
     fun `duplicate rule ids are rejected`() {
-        assertRejected(TestRules.bundledWith { it.replace("\"id\": \"tagged-tab\"", "\"id\": \"reels-links\"") }, "duplicate rule id")
+        assertRejected(TestRules.bundledWith { it.replace("\"id\": \"reels-icon\"", "\"id\": \"reels-links\"") }, "duplicate rule id")
     }
 
     @Test

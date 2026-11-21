@@ -53,9 +53,8 @@ class UrlRouterTest {
     }
 
     @Test
-    fun `a profile's tagged tab goes to the profile`() {
-        assertEquals(Decision.Redirect("$ig/some.user_1/", "hidden"), decide("$ig/some.user_1/tagged/"))
-        assertEquals(Decision.Redirect("$ig/some.user_1/", "hidden"), decide("$ig/some.user_1/tagged"))
+    fun `a profile's tagged tab loads, like the rest of the profile`() { // owner, 2026-11-21
+        assertEquals(Decision.Load, decide("$ig/some.user_1/tagged/"))
         assertEquals(Decision.Load, decide("$ig/some.user_1/"))
         assertEquals(Decision.Load, decide("$ig/explore/tags/tagged/"))
     }

@@ -206,7 +206,7 @@ data class FeedDataRules(
     val adNodeFields: List<String> = emptyList(),
     /** Node fields holding a suggested post (the post is at `<field>.<mediaField>`). Discovery may keep a few. */
     val suggestionNodeFields: List<String> = emptyList(),
-    /** Node fields marking other units (suggested accounts, surveys). Never kept. */
+    /** Node fields marking other units (surveys). Never kept. Suggested accounts are (DECISIONS.md #34a). */
     val dropNodeFields: List<String> = emptyList(),
     /** Post tests marking an ad. Never kept. */
     val adMedia: List<FieldTest> = emptyList(),

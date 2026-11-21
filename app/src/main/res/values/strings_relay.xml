@@ -23,6 +23,7 @@
     <string name="guard_notification_paused_text">Throwback can\'t see calls while its notification access is disconnected, so it lets the Instagram app open. It is asking Android to reconnect.</string>
     <string name="guard_off_title">Instagram guard is off</string>
     <string name="guard_off_text">Android stopped it. Tap to turn it back on.</string>
+    <string name="guard_off_permission_text">A permission it needs was turned off. Tap to turn it back on.</string>
     <string name="guard_cover_title">Use Throwback instead</string>
     <string name="guard_cover_body">The Instagram app is only for calls and posting. Taking you back…</string>
     <plurals name="story_in_app_hint">
@@ -42,8 +43,8 @@
     <string name="guard_cover_story_title">Story time\'s up</string>
     <string name="guard_cover_story_body">Thought you could sneak a scroll…? Nahhh.</string>
     <plurals name="story_in_app_used_up">
-        <item quantity="one">That\'s %d story through the Instagram app today. Back tomorrow.</item>
-        <item quantity="other">That\'s %d stories through the Instagram app today. Back tomorrow.</item>
+        <item quantity="one">That\'s %d visit to Instagram\'s story editor without a post today. Back tomorrow.</item>
+        <item quantity="other">That\'s %d visits to Instagram\'s story editor without a post today. Back tomorrow.</item>
     </plurals>
     <plurals name="story_in_app_wait">
         <item quantity="one">Instagram\'s story editor opens again in %d min (the wait after a story pass without a post).</item>
@@ -52,9 +53,10 @@
     <string name="story_in_app_not_ready">One moment… then tap “Your story” again.</string>
     <string name="story_web_ready">Instagram\'s story editor is ready again: tap “Your story” once more to use it.</string>
     <string name="create_in_app_failed">Couldn\'t open the Instagram app.</string>
-    <string name="create_in_app_used_up">That\'s 10 posts through the Instagram app today. Back tomorrow.</string>
+    <string name="create_in_app_used_up">You\'ve opened Instagram\'s post editor 10 times today. Back tomorrow.</string>
     <string name="settings_in_app_used_up">That\'s 5 visits to the Instagram app\'s settings today. Back tomorrow.</string>
     <string name="app_pass_locked">Not while your daily limit is reached.</string>
+    <string name="call_not_ready">One moment… then tap the call button again.</string>
     <string name="call_too_many">That\'s 3 tries this hour. Incoming calls still ring as usual.</string>
     <string name="call_needs_instagram_app">Calls start in the Instagram app. Connect Instagram to Throwback in Settings → Connect → Instagram.</string>
 </resources>

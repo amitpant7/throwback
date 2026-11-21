@@ -90,7 +90,7 @@
     <string name="tl_reset_ready_big">Ready</string>
     <string name="tl_reset_ready_sub">You can set a new PIN now.</string>
     <string name="tl_reset_step_wait">The 3-day wait stops impulse resets. If it were instant, the PIN wouldn\'t protect anything.</string>
-    <string name="tl_reset_step_limit">Your daily limit stays on meanwhile. Extensions need the old PIN.</string>
+    <string name="tl_reset_step_limit">Your daily limit stays on meanwhile, and extensions are paused.</string>
     <string name="tl_reset_step_cancel">Remembered it? Cancel the reset below.</string>
     <string name="tl_reset_step_cancel_start">Remembered it after all? You can cancel the reset at any time.</string>
     <string name="tl_reset_start">Start 3-day reset</string>

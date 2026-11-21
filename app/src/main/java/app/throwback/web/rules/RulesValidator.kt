@@ -129,7 +129,9 @@ object RulesValidator {
                 }
             }
             e.actions?.let { a ->
-                (a.like + a.unlike + a.save + a.unsave).forEach { check(it.isNotBlank() && it.length <= 60) { "explore.actions: bad label" } }
+                mapOf("like" to a.like, "unlike" to a.unlike, "save" to a.save, "unsave" to a.unsave).forEach { (action, labels) ->
+                    labels.forEach { check(ExploreActionLabels.allows(action, it)) { "explore.actions.$action: '$it' is not one of its labels" } }
+                }
             }
         }
 

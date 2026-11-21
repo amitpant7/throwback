@@ -28,11 +28,12 @@ internal object CallInApp {
     /** Long enough to tap call; the running call itself is then allowed by its audio. */
     const val PASS_MS = 30_000L
 
-    enum class Result { OPENED, NO_APP, LIMITED }
+    /** NOT_READY: the time limit's clock (which counts the taps) hasn't loaded yet, a moment after start. */
+    enum class Result { OPENED, NO_APP, LIMITED, NOT_READY }
 
     fun open(context: Context, thread: String?, user: String? = null): Result {
         val pkg = installedInstagram(context) ?: return Result.NO_APP
-        val now = PassLedger.now(context) ?: return Result.LIMITED
+        val now = PassLedger.now(context) ?: return Result.NOT_READY
         if (!PassLedger.read(context).callAllowed(now.wallMillis)) return Result.LIMITED
         // ig.me/m/<username> opens a chat with that person from whichever account the Instagram app
         // uses (a chat id only exists in one account); the chat id is for group chats.

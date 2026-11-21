@@ -56,4 +56,17 @@ class AppTimeTest {
         )
         assertEquals(40L, AppTime.inFront(events, watched, from = 0, to = 100))
     }
+
+    @Test
+    fun `Instagram's call screens don't count (calls never count)`() {
+        val call = "com.instagram.rtc.activity.RtcCallActivity"
+        val events = listOf(
+            e(0, ACTIVITY_RESUMED), e(10, ACTIVITY_PAUSED), // 10 on the feed
+            e(10, ACTIVITY_RESUMED, cls = call), e(60, ACTIVITY_PAUSED, cls = call), // a 50 call
+            e(60, ACTIVITY_RESUMED), e(70, ACTIVITY_PAUSED), // 10 more on the feed
+        )
+        val callScreens = PassRules.screensPattern("^com\\.instagram\\.rtc\\.")
+        assertEquals(20L, AppTime.inFront(events, watched, from = 0, to = 100, notCounted = callScreens))
+        assertEquals(70L, AppTime.inFront(events, watched, from = 0, to = 100))
+    }
 }

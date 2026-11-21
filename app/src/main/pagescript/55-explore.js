@@ -24,10 +24,11 @@
 
   /**
    * A grid of posts: Explore itself, hashtag and place pages, keyword results (all under /explore/,
-   * all on the same daily minutes). Not the search page while typing.
+   * all on the same daily minutes). Not the search page while typing, and not Discover people
+   * (suggested accounts show as Instagram shows them, DECISIONS.md #13k).
    */
   function onExploreGrid() {
-    return pageActive('explore') && !/^\/explore\/search\/?$/.test(state.path);
+    return pageActive('explore') && !/^\/explore\/(search|people)(\/|$)/.test(state.path);
   }
 
   var exploreWasAllowed = null;

@@ -69,6 +69,8 @@ internal object MessagesFeature {
         } else {
             Log.d(TAG, "guard off (set up: $setUp)")
             GuardService.stop(context)
+            // Set up, but a permission was turned off (Android may have ended Throwback with it).
+            if (setUp) RelayNotifier.showGuardOff(context, permissionOff = true)
             // Turned off on purpose: the Instagram app is free from now, nothing to count later.
             if (!setUp) GuardHeartbeat.clear(context)
         }

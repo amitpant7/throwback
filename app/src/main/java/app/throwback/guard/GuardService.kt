@@ -243,8 +243,11 @@ class GuardService : Service() {
             val now = SystemClock.elapsedRealtime()
             if (now - lastPermissionCheck > PERMISSION_CHECK_MS) {
                 lastPermissionCheck = now
-                if (!MessagesFeature.guardPossible(this) || !MessagesFeature.isSetUp(this)) {
+                val setUp = MessagesFeature.isSetUp(this)
+                if (!setUp || !MessagesFeature.guardPossible(this)) {
                     Log.i(TAG, "permissions gone or turned off: stopping")
+                    // A permission was taken away: say so (DECISIONS.md #27b). Turned off on purpose: nothing to say.
+                    if (setUp) RelayNotifier.showGuardOff(this, permissionOff = true)
                     stopSelf()
                     return
                 }

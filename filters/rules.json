@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112040,
+  "version": 2026112041,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -41,8 +41,6 @@
         "note": "Newer share links of the form /<user>/reel/<code>/." },
       { "pattern": "^/([A-Za-z0-9._]+)/reels/?$", "redirect": "/$1/", "kind": "reels",
         "note": "The Reels tab on a profile goes to the profile's posts instead." },
-      { "pattern": "^/([A-Za-z0-9._]+)/tagged/?$", "redirect": "/$1/", "kind": "hidden",
-        "note": "The Tagged tab on a profile (posts by other people) goes to the profile's posts instead." },
       { "pattern": "^/reels?(/|$)", "kind": "reels",
         "note": "The Reels tab and anything else under /reels/ or /reel/." }
     ],
@@ -72,8 +70,6 @@
       "note": "Reels tab in the bottom bar, the Reels tab on profiles, and 'Original audio' links that open the Reels feed. Links to a single /reel/ are kept; tapping them opens the post." },
     { "id": "reels-icon", "selector": "svg[aria-label='Reels']", "closest": "a, [role='link'], [role='tab'], [role='button']", "closestDepth": 5, "on": "always", "style": "remove",
       "note": "Reels tab found by its icon label, in case its link changes." },
-    { "id": "tagged-tab", "selector": "a[href$='/tagged/']", "on": "always", "style": "remove",
-      "note": "A profile's Tagged tab (others' posts of that person: an endless feed). Its page is blocked too (paths.blocked)." },
     { "id": "app-links", "selector": "a[href^='intent:'], a[href^='instagram:'], a[href*='play.google.com/store/apps'], a[href*='apps.apple.com'], a[href*='itunes.apple.com']", "on": "always", "style": "remove",
       "note": "'Get the app' / 'Open in app' links and store badges." },
     { "id": "explore-tiles", "selector": "main a[href^='/p/'], main a[href^='/reel/']", "on": "explore", "style": "remove",
@@ -199,7 +195,7 @@
     "mediaField": "media",
     "adNodeFields": ["ad"],
     "suggestionNodeFields": ["explore_story"],
-    "dropNodeFields": ["bloks_netego", "inline_survey"],
+    "dropNodeFields": ["inline_survey"],
     "adMedia": [{"path": "ad_id", "present": true}],
     "suggestedMedia": [],
     "endMarkerFields": ["end_of_feed_demarcator"],

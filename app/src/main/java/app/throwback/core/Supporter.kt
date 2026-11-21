@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * Whether the user has tipped at least once (DECISIONS.md #4d): it unlocks Make It Yours and ends
  * the support ask. Kept in its own preferences file, which Auto Backup includes, so a reinstall
- * keeps it (tips are one-off purchases Google Play doesn't list again).
+ * keeps it. With billing, the tips Google Play lists as owned set it too (the plan in #4d).
  */
 object Supporter {
     internal const val PREFS = "supporter" // backup_rules.xml and data_extraction_rules.xml name it

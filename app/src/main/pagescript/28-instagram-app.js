@@ -37,7 +37,8 @@
   /*
    * With the Instagram app connected (owner, 2026-11-20): a row at the very end of Instagram's
    * settings page opens the app's own "Settings and activity" (some settings exist only there). The
-   * app's guard allows its settings screens, and other screens for a few minutes in total.
+   * app's guard allows only its settings screens (rules appSettings; other screens get
+   * appSettings.otherScreenMinutes, 0 today, so never the feed).
    */
   var APP_SETTINGS_ROW_ID = '__tb_app_settings';
 

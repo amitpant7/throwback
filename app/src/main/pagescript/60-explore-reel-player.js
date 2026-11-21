@@ -58,7 +58,8 @@
       video: v.url,
       poster: poster,
       user: m.user && typeof m.user.username === 'string' ? m.user.username : '',
-      caption: m.caption && typeof m.caption.text === 'string' ? m.caption.text.slice(0, 500) : '',
+      // Whole: captions are never hidden (DECISIONS.md #15); 2,200 is Instagram's own limit.
+      caption: m.caption && typeof m.caption.text === 'string' ? m.caption.text.slice(0, 2200) : '',
       liked: !!m.has_liked,
       likes: typeof m.like_count === 'number' ? m.like_count : null,
       comments: typeof m.comment_count === 'number' ? m.comment_count : null,
@@ -119,7 +120,8 @@
     '#' + CLIP_ID + ' .tbc-user{pointer-events:auto;background:none;border:0;color:#fff;padding:6px 0;font:inherit;' +
       'font-weight:600;font-size:15px}' +
     '#' + CLIP_ID + ' .tbc-cap{margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;' +
-      'overflow:hidden;opacity:.92;white-space:pre-line}' +
+      'overflow:hidden;opacity:.92;white-space:pre-line;pointer-events:auto}' +
+    '#' + CLIP_ID + ' .tbc-cap.open{display:block;max-height:40vh;overflow-y:auto;overscroll-behavior:contain}' +
     '#' + CLIP_ID + ' .tbc-top{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;' +
       'justify-content:space-between;padding:12px 8px 24px 4px;background:linear-gradient(rgba(0,0,0,.45),transparent);' +
       'pointer-events:none}' +
@@ -480,7 +482,15 @@
       });
       info.appendChild(user);
     }
-    if (c.caption) info.appendChild(clipText('div', 'tbc-cap', c.caption));
+    if (c.caption) {
+      // Two lines; a tap shows all of it (and another folds it), without the player's tap-to-mute.
+      var cap = clipText('div', 'tbc-cap', c.caption);
+      cap.addEventListener('click', function (e) {
+        e.stopPropagation();
+        cap.classList.toggle('open');
+      });
+      info.appendChild(cap);
+    }
     slide.appendChild(info);
     slide.appendChild(clipSide(c));
     clipPlayer.strip.appendChild(slide);

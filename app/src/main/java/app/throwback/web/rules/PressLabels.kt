@@ -2,6 +2,12 @@ package app.throwback.web.rules
 
 import java.util.Locale
 
+/** A label as the page normalises texts (10-helpers.js norm): no invisible characters, single spaces, lower case. */
+private val WHITESPACE = Regex("\\s+")
+private val INVISIBLE = Regex("[\\u200B-\\u200D\\u2060\\uFEFF]")
+
+private fun norm(label: String): String = label.replace(INVISIBLE, "").replace(WHITESPACE, " ").trim().lowercase(Locale.ROOT)
+
 /**
  * The only buttons remote rules may press in Instagram's dialogs (DECISIONS.md #34d): ones that
  * close, decline or put off, never ones that act (follow, allow, accept, log out). A rules file whose
@@ -24,10 +30,24 @@ internal object DismissLabels {
         "non ora", "annulla", "chiudi", "rifiuta tutto", "rifiuta cookie facoltativi",
     )
 
-    private val WHITESPACE = Regex("\\s+")
-    private val INVISIBLE = Regex("[\u200B-\u200D\u2060\uFEFF]")
+    fun allows(label: String): Boolean = norm(label) in LABELS
+}
 
-    /** True when [label], normalised as the page normalises texts (10-helpers.js norm), is a dismiss label. */
-    fun allows(label: String): Boolean =
-        label.replace(INVISIBLE, "").replace(WHITESPACE, " ").trim().lowercase(Locale.ROOT) in LABELS
+/**
+ * The Explore reel player's ♥ and 🔖 press Instagram's own Like and Save buttons on the post's page
+ * (rules `explore.actions`, DECISIONS.md #13i). Like the dialogs' buttons (#34d), the labels a rules
+ * file may name for each are a fixed list here, so a tampered file can't turn ♥ into Follow.
+ */
+internal object ExploreActionLabels {
+    private val LABELS = mapOf(
+        "like" to setOf("like", "gefällt mir", "j’aime", "j'aime", "me gusta", "curtir", "mi piace"),
+        "unlike" to setOf(
+            "unlike", "gefällt mir nicht mehr", "je n’aime plus", "je n'aime plus", "ya no me gusta", "descurtir",
+            "non mi piace più",
+        ),
+        "save" to setOf("save", "speichern", "enregistrer", "guardar", "salvar", "salva"),
+        "unsave" to setOf("remove", "entfernen", "retirer", "eliminar", "remover", "rimuovi"),
+    )
+
+    fun allows(action: String, label: String): Boolean = LABELS[action]?.contains(norm(label)) == true
 }

@@ -56,7 +56,11 @@ internal object RelayNotifier {
      * Android refused to (re)start the guard from the background (Android 12+ may): say so, instead
      * of leaving the Instagram app open without a word. The tap opens Throwback, which starts it.
      */
-    fun showGuardOff(context: Context) {
+    /**
+     * "Instagram guard is off": Android stopped it, or ([permissionOff]) a permission it needs was
+     * turned off; then the tap opens Settings, where Connect › Instagram says which one.
+     */
+    fun showGuardOff(context: Context, permissionOff: Boolean = false) {
         ensureChannels(context)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -66,13 +70,14 @@ internal object RelayNotifier {
         val open = PendingIntent.getActivity(
             context,
             GUARD_OFF_NOTIFICATION_ID,
-            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                .apply { if (permissionOff) action = MainActivity.ACTION_OPEN_SETTINGS },
             PendingIntent.FLAG_IMMUTABLE,
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_GUARD_OFF)
             .setSmallIcon(R.drawable.ic_stat_throwback)
             .setContentTitle(context.getString(R.string.guard_off_title))
-            .setContentText(context.getString(R.string.guard_off_text))
+            .setContentText(context.getString(if (permissionOff) R.string.guard_off_permission_text else R.string.guard_off_text))
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setContentIntent(open)
             .setAutoCancel(true)

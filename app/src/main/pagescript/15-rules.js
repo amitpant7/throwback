@@ -90,9 +90,13 @@
     } : null;
     var ac = rules.appCreate;
     c.appCreate = ac && Array.isArray(ac.triggers) ? {
-      triggers: ac.triggers.filter(function (t) {
-        return t && ((t.selector && validSelector(t.selector)) || (Array.isArray(t.text) && t.text.length));
-      })
+      // An invalid selector is dropped on its own (a trigger with text still works by its text): kept,
+      // el.matches would throw on every tap.
+      triggers: ac.triggers.map(function (t) {
+        var selector = t && validSelector(t.selector) ? t.selector : null;
+        var text = t && Array.isArray(t.text) && t.text.length ? t.text : null;
+        return selector || text ? { selector: selector, text: text, kind: t.kind, fileInput: !!t.fileInput } : null;
+      }).filter(Boolean)
     } : null;
     var nav = rules.nav;
     c.nav = nav && validSelector(nav.links) ? { links: nav.links, minLinks: nav.minLinks || 3 } : null;

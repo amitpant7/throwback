@@ -176,18 +176,22 @@
     });
   }
 
-  function watchStoryImages() {
+  /**
+   * Resources the page loads: photos teach the look-ahead the size Instagram shows (stories and the
+   * feed), code files feed the warm-up (72-warmup.js).
+   */
+  function watchResources() {
     if (!window.PerformanceObserver) return;
     try {
       new PerformanceObserver(function (list) {
         var images = !!state.c && (pageActive('stories') || pageActive('home'));
         list.getEntries().forEach(function (e) {
           if (e.initiatorType !== 'img') {
-            noteCodeEntry(e); // for the warm-up (72-warmup.js)
+            noteCodeEntry(e);
             return;
           }
           var u = images && parseUrl(e.name);
-          if (u && storyCdn(u)) noteStoryImage(u.pathname);
+          if (u && isCdnHost(u.hostname)) noteStoryImage(u.pathname);
         });
       }).observe({ type: 'resource', buffered: true });
     } catch (e) {
@@ -219,10 +223,6 @@
     img.src = c.url;
   }
 
-  function storyCdn(u) {
-    return isCdnHost(u.hostname);
-  }
-
   /**
    * The player asks for a piece of a video: learn its quality, and hand it over from memory if we can.
    * Each piece is handed over once, and on a later task, never at once. Instagram's player can ask for
@@ -234,7 +234,7 @@
   function storyFetchHit(url) {
     if (url.indexOf('bytestart=') === -1 || !state.c) return null;
     var u = parseUrl(url);
-    if (!u || !storyCdn(u)) return null;
+    if (!u || !isCdnHost(u.hostname)) return null;
     noteStoryPlaying(u.pathname);
     var la = stories.store[u.pathname] ? stories : feedAhead;
     var e = la.store[u.pathname];

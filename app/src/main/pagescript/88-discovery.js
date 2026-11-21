@@ -26,13 +26,6 @@
     discRecord.save();
   }
 
-  /** Key of a post (its /p/ or /reel/ code), so a post shown once stays shown when Instagram re-renders it. */
-  function postKey(post) {
-    var a = post.querySelector('a[href*="/p/"], a[href*="/reel/"]');
-    var m = a && /\/(?:p|reels?)\/([A-Za-z0-9_-]+)/.exec(a.getAttribute('href') || '');
-    return m ? m[1] : null;
-  }
-
   function allowDiscovery(post) {
     if (state.mode === MODE_MESSAGES || !pageActive('home')) return false;
     var key = postKey(post);

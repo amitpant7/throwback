@@ -18,7 +18,7 @@
   // Sections learned in this document. Only a section's first open loads all its code; a later
   // open in the same document loads little or nothing and must not replace the full list.
   var warmLearned = {};
-  // Recent code-file loads, from the page's resource observer (watchStoryImages). The browser's own
+  // Recent code-file loads, from the page's resource observer (watchResources). The browser's own
   // resource-timing buffer is not used: feed images fill it within a minute and it then records nothing.
   var codeEntries = [];
 

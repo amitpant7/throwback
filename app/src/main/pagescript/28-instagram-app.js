@@ -49,7 +49,7 @@
       if (row && row.parentNode) row.parentNode.removeChild(row);
       return;
     }
-    if (row && row.isConnected && !row.nextElementSibling) return; // already last
+    if (row && !row.nextElementSibling) return; // already last
     if (!row) {
       if (!heading) return;
       var section = document.getElementById(SETTINGS_SECTION_ID);

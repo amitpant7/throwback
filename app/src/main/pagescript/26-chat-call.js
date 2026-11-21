@@ -26,7 +26,7 @@
       callLookup.thread = null; // out of the chat: opening it again looks afresh
       return;
     }
-    var placed = existing && existing.isConnected && existing.nextSibling === infoBtn;
+    var placed = existing && existing.nextSibling === infoBtn;
     if (callLookup.thread !== m[1]) callLookup = { thread: m[1], at: Date.now() };
     // Already in place for this chat with its username, or known to have none: nothing to look up
     // again on every keystroke.

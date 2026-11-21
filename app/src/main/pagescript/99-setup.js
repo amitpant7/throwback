@@ -78,7 +78,7 @@
   function start() {
     hookHistory();
     installHomeLongPress();
-    watchStoryImages();
+    watchResources();
     startTick();
     // Scrolling into Instagram's empty placeholder space changes nothing in the page, so check the
     // end of the feed on scroll too (at most once a frame).

@@ -52,7 +52,7 @@ fallback way and must still run there.
 | `70-covered.js` | Nothing plays while a Throwback screen covers the page |
 | `72-warmup.js` | Prefetches Instagram's messages and story code when idle |
 | `80-feed-data.js` | Removes ads and suggestions from the feed data before it is drawn |
-| `82-stories.js` | Story ads removed; the next stories load ahead |
+| `82-stories.js` | Story ads removed; the next stories load ahead (the look-ahead the feed uses too); the resource observer |
 | `84-feed-lookahead.js` | The next feed posts load ahead |
 | `86-approve-posts.js` | Home-feed posts stay hidden until checked |
 | `88-discovery.js` | A few tagged suggestions, strictly rationed |

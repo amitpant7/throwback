@@ -165,6 +165,16 @@
     }
   }
 
+  /**
+   * Key of a feed post: its /p/ or /reel/ code, the same in the page and in the feed data, and kept
+   * when Instagram re-renders the post.
+   */
+  function postKey(post) {
+    var a = post.querySelector('a[href*="/p/"], a[href*="/reel/"]');
+    var m = a && /\/(?:p|reels?)\/([A-Za-z0-9_-]+)/.exec(a.getAttribute('href') || '');
+    return m ? m[1] : null;
+  }
+
   /** Instagram's media and code CDN (photos, videos, static files). */
   function isCdnHost(hostname) {
     return /(^|\.)(cdninstagram\.com|fbcdn\.net)$/.test(hostname);

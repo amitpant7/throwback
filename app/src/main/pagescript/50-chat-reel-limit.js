@@ -51,7 +51,7 @@
       return;
     }
     if (reels.current === v) return; // the same reel looping
-    var opened = reels.viewer !== viewer || !viewer.isConnected;
+    var opened = reels.viewer !== viewer;
     reels.current = v;
     reels.viewer = viewer;
     if (opened) return; // the reel that was opened is free
@@ -100,7 +100,7 @@
   function closeReelViewer() {
     var viewer = document.querySelector('[' + ATTR_REEL_STOP + ']');
     var rv = state.c && state.c.reelViewer;
-    if (!viewer || !viewer.isConnected || !rv) return false;
+    if (!viewer || !rv) return false;
     var best = null;
     var bestScore = Infinity;
     var labelled = document.querySelectorAll('[aria-label]');

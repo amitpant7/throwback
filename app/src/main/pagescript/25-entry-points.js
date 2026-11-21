@@ -20,7 +20,7 @@
       if (existing) existing.parentNode.removeChild(existing);
       return;
     }
-    if (existing && existing.isConnected) return;
+    if (existing) return;
     // The other top-bar button, at the far right of the same bar (the Threads link). Once found it
     // stays tagged (and hidden), so it is found again after the bar was hidden for a while.
     var threads = document.querySelector('[' + ATTR_THREADS + ']');
@@ -83,8 +83,8 @@
     }
     // The heading is looked for only while something is missing (a whole-page text search).
     var missingRow = state.createInApp && !document.getElementById(APP_SETTINGS_ROW_ID);
-    var heading = (!existing || !existing.isConnected || missingRow) ? settingsHeading(ss) : null;
-    if (!existing || !existing.isConnected) {
+    var heading = (!existing || missingRow) ? settingsHeading(ss) : null;
+    if (!existing) {
       if (!heading) return;
       var place = sectionPlacement(heading);
       if (!place) return;

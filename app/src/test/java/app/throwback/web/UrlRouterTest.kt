@@ -61,8 +61,8 @@ class UrlRouterTest {
     }
 
     @Test
-    fun `suggested people page is blocked`() {
-        assertEquals(Decision.Redirect(home, "suggested"), decide("$ig/explore/people/"))
+    fun `suggested people page loads`() { // owner, 2026-11-21
+        assertEquals(Decision.Load, decide("$ig/explore/people/"))
     }
 
     // ---- Home feed

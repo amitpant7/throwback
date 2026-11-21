@@ -56,7 +56,7 @@ document-start script for Instagram's origins (or injects it on page start on ol
 with only some keys updates the live page through `window.__throwback.configure(...)`.
 
 **Routing.** `UrlRouter` (pure, tested) decides for every navigation: load, redirect (blocked pages:
-Reels, `/explore/people`, a profile's Tagged tab…), open outside (only on a user's tap), or ignore. URLs
+Reels, a profile's Tagged tab…), open outside (only on a user's tap), or ignore. URLs
 with a backslash or control characters are refused: Chromium reads their host differently from any
 parser. Deep links are loaded as URLs rebuilt from their checked parts. The page script mirrors the
 path rules for in-page navigation.

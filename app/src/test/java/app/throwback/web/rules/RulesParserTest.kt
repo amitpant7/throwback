@@ -138,14 +138,14 @@ class RulesParserTest {
     @Test
     fun `selectors that could break out of the generated CSS are rejected`() {
         val json = TestRules.bundledWith {
-            it.replace("\"selector\": \"a[href^='/explore/people']\"", "\"selector\": \"a{} body{display:none\"")
+            it.replace("\"selector\": \"a[href$='/tagged/']\"", "\"selector\": \"a{} body{display:none\"")
         }
         assertRejected(json, "forbidden character")
     }
 
     @Test
     fun `duplicate rule ids are rejected`() {
-        assertRejected(TestRules.bundledWith { it.replace("\"id\": \"people-links\"", "\"id\": \"reels-links\"") }, "duplicate rule id")
+        assertRejected(TestRules.bundledWith { it.replace("\"id\": \"tagged-tab\"", "\"id\": \"reels-links\"") }, "duplicate rule id")
     }
 
     @Test
@@ -161,7 +161,7 @@ class RulesParserTest {
     @Test
     fun `rules that would block the home feed are rejected`() {
         // A blocked pattern matching "/" would send every load of home back to home forever.
-        val json = TestRules.bundledWith { it.replace("\"pattern\": \"^/explore/people(/|$)\"", "\"pattern\": \"^/$\"") }
+        val json = TestRules.bundledWith { it.replace("\"pattern\": \"^/reels?(/|$)\"", "\"pattern\": \"^/$\"") }
         assertRejected(json, "redirect forever")
     }
 

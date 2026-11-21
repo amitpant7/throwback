@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112037,
+  "version": 2026112038,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -44,9 +44,7 @@
       { "pattern": "^/([A-Za-z0-9._]+)/tagged/?$", "redirect": "/$1/", "kind": "hidden",
         "note": "The Tagged tab on a profile (posts by other people) goes to the profile's posts instead." },
       { "pattern": "^/reels?(/|$)", "kind": "reels",
-        "note": "The Reels tab and anything else under /reels/ or /reel/." },
-      { "pattern": "^/explore/people(/|$)", "kind": "suggested",
-        "note": "'Discover people' is a page of suggested accounts." }
+        "note": "The Reels tab and anything else under /reels/ or /reel/." }
     ],
     "alwaysAllowed": [
       "^/accounts/(login|onetap|emailsignup|signup|password|suspended|disabled|logout|confirm_email)(/|$)",
@@ -74,8 +72,6 @@
       "note": "Reels tab in the bottom bar, the Reels tab on profiles, and 'Original audio' links that open the Reels feed. Links to a single /reel/ are kept; tapping them opens the post." },
     { "id": "reels-icon", "selector": "svg[aria-label='Reels']", "closest": "a, [role='link'], [role='tab'], [role='button']", "closestDepth": 5, "on": "always", "style": "remove",
       "note": "Reels tab found by its icon label, in case its link changes." },
-    { "id": "people-links", "selector": "a[href^='/explore/people']", "on": "always", "style": "remove",
-      "note": "'See all' suggested accounts." },
     { "id": "tagged-tab", "selector": "a[href$='/tagged/']", "on": "always", "style": "remove",
       "note": "A profile's Tagged tab (others' posts of that person: an endless feed). Its page is blocked too (paths.blocked)." },
     { "id": "app-links", "selector": "a[href^='intent:'], a[href^='instagram:'], a[href*='play.google.com/store/apps'], a[href*='apps.apple.com'], a[href*='itunes.apple.com']", "on": "always", "style": "remove",
@@ -113,8 +109,8 @@
 
   "modules": [
     { "id": "suggested-module", "on": "home",
-      "text": ["Suggested for you", "Suggested reels", "Suggested threads", "Suggestions for you", "Discover people", "Vorschläge für dich", "Suggestions pour vous", "Sugerencias para ti", "Sugestões para você", "Suggeriti per te"],
-      "note": "Feed blocks headed by these words (account carousels, suggested reels) are removed as a whole." }
+      "text": ["Suggested reels", "Suggested threads"],
+      "note": "Feed blocks headed by these words (suggested reels and threads carousels) are removed as a whole. Suggested accounts ('Suggested for you') are shown, as everywhere (owner, 2026-11-21)." }
   ],
 
   "sectionMarkers": [
@@ -198,7 +194,7 @@
     "mediaField": "media",
     "adNodeFields": ["ad"],
     "suggestionNodeFields": ["explore_story"],
-    "dropNodeFields": ["suggested_users", "bloks_netego", "inline_survey"],
+    "dropNodeFields": ["bloks_netego", "inline_survey"],
     "adMedia": [{"path": "ad_id", "present": true}],
     "suggestedMedia": [],
     "endMarkerFields": ["end_of_feed_demarcator"],

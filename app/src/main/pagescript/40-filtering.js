@@ -147,30 +147,11 @@
     return !n.querySelector(state.c.postContainer + ', main, nav, [role="main"], [' + ATTR_NAV + '], input, textarea, [contenteditable="true"]');
   }
 
-  /**
-   * "Suggested for you" carousels and similar blocks between posts, or the list of suggested accounts
-   * Instagram shows on a home feed without posts (which can't be placed between posts).
-   */
+  /** Suggested reels and threads carousels and similar blocks between posts (rules: modules). */
   function onModule(el, id) {
     if (el.closest(state.c.postContainer)) return; // labels inside posts are handled by onPostLabel
-    var item = feedItemOf(el) || emptyFeedBlockOf(el);
+    var item = feedItemOf(el);
     if (item) item.setAttribute(ATTR_POST, id);
-  }
-
-  var EMPTY_FEED_MIN_BUTTONS = 3;
-
-  /**
-   * On a feed with no posts, Instagram fills the page with its "Suggested for you" accounts (seen on
-   * the test account, 2026-11-20): the heading's smallest ancestor inside <main> that also holds the
-   * list's buttons. Null when the page has posts or there is no such block.
-   */
-  function emptyFeedBlockOf(el) {
-    var main = el.closest('main, [role="main"]');
-    if (!main || main.querySelector(state.c.postContainer)) return null;
-    for (var n = el.parentElement, depth = 0; n && n !== main && depth < 8; n = n.parentElement, depth++) {
-      if (n.querySelectorAll('button, [role="button"]').length >= EMPTY_FEED_MIN_BUTTONS) return safeItem(n) ? n : null;
-    }
-    return null;
   }
 
   /** "Suggested posts" heading: it and everything after it in the feed. */

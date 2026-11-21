@@ -29,20 +29,8 @@
       }
     }
     if (!list || visible === 0) {
-      // A feed with no posts at all: its suggestions block is hidden (onModule); the card goes there.
-      var emptyFeed = !list && pageActive('home') && state.mode !== MODE_MESSAGES &&
-        document.querySelector('main [' + ATTR_POST + ']');
-      if (emptyFeed) {
-        state.emptyFeedCard = true;
-        showEndCard(emptyFeed);
-      } else {
-        clearFeedBottom();
-      }
-      return;
-    }
-    if (state.emptyFeedCard) { // posts arrived after all: the card goes back to the end of the feed
-      state.emptyFeedCard = false;
       clearFeedBottom();
+      return;
     }
     warmUpcoming(list);
     // The data filter knows the exact end (only suggestions left): the card goes right after the last post.

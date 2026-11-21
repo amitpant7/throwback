@@ -153,7 +153,7 @@ editor screens (they can't render on the emulator).
   accepted reinstalling as the emergency exit).
 
 **Owner's answers of 2026-11-21, to build** (DECISIONS.md #34; ticked when done):
-- [ ] a. Suggested people in the home feed and on Discover people
+- [x] a. Suggested people in the home feed and on Discover people
 - [ ] b. Calls unlock only the call screen (allowed as before when it can't be recognised)
 - [ ] c. Offer to connect the Instagram app after turning a limit on
 - [ ] d. Remote rules tap only dismiss buttons

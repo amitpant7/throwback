@@ -121,7 +121,9 @@ internal object GuardHeartbeat {
             val from = max(last, min(midnight, midnight + (now - today.wallMillis)))
             if (from < now) {
                 val events = read(context, from - READ_BEFORE_MS, now) ?: return
-                val callScreens = PassRules.screensPattern(RulesRepository.get(context).rules.value?.appCall?.screens)
+                // Loaded first: at a cold start the rules aren't in memory yet, and calls never count.
+                val rules = runCatching { RulesRepository.get(context).load() }.getOrNull()
+                val callScreens = PassRules.screensPattern(rules?.appCall?.screens)
                 val millis = AppTime.inFront(events, RelayDebug.watchedPackages(), from, now, notCounted = callScreens)
                 if (millis > 0) {
                     Log.i(TAG, "the guard was off: ${millis / 1000} s of the Instagram app count against today's limit")

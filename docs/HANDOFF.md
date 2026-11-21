@@ -80,6 +80,7 @@ one with `adb -P 15037 kill-server`). Never open stories on the owner's account 
 | `files/debug_clock` containing `<speed> [HH:MM]` | Time-limit clock runs faster; with `HH:MM` the day starts there. Delete it and `files/debug_clock_anchor` to return to real time |
 | `files/debug_noscript` | No page script: plain Instagram in the same WebView, as a baseline |
 | `am start … --es debug_open settings` or `messages` | Opens Settings or Connect › Instagram directly |
+| `am start … --ez debug_supporter true` | Acts as if a tip went through: unlocks Customize icon (stays set) |
 | `DebugRelayReceiver` broadcasts | Fake Instagram notifications; make the guard watch another app (see `app/src/debug/`) |
 
 ```bash
@@ -151,18 +152,13 @@ editor screens (they can't render on the emulator).
 - `ui_prefs` is not in Auto Backup, so a reinstall forgets the Instagram connection (the owner
   accepted reinstalling as the emergency exit).
 
-**Questions for the owner** (from the reviews):
-1. During an Instagram call the whole Instagram app is allowed until the call ends. Restrict it to
-   the call screen? (Call audio counts as Instagram's only after an Instagram call notification,
-   within 30 s, or when it starts in Instagram; a call already running when an Instagram call is
-   declined still counts, so switching from a WhatsApp call to an Instagram call is never covered.)
-2. With a daily limit on and the Instagram app installed but not connected, the limit covers only
-   Throwback. Offer to connect the app when turning on a limit?
-3. Remote rules can press named buttons in dialogs (cookie banner); a compromised rules file could
-   press others. Limit to dismiss-type labels?
-4. The chat reel viewer's detection and its Close labels are in code; move them into the rules?
-5. Instagram app in a work profile, Private Space or a dual-app clone is invisible to the guard. Say
-   so in the setup?
+**Owner's answers of 2026-11-21, to build** (DECISIONS.md #34; ticked when done):
+- [ ] a. Suggested people in the home feed and on Discover people
+- [ ] b. Calls unlock only the call screen (allowed as before when it can't be recognised)
+- [ ] c. Offer to connect the Instagram app after turning a limit on
+- [ ] d. Remote rules tap only dismiss buttons
+- [ ] e. Chat reel viewer detection and Close labels into the rules
+- [ ] f. Connect › Instagram setup mentions clones and work profiles
 
 ## 6. How the home feed is filtered
 

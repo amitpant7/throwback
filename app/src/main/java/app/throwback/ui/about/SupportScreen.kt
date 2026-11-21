@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -29,9 +29,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -51,6 +51,7 @@ import app.throwback.core.ui.SettingsScaffold
 import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.UiText
+import app.throwback.core.ui.doneHidesKeyboard
 import app.throwback.ui.common.SystemScreens
 
 /**
@@ -76,7 +77,6 @@ internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
     val currency = stringResource(R.string.ui_tip_currency)
     val linkFailed = stringResource(R.string.ui_link_failed)
     val open: (String) -> Unit = { url -> if (!SystemScreens.openUrl(context, url)) showMessage(linkFailed) }
-    val focus = LocalFocusManager.current
     var bigOpen by rememberSaveable { mutableStateOf(false) }
 
     // The scaffold keeps the amount field above the keyboard.
@@ -137,19 +137,14 @@ internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(currency, style = UiText.row15.copy(fontWeight = FontWeight.Bold), color = colors.muted)
-                        androidx.compose.foundation.text.BasicTextField(
+                        BasicTextField(
                             value = amount,
                             onValueChange = { t -> amount = t.filter { it.isDigit() }.take(4) },
                             singleLine = true,
                             textStyle = UiText.row15.copy(fontWeight = FontWeight.Bold, color = colors.text),
-                            cursorBrush = androidx.compose.ui.graphics.SolidColor(colors.accent),
+                            cursorBrush = SolidColor(colors.accent),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                            keyboardActions = KeyboardActions(
-                                onDone = {
-                                    focus.clearFocus()
-                                    tip()
-                                },
-                            ),
+                            keyboardActions = doneHidesKeyboard(tip),
                             modifier = Modifier.weight(1f).padding(start = 4.dp),
                             decorationBox = { inner ->
                                 Box {

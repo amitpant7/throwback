@@ -13,6 +13,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import app.throwback.core.AppRoot
 import app.throwback.core.RateAsk
+import app.throwback.core.Supporter
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.relay.RelayLinks
 import app.throwback.relay.RelayNotifier
@@ -56,6 +57,8 @@ class MainActivity : ComponentActivity() {
         // Test builds only: `adb shell am start -n app.throwback/.MainActivity --es debug_open settings`
         // (or messages) opens Settings directly, so screens can be checked without an Instagram login.
         val debugOpen = if (BuildConfig.DEBUG) intent.getStringExtra("debug_open") else null
+        // Test builds only: `--ez debug_supporter true` acts as if a tip went through (unlocks Customize icon).
+        if (BuildConfig.DEBUG && intent.getBooleanExtra("debug_supporter", false)) Supporter.markTipped(this)
         val app = application as ThrowbackApp
         StartTrace.mark("setContent")
         setContent {

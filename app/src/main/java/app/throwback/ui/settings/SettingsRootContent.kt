@@ -227,7 +227,9 @@ private fun RouteContent(
             )
         }
 
-        SettingsRoute.Shortcut -> Box(padded) { ShortcutScreen(onBack = back, showMessage = showMessage) }
+        SettingsRoute.Shortcut -> Box(padded) {
+            ShortcutScreen(onBack = back, onOpenSupport = { push(SettingsRoute.Support) }, showMessage = showMessage)
+        }
 
         SettingsRoute.Support -> Box(padded) { SupportScreen(onBack = back, showMessage = showMessage) }
         SettingsRoute.About -> Box(padded) { AboutScreen(onBack = back, showMessage = showMessage) }

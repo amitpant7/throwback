@@ -57,7 +57,8 @@
     <string name="ui_messages_value_setup">Set up</string>
     <string name="ui_messages_value_on">Connected</string>
     <string name="ui_section_app">App</string>
-    <string name="ui_shortcut_title">Add to home screen</string>
+    <string name="ui_shortcut_title">Customize icon</string>
+    <string name="ui_shortcut_row_sub">Your own name and icon on the home screen</string>
     <string name="ui_about_title">About</string>
 
     <!-- 13–16 · Messages & calls wizard -->
@@ -146,7 +147,12 @@
     <string name="ui_shortcut_icon_dark">Dark icon</string>
     <string name="ui_shortcut_icon_light">Light icon</string>
     <string name="ui_shortcut_icon_photo">Photo frame icon</string>
-    <string name="ui_shortcut_note">Call it whatever you like. Throwback doesn\'t use Instagram\'s name or logo, but your shortcut is yours to name.</string>
+    <string name="ui_shortcut_icon_own">Your own picture</string>
+    <string name="ui_shortcut_own_failed">Couldn\'t open that picture. Try another one.</string>
+    <string name="ui_shortcut_locked_title">Unlocks with any tip</string>
+    <string name="ui_shortcut_locked_body">Support Throwback once, any amount, and custom icons are yours for good. Try it out below.</string>
+    <string name="ui_shortcut_unlock">Leave a tip to unlock</string>
+    <string name="ui_shortcut_note">Call it whatever you like and use any picture. Throwback doesn\'t use Instagram\'s name or logo, but your shortcut is yours. Most phones add a small Throwback badge to shortcuts.</string>
     <string name="ui_shortcut_add">Add to home screen</string>
     <string name="ui_shortcut_requested">Sent to your home screen. Your phone may ask you to confirm.</string>
     <string name="ui_shortcut_unsupported">Your home screen app can\'t add shortcuts. Try long-pressing Throwback in your app list instead.</string>

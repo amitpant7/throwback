@@ -16,7 +16,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
    (owner, 2026-11-20, replacing GPL-3.0): personal and other non-commercial use only, no
    redistribution, no published changes. Source-available, not open source (so no F-Droid). The
    repo was public under GPL-3.0 for about an hour on 2026-11-20; copies from then keep GPL rights.
-4. **Money:** free, with optional tips through Google Play Billing (no paid features). The tip tiers in
+4. **Money:** free, with optional tips through Google Play Billing (no paid features; one thank-you
+   unlock, #4d). The tip tiers in
    the mockup are Beer / Rock show / GTA 6. Beer and GTA 6 have original icons; Rock show uses a prism
    image supplied by the owner (source and licence to confirm before release). Before the Play
    release, recheck using third-party names as product names.
@@ -28,6 +29,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     Prices shown from Google Play in the user's currency. Fine print "Paid through Google Play", then
     "How tips work" and "Report something Throwback missed". Renaming "GTA 6" and the prism image stay
     on the release list.
+4d. **One tip unlocks Customize icon** (owner, 2026-11-21): any tip, once, unlocks the whole Customize
+    icon screen (#31) for good. Before that it can be tried out; its button leads to Support. The
+    flag is kept on the phone and in Auto Backup (`core/Supporter`), since tips are one-off purchases
+    Google Play doesn't list again. Until billing is set up nobody can unlock it (test builds can).
 4a. **Rating ask** (owner, 2026-11-20): **once, after a month, never again.** Google Play's own in-app
     review card, at "You're all caught up", once the app is at least 30 days old and was used on 10
     different days. Google may choose not to show it; there is no second try and no "do you like it?"
@@ -85,9 +90,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     shown, tagged "Discover · not someone you follow". Per 5 minutes of time actually spent on the feed:
     at most 1 video/reel and 1 photo post; at most 20 a day; only after 8 posts from people you follow
     since the previous one; never after "You're all caught up". Always on, no setting.
-13k. **Suggested people stay** (owner, 2026-11-21): "Suggested for you" lists of accounts on the
-    notifications page and on profiles, and profiles of people you don't follow, are shown as
-    Instagram shows them. Only suggested posts in the feed are filtered (13b, 13d).
+13k. **Suggested people stay** (owner, 2026-11-21): "Suggested for you" lists of accounts (on the
+    notifications page, on profiles, in the home feed and on the Discover people page), and profiles
+    of people you don't follow, are shown as Instagram shows them (#34a). Only suggested posts in the
+    feed are filtered (13b, 13d).
 13d. **Filter the feed data, not the drawn page** (decided 2026-11-20): ads and suggestions are removed
     from Instagram's feed data before the page draws them (no flicker, exact end); as a safety net,
     home-feed posts stay hidden until checked. No extra requests to Instagram. See HANDOFF 5c.
@@ -233,7 +239,11 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 30. **Mindful pause:** **on by default** (owner, 2026-11-20: Instagram loads underneath, so it hides the
     page load), can be turned off in Settings. **4 seconds**, no buttons (Back still leaves). 30 short
     original lines in a shuffled order that goes through all of them before repeating.
-31. **Home-screen shortcut:** the user picks a name and icon (pinned shortcut).
+31. **Customize icon** (owner, 2026-11-21; was "Add to home screen"): a home-screen shortcut with the
+    user's own name and icon: the logo on the app colour, dark or light, a photo frame, or the user's
+    own picture (cropped square, any picture; Throwback ships no Instagram name or logo, but the
+    user's shortcut is theirs). Android doesn't let an app rename or re-icon itself, so it is a
+    pinned shortcut; most launchers add a small Throwback badge to it. Unlocked by one tip (#4d).
 32. **Theme: Sage.** Nunito type with a sage-green accent, following the phone's light/dark setting.
     The Instagram feed keeps Instagram's own colours.
 33a. **Throwback settings ("portal") has no button on the feed** (decided 2026-11-20); the feed looks
@@ -252,3 +262,17 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     reels-in-chats cooldown, Discover posts left, and what was removed today (ads, suggested posts,
     Instagram alerts). Counted on the phone only (page storage `__tb_day` + the app), reset at midnight.
 33. **Mockups:** https://claude.ai/artifact/JVunY8kiNTP8abRP43LSGV (private to the owner).
+34. **Owner's answers of 2026-11-21** (multiple choice, from the reviews):
+    a. **Suggested people show everywhere:** also the accounts block in the home feed and the
+       Discover people page (`/explore/people`), as on notifications and profiles (#13k).
+    b. **Calls unlock only the call screen:** during an Instagram call, the rest of the Instagram app
+       is covered. If Throwback can't recognise the call screen (Instagram renamed it), the call is
+       allowed as before, so a call is never cut off.
+    c. **Daily limit + unconnected Instagram app:** after turning a limit on, a one-time, skippable
+       offer to connect the Instagram app so the limit covers it too.
+    d. **Remote rules may only tap dismiss buttons** (Close, Not now, Decline, Cancel and the like);
+       any other button a rules file names is ignored.
+    e. **The chat reel viewer's detection and its Close labels move into the rules**, so they can be
+       fixed without an app update.
+    f. **Clones:** the Connect › Instagram setup says that a second copy of Instagram (work profile,
+       dual apps, Private Space) isn't covered.

@@ -25,15 +25,10 @@ object SupportAsk {
     fun due(context: Context, today: LocalDate = LocalDate.now()): String? {
         val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val last = p.getLong("lastShown", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }
-        return due(RateAsk.firstUseDay(context), today.toEpochDay(), last, p.getBoolean("tipped", false))
+        return due(RateAsk.firstUseDay(context), today.toEpochDay(), last, Supporter.tipped(context).value)
     }
 
     fun markShown(context: Context, today: LocalDate = LocalDate.now()) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putLong("lastShown", today.toEpochDay()).apply()
-    }
-
-    /** Called once a tip is confirmed by Google Play billing (release). */
-    fun markTipped(context: Context) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean("tipped", true).apply()
     }
 }

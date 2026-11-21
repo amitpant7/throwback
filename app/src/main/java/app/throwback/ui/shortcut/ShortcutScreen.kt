@@ -3,6 +3,11 @@ package app.throwback.ui.shortcut
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -11,10 +16,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,19 +36,25 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.colorResource
@@ -53,22 +66,26 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.MainActivity
 import app.throwback.R
+import app.throwback.core.Supporter
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.SectionLabel
 import app.throwback.core.ui.TbButton
 import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.TbTopBar
 import app.throwback.core.ui.UiText
+import app.throwback.core.ui.doneHidesKeyboard
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
- * Icon choices for the pinned shortcut (DECISIONS.md #31): the adaptive [icon] given to the launcher,
+ * Preset icons for the pinned shortcut (DECISIONS.md #31): the adaptive [icon] given to the launcher,
  * and its two layers, which the in-app previews draw, so a preview always matches the icon.
  */
 internal enum class ShortcutStyle(
@@ -82,20 +99,6 @@ internal enum class ShortcutStyle(
     Dark(R.drawable.ui_shortcut_dark, R.drawable.ui_shortcut_mark, R.color.shortcut_bg_dark, R.string.ui_shortcut_icon_dark),
     Light(R.drawable.ui_shortcut_light, R.drawable.ui_shortcut_mark_light, R.color.shortcut_bg_light, R.string.ui_shortcut_icon_light),
     Photo(R.drawable.ui_shortcut_photo, R.drawable.ui_shortcut_photo_fg, R.color.shortcut_bg_photo, R.string.ui_shortcut_icon_photo),
-}
-
-/**
- * [style]'s icon as a launcher shows it: the middle 72 of the layers' 108 dp (the rest is room for
- * the launcher's mask and motion), on a rounded square.
- */
-@Composable
-private fun ShortcutIcon(style: ShortcutStyle, size: Dp, modifier: Modifier = Modifier) {
-    Box(
-        modifier.size(size).clip(RoundedCornerShape(size * 0.28f)).background(colorResource(style.background)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Image(painterResource(style.foreground), contentDescription = null, modifier = Modifier.requiredSize(size * 1.5f))
-    }
 }
 
 internal object ShortcutLabel {
@@ -114,7 +117,7 @@ internal object ShortcutLabel {
 internal enum class PinResult { Requested, Unsupported }
 
 internal object HomeShortcut {
-    fun request(context: Context, name: String, style: ShortcutStyle): PinResult {
+    fun request(context: Context, name: String, icon: IconCompat): PinResult {
         if (!ShortcutManagerCompat.isRequestPinShortcutSupported(context)) return PinResult.Unsupported
         val intent = Intent(Intent.ACTION_MAIN)
             .addCategory(Intent.CATEGORY_LAUNCHER)
@@ -122,7 +125,7 @@ internal object HomeShortcut {
         val shortcut = ShortcutInfoCompat.Builder(context, "throwback-home-${System.currentTimeMillis()}")
             .setShortLabel(name)
             .setLongLabel(name)
-            .setIcon(IconCompat.createWithResource(context, style.icon))
+            .setIcon(icon)
             .setIntent(intent)
             .build()
         return if (ShortcutManagerCompat.requestPinShortcut(context, shortcut, null)) {
@@ -133,17 +136,42 @@ internal object HomeShortcut {
     }
 }
 
+/**
+ * Customize icon (DECISIONS.md #31, #4d): a home-screen shortcut with the user's name and a preset
+ * icon or their own picture. Unlocked by one tip; until then everything can be tried out, and the
+ * button leads to Support instead of adding the shortcut.
+ */
 @Composable
-internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
+internal fun ShortcutScreen(onBack: () -> Unit, onOpenSupport: () -> Unit, showMessage: (String) -> Unit) {
     val colors = ThrowbackTheme.colors
     val context = LocalContext.current
     val focus = LocalFocusManager.current
+    val unlocked by Supporter.tipped(context).collectAsStateWithLifecycle()
     val defaultName = stringResource(R.string.ui_shortcut_default_name)
     var name by rememberSaveable { mutableStateOf(defaultName) }
     var style by rememberSaveable { mutableStateOf(ShortcutStyle.App) }
+    // The user's picture: its address survives recreation; the icon made from it is read again.
+    var ownUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var useOwn by rememberSaveable { mutableStateOf(false) }
+    var own by remember { mutableStateOf<Bitmap?>(null) }
     val label = ShortcutLabel.sanitize(name, defaultName)
     val requested = stringResource(R.string.ui_shortcut_requested)
     val unsupported = stringResource(R.string.ui_shortcut_unsupported)
+    val ownFailed = stringResource(R.string.ui_shortcut_own_failed)
+
+    val pick = rememberLauncherForActivityResult(PickVisualMedia()) { uri -> if (uri != null) ownUri = uri }
+    val pickPicture = { pick.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) }
+    LaunchedEffect(ownUri) {
+        val uri = ownUri ?: return@LaunchedEffect
+        val made = withContext(Dispatchers.IO) { ShortcutImage.load(context, uri) }
+        own = made
+        useOwn = made != null
+        if (made == null) {
+            ownUri = null
+            showMessage(ownFailed)
+        }
+    }
+    val ownPicture = own?.takeIf { useOwn }
 
     Column(Modifier.fillMaxSize().navigationBarsPadding().imePadding()) {
         TbTopBar(stringResource(R.string.ui_shortcut_title), onBack = onBack)
@@ -153,6 +181,17 @@ internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(start = 20.dp, end = 20.dp, top = 8.dp),
         ) {
+            if (!unlocked) {
+                TbCard(
+                    radius = 20.dp,
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(bottom = 12.dp),
+                ) {
+                    Text(stringResource(R.string.ui_shortcut_locked_title), style = UiText.body14, color = colors.text)
+                    Text(stringResource(R.string.ui_shortcut_locked_body), style = UiText.sub, color = colors.muted)
+                }
+            }
             // Preview
             TbCard(
                 radius = 20.dp,
@@ -160,7 +199,7 @@ internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                ShortcutIcon(style, 72.dp)
+                if (ownPicture != null) PictureIcon(ownPicture, Modifier.size(72.dp)) else PresetIcon(style, Modifier.size(72.dp))
                 Text(label, style = UiText.body14, color = colors.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(stringResource(R.string.ui_shortcut_preview), style = UiText.fine, color = colors.muted)
             }
@@ -174,7 +213,7 @@ internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
                 textStyle = UiText.row.copy(color = colors.text),
                 cursorBrush = SolidColor(colors.accent),
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }),
+                keyboardActions = doneHidesKeyboard(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .semantics { contentDescription = nameLabel },
@@ -193,9 +232,26 @@ internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
             )
 
             SectionLabel(stringResource(R.string.ui_shortcut_icon_label))
-            Row(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                val tile = Modifier.weight(1f)
                 ShortcutStyle.entries.forEach { option ->
-                    IconOption(option, selected = option == style, onSelect = { style = option })
+                    IconOption(stringResource(option.label), selected = !useOwn && option == style, modifier = tile, onSelect = {
+                        style = option
+                        useOwn = false
+                    }) { PresetIcon(option, Modifier.fillMaxSize()) }
+                }
+                // Your own picture: picks one the first time, and again when tapped while chosen.
+                IconOption(stringResource(R.string.ui_shortcut_icon_own), selected = useOwn, modifier = tile, onSelect = {
+                    if (useOwn || own == null) pickPicture() else useOwn = true
+                }) {
+                    val picture = own
+                    if (picture != null) {
+                        PictureIcon(picture, Modifier.fillMaxSize())
+                    } else {
+                        Box(Modifier.fillMaxSize().background(colors.surface), contentAlignment = Alignment.Center) {
+                            Icon(painterResource(R.drawable.ic_image_add), contentDescription = null, tint = colors.muted)
+                        }
+                    }
                 }
             }
             Text(
@@ -207,12 +263,18 @@ internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
             Spacer(Modifier.height(20.dp))
         }
         TbButton(
-            stringResource(R.string.ui_shortcut_add),
+            stringResource(if (unlocked) R.string.ui_shortcut_add else R.string.ui_shortcut_unlock),
             onClick = {
                 focus.clearFocus()
-                when (HomeShortcut.request(context, label, style)) {
-                    PinResult.Requested -> showMessage(requested)
-                    PinResult.Unsupported -> showMessage(unsupported)
+                if (!unlocked) {
+                    onOpenSupport()
+                } else {
+                    val icon = ownPicture?.let(IconCompat::createWithAdaptiveBitmap)
+                        ?: IconCompat.createWithResource(context, style.icon)
+                    when (HomeShortcut.request(context, label, icon)) {
+                        PinResult.Requested -> showMessage(requested)
+                        PinResult.Unsupported -> showMessage(unsupported)
+                    }
                 }
             },
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 28.dp),
@@ -220,19 +282,48 @@ internal fun ShortcutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
     }
 }
 
+/** A preset icon as the launcher shows it. */
 @Composable
-private fun IconOption(option: ShortcutStyle, selected: Boolean, onSelect: () -> Unit) {
+private fun PresetIcon(style: ShortcutStyle, modifier: Modifier) =
+    LauncherIcon(painterResource(style.foreground), colorResource(style.background), modifier)
+
+/** The user's picture as the launcher shows it ([ShortcutImage] made it a full layer). */
+@Composable
+private fun PictureIcon(picture: Bitmap, modifier: Modifier) =
+    LauncherIcon(remember(picture) { BitmapPainter(picture.asImageBitmap()) }, Color.White, modifier)
+
+/**
+ * An adaptive icon's [layer] as a launcher shows it: the middle 72 of its 108 dp (the rest is room
+ * for the launcher's mask and motion), on [background], in a rounded square.
+ */
+@Composable
+private fun LauncherIcon(layer: Painter, background: Color, modifier: Modifier) {
+    BoxWithConstraints(
+        modifier.aspectRatio(1f).clip(RoundedCornerShape(percent = 28)).background(background),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(layer, contentDescription = null, modifier = Modifier.requiredSize(maxWidth * 1.5f))
+    }
+}
+
+@Composable
+private fun IconOption(
+    description: String,
+    selected: Boolean,
+    modifier: Modifier,
+    onSelect: () -> Unit,
+    content: @Composable () -> Unit,
+) {
     val colors = ThrowbackTheme.colors
-    val shape = RoundedCornerShape(18.dp)
-    val description = stringResource(option.label)
+    val shape = RoundedCornerShape(percent = 28)
     Box(
-        Modifier
-            .size(64.dp)
+        modifier
+            .aspectRatio(1f)
             .clip(shape)
             .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
             .semantics { contentDescription = description },
     ) {
-        ShortcutIcon(option, 64.dp)
+        content()
         // Selected: 2dp ring in the text colour. Unselected: a hairline, so the dark option
         // stays visible on the dark background.
         Box(

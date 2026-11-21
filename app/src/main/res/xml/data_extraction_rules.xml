@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Backup and device-transfer rules for Android 12 and higher (owned by the timelimit area;
+    Backup and device-transfer rules for Android 12 and higher (time limit and support;
     DECISIONS.md #23). Same content as backup_rules.xml: only the time-limit DataStore
-    (limit, PIN hash and salt, usage, extensions, pending changes, pending PIN reset).
+    (limit, PIN hash and salt, usage, extensions, pending changes, pending PIN reset), and
+    whether the user has tipped (core/Supporter).
     The Instagram login and all WebView data are never included.
 -->
 <data-extraction-rules>
     <cloud-backup>
         <include domain="file" path="datastore/timelimit.preferences_pb" />
+        <include domain="sharedpref" path="supporter.xml" />
     </cloud-backup>
     <device-transfer>
         <include domain="file" path="datastore/timelimit.preferences_pb" />
+        <include domain="sharedpref" path="supporter.xml" />
     </device-transfer>
 </data-extraction-rules>

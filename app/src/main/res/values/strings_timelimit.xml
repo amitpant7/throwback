@@ -121,6 +121,7 @@
     <string name="tl_cancel_pending_cd">Cancel: %1$s</string>
     <string name="tl_section_limit">Daily limit</string>
     <string name="tl_limit_help">Lowering works right away. Raising needs your PIN and starts tomorrow.</string>
+    <string name="tl_limit_help_reset">Lowering works right away. Raising needs your PIN, so it isn\'t available while a PIN reset runs.</string>
     <string name="tl_section_pin">PIN</string>
     <string name="tl_change_pin">Change PIN</string>
     <string name="tl_change_pin_sub">Needs your PIN. The new one works from tomorrow.</string>

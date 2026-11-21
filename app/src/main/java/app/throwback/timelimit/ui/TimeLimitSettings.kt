@@ -61,28 +61,34 @@ internal val CardPadding = PaddingValues(horizontal = 18.dp, vertical = 16.dp)
 
 /**
  * The 15/30/45/60 minute choice (mockup `.chip`; at least 48dp tall for touch). With a very large font
- * size a label wraps onto two lines and the chip grows, rather than being cut off.
+ * size a label wraps onto two lines and the chip grows, rather than being cut off. Choices that
+ * aren't [enabled] are greyed out.
  */
 @Composable
-internal fun LimitChoices(selected: Int, onPick: (Int) -> Unit) {
+internal fun LimitChoices(selected: Int, onPick: (Int) -> Unit, enabled: (Int) -> Boolean = { true }) {
     val c = ThrowbackTheme.colors
     Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Rules.LIMIT_CHOICES.forEach { m ->
             val isSelected = m == selected
+            val isEnabled = enabled(m)
             Box(
                 Modifier
                     .weight(1f)
                     .heightIn(min = 48.dp)
                     .clip(RoundedCornerShape(percent = 50))
                     .background(if (isSelected) c.accent else c.surface2)
-                    .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onPick(m) })
+                    .selectable(selected = isSelected, enabled = isEnabled, role = Role.RadioButton, onClick = { onPick(m) })
                     .padding(horizontal = 4.dp, vertical = 6.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     stringResource(R.string.tl_minutes_chip, m),
                     style = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
-                    color = if (isSelected) c.onAccent else c.text,
+                    color = when {
+                        isSelected -> c.onAccent
+                        isEnabled -> c.text
+                        else -> c.muted
+                    },
                     textAlign = TextAlign.Center,
                 )
             }

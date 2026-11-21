@@ -188,6 +188,8 @@ private fun ManageHome(
     val c = ThrowbackTheme.colors
     val limit = view.limitMinutes ?: return
     val reset = view.pinReset
+    // No PIN can be used while a PIN reset runs: what needs it is greyed out.
+    val pinLocked = reset != null
 
     SettingsScaffold(
         stringResource(R.string.tl_title),
@@ -238,16 +240,15 @@ private fun ManageHome(
         }
 
         SectionLabel(stringResource(R.string.tl_section_limit))
-        LimitChoices(selected = limit, onPick = onPickLimit)
+        LimitChoices(selected = limit, onPick = onPickLimit, enabled = { m -> m <= limit || !pinLocked })
         Text(
-            stringResource(R.string.tl_limit_help),
+            stringResource(if (pinLocked) R.string.tl_limit_help_reset else R.string.tl_limit_help),
             style = MaterialTheme.typography.bodySmall,
             color = c.muted,
             modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 10.dp),
         )
 
         SectionLabel(stringResource(R.string.tl_section_pin))
-        val pinLocked = reset != null
         TbCard {
             NavRow(
                 title = stringResource(R.string.tl_change_pin),

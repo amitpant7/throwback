@@ -72,6 +72,9 @@ internal fun PinPrompt(
     var attempt by remember { mutableIntStateOf(0) }
     var lastResult by remember { mutableStateOf<ActionResult?>(null) }
 
+    // No PIN can be used while a PIN reset runs ("Forgot PIN?" below leads to it), so don't ask for one.
+    val resetRunning = view.pinReset != null
+
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             if (showHeader) TbTopBar(stringResource(R.string.tl_title), onBack)
@@ -79,8 +82,12 @@ internal fun PinPrompt(
                 title = title,
                 eyebrow = eyebrow,
                 subtitle = subtitle,
-                message = if (checking.running) stringResource(R.string.tl_checking) else pinProblemText(lastResult, view.pinBlockedMillis),
-                enabled = !checking.running && view.pinBlockedMillis == 0L,
+                message = when {
+                    checking.running -> stringResource(R.string.tl_checking)
+                    resetRunning -> stringResource(R.string.tl_pin_reset_pending)
+                    else -> pinProblemText(lastResult, view.pinBlockedMillis)
+                },
+                enabled = !checking.running && !resetRunning && view.pinBlockedMillis == 0L,
                 clearKey = attempt,
                 topPadding = if (showHeader) 16.dp else 64.dp,
                 onPin = { pin ->

@@ -21,6 +21,15 @@ class PageScriptTest {
     }
 
     @Test
+    fun `CSS written by the page script works on old WebViews`() {
+        // Old WebViews get the script the fallback way (pagescript/README.md): no inset (Chrome 87)
+        // and no min()/max()/clamp() (Chrome 79) in the styles it writes.
+        val js = TestRules.pageScript
+        assertEquals(emptyList<String>(), Regex("[;{\"']\\s*inset\\s*:").findAll(js).map { it.value }.toList())
+        assertEquals(emptyList<String>(), Regex("(?<![.\\w])(min|max|clamp)\\(").findAll(js).map { it.value }.toList())
+    }
+
+    @Test
     fun `build substitutes mode, css and rules`() {
         val features = PageFeatures(createInApp = true, storyInApp = true, supportAsk = "again")
         val script = PageScript.build("(function(c){})(${PageScript.CONFIG_TOKEN});", "a{color:red}", rules, WebMode.MESSAGES_ONLY, clock = null, features)

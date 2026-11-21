@@ -46,7 +46,7 @@ A standard single-module Android project: all source code is under `app/src/`.
 | `app/src/debug/` | Test-build helpers (fake notifications for the emulator) |
 | `filters/rules.json` | The filter rules: bundled into the app and fetched daily from this repository |
 | `tools/` | Development tools: DevTools scripts, emulator helpers, the page-script lint, the shortcut-icon generator ([README](tools/README.md)) |
-| `docs/` | [Architecture](docs/ARCHITECTURE.md) and [handoff notes](docs/HANDOFF.md); [DECISIONS.md](DECISIONS.md) records the product decisions, [PRIVACY.md](PRIVACY.md) the privacy policy |
+| `docs/` | [Architecture](docs/ARCHITECTURE.md), [handoff notes](docs/HANDOFF.md) and [releasing on Google Play](docs/PLAY_RELEASE.md); [DECISIONS.md](DECISIONS.md) records the product decisions, [PRIVACY.md](PRIVACY.md) the privacy policy |
 | `design/` | Logo masters |
 
 ## Building

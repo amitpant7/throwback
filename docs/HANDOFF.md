@@ -37,6 +37,7 @@ posting, with a guard that keeps the app out of reach otherwise).
 | Code | github.com/amitpant7/throwback, branch `main`; layout in the [README](../README.md#repository-layout) |
 | Product decisions | `DECISIONS.md` |
 | Architecture, bridge, storage | `docs/ARCHITECTURE.md` |
+| Google Play release: steps and drafts for every form | `docs/PLAY_RELEASE.md` |
 | Page script (one file per area) | `app/src/main/pagescript/` and its README |
 | Filter rules (remote-updatable) | `filters/rules.json` (bundled; fetched daily from `main`) |
 | Development tools | `tools/` and its README |
@@ -209,7 +210,13 @@ emulator: update → "guard is off" + setup shows the permission → allow again
   version"). **Owner, in Play Console:** a payments profile; the three products with those ids and
   prices (India by hand, #4b); then a test purchase from a testing track with a license tester.
   Still to settle: the gig ticket's prism image (`ui_tip_rock`), source and licence.
-- Privacy policy, Play listing and data-safety form (nothing collected); release signing; the
+- **Release signing is wired (2026-11-21):** `app/build.gradle.kts` signs release builds with the
+  upload key named in a git-ignored `keystore.properties`; checked with a throwaway key (signed APK
+  and AAB), and without the file the build stays unsigned. The owner creates the real key
+  (docs/PLAY_RELEASE.md, 2).
+- **docs/PLAY_RELEASE.md** has the Play Console steps and drafts: listing texts, reviewer steps, the
+  foreground-service declaration, content rating, the tip products. **Owner's decision there:** the
+  Data safety answer (Google counts data sent through a web view the app controls). Still to do: the
   owner's story in the README "Why" section.
 - Optional: an enforced Kotlin formatter (ktlint via Gradle). Downloading and running it was not
   permitted in the 2026-11-20 session, so `.editorconfig`, Android lint and

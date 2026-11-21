@@ -68,10 +68,12 @@ data class FilterRules(
 data class Hosts(
     /** Instagram itself: kept in the WebView, filtered. Exact hosts or `*.example.com`. */
     val instagram: List<String>,
-    /** Account pages (Accounts Center) kept in the WebView without filters. */
+    /** Account pages (Accounts Center) kept in the WebView without filters; in messages-only mode only during a login. */
     val internal: List<String> = emptyList(),
-    /** Facebook/Meta login: kept in the WebView only during a login flow, otherwise opened outside. */
+    /** Facebook/Meta login: its [loginPaths] pages are kept in the WebView during a login flow; the rest opens outside. */
     val login: List<String> = emptyList(),
+    /** Path regexes of the login pages on [login] hosts (login, two-factor, OAuth dialog, recovery). */
+    val loginPaths: List<String> = emptyList(),
     /** Outbound link redirectors; the real target in [LinkShim.param] is opened outside directly. */
     val linkShims: List<LinkShim> = emptyList(),
     /** Full-URL regexes that are ignored outright ("open in app" intents, app store pages). */

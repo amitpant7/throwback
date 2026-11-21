@@ -229,6 +229,21 @@ class RulesParserTest {
     }
 
     @Test
+    fun `no other host list may take one of Instagram's hosts`() {
+        // Instagram's pages would load there without filters.
+        assertRejected(TestRules.bundledWith { it.replace("\"internal\": [", "\"internal\": [\"*.instagram.com\", ") }, "covers an Instagram host")
+        assertRejected(TestRules.bundledWith { it.replace("\"login\": [", "\"login\": [\"www.instagram.com\", ") }, "covers an Instagram host")
+        assertRejected(TestRules.bundledWith { it.replace("{ \"host\": \"l.instagram.com\"", "{ \"host\": \"m.instagram.com\"") }, "covers an Instagram host")
+    }
+
+    @Test
+    fun `facebook login needs its login pages`() {
+        val noLoginPaths = Regex("\"loginPaths\": \\[.*?\n    ],", RegexOption.DOT_MATCHES_ALL)
+        assertRejected(TestRules.bundledWith { it.replace(noLoginPaths, "\"loginPaths\": [],") }, "hosts.loginPaths is empty")
+        assertRejected(TestRules.bundledWith { it.replace("\"^/v[0-9.]+/dialog/\"", "\"^/(v|x)+/dialog/\"") }, "hosts.loginPaths")
+    }
+
+    @Test
     fun `patterns the page's JavaScript reads differently are rejected`() {
         // Valid Java, but JavaScript's RegExp rejects it: in the page every path would go to the inbox.
         assertRejected(TestRules.bundledWith { it.replace("\"messagesOnly\": [\"^/direct(/|$)\"]", "\"messagesOnly\": [\"(?i)^/direct(/|$)\"]") }, "Java-only")

@@ -208,6 +208,10 @@ internal object FallbackRules {
         hosts = Hosts(
             instagram = listOf("instagram.com", "www.instagram.com"),
             login = listOf("facebook.com", "*.facebook.com"),
+            loginPaths = listOf(
+                "^/(login|checkpoint|recover|two_step_verification|two_factor|auth_platform|dialog|privacy/consent|cookie|r|reg|confirmemail|security)(/|\\.php|$)",
+                "^/v[0-9.]+/dialog/",
+            ),
             linkShims = listOf(LinkShim("l.instagram.com", "u")),
         ),
         paths = Paths(

@@ -15,10 +15,14 @@
   "messagesUrl": "https://www.instagram.com/direct/inbox/",
 
   "hosts": {
-    "note": "instagram: filtered and kept in Throwback. internal: Instagram/Meta account pages kept in Throwback without filters. login: Facebook/Meta login, kept in Throwback only while a login flow is in progress, otherwise opened in another app. linkShims: outbound link redirectors; the target in 'param' is opened directly in another app. blockedUrls: links that would open the Instagram app or an app store; they do nothing.",
+    "note": "instagram: filtered and kept in Throwback. internal: Instagram/Meta account pages kept in Throwback without filters (in messages-only mode only during a login). login: Facebook/Meta hosts; only their login pages (loginPaths, path regexes) are kept in Throwback, and only during a login (from an Instagram login page, Accounts Center or another login page); everything else there opens in another app, so the login can't turn into browsing Facebook. linkShims: outbound link redirectors; the target in 'param' is opened directly in another app. blockedUrls: links that would open the Instagram app or an app store; they do nothing.",
     "instagram": ["instagram.com", "www.instagram.com", "m.instagram.com"],
     "internal": ["accountscenter.instagram.com", "accountscenter.facebook.com", "accountscenter.meta.com"],
     "login": ["facebook.com", "*.facebook.com", "meta.com", "*.meta.com"],
+    "loginPaths": [
+      "^/(login|checkpoint|recover|two_step_verification|two_factor|auth_platform|dialog|privacy/consent|cookie|r|reg|confirmemail|security)(/|\\.php|$)",
+      "^/v[0-9.]+/dialog/"
+    ],
     "linkShims": [
       { "host": "l.instagram.com", "param": "u" },
       { "host": "l.facebook.com", "param": "u" },

@@ -133,7 +133,8 @@ class UrlRouterTest {
         val fb = "https://www.facebook.com/login.php?next=x"
         assertEquals(Decision.Load, decide(fb, current = "$ig/accounts/login/"))
         assertEquals(Decision.Load, decide("https://m.facebook.com/v18.0/dialog/oauth?x", current = "https://www.facebook.com/login.php"))
-        assertEquals(Decision.Load, decide(fb, current = null))
+        assertEquals(Decision.Load, decide("https://m.facebook.com/checkpoint/?next=x", current = "https://m.facebook.com/login/device-based/regular/login/"))
+        assertEquals(Decision.Load, decide("https://www.facebook.com/dialog/oauth?x", current = "https://accountscenter.instagram.com/accounts/"))
         assertEquals(Decision.External(fb), decide(fb, current = "$ig/direct/t/1/"))
         assertEquals(Decision.External("https://facebook.com/somepage"), decide("https://facebook.com/somepage", current = home))
         // Lookalike hosts are not Facebook.
@@ -141,8 +142,42 @@ class UrlRouterTest {
     }
 
     @Test
+    fun `a login never turns into browsing facebook`() {
+        val login = "https://www.facebook.com/login.php"
+        // Facebook's own pages open outside, even from its login page...
+        listOf("https://www.facebook.com/", "https://www.facebook.com/watch/", "https://m.facebook.com/reel/1/", "https://www.facebook.com/some.page")
+            .forEach { assertEquals(it, Decision.External(it), decide(it, current = login)) }
+        // ...and a Facebook page that isn't a login page doesn't vouch for the next one.
+        assertEquals(Decision.External(login), decide(login, current = "https://www.facebook.com/watch/"))
+        // No page, or a page that isn't on the web, is not a login.
+        assertEquals(Decision.External(login), decide(login, current = null))
+        assertEquals(Decision.External(login), decide(login, current = "about:blank"))
+    }
+
+    @Test
     fun `accounts center stays inside`() {
         assertEquals(Decision.Load, decide("https://accountscenter.instagram.com/password_and_security/"))
+        assertEquals(Decision.Load, decide("https://accountscenter.instagram.com/", current = null))
+    }
+
+    @Test
+    fun `messages-only mode shows facebook and accounts center only during a login`() {
+        val center = "https://accountscenter.instagram.com/password_and_security/"
+        val fbLogin = "https://www.facebook.com/login.php?next=x"
+        val moInbox = Decision.Redirect(inbox, UrlRouter.KIND_MESSAGES_ONLY)
+        // From a chat (a link someone sent) or with no page: not in a login.
+        assertEquals(moInbox, decide(center, MESSAGES_ONLY, current = "$ig/direct/t/1/"))
+        assertEquals(moInbox, decide(center, MESSAGES_ONLY, current = null))
+        assertEquals(moInbox, decide("https://accountscenter.facebook.com/", MESSAGES_ONLY, current = "https://www.facebook.com/home.php"))
+        assertEquals(Decision.External(fbLogin), decide(fbLogin, MESSAGES_ONLY, current = inbox))
+        // Instagram's settings are an auth page in full mode, but messages-only mode doesn't show them.
+        assertEquals(moInbox, decide(center, MESSAGES_ONLY, current = "$ig/accounts/settings/"))
+        assertEquals(Decision.External(fbLogin), decide(fbLogin, MESSAGES_ONLY, current = "$ig/accounts/edit/"))
+        // Logging in still works: from Instagram's login page, and on through Facebook's.
+        assertEquals(Decision.Load, decide(fbLogin, MESSAGES_ONLY, current = "$ig/accounts/login/"))
+        assertEquals(Decision.Load, decide("https://m.facebook.com/v18.0/dialog/oauth?x", MESSAGES_ONLY, current = fbLogin))
+        assertEquals(Decision.Load, decide(center, MESSAGES_ONLY, current = "$ig/challenge/abc/"))
+        assertEquals(Decision.Load, decide(center, MESSAGES_ONLY, current = "https://accountscenter.instagram.com/"))
     }
 
     @Test

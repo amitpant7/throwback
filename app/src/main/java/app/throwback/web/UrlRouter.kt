@@ -32,6 +32,7 @@ class UrlRouter(private val rules: FilterRules) {
     private val instagram = HostMatcher(rules.hosts.instagram)
     private val internal = HostMatcher(rules.hosts.internal)
     private val login = HostMatcher(rules.hosts.login)
+    private val loginPaths = rules.hosts.loginPaths.map(::Regex)
     private val shims = rules.hosts.linkShims.associate { it.host.lowercase() to it.param }
     private val blockedUrls = rules.hosts.blockedUrls.map(::Regex)
     private val blocked = rules.paths.blocked.map { Regex(it.pattern) to it }
@@ -57,8 +58,9 @@ class UrlRouter(private val rules: FilterRules) {
     fun homeUrl(mode: WebMode): String = if (mode == WebMode.MESSAGES_ONLY) rules.messagesUrl else rules.homeUrl
 
     /**
-     * @param currentUrl the page the navigation starts from; it decides whether a Facebook URL is
-     *        part of a login flow (stays in the WebView) or a link someone shared (opens outside).
+     * @param currentUrl the page the navigation starts from; it decides whether a Facebook or Accounts
+     *        Center URL is part of a login flow (stays in the WebView) or a link someone shared (opens
+     *        outside; in messages-only mode Accounts Center goes to the inbox). Null: not in a login.
      * @param userGesture false when a page navigates on its own (no tap, and not a server redirect of
      *        one): it may not send the user to another app, so an outside link is then ignored.
      */
@@ -124,8 +126,14 @@ class UrlRouter(private val rules: FilterRules) {
         }
         return when {
             instagram.matches(parts.host) -> decideInstagram(parts, mode)
-            internal.matches(parts.host) -> Decision.Load
-            login.matches(parts.host) -> if (inLoginFlow(currentUrl)) Decision.Load else Decision.External(url)
+            // Accounts Center: messages-only mode shows it only on the way through a login.
+            internal.matches(parts.host) -> if (mode != WebMode.MESSAGES_ONLY || inLoginFlow(currentUrl, mode)) {
+                Decision.Load
+            } else {
+                Decision.Redirect(rules.messagesUrl, KIND_MESSAGES_ONLY)
+            }
+            // Facebook/Meta: only their login pages, and only during a login. The rest is Facebook itself.
+            login.matches(parts.host) && isLoginPage(parts) && inLoginFlow(currentUrl, mode) -> Decision.Load
             else -> Decision.External(url)
         }
     }
@@ -158,13 +166,24 @@ class UrlRouter(private val rules: FilterRules) {
         return Decision.Load
     }
 
-    /** True when the user is logging in, so Facebook/Meta login pages should stay in the WebView. */
-    private fun inLoginFlow(currentUrl: String?): Boolean {
-        val current = currentUrl?.let(UrlParts::parse)
-        if (current == null || !current.isWeb()) return true // nothing loaded yet
-        if (login.matches(current.host) || internal.matches(current.host)) return true
-        return instagram.matches(current.host) && auth.any { it.containsMatchIn(current.path.capped()) }
+    /**
+     * True when [currentUrl] is part of a login, so Facebook/Meta login pages (and Accounts Center in
+     * messages-only mode) may load from it: an Instagram login page that [mode] shows, Accounts
+     * Center, or a Facebook/Meta login page. Anything else, or no page at all, is not.
+     */
+    private fun inLoginFlow(currentUrl: String?, mode: WebMode): Boolean {
+        val current = currentUrl?.let(UrlParts::parse)?.takeIf { it.isWeb() } ?: return false
+        return when {
+            instagram.matches(current.host) ->
+                auth.any { it.containsMatchIn(current.path.capped()) } && decideInstagram(current, mode) == Decision.Load
+            internal.matches(current.host) -> true
+            login.matches(current.host) -> isLoginPage(current)
+            else -> false
+        }
     }
+
+    /** A page of a login on a Facebook/Meta host (hosts.loginPaths): not its feed, Reels or profiles. */
+    private fun isLoginPage(parts: UrlParts) = loginPaths.any { it.containsMatchIn(parts.path.capped()) }
 
     private fun UrlParts.isWeb() = scheme == "https" || scheme == "http"
 

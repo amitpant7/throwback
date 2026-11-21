@@ -271,10 +271,12 @@ internal class InstagramWebController(
         if (destroyed) return false
         val router = router ?: return false
         if (mode == WebMode.MESSAGES_ONLY) {
+            val current = webView.url
             val history = webView.copyBackForwardList()
             for (i in history.currentIndex - 1 downTo 0) {
                 val url = history.getItemAtIndex(i)?.url ?: continue
-                if (router.decide(url, mode, currentUrl = url) == UrlRouter.Decision.Load) {
+                // Judged as a step from this page: a Facebook page doesn't vouch for itself.
+                if (router.decide(url, mode, currentUrl = current) == UrlRouter.Decision.Load) {
                     error = null
                     webView.goBackOrForward(i - history.currentIndex)
                     return true
@@ -282,7 +284,6 @@ internal class InstagramWebController(
             }
             // Nothing behind us this mode shows: from a chat go to the inbox, from the inbox leave.
             val inbox = router.homeUrl(mode)
-            val current = webView.url
             if (current != null && router.locationFor(current) != router.locationFor(inbox)) {
                 error = null
                 load(inbox)
@@ -454,7 +455,8 @@ internal class InstagramWebController(
             load(router.homeUrl(mode))
             return
         }
-        val d = router.decide(url, mode, currentUrl = url)
+        // Not as a step in a login: Accounts Center then goes to the inbox in messages-only mode.
+        val d = router.decide(url, mode, currentUrl = null)
         if (d is UrlRouter.Decision.Redirect) load(d.url)
     }
 

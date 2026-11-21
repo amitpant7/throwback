@@ -1,6 +1,7 @@
 package app.throwback.web.rules
 
 import app.throwback.core.WebMode
+import app.throwback.web.HostMatcher
 import app.throwback.web.UrlParts
 import app.throwback.web.UrlRouter
 
@@ -52,7 +53,13 @@ object RulesValidator {
         (h.internal + h.login + h.linkShims.map { it.host }).forEach {
             check(isMetaHost(it)) { "hosts: '$it' is not under ${META_DOMAINS.joinToString(", ")}" }
         }
+        // Instagram is always filtered: no other list may take one of its hosts.
+        (h.internal + h.login + h.linkShims.map { it.host }).forEach { entry ->
+            check(INSTAGRAM_HOSTS.none(HostMatcher(listOf(entry))::matches)) { "hosts: '$entry' covers an Instagram host" }
+        }
         h.linkShims.forEach { check(it.param.isNotBlank()) { "link shim ${it.host} has no param" } }
+        h.loginPaths.forEach { pattern(it, "hosts.loginPaths") }
+        check(h.login.isEmpty() || h.loginPaths.isNotEmpty()) { "hosts.loginPaths is empty: no Facebook login page would load" }
         h.blockedUrls.forEach { pattern(it, "hosts.blockedUrls") }
 
         // Paths

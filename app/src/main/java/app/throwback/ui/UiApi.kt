@@ -42,10 +42,10 @@ fun InstagramAppPrompt(onOpenMessagesSetup: () -> Unit, onDone: () -> Unit, back
     InstagramAppPromptContent(onOpenMessagesSetup = onOpenMessagesSetup, onDone = onDone, backEnabled = backEnabled)
 }
 
-enum class SettingsStart { Home, MessagesAndCalls, Support }
+enum class SettingsStart { Home, ConnectInstagram, Support }
 
 /**
- * Settings and everything reachable from it: Messages & calls wizard and settings, home-screen shortcut,
+ * Settings and everything reachable from it: Connect › Instagram setup and settings, home-screen shortcut,
  * About & support. The time-limit screens come from the timelimit package via [timeLimitScreen].
  * System back pops one level; at the root it calls [onClose].
  */
@@ -54,8 +54,8 @@ fun SettingsRoot(
     onClose: () -> Unit,
     timeLimitScreen: @Composable (onClose: () -> Unit, onLimitSet: () -> Unit) -> Unit,
     startAt: SettingsStart = SettingsStart.Home,
-    todayScreen: @Composable (onClose: () -> Unit) -> Unit = {},
-    messagesOff: app.throwback.ui.messages.MessagesOffHooks = app.throwback.ui.messages.MessagesOffHooks(),
+    todayScreen: @Composable (onClose: () -> Unit) -> Unit,
+    messagesOff: app.throwback.ui.messages.MessagesOffHooks,
 ) {
     SettingsRootContent(
         onClose = onClose, timeLimitScreen = timeLimitScreen, startAt = startAt,

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Strings owned by the ui area (onboarding, settings, Messages & calls, shortcut, About, mindful pause). -->
+<!-- Strings owned by the ui area (onboarding, settings, Connect › Instagram, Make It Yours, About, mindful pause). -->
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Common -->
@@ -62,7 +62,7 @@
     <string name="ui_shortcut_row_sub">Your own name and icon on the home screen</string>
     <string name="ui_about_title">About</string>
 
-    <!-- 13–16 · Messages & calls wizard -->
+    <!-- 13–16 · Connect › Instagram setup -->
     <string name="ui_wizard_step_optional">Step %1$d of %2$d · Optional</string>
     <string name="ui_wizard_step">Step %1$d of %2$d</string>
 
@@ -85,7 +85,7 @@
     <string name="ui_quiet_keep_on">Keep on</string>
     <string name="ui_quiet_turn_off">Turn off</string>
     <string name="ui_quiet_open_instagram">Open notification settings for Instagram</string>
-    <!-- Optional tip on the Messages & calls screen (was setup step 2). -->
+    <!-- Optional tip on the Connect › Instagram screen (was setup step 2). -->
     <string name="ui_quiet_tip_title">For a quieter phone (optional)</string>
     <string name="ui_quiet_tip_body">Throwback already removes everything except messages and calls. For an even quieter phone, open the Instagram app\'s notification settings: keep the group \'Instagram messages\' on, and turn off the group \'Instagram\' (on most phones one switch: All \'Instagram\' notifications).</string>
     <plurals name="ui_quiet_seen_other">
@@ -99,7 +99,10 @@
     <string name="ui_quiet_group_other_sub">Everything else: likes, comments, followers, first posts…</string>
 
     <string name="ui_perm_title">Three permissions</string>
-    <string name="ui_perm_body">Each opens an Android settings screen. Turn Throwback on there, then come back.</string>
+    <string name="ui_perm_title_four">Four permissions</string>
+    <string name="ui_perm_post_title">Notifications</string>
+    <string name="ui_perm_post_body">To show you Instagram\'s messages as Throwback\'s own</string>
+    <string name="ui_perm_body">Each opens an Android screen. Turn Throwback on there, then come back.</string>
     <string name="ui_perm_notifications_title">Notification access</string>
     <string name="ui_perm_notifications_body">To pass on messages and calls, and drop the rest</string>
     <string name="ui_perm_usage_title">Usage access</string>
@@ -114,7 +117,7 @@
     <string name="ui_perm_app_info">Open App info</string>
     <string name="ui_perm_post_denied">Throwback can\'t show notifications, so Instagram\'s own message notifications stay as they are. You can allow it later in Android\'s settings.</string>
 
-    <!-- 17 · Messages & calls settings -->
+    <!-- 17 · Connect › Instagram settings -->
     <string name="ui_status_ready_title">Ready</string>
     <string name="ui_status_ready_body">Messages come from Throwback. The Instagram app opens for calls and posting; anything else brings you back</string>
     <string name="ui_status_no_app_title">Instagram app not installed</string>
@@ -144,7 +147,7 @@
     <string name="ui_messages_off_scheduled">Instagram disconnects tomorrow.</string>
     <string name="ui_messages_off_cancelled">Instagram stays connected.</string>
 
-    <!-- 5 · Add to home screen -->
+    <!-- 5 · Make It Yours (was Add to home screen) -->
     <string name="ui_shortcut_default_name">Throwback</string>
     <string name="ui_shortcut_preview">Preview</string>
     <string name="ui_shortcut_name_label">Name</string>
@@ -241,7 +244,7 @@
     <string name="ui_reel_poster_bored">Or just get bored.</string>
     <string name="ui_reel_poster_rule">A reel someone sends you, plus a few more. That\'s the deal.</string>
     <string name="ui_reel_poster_hint">Swipe back to return to your chat.</string>
-    <!-- Messages & calls: a short way into the real Instagram app (the guard lets it through) -->
+    <!-- Connect › Instagram: a short way into the real Instagram app (the guard lets it through) -->
     <string name="ui_visit_title">Need the Instagram app?</string>
     <string name="ui_visit_body">To switch accounts, post, add a story or change its settings. Once a day, for up to 5 minutes; leaving Instagram ends it.</string>
     <string name="ui_visit_used">Already used today. It\'s back tomorrow.</string>

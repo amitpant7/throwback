@@ -66,8 +66,8 @@ internal fun SettingsRootContent(
     onClose: () -> Unit,
     timeLimitScreen: @Composable (onClose: () -> Unit, onLimitSet: () -> Unit) -> Unit,
     startAt: SettingsStart,
-    todayScreen: @Composable (onClose: () -> Unit) -> Unit = {},
-    messagesOff: MessagesOffHooks = MessagesOffHooks(),
+    todayScreen: @Composable (onClose: () -> Unit) -> Unit,
+    messagesOff: MessagesOffHooks,
 ) {
     val colors = ThrowbackTheme.colors
     val context = LocalContext.current

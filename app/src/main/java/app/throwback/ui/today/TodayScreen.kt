@@ -49,7 +49,7 @@ data class TodayStats(
     val discoverMax: Int = 0,
     val adsRemoved: Int? = null,
     val suggestionsRemoved: Int? = null,
-    /** Instagram alerts the relay removed today; null when Messages & calls isn't set up. */
+    /** Instagram alerts the relay removed today; null when the Instagram app isn't connected. */
     val alertsRemoved: Int? = null,
     /** The connected Instagram app today; null when it isn't connected. */
     val instagramApp: InstagramAppDay? = null,

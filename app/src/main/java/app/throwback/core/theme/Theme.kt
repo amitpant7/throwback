@@ -42,7 +42,6 @@ data class ThrowbackColors(
     val onAccent: Color,
     val accentText: Color,
     val ok: Color,
-    val isDark: Boolean,
 )
 
 val SageDark = ThrowbackColors(
@@ -56,7 +55,6 @@ val SageDark = ThrowbackColors(
     onAccent = Color(0xFF0C1F15),
     accentText = Color(0xFF8FD1AD),
     ok = Color(0xFF5CC98F),
-    isDark = true,
 )
 
 val SageLight = ThrowbackColors(
@@ -70,7 +68,6 @@ val SageLight = ThrowbackColors(
     onAccent = Color(0xFFFFFFFF),
     accentText = Color(0xFF2F7D57),
     ok = Color(0xFF1D7A4C),
-    isDark = false,
 )
 
 @OptIn(ExperimentalTextApi::class)

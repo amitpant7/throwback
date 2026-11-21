@@ -84,14 +84,19 @@ class MainActivity : ComponentActivity() {
 
     /**
      * Off the main thread during the cold start: the page script (the first page starts sooner when
-     * it is already read) and the day count for the rating ask (SharedPreferences).
+     * it is already read).
      */
     private fun warmUp() {
         val context = applicationContext
-        lifecycleScope.launch(Dispatchers.IO) {
-            launch { runCatching { PageAssets.load(context) } }
-            launch { runCatching { RateAsk.noteUse(context) } }
-        }
+        lifecycleScope.launch(Dispatchers.IO) { runCatching { PageAssets.load(context) } }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // A day of use for the rating ask, each time Throwback comes to the front: the activity can
+        // live on for days (singleTask), so its creation alone missed days. Off the main thread.
+        val context = applicationContext
+        lifecycleScope.launch(Dispatchers.IO) { runCatching { RateAsk.noteUse(context) } }
     }
 
     override fun onNewIntent(intent: Intent) {

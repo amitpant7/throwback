@@ -54,7 +54,7 @@ internal class UiPrefs(private val store: DataStore<Preferences>) : UiPreference
     /** The "Instagram app found" choice has been shown once. */
     val instagramPromptShown: Flow<Boolean> = flag(INSTAGRAM_PROMPT_SHOWN)
 
-    /** The user finished the Messages & calls wizard (and hasn't turned the feature off). */
+    /** The user finished the Connect › Instagram setup (and hasn't turned the feature off). */
     val messagesSetupDone: Flow<Boolean> = flag(MESSAGES_SETUP_DONE)
 
     /** The one-time "how to open Throwback's settings" hint was shown (or settings were found anyway). */

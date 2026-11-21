@@ -13,7 +13,7 @@ class SettingsNavTest {
     fun `start points`() {
         assertEquals(listOf(SettingsRoute.Home), SettingsNav.initial(SettingsStart.Home))
         // From "Instagram app found": the wizard is the root, so back leaves Settings.
-        assertEquals(listOf(SettingsRoute.Messages), SettingsNav.initial(SettingsStart.MessagesAndCalls))
+        assertEquals(listOf(SettingsRoute.Messages), SettingsNav.initial(SettingsStart.ConnectInstagram))
     }
 
     @Test

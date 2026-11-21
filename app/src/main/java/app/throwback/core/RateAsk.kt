@@ -25,7 +25,7 @@ object RateAsk {
     internal fun due(firstDay: Long, today: Long, useDays: Int, asked: Boolean): Boolean =
         !asked && today - firstDay >= MIN_DAYS && useDays >= MIN_USE_DAYS
 
-    /** Call once per app start: remembers the first day and counts the days the app was used. */
+    /** Call whenever the app comes to the front: remembers the first day and counts the days it was used. */
     fun noteUse(context: Context, today: LocalDate = LocalDate.now()) {
         val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val day = today.toEpochDay()

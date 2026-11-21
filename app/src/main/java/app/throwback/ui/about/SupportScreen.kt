@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.contentDescription
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.CardDivider
@@ -137,6 +138,7 @@ internal fun SupportScreen(onBack: () -> Unit, onOpenPage: (String) -> Unit, sho
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(currency, style = UiText.row15.copy(fontWeight = FontWeight.Bold), color = colors.muted)
+                        val amountLabel = stringResource(R.string.ui_tip_any_hint)
                         BasicTextField(
                             value = amount,
                             onValueChange = { t -> amount = t.filter { it.isDigit() }.take(4) },
@@ -145,7 +147,10 @@ internal fun SupportScreen(onBack: () -> Unit, onOpenPage: (String) -> Unit, sho
                             cursorBrush = SolidColor(colors.accent),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                             keyboardActions = doneHidesKeyboard(tip),
-                            modifier = Modifier.weight(1f).padding(start = 4.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 4.dp)
+                                .semantics { contentDescription = amountLabel }, // the placeholder goes once typed
                             decorationBox = { inner ->
                                 Box {
                                     if (amount.isEmpty()) {

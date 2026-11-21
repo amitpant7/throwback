@@ -63,8 +63,8 @@ import app.throwback.ui.common.SystemScreens
 import app.throwback.ui.common.rememberCheckedOnResume
 
 /**
- * The two steps of the Messages & calls setup (DECISIONS.md #28). The hide-icon step was dropped;
- * "Quiet the Instagram app" became an optional tip on the Messages & calls screen (owner, 2026-11-20).
+ * The two steps of the Connect › Instagram setup (DECISIONS.md #28). The hide-icon step was dropped;
+ * "Quiet the Instagram app" became an optional tip on the Connect › Instagram screen (owner, 2026-11-20).
  */
 internal enum class WizardStep {
     Install, Permissions;
@@ -79,7 +79,7 @@ internal enum class WizardStep {
 }
 
 /**
- * Messages & calls setup wizard. [onExit] leaves without finishing (back on step 1 or "Not now");
+ * Connect › Instagram setup wizard. [onExit] leaves without finishing (back on step 1 or "Not now");
  * [onFinish] is called from the last step.
  */
 @Composable
@@ -236,10 +236,16 @@ private fun PermissionsStep(onNext: () -> Unit, showMessage: (String) -> Unit) {
             onNext()
         }
     }
+    // The same permission as a row of its own (Android 13+): Settings counts it as missing, and once
+    // denied twice Android no longer asks, so Allow then opens Throwback's notification settings.
+    val postRowAsks = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+    val askPostFromRow = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (!granted && !SystemScreens.openAppNotificationSettings(context, context.packageName)) showMessage(failed)
+    }
 
     StepLayout(
         step = WizardStep.Permissions,
-        title = stringResource(R.string.ui_perm_title),
+        title = stringResource(if (postRowAsks) R.string.ui_perm_title_four else R.string.ui_perm_title),
         buttons = { TbButton(stringResource(R.string.ui_finish), onClick = finish) },
     ) {
         Text(stringResource(R.string.ui_perm_body), style = UiText.lead, color = colors.muted)
@@ -268,6 +274,16 @@ private fun PermissionsStep(onNext: () -> Unit, showMessage: (String) -> Unit) {
                 granted = state.drawOverlays,
                 onAllow = { if (!SystemScreens.openOverlaySettings(context)) showMessage(failed) },
             )
+            if (postRowAsks) {
+                CardDivider()
+                PermissionRow(
+                    icon = R.drawable.ic_chat,
+                    title = R.string.ui_perm_post_title,
+                    body = R.string.ui_perm_post_body,
+                    granted = state.postNotifications,
+                    onAllow = { askPostFromRow.launch(Manifest.permission.POST_NOTIFICATIONS) },
+                )
+            }
         }
         // Android 13+ blocks notification access for apps installed from a downloaded file (not an
         // app store) until the user allows "restricted settings" in App info. Right under the list,

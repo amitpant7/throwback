@@ -31,7 +31,7 @@ internal object InstagramApp {
     }
 }
 
-/** Live state of everything the Messages & calls feature needs. */
+/** Live state of everything the connected Instagram app needs. */
 internal data class MessagesSetupState(
     val instagramPackage: String?,
     val notificationAccess: Boolean,

@@ -100,7 +100,7 @@ fun AppRoot(
         mutableStateOf(
             when (debugOpen) { // test builds only, see MainActivity
                 "settings" -> SettingsStart.Home
-                "messages" -> SettingsStart.MessagesAndCalls
+                "messages" -> SettingsStart.ConnectInstagram
                 else -> null
             },
         )
@@ -123,7 +123,7 @@ fun AppRoot(
         }
     }
 
-    // A Messages & calls turn-off scheduled with the PIN is due (a new day): turn it off now.
+    // A disconnect of the Instagram app scheduled with the PIN is due (a new day): turn it off now.
     // Only this flag: the whole view changes every second while a limit runs, recomposing AppRoot.
     val guardOffDue by remember {
         GuardOffApi.view(app.timeLimit)?.map { it.guardOffDue }?.distinctUntilChanged() ?: flowOf(false)
@@ -152,7 +152,7 @@ fun AppRoot(
                 onSplashHold = onSplashHold,
                 onCloseApp = onCloseApp,
                 onOpenSettings = { settingsOpen = SettingsStart.Home },
-                onOpenMessagesSetup = { settingsOpen = SettingsStart.MessagesAndCalls },
+                onOpenMessagesSetup = { settingsOpen = SettingsStart.ConnectInstagram },
                 onOpenSupport = { settingsOpen = SettingsStart.Support },
                 messagesRequests = messagesRequests,
             )
@@ -239,7 +239,7 @@ private fun MainScreen(
         }
     }
 
-    // A relayed message notification was tapped (Messages & calls): if the limit is locked, open
+    // A relayed message notification was tapped (the connected Instagram app): if the limit is locked, open
     // messages-only mode instead of the lock screen. Waits briefly for the lock state on a cold start.
     LaunchedEffect(messagesRequests) {
         if (messagesRequests > 0) {

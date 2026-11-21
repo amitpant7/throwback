@@ -50,7 +50,7 @@ internal fun ExtraNotification.label(): Int = when (this) {
     ExtraNotification.LIVE_VIDEOS -> R.string.ui_notify_live_videos
 }
 
-/** Messages & calls once set up: live status, always-on types, extra toggles, turn off. */
+/** Connect › Instagram once set up: live status, always-on types, extra toggles, turn off. */
 @Composable
 internal fun MessagesSettingsScreen(
     prefs: UiPrefs,

@@ -8,13 +8,13 @@ internal enum class SettingsRoute {
     Today,
     TimeLimit,
 
-    /** Messages & calls: the wizard until it is finished, then the settings screen. */
+    /** Connect › Instagram: the setup until it is finished, then the settings screen. */
     Messages,
 
-    /** The wizard opened explicitly from the Messages & calls settings ("Finish setup"). */
+    /** The wizard opened explicitly from the Connect › Instagram settings ("Finish setup"). */
     MessagesWizard,
 
-    /** PIN before Messages & calls turns off (only while a daily limit is on). */
+    /** PIN before the Instagram app is disconnected (only while a daily limit is on). */
     MessagesOffPin,
 
     /** Right after a daily limit is turned on, when the Instagram app is installed but not connected. */
@@ -30,7 +30,7 @@ internal object SettingsNav {
     fun initial(start: SettingsStart): List<SettingsRoute> = when (start) {
         SettingsStart.Home -> listOf(SettingsRoute.Home)
         // Opened from "Instagram app found": back from the wizard returns to Throwback, not to Settings.
-        SettingsStart.MessagesAndCalls -> listOf(SettingsRoute.Messages)
+        SettingsStart.ConnectInstagram -> listOf(SettingsRoute.Messages)
         // "Say thanks" in the feed: Support, with Back going to Settings.
         SettingsStart.Support -> listOf(SettingsRoute.Home, SettingsRoute.Support)
     }

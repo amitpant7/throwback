@@ -271,11 +271,11 @@ internal class DefaultTimeLimitController(
 
     /**
      * Saves real changes at once, and usage at most every [saveEveryMillis]. The anchor alone (the
-     * last clock reading, new on every call) is saved only for a new boot, on leaving Throwback
-     * ([Save.Now]) or every [anchorSaveEveryMillis]: within a boot any anchor of that boot gives the
-     * same trusted time, and after a reboot it is where Android 13+ counts on from until network
-     * time is back, so it should not be much older than the last use. (Before, it was written
-     * every 10 s while Throwback was open, with or without a limit.)
+     * last clock reading, new on every call) is saved only on leaving Throwback ([Save.Now]) or every
+     * [anchorSaveEveryMillis]: within a boot any anchor of that boot gives the same trusted time, and
+     * after a reboot it is where the trusted time counts on from until network time is back, so it
+     * should not be much older than the last use. (The boot can't change within a process, and the
+     * first save after loading always goes.)
      */
     private fun persist(s: TimeLimitState, r: ClockReading, save: Save) {
         if (!loaded || keepStored) return // Never overwrite the stored state with a blank one.
@@ -287,7 +287,7 @@ internal class DefaultTimeLimitController(
         val due = when {
             previous == null -> true
             p.copy(anchor = previous.anchor) == previous -> // only the anchor moved
-                save == Save.Now || p.anchor?.bootCount != previous.anchor?.bootCount || sinceSave >= anchorSaveEveryMillis
+                save == Save.Now || sinceSave >= anchorSaveEveryMillis
             p.copy(usedMillis = previous.usedMillis, anchor = previous.anchor) == previous -> // usage
                 save == Save.Now || sinceSave >= saveEveryMillis
             else -> true

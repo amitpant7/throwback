@@ -377,6 +377,25 @@ class GuardPolicyTest {
     }
 
     @Test
+    fun `replaying the last seconds' events again changes nothing (the queries overlap)`() {
+        val t = ForegroundTracker()
+        val modal = "com.instagram.modal.ModalActivity"
+        val events = listOf(
+            Triple(ACTIVITY_RESUMED, ig, feed),
+            Triple(ACTIVITY_RESUMED, "com.whatsapp", "com.whatsapp.HomeActivity"), // split screen
+            Triple(ACTIVITY_PAUSED, ig, feed),
+            Triple(ACTIVITY_RESUMED, ig, modal),
+            Triple(ACTIVITY_STOPPED, ig, feed),
+        )
+        events.forEach { (type, pkg, cls) -> t.onEvent(type, pkg, cls) }
+        val before = Triple(t.current, t.activeScreens(watched), t.onScreen(watched))
+        for (from in events.indices) {
+            events.drop(from).forEach { (type, pkg, cls) -> t.onEvent(type, pkg, cls) }
+            assertEquals(before, Triple(t.current, t.activeScreens(watched), t.onScreen(watched)))
+        }
+    }
+
+    @Test
     fun `below Android 10 a pause ends it (there are no stop events)`() {
         val t = ForegroundTracker(stopEvents = false)
         t.onEvent(ACTIVITY_RESUMED, ig, feed)

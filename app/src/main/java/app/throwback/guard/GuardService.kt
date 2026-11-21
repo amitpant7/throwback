@@ -236,7 +236,7 @@ class GuardService : Service() {
                 overlay.hide()
                 screenOn.first { it }
                 // What is on screen now is rebuilt from the events since the screen went off (a pass
-                // that ran out meanwhile is then covered); before, a whole hour was replayed.
+                // that ran out meanwhile is then covered); screens on screen come back resumed or paused.
                 tracker.clear()
                 queryFrom = screenOffAt?.let { it - SCREEN_OFF_MARGIN_MS }
             }
@@ -298,7 +298,6 @@ class GuardService : Service() {
                     overlay.hide()
                     noCoverUntil = now + GuardPolicy.STEP_ASIDE_MS
                     windowLeftOpen = true
-                    queryFrom = null // and checks from scratch, in case an event was missed
                 }
                 GuardAction.NONE -> Unit
             }
@@ -312,8 +311,8 @@ class GuardService : Service() {
         val begin = if (from != null) {
             max(from, end - LOOK_BACK_MS)
         } else {
-            // First run, the clock moved back, or a check from scratch: what is on screen now is
-            // rebuilt from the last hour (not added on top, or an old screen could seem still open).
+            // First run or the clock moved back: what is on screen now is rebuilt from the last day
+            // (not added on top, or an old screen could seem still open).
             tracker.clear()
             end - LOOK_BACK_MS
         }
@@ -327,8 +326,9 @@ class GuardService : Service() {
             events.getNextEvent(event)
             tracker.onEvent(event.eventType, event.packageName, event.className)
         }
-        // The next window overlaps this one a little: events are recorded asynchronously and one
-        // stamped just before this end could be missed. Replaying events in order is harmless.
+        // The next window overlaps this one: events are recorded asynchronously and one stamped just
+        // before this end could be missed (nothing rebuilds from scratch while the screen stays on).
+        // Replaying events in order is harmless.
         queryFrom = end - QUERY_OVERLAP_MS
     }
 
@@ -462,7 +462,7 @@ class GuardService : Service() {
     companion object {
         private const val TAG = "ThrowbackGuard"
         private const val POLL_MS = 500L
-        private const val QUERY_OVERLAP_MS = 3_000L
+        private const val QUERY_OVERLAP_MS = 10_000L
         private const val REBIND_AFTER_MS = 30_000L
         /**
          * Call audio that comes on within this long after an Instagram call notification goes away is
@@ -470,8 +470,11 @@ class GuardService : Service() {
          * an Instagram call isn't taken for one (was 120 s; 2026-11-20 review).
          */
         private const val IG_CALL_LINK_MS = 30_000L
-        /** The first query after the guard starts looks back this far, to learn what is on screen. */
-        private const val LOOK_BACK_MS = 60 * 60 * 1000L
+        /**
+         * The first query after the guard starts looks back this far, to learn what is on screen: an
+         * app in split screen or picture-in-picture can have been resumed long ago (an hour lost it).
+         */
+        private const val LOOK_BACK_MS = 24 * 60 * 60 * 1000L
 
         /** The replay at screen-on starts this long before the screen went off. */
         private const val SCREEN_OFF_MARGIN_MS = 5_000L

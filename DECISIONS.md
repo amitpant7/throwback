@@ -28,7 +28,7 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     question first (Play policy). Builds not from Play do nothing.
 4b. **Support screen: design A "list rows"** (owner, 2026-11-20; mockups row 5): one row per tip with
     the existing icons, a one-liner and the price: A beer **$3** ("A cold one, on you"), A gig ticket
-    **$10** ("Toward the next show"), GTA 6 **$25** ("Toward the next big game"). **No "Whatever you
+    **$10** ("Toward the next show"), GTA 6 **$25** ("Toward the next game"; "big" dropped, owner 2026-11-21). **No "Whatever you
     want"** (owner, 2026-11-21): Google Play can only charge prices set up in advance, so a typed
     amount would have needed one product per price. Play products `tip_small`, `tip_medium`,
     `tip_large` (named by size, so a renamed tip keeps its product); India priced by hand (₹99 / ₹299 /

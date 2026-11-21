@@ -185,7 +185,7 @@
     <string name="ui_support_leave_tip">Leave a tip</string>
     <string name="ui_tip_beer_line">A cold one, on you</string>
     <string name="ui_tip_gig_line">Toward the next show</string>
-    <string name="ui_tip_gta_line">Toward the next big game</string>
+    <string name="ui_tip_gta_line">Toward the next game</string>
     <!-- The currency, in this one place, until Google Play billing supplies the local prices. -->
     <string name="ui_tip_currency">$</string>
     <!-- A price: the currency, then the amount, e.g. "$3". -->

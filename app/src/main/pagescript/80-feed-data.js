@@ -9,7 +9,10 @@
    * stay as the safety net.
    * Nothing extra is requested from Instagram: only data the page already downloaded is filtered.
    */
-  var feedDataState = { emptyPages: 0, sinceDiscovery: 0, cursors: {}, ended: false, endCursor: null };
+  var feedDataState = { emptyPages: 0, sinceDiscovery: 0, cursors: {}, cursorOrder: [], ended: false, endCursor: null };
+  // Feed pages remembered as counted, the latest only: 200 pages are about 2,400 entries, more than a
+  // session scrolls, so a page parsed again is still among them.
+  var CURSORS_MAX = 200;
   var dataFilterInstalled = false;
 
   function installDataFilter() {
@@ -103,7 +106,12 @@
     var cursor = info && info.end_cursor;
     // The same page can be parsed more than once (cache, re-render): count it only the first time.
     var fresh = !cursor || !feedDataState.cursors[cursor];
-    if (cursor) feedDataState.cursors[cursor] = 1;
+    if (cursor && fresh) {
+      var order = feedDataState.cursorOrder;
+      feedDataState.cursors[cursor] = 1;
+      order.push(cursor);
+      if (order.length > CURSORS_MAX) delete feedDataState.cursors[order.shift()];
+    }
     var kept = [];
     var followed = 0;
     var endAt = false;

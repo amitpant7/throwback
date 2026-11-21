@@ -25,7 +25,7 @@ data class ClockReading(
      * plus the stopwatch since, so the user can't set it. Null when the phone has none (yet).
      */
     val networkMillis: Long? = null,
-    /** The phone can report network time (Android 13+), so after a reboot it is worth waiting for. */
+    /** Network time will come (Android's own on 13+, Instagram's server time on any version), so after a reboot it is worth waiting for. */
     val networkTimeSupported: Boolean = false,
 )
 

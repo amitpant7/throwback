@@ -14,9 +14,9 @@ import java.time.LocalTime
 import java.time.ZoneId
 
 /**
- * The real clocks: monotonic elapsedRealtime, the wall clock, the time zone, the boot number and,
- * on Android 13+, network time. Network time is Android's own last time sync (no request is made
- * for Throwback), so reading it costs no data and sends nothing.
+ * The real clocks: monotonic elapsedRealtime, the wall clock, the time zone, the boot number and
+ * network time: on Android 13+ Android's own last time sync, else Instagram's server time as the page
+ * last saw it ([ServerTimeHint]). Neither makes a request for Throwback.
  */
 internal open class AndroidClock(context: Context) : Clock {
 
@@ -30,8 +30,9 @@ internal open class AndroidClock(context: Context) : Clock {
         wallMillis = System.currentTimeMillis(),
         zone = ZoneId.systemDefault(),
         bootCount = bootCount,
-        networkMillis = networkTime(),
-        networkTimeSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU,
+        networkMillis = networkTime() ?: ServerTimeHint.now(),
+        // Network time comes once the phone syncs (13+) or once Instagram's page loads (any version).
+        networkTimeSupported = true,
     )
 
     /** Null below Android 13, or before the phone has synced its time since boot. */

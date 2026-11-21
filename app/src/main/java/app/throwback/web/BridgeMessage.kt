@@ -4,6 +4,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 
@@ -15,7 +16,11 @@ internal sealed interface BridgeMessage {
      * Instagram's own top-level documents: the legacy bridge, which every frame can call, drops these.
      */
     val opensOtherApp: Boolean
-        get() = this is CallInApp || this is CreateInApp || this is SettingsInApp || this is StoryWeb || this is Share
+        get() = this is CallInApp || this is CreateInApp || this is SettingsInApp || this is StoryWeb || this is Share ||
+            this is ServerTime // it sets the time limit's clock: only from Instagram's own document
+
+    /** Instagram's server time (the Date of its own response), for phones without network time. */
+    data class ServerTime(val millis: Long) : BridgeMessage
 
     /** The page's location changed (load, pushState, replaceState, back/forward). */
     data class Location(val url: String) : BridgeMessage
@@ -98,9 +103,14 @@ internal sealed interface BridgeMessage {
                 "supportAskShown" -> SupportAskShown
                 "supportThanks" -> SupportThanks
                 "share" -> str("url")?.takeIf { SHARE_URL.matches(it) }?.let(::Share)
+                "serverTime" -> (obj["ms"] as? JsonPrimitive)?.takeIf { !it.isString }?.longOrNull
+                    ?.takeIf { it in SERVER_TIME_RANGE }?.let(::ServerTime)
                 else -> null
             }
         }
+
+        /** 2024-01-01 to 2100-01-01: anything else is not a real server time. */
+        private val SERVER_TIME_RANGE = 1_704_067_200_000L..4_102_444_800_000L
 
         private val RGB = Regex("""^rgba?\(\s*(\d{1,3})[\s,]+(\d{1,3})[\s,]+(\d{1,3})(?:\s*[,/]\s*([\d.]+%?))?\s*\)$""")
 

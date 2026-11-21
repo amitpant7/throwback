@@ -593,6 +593,7 @@ internal class InstagramWebController(
                     injector.configureLive(PageScript.config(clock = clock)) {}
                 }
             }
+            is BridgeMessage.ServerTime -> PageClock.serverTimeSink?.invoke(m.millis)
             is BridgeMessage.Blocked -> showNotice(noticeFor(m.kind))
             is BridgeMessage.Touch -> {
                 pull.scriptReport(m.atTop)

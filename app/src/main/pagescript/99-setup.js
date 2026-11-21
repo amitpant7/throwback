@@ -178,6 +178,7 @@
     ensureStyle();
     applyClasses();
     installDataFilter(); // before Instagram's own scripts parse any feed data
+    installServerTime();
     installRequestTweak(); // before Instagram's scripts send any feed request
     start();
   }

@@ -132,8 +132,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     page never goes back a day. The page anchors the app's clock on its own monotonic clock and only
     uses a fresh one (read less than 10 minutes before); without one the day doesn't move on, so
     changing the phone's date while the page is open changes nothing (2026-11-20 review). Clock
-    forward + reboot: on Android 13+ network time is preferred and, after a reboot without it, the
-    trusted time continues from the last one (closed there); below Android 13 it remains open.
+    forward + reboot: network time is preferred (Android's own on 13+; on any version also
+    Instagram's server time, from the Date of Instagram's own responses the page already receives:
+    no extra request), and after a reboot without it the trusted time continues from the last one
+    until it arrives. Closed on all versions (2026-11-21).
 14. **No toggles.** Throwback is minimal; there is no setting to bring distractions back.
     Settings shows a read-only "Throwback removes" list.
 15. Video captions and descriptions must never be hidden (a known complaint about a competitor).

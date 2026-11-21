@@ -37,6 +37,10 @@ internal object PageClock {
     @Volatile
     var provider: (() -> Reading?)? = null
 
+    /** Receives Instagram's server time from the page (the time limit uses it where Android has no network time). */
+    @Volatile
+    var serverTimeSink: ((Long) -> Unit)? = null
+
     /** The clock for the page's config, read now, or null: then the config has no clock at all. */
     fun json(): JsonObject? = provider?.invoke()?.json()
 }

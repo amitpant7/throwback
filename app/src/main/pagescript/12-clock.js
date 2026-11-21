@@ -84,3 +84,42 @@
     };
   }
 
+  /*
+   * Instagram's server time for the app's trusted clock, on phones without network time of their own
+   * (below Android 13). From the Date header of Instagram's own POST responses on this site (never
+   * served from a cache; readable because same-origin), at most every SERVER_TIME_EVERY_MS. No request
+   * is made for this.
+   */
+  var SERVER_TIME_EVERY_MS = 5 * 60 * 1000;
+  var serverTimeSentAt = null;
+  var serverTimeInstalled = false;
+
+  function installServerTime() {
+    var X = window.XMLHttpRequest;
+    if (serverTimeInstalled || !X || !X.prototype) return;
+    serverTimeInstalled = true;
+    var open = X.prototype.open;
+    X.prototype.open = function (method) {
+      try {
+        if (String(method).toUpperCase() === 'POST') this.addEventListener('load', onServerResponse);
+      } catch (e) {
+        // Never break Instagram's requests.
+      }
+      return open.apply(this, arguments);
+    };
+  }
+
+  function onServerResponse() {
+    var now = performance.now();
+    if (serverTimeSentAt !== null && now - serverTimeSentAt < SERVER_TIME_EVERY_MS) return;
+    var ms = NaN;
+    try {
+      ms = Date.parse(this.getResponseHeader('date') || ''); // null for other sites' responses
+    } catch (e) {
+      return;
+    }
+    if (!(ms > 0)) return;
+    serverTimeSentAt = now;
+    send({ t: 'serverTime', ms: ms });
+  }
+

@@ -105,7 +105,7 @@ time limit and guard) and measurements on the emulator led to these changes:
 - **Cheats closed:** the page's day followed the phone's clock (Explore, Discover, Your day reset);
   pass counters used the phone's clock and zone (unlimited 5-minute visits); the story pass's free
   leave allowed unlimited 3-minute slices of the real app; clock forward + reboot (API 33+, via
-  network time); split screen, pop-up windows and PiP left the real app uncovered; settings and
+  network time, and Instagram's server time below Android 13); split screen, pop-up windows and PiP left the real app uncovered; settings and
   posting passes were long and uncounted; any phone call kept the real app open; stopping the guard
   hid the real app's time (now counted when Throwback next runs); the profile Tagged tab.
 - **Security:** a URL with a backslash could load another site full-screen through a deep link;
@@ -158,14 +158,12 @@ editor screens (they can't render on the emulator).
    declined still counts, so switching from a WhatsApp call to an Instagram call is never covered.)
 2. With a daily limit on and the Instagram app installed but not connected, the limit covers only
    Throwback. Offer to connect the app when turning on a limit?
-3. Below Android 13 there is no network time, so clock forward + reboot still works there. Accept,
-   or allow one request per boot for the time?
-4. Profiles of people you don't follow, and "Suggested for you" lists on profiles and notifications,
+3. Profiles of people you don't follow, and "Suggested for you" lists on profiles and notifications,
    allow endless browsing with no budget. Intended?
-5. Remote rules can press named buttons in dialogs (cookie banner); a compromised rules file could
+4. Remote rules can press named buttons in dialogs (cookie banner); a compromised rules file could
    press others. Limit to dismiss-type labels?
-6. The chat reel viewer's detection and its Close labels are in code; move them into the rules?
-7. Instagram app in a work profile, Private Space or a dual-app clone is invisible to the guard. Say
+5. The chat reel viewer's detection and its Close labels are in code; move them into the rules?
+6. Instagram app in a work profile, Private Space or a dual-app clone is invisible to the guard. Say
    so in the setup?
 
 ## 6. How the home feed is filtered

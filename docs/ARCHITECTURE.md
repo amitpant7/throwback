@@ -103,7 +103,8 @@ within 60 s restarts at home; a third shows the error screen.
 `timelimit/engine` is pure Kotlin and fully unit-tested: the limit, the 5-minute wait, PIN extensions
 (twice a day), locked until the day ends, changes that take effect the next day, the 3-day forgot-PIN
 reset, and the trusted clock. Trusted time comes from the phone's since-boot clock plus the last
-trusted time, preferring network time where Android provides it (API 33+); a new day needs at least
+trusted time, preferring network time: Android's own (API 33+), else Instagram's server time from the
+Date of its responses (the page sends it, `serverTime`; `ServerTimeHint`); a new day needs at least
 23 hours of real time; the time zone counts from the next midnight. `DefaultTimeLimitController`
 wires it to DataStore (`timelimit`, included in Auto Backup) and a ticker while Instagram is in front.
 

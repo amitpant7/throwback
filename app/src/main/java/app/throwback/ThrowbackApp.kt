@@ -13,6 +13,7 @@ import app.throwback.core.TimeLimitController
 import app.throwback.core.UiPreferences
 import app.throwback.relay.MessagesFeature
 import app.throwback.timelimit.DefaultTimeLimitController
+import app.throwback.timelimit.ServerTimeHint
 import app.throwback.timelimit.TimeLimitModule
 import app.throwback.ui.UiModule
 
@@ -29,6 +30,7 @@ class ThrowbackApp : Application() {
         MessagesFeature.install(this)
         // The page's daily counters use the time limit's trusted clock, not the phone's: only once
         // its saved state is loaded (before that it would be the phone's own clock), else none.
+        PageClock.serverTimeSink = { ServerTimeHint.note(it) }
         PageClock.provider = {
             (timeLimit as? DefaultTimeLimitController)?.takeIf { it.ready.value }?.pageClock()?.let {
                 PageClock.Reading(it.offsetMs, it.zoneOffsetMin, it.day, it.nextDayAt, readAt = System.currentTimeMillis())

@@ -74,4 +74,14 @@ class BridgeMessageTest {
         assertEquals(BridgeMessage.CallInApp("12345", "some.user_1"), BridgeMessage.parse("""{"t":"callInApp","thread":"12345","user":"some.user_1"}"""))
         assertEquals(BridgeMessage.CallInApp("12345", null), BridgeMessage.parse("""{"t":"callInApp","thread":"12345","user":"x/../y"}"""))
     }
+
+    @Test
+    fun `server time is read only when plausible, and never from the legacy bridge`() {
+        val m = BridgeMessage.parse("""{"t":"serverTime","ms":1795225093000}""")
+        assertEquals(BridgeMessage.ServerTime(1795225093000L), m)
+        assertTrue(m!!.opensOtherApp) // i.e. refused on the legacy bridge, which any frame can call
+        assertNull(BridgeMessage.parse("""{"t":"serverTime","ms":0}"""))
+        assertNull(BridgeMessage.parse("""{"t":"serverTime","ms":9999999999999}"""))
+        assertNull(BridgeMessage.parse("""{"t":"serverTime","ms":"1795225093000"}"""))
+    }
 }

@@ -38,8 +38,10 @@ internal object CallInApp {
 
     fun open(context: Context, thread: String?, user: String? = null): Result {
         val pkg = installedInstagram(context) ?: return Result.NO_APP
-        val now = PassLedger.now(context) ?: return Result.NOT_READY
-        if (!PassLedger.read(context).callAllowed(now.wallMillis)) return Result.LIMITED
+        // Instagram not connected: no guard, so no pass and nothing to count (still loading: count).
+        val guarded = MessagesFeature.setUpNow != false
+        val now = if (guarded) PassLedger.now(context) ?: return Result.NOT_READY else null
+        if (now != null && !PassLedger.read(context).callAllowed(now.wallMillis)) return Result.LIMITED
         // ig.me/m/<username> opens a chat with that person from whichever account the Instagram app
         // uses (a chat id only exists in one account); the chat id is for group chats.
         val byUser = user?.let { Intent(Intent.ACTION_VIEW, Uri.parse("https://ig.me/m/$it")).setPackage(pkg) }
@@ -50,8 +52,10 @@ internal object CallInApp {
         for (intent in listOfNotNull(byUser, byThread, launch)) {
             if (start(context, intent)) {
                 // Only once Instagram really opens.
-                GuardPass.grant(SystemClock.elapsedRealtime(), PASS_MS, GuardPass.Kind.CALL)
-                PassLedger.update(context) { it.callTapped(now.wallMillis) }
+                if (now != null) {
+                    GuardPass.grant(SystemClock.elapsedRealtime(), PASS_MS, GuardPass.Kind.CALL)
+                    PassLedger.update(context) { it.callTapped(now.wallMillis) }
+                }
                 return Result.OPENED
             }
         }

@@ -31,11 +31,17 @@ internal object MessagesFeature {
     private const val TAG = "ThrowbackRelay"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
+    /** The setup's last known state, for callers that can't wait for DataStore; null until read. */
+    @Volatile
+    var setUpNow: Boolean? = null
+        private set
+
     /** Called once from ThrowbackApp.onCreate. Cheap: one DataStore read, no services started unless set up. */
     fun install(app: Application) {
         scope.launch {
             var before: Boolean? = null
             UiPrefs.from(app).messagesSetupDone.distinctUntilChanged().collect { setUp ->
+                setUpNow = setUp
                 // Connected again after being off: the time it was off never counts.
                 if (setUp && before == false) GuardHeartbeat.clear(app)
                 before = setUp

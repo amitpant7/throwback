@@ -51,8 +51,8 @@ internal data class WebToast(val notice: WebNotice, val id: Long)
 /** A main-frame load failed. [retrying] while a retry is in flight. */
 internal data class LoadError(val offline: Boolean, val url: String?, val retrying: Boolean = false)
 
-/** The WebView's renderer process went away: it [crashed], or the system killed it (memory). */
-internal data class RendererGone(val crashed: Boolean)
+/** The WebView's renderer process went away: it [crashed], or the system killed it (memory); [inFront]: while the app was started. */
+internal data class RendererGone(val crashed: Boolean, val inFront: Boolean)
 
 /**
  * Owns the single long-lived Instagram WebView and everything wired to it: settings, the page
@@ -122,6 +122,9 @@ internal class InstagramWebController(
 
     private var mode: WebMode = initialMode
     private var started = false
+
+    /** Between [onStart] and [onStop]. */
+    private var inFront = false
     private var features: PageFeatures = initialFeatures
 
     private var rules: FilterRules? = null
@@ -327,6 +330,7 @@ internal class InstagramWebController(
      */
     fun onStart() {
         if (destroyed) return
+        inFront = true
         webView.onResume()
         webView.resumeTimers()
         if (wasStopped) refreshClock()
@@ -360,6 +364,7 @@ internal class InstagramWebController(
     /** In the background: stop timers and animations (saves battery), keep the login. */
     fun onStop() {
         if (destroyed) return
+        inFront = false
         wasStopped = true
         handler.removeCallbacks(clockTick)
         webView.onPause()
@@ -740,7 +745,7 @@ internal class InstagramWebController(
             // and destroyed now (as the Android docs ask), and InstagramScreen builds a new one.
             Log.w(TAG, "WebView renderer gone (crashed=${detail.didCrash()}); recreating")
             destroy()
-            rendererGone = RendererGone(crashed = detail.didCrash())
+            rendererGone = RendererGone(crashed = detail.didCrash(), inFront = inFront)
             return true
         }
     }

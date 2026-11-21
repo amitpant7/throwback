@@ -43,7 +43,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.withStarted
 import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.core.StartTrace
 import app.throwback.core.WebMode
@@ -174,8 +176,8 @@ fun InstagramScreen(
             host = host,
             onExitRequest = onExitRequest,
             onRecreate = { generation++ },
-            onRendererGone = { crashed ->
-                when (crashes.onGone(crashed)) {
+            onRendererGone = { gone ->
+                when (crashes.onGone(gone.crashed, gone.inFront)) {
                     RendererCrashes.Next.RESTORE -> generation++
                     RendererCrashes.Next.HOME -> {
                         lastUrl = null // the page it was on may be what crashes it
@@ -202,12 +204,13 @@ private fun InstagramWebHost(
     host: InstagramWebController.Host,
     onExitRequest: () -> Unit,
     onRecreate: () -> Unit,
-    onRendererGone: (crashed: Boolean) -> Unit,
+    onRendererGone: (RendererGone) -> Unit,
     backEnabled: Boolean,
     covered: Boolean,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
     val colors = ThrowbackTheme.colors
     // The app's features for the page; followed only while the activity is started.
     val features by PageFeatures.current.collectAsStateWithLifecycle()
@@ -219,8 +222,9 @@ private fun InstagramWebHost(
                 StartTrace.mark("webview-ready")
                 // Cold start without a deep link: start loading now rather than after the first frame
                 // (the LaunchedEffect below then finds it started). A deep link waits for the host
-                // (set after this composition), which records it as handled.
-                if (startUrl == null) {
+                // (set after this composition), which records it as handled. A WebView rebuilt in the
+                // background (its renderer was killed) waits for the app to come to the front.
+                if (startUrl == null && lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
                     it.applyRules(rules)
                     it.openOrStart(null, restoreUrl)
                 }
@@ -271,8 +275,11 @@ private fun InstagramWebHost(
     }
 
     LaunchedEffect(controller, rules, startUrl) {
-        controller.applyRules(rules)
-        controller.openOrStart(startUrl, restoreUrl)
+        // Not in the background: loading there could get the new renderer killed again, in a loop.
+        lifecycle.withStarted {
+            controller.applyRules(rules)
+            controller.openOrStart(startUrl, restoreUrl)
+        }
     }
     LaunchedEffect(controller, mode) {
         controller.setMode(mode)
@@ -298,7 +305,7 @@ private fun InstagramWebHost(
 
     // The renderer went away and the controller destroyed its WebView: InstagramScreen replaces it.
     controller.rendererGone?.let { gone ->
-        LaunchedEffect(gone) { onRendererGone(gone.crashed) }
+        LaunchedEffect(gone) { onRendererGone(gone) }
     }
 
     // The system bar areas take the page's own background, so the app looks edge to edge.

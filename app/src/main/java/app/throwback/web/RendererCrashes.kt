@@ -4,9 +4,10 @@ package app.throwback.web
  * What to do after the WebView's renderer went away, so a page that crashes it on every load can't
  * loop forever behind the loading cover. Pure, for tests; main thread only.
  *
- * A renderer the system killed (memory, often in the background) is just replaced, on the same
- * page. A crash is too, the first time; one less than [windowMillis] after the previous crash
- * starts over at home instead; a third such crash gives up and shows the error screen.
+ * A renderer the system killed in the background (reclaiming memory) is just replaced, on the same
+ * page. A crash is too, the first time, and so is a kill while the app is in front (a page that eats
+ * memory would loop just the same); one less than [windowMillis] after the previous one starts over
+ * at home instead; a third such one gives up and shows the error screen.
  */
 internal class RendererCrashes(private val now: () -> Long, private val windowMillis: Long = 60_000) {
 
@@ -15,8 +16,9 @@ internal class RendererCrashes(private val now: () -> Long, private val windowMi
     private var lastCrashAt: Long? = null
     private var inARow = 0
 
-    fun onGone(crashed: Boolean): Next {
-        if (!crashed) return Next.RESTORE
+    /** @param inFront the app was in front (started) when it went. */
+    fun onGone(crashed: Boolean, inFront: Boolean): Next {
+        if (!crashed && !inFront) return Next.RESTORE
         val t = now()
         inARow = if (lastCrashAt?.let { t - it < windowMillis } == true) inARow + 1 else 1
         lastCrashAt = t

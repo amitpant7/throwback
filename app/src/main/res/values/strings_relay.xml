@@ -56,6 +56,7 @@
     <string name="create_in_app_used_up">You\'ve opened Instagram\'s post editor 10 times today. Back tomorrow.</string>
     <string name="settings_in_app_used_up">That\'s 5 visits to the Instagram app\'s settings today. Back tomorrow.</string>
     <string name="app_pass_locked">Not while your daily limit is reached.</string>
+    <string name="app_pass_not_ready">One moment… then tap again.</string>
     <string name="call_not_ready">One moment… then tap the call button again.</string>
     <string name="call_too_many">That\'s 3 tries this hour. Incoming calls still ring as usual.</string>
     <string name="call_needs_instagram_app">Calls start in the Instagram app. Connect Instagram to Throwback in Settings → Connect → Instagram.</string>

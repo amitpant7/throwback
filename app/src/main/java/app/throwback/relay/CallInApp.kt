@@ -7,11 +7,8 @@ import android.net.Uri
 import android.os.SystemClock
 import androidx.annotation.StringRes
 import app.throwback.R
-import app.throwback.core.LockState
 import app.throwback.guard.GuardPass
 import app.throwback.guard.PassLedger
-import app.throwback.timelimit.DefaultTimeLimitController
-import app.throwback.timelimit.TimeLimitModule
 import app.throwback.web.PageFeatures
 import kotlinx.coroutines.flow.update
 import app.throwback.web.rules.RulesRepository
@@ -74,8 +71,9 @@ internal object CallInApp {
     fun visit(context: Context): VisitResult {
         val pkg = installedInstagram(context) ?: return VisitResult.NO_APP
         val launch = context.packageManager.getLaunchIntentForPackage(pkg) ?: return VisitResult.NO_APP
+        // Still loading: its screen has no "not ready" message yet (it handles every result).
         val now = PassLedger.now(context) ?: return VisitResult.USED_TODAY
-        val locked = locked(context)
+        val locked = PassLedger.locked(context) == true
         if (!PassLedger.read(context).visitAllowed(now.epochDay, locked)) {
             return if (locked) VisitResult.LOCKED else VisitResult.USED_TODAY
         }
@@ -92,6 +90,9 @@ internal object CallInApp {
         LOCKED(R.string.app_pass_locked),
         CREATE_USED_UP(R.string.create_in_app_used_up),
         SETTINGS_USED_UP(R.string.settings_in_app_used_up),
+
+        /** The time limit, which counts the passes, is still loading. */
+        NOT_READY(R.string.app_pass_not_ready),
     }
 
     /** Longest a create pass lasts (it normally ends when Instagram leaves its create screens). */
@@ -104,8 +105,8 @@ internal object CallInApp {
      */
     fun create(context: Context): AppPass {
         val pkg = installedInstagram(context) ?: return AppPass.NO_APP
-        if (locked(context)) return AppPass.LOCKED
-        val now = PassLedger.now(context) ?: return AppPass.CREATE_USED_UP
+        val now = PassLedger.now(context) ?: return AppPass.NOT_READY
+        if (PassLedger.locked(context) == true) return AppPass.LOCKED
         if (!PassLedger.read(context).createAllowed(now.epochDay)) return AppPass.CREATE_USED_UP
         val link = RulesRepository.get(context).rules.value?.appCreate?.link ?: "instagram://share"
         if (!start(context, Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(pkg))) return AppPass.NO_APP
@@ -198,8 +199,8 @@ internal object CallInApp {
      */
     fun story(context: Context): StoryResult {
         val pkg = installedInstagram(context) ?: return StoryResult.NO_APP
-        if (locked(context)) return StoryResult.LOCKED
         val now = PassLedger.now(context) ?: return StoryResult.NOT_READY
+        if (PassLedger.locked(context) == true) return StoryResult.LOCKED
         val ledger = PassLedger.read(context)
         if (!ledger.storyAllowed(now.epochDay, now.wallMillis, storiesPerDay(context))) {
             val wait = ledger.storyWaitMinutes(now.epochDay, now.wallMillis, storiesPerDay(context))
@@ -250,20 +251,14 @@ internal object CallInApp {
      */
     fun settings(context: Context): AppPass {
         val pkg = installedInstagram(context) ?: return AppPass.NO_APP
-        if (locked(context)) return AppPass.LOCKED
-        val now = PassLedger.now(context) ?: return AppPass.SETTINGS_USED_UP
+        val now = PassLedger.now(context) ?: return AppPass.NOT_READY
+        if (PassLedger.locked(context) == true) return AppPass.LOCKED
         if (!PassLedger.read(context).settingsAllowed(now.epochDay)) return AppPass.SETTINGS_USED_UP
         val link = RulesRepository.get(context).rules.value?.appSettings?.link ?: "instagram://settings"
         if (!start(context, Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(pkg))) return AppPass.NO_APP
         GuardPass.grant(SystemClock.elapsedRealtime(), SETTINGS_PASS_MS, GuardPass.Kind.SETTINGS)
         PassLedger.update(context) { it.settingsOpened(now.epochDay) }
         return AppPass.OPENED
-    }
-
-    /** The daily limit is reached: no pass into the app but calls (DECISIONS.md #20, #27a). */
-    private fun locked(context: Context): Boolean {
-        val limit = TimeLimitModule.create(context)
-        return ((limit as? DefaultTimeLimitController)?.currentLockState() ?: limit.state.value) is LockState.Locked
     }
 
     private fun installedInstagram(context: Context): String? = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) }

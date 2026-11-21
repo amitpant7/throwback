@@ -6,10 +6,8 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
 import app.throwback.BuildConfig
-import app.throwback.ThrowbackApp
-import app.throwback.core.LockState
 import app.throwback.guard.GuardPass
-import app.throwback.timelimit.DefaultTimeLimitController
+import app.throwback.guard.PassLedger
 import app.throwback.ui.UiPrefs
 import app.throwback.web.rules.DEFAULT_ACTIVITY_URL
 import app.throwback.web.rules.NotificationRules
@@ -22,7 +20,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * The Messages & calls relay (DECISIONS.md #26). Android binds it while the user has granted
@@ -162,15 +159,10 @@ class RelayListenerService : NotificationListenerService() {
         }
     }
 
-    /**
-     * The daily limit is reached right now. Refreshed first (in the background nothing else moves it
-     * past midnight), and once the saved state is loaded (a notification can start the process).
-     */
+    /** The daily limit is reached right now, once the time limit has loaded (else: not locked). */
     private suspend fun lockedNow(): Boolean {
-        val limit = (application as ThrowbackApp).timeLimit
-        val impl = limit as? DefaultTimeLimitController ?: return limit.state.value is LockState.Locked
-        withTimeoutOrNull(LOAD_WAIT_MS) { impl.ready.first { it } }
-        return impl.currentLockState() is LockState.Locked
+        PassLedger.awaitLoaded(this, LOAD_WAIT_MS)
+        return PassLedger.locked(this) == true
     }
 
     private fun groupHasCall(summary: NotificationFacts): Boolean {

@@ -3,9 +3,12 @@ package app.throwback.guard
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import app.throwback.core.LockState
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.TimeLimitModule
 import app.throwback.timelimit.engine.TrustedTime
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * What the passes into the Instagram app remember, and the rules on it (DECISIONS.md #27a, #27f).
@@ -105,8 +108,22 @@ internal object PassLedger {
     private const val FILE = "guard_passes"
 
     /** Today and now on the trusted clock; null until the time limit has loaded its state (then: no new passes). */
-    fun now(context: Context): TrustedTime? =
-        (TimeLimitModule.create(context) as? DefaultTimeLimitController)?.trustedTime()
+    fun now(context: Context): TrustedTime? = loadedLimit(context)?.trustedTime()
+
+    /**
+     * Whether the daily limit is reached right now (refreshed first: in the background nothing else
+     * moves it past midnight); null until the time limit has loaded its state, like [now].
+     */
+    fun locked(context: Context): Boolean? = loadedLimit(context)?.let { it.currentLockState() is LockState.Locked }
+
+    /** Waits at most [maxMillis] for the time limit to load its saved state (a notification can start the process). */
+    suspend fun awaitLoaded(context: Context, maxMillis: Long) {
+        val limit = TimeLimitModule.create(context) as? DefaultTimeLimitController ?: return
+        withTimeoutOrNull(maxMillis) { limit.ready.first { it } }
+    }
+
+    private fun loadedLimit(context: Context): DefaultTimeLimitController? =
+        (TimeLimitModule.create(context) as? DefaultTimeLimitController)?.takeIf { it.ready.value }
 
     @Synchronized
     fun read(context: Context): PassBook {

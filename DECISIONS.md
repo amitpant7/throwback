@@ -17,20 +17,21 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
    redistribution, no published changes. Source-available, not open source (so no F-Droid). The
    repo was public under GPL-3.0 for about an hour on 2026-11-20; copies from then keep GPL rights.
 4. **Money:** free, with optional tips through Google Play Billing (no paid features; one thank-you
-   unlock, #4d). The tip tiers in
-   the mockup are Beer / Rock show / GTA 6. Beer and GTA 6 have original icons; Rock show uses a prism
+   unlock, #4d). The tip tiers are A beer / A gig ticket / GTA 6 (names: owner, 2026-11-21; GTA 6
+   for now). A beer and GTA 6 have original icons; A gig ticket uses a prism
    image supplied by the owner (source and licence to confirm before release). Before the Play
    release, recheck using third-party names as product names.
 4b. **Support screen: design A "list rows"** (owner, 2026-11-20; mockups row 5): one row per tip with
-    the existing icons, a one-liner and the price: Beer **$3** ("A cold one, on you"), Rock show **$10**
-    ("Toward a gig ticket"), GTA 6 **$25** ("Toward the next big game"), and **"Whatever you want"**:
+    the existing icons, a one-liner and the price: A beer **$3** ("A cold one, on you"), A gig ticket
+    **$10** ("Toward the next show"), GTA 6 **$25** ("Toward the next big game"), and **"Whatever you want"**:
     a field where the user types any amount (no starting value; owner). Play needs fixed prices, so
     billing will charge the closest tip product, set up in steps (each dollar to $100, then wider). India priced by hand (₹99 / ₹299 / ₹799 suggested).
     Prices shown from Google Play in the user's currency. Fine print "Paid through Google Play", then
-    "How tips work" and "Report something Throwback missed". Renaming "GTA 6" and the prism image stay
-    on the release list.
-4d. **One tip unlocks Customize icon** (owner, 2026-11-21): any tip, once, unlocks the whole Customize
-    icon screen (#31) for good. Before that it can be tried out; its button leads to Support. The
+    "How tips work", "Report something Throwback missed" and "Say Hi on Instagram · @97m.it" (the
+    developer's profile, opened in Throwback; owner, 2026-11-21). The intro says what a tip gets:
+    Make It Yours (#4d). Renaming "GTA 6" and the prism image stay on the release list.
+4d. **One tip unlocks Make It Yours** (owner, 2026-11-21): any tip, once, unlocks the whole Make It
+    Yours screen (#31) for good. Before that it can be tried out; its button leads to Support. The
     flag is kept on the phone and in Auto Backup (`core/Supporter`), since tips are one-off purchases
     Google Play doesn't list again. Until billing is set up nobody can unlock it (test builds can).
 4a. **Rating ask** (owner, 2026-11-20): **once, after a month, never again.** Google Play's own in-app
@@ -239,7 +240,7 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 30. **Mindful pause:** **on by default** (owner, 2026-11-20: Instagram loads underneath, so it hides the
     page load), can be turned off in Settings. **4 seconds**, no buttons (Back still leaves). 30 short
     original lines in a shuffled order that goes through all of them before repeating.
-31. **Customize icon** (owner, 2026-11-21; was "Add to home screen"): a home-screen shortcut with the
+31. **Make It Yours** (owner, 2026-11-21; was "Add to home screen", then "Customize icon"): a home-screen shortcut with the
     user's own name and icon: the logo on the app colour, dark or light, a photo frame, or the user's
     own picture (cropped square, any picture; Throwback ships no Instagram name or logo, but the
     user's shortcut is theirs). Android doesn't let an app rename or re-icon itself, so it is a
@@ -259,7 +260,7 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     also counts.
 33c. **Your day** (owner, 2026-11-20): first row in Settings. Time on Instagram today (split into
     feed, stories, messages, Explore, profiles and posts), the daily limit left, Explore minutes left,
-    reels-in-chats cooldown, Discover posts left, and what was removed today (ads, suggested posts,
+    Discover posts left (no reels-in-chats row: it added nothing, owner 2026-11-21), and what was removed today (ads, suggested posts,
     Instagram alerts). Counted on the phone only (page storage `__tb_day` + the app), reset at midnight.
 33. **Mockups:** https://claude.ai/artifact/JVunY8kiNTP8abRP43LSGV (private to the owner).
 34. **Owner's answers of 2026-11-21** (multiple choice, from the reviews):
@@ -278,3 +279,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
        fixed without an app update.
     f. **Clones:** the Connect › Instagram setup says that a second copy of Instagram (work profile,
        dual apps, Private Space) isn't covered.
+    g. **After the first login, connecting the Instagram app is the recommended choice** (marked
+       "Recommended"; "Decide later" stays at the bottom).
+    h. **No budget for browsing profiles or suggested accounts:** not worth the complexity.
+    i. **Licence stays PolyForm Strict** (people may read the code, not publish copies), so the app
+       says "the code is public on GitHub", not "open source" (welcome screen's small print).

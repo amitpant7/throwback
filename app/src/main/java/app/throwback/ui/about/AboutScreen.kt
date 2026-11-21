@@ -38,6 +38,10 @@ internal object AboutLinks {
     const val REPORT_MISSED_URL = "$REPO_URL/issues/new"
     /** README section explaining tips (Play Billing only; no other payment links: Play policy). */
     const val HOW_TIPS_WORK_URL = "$REPO_URL#how-tips-work"
+
+    /** The developer on Instagram (Support → Say Hi), opened in Throwback. */
+    const val DEV_INSTAGRAM_HANDLE = "@97m.it"
+    const val DEV_INSTAGRAM_URL = "https://www.instagram.com/97m.it/"
 }
 
 @Composable

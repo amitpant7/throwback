@@ -66,10 +66,11 @@ The debug APK is `app/build/outputs/apk/debug/app-debug.apk`. More in
 
 ## How tips work
 
-Throwback is free, with no paid features. If you'd like to say thanks, Settings → Support Throwback
-offers a few tips (Beer, Rock show, GTA 6, or "Whatever you want"). They're one-time payments made
-through Google Play in your own currency; Google keeps its fee and the rest goes to the developer.
-Nothing unlocks: tips help keep the filters working as Instagram changes.
+Throwback is free. If you'd like to say thanks, Settings → Support Throwback offers a few tips (A beer,
+A gig ticket, GTA 6, or "Whatever you want"). They're one-time payments made through Google Play in
+your own currency; Google keeps its fee and the rest goes to the developer. Any tip, once, unlocks
+Make It Yours (your own name and icon for Throwback on the home screen); tips also help keep the
+filters working as Instagram changes.
 
 ## Licence
 

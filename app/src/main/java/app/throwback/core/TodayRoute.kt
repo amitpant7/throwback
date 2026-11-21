@@ -55,7 +55,6 @@ internal fun TodayRoute(timeLimit: TimeLimitController, onClose: () -> Unit) {
         },
         exploreLeftSec = p?.let { (it.exploreAllowanceSec - it.exploreUsedSec).coerceAtLeast(0) },
         exploreAllowanceSec = p?.exploreAllowanceSec ?: 0,
-        reelCooldownMs = p?.reelCooldownMs,
         discoverShown = p?.discoverShown,
         discoverMax = p?.discoverMax ?: 0,
         adsRemoved = p?.adsRemoved,

@@ -137,7 +137,7 @@ internal object HomeShortcut {
 }
 
 /**
- * Customize icon (DECISIONS.md #31, #4d): a home-screen shortcut with the user's name and a preset
+ * Make It Yours (DECISIONS.md #31, #4d): a home-screen shortcut with the user's name and a preset
  * icon or their own picture. Unlocked by one tip; until then everything can be tried out, and the
  * button leads to Support instead of adding the shortcut.
  */

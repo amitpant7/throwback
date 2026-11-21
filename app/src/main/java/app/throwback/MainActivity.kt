@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
         // Test builds only: `adb shell am start -n app.throwback/.MainActivity --es debug_open settings`
         // (or messages) opens Settings directly, so screens can be checked without an Instagram login.
         val debugOpen = if (BuildConfig.DEBUG) intent.getStringExtra("debug_open") else null
-        // Test builds only: `--ez debug_supporter true` acts as if a tip went through (unlocks Customize icon).
+        // Test builds only: `--ez debug_supporter true` acts as if a tip went through (unlocks Make It Yours).
         if (BuildConfig.DEBUG && intent.getBooleanExtra("debug_supporter", false)) Supporter.markTipped(this)
         val app = application as ThrowbackApp
         StartTrace.mark("setContent")

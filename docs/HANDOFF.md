@@ -80,7 +80,7 @@ one with `adb -P 15037 kill-server`). Never open stories on the owner's account 
 | `files/debug_clock` containing `<speed> [HH:MM]` | Time-limit clock runs faster; with `HH:MM` the day starts there. Delete it and `files/debug_clock_anchor` to return to real time |
 | `files/debug_noscript` | No page script: plain Instagram in the same WebView, as a baseline |
 | `am start … --es debug_open settings` or `messages` | Opens Settings or Connect › Instagram directly |
-| `am start … --ez debug_supporter true` | Acts as if a tip went through: unlocks Customize icon (stays set) |
+| `am start … --ez debug_supporter true` | Acts as if a tip went through: unlocks Make It Yours (stays set) |
 | `DebugRelayReceiver` broadcasts | Fake Instagram notifications; make the guard watch another app (see `app/src/debug/`) |
 
 ```bash
@@ -141,7 +141,7 @@ editor screens (they can't render on the emulator).
   full on-device checklist (7).
 - Play Billing for the tips (product ids per tip; "Whatever you want" maps to fixed step products;
   `SupportAsk.markTipped` once a tip is confirmed). Recheck third-party names ("GTA 6") as tip product
-  names, and replace or license the Rock show prism image (`ui_tip_rock`).
+  names, and replace or license the gig ticket's prism image (`ui_tip_rock`).
 - Privacy policy, Play listing and data-safety form (nothing collected); release signing; the
   owner's story in the README "Why" section.
 - Optional: an enforced Kotlin formatter (ktlint via Gradle). Downloading and running it was not

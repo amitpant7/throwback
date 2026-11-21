@@ -23,7 +23,7 @@ reasons are in [DECISIONS.md](../DECISIONS.md).
 | `timelimit/engine` | The time-limit engine, pure Kotlin: state machine, trusted clock, PIN hashing |
 | `timelimit/data`, `timelimit` | Storage (DataStore `timelimit`), the Android clock, `DefaultTimeLimitController` |
 | `timelimit/ui` | Setup, manage, PIN entry and prompt, lock screens, forgot PIN, the time-left chip |
-| `ui` | Settings and its screens (`settings`, `messages` = Connect › Instagram, `today`, `about`, `shortcut` = Customize icon), onboarding, pause, reel poster; `UiPrefs` (DataStore `ui_prefs`) |
+| `ui` | Settings and its screens (`settings`, `messages` = Connect › Instagram, `today`, `about`, `shortcut` = Make It Yours), onboarding, pause, reel poster; `UiPrefs` (DataStore `ui_prefs`) |
 | `relay` | Notification relay and the passes into the Instagram app (`CallInApp`, the pass ledger) |
 | `guard` | The guard service and its pure policy (`GuardPolicy`), the cover overlay, restart after boot |
 
@@ -146,7 +146,7 @@ the setup and the permissions.
 | DataStore `timelimit` | Time-limit state (Auto Backup) |
 | DataStore `ui_prefs` | Onboarding, pause, setup done, notification switches, hints |
 | SharedPreferences `guard_passes`, `relay_stats`, `rate_ask`, `support_ask`, `pause_lines` | Pass ledger, relay day counts, rating ask, support ask, the pause's line rotation |
-| SharedPreferences `supporter` | Whether the user has tipped (unlocks Customize icon; Auto Backup) |
+| SharedPreferences `supporter` | Whether the user has tipped (unlocks Make It Yours; Auto Backup) |
 | instagram.com `localStorage` (the page) | `__tb_day` (Your day), `__tb_explore`, `__tb_discover`, `__tb_reels`, `__tb_totals` (support line), `__tb_lastday` (the page's day), `__tb_code_assets` (warm-up), `__tb_redirects` (loop guard) |
 
 ## Build and tests

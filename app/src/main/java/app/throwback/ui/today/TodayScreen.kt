@@ -45,7 +45,6 @@ data class TodayStats(
     val limit: Limit = Limit.None,
     val exploreLeftSec: Int? = null,
     val exploreAllowanceSec: Int = 0,
-    val reelCooldownMs: Long? = null,
     val discoverShown: Int? = null,
     val discoverMax: Int = 0,
     val adsRemoved: Int? = null,
@@ -92,16 +91,6 @@ internal fun TodayScreen(stats: TodayStats, onBack: () -> Unit) {
                     exploreLeft.toFloat() / stats.exploreAllowanceSec
                 } else {
                     null
-                },
-            )
-            CardDivider()
-            val cool = stats.reelCooldownMs
-            AllowanceRow(
-                title = stringResource(R.string.ui_today_reels),
-                value = when {
-                    cool == null -> null
-                    cool > 0 -> stringResource(R.string.ui_today_reels_cooling, remainingText(cool))
-                    else -> stringResource(R.string.ui_today_reels_free)
                 },
             )
             CardDivider()

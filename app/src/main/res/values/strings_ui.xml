@@ -26,7 +26,7 @@
     <!-- TalkBack for the ticked items, e.g. "Stories, still here". -->
     <string name="ui_onb_kept_description">%1$s, still here</string>
     <string name="ui_onb_login">Log in to Instagram</string>
-    <string name="ui_onb_note">You log in on Instagram\'s own page. Throwback never sees your password.\nNot affiliated with Instagram or Meta.</string>
+    <string name="ui_onb_note">You log in on Instagram\'s own page. Throwback never sees your password.\nFree, and the code is public on GitHub. Not affiliated with Instagram or Meta.</string>
 
     <!-- 1b · Instagram app found -->
     <string name="ui_found_icon_description">Instagram app installed</string>
@@ -36,6 +36,7 @@
     <string name="ui_found_keep_body">For calls, message alerts and posting. Throwback keeps you out of everything else.</string>
     <string name="ui_found_remove_title">Remove it</string>
     <string name="ui_found_remove_body">Opens the app\'s page in Android Settings. Tap Uninstall there.</string>
+    <string name="ui_found_recommended">Recommended</string>
     <string name="ui_found_later">Decide later</string>
     <string name="ui_found_footer">You can change this anytime in Settings → Connect → Instagram.</string>
 
@@ -57,7 +58,7 @@
     <string name="ui_messages_value_setup">Set up</string>
     <string name="ui_messages_value_on">Connected</string>
     <string name="ui_section_app">App</string>
-    <string name="ui_shortcut_title">Customize icon</string>
+    <string name="ui_shortcut_title">Make It Yours</string>
     <string name="ui_shortcut_row_sub">Your own name and icon on the home screen</string>
     <string name="ui_about_title">About</string>
 
@@ -154,7 +155,7 @@
     <string name="ui_shortcut_icon_own">Your own picture</string>
     <string name="ui_shortcut_own_failed">Couldn\'t open that picture. Try another one.</string>
     <string name="ui_shortcut_locked_title">Unlocks with any tip</string>
-    <string name="ui_shortcut_locked_body">Support Throwback once, any amount, and custom icons are yours for good. Try it out below.</string>
+    <string name="ui_shortcut_locked_body">Support Throwback once, any amount, and Make It Yours unlocks for good. Try it out below.</string>
     <string name="ui_shortcut_unlock">Leave a tip to unlock</string>
     <string name="ui_shortcut_note">Call it whatever you like and use any picture. Throwback doesn\'t use Instagram\'s name or logo, but your shortcut is yours. Most phones add a small Throwback badge to shortcuts.</string>
     <string name="ui_shortcut_add">Add to home screen</string>
@@ -164,14 +165,14 @@
     <!-- 6 · About & support -->
     <string name="ui_about_version">v%1$s</string>
     <string name="ui_support_title">Support Throwback</string>
-    <string name="ui_tip_beer">Beer</string>
-    <string name="ui_tip_rock">Rock show</string>
+    <string name="ui_tip_beer">A beer</string>
+    <string name="ui_tip_gig">A gig ticket</string>
     <string name="ui_tip_gta">GTA 6</string>
     <string name="ui_tips_soon">Tips arrive with the Play Store release.</string>
-    <string name="ui_support_intro">Throwback is free and stays free. If it gave you some time back, you can say thanks. Nothing unlocks.</string>
+    <string name="ui_support_intro">Throwback is free and stays free. If it gave you some time back, you can say thanks, and any tip gets you Make It Yours: your own name and icon on the home screen.</string>
     <string name="ui_support_leave_tip">Leave a tip</string>
     <string name="ui_tip_beer_line">A cold one, on you</string>
-    <string name="ui_tip_rock_line">Toward a gig ticket</string>
+    <string name="ui_tip_gig_line">Toward the next show</string>
     <string name="ui_tip_gta_line">Toward the next big game</string>
     <!-- The currency, in this one place, until Google Play billing supplies the local prices. -->
     <string name="ui_tip_currency">$</string>
@@ -184,6 +185,7 @@
     <string name="ui_tip_any_button_empty">Tip</string>
     <string name="ui_support_fine">Paid through Google Play. Prices shown in your currency.</string>
     <string name="ui_support_how">How tips work</string>
+    <string name="ui_support_say_hi">Say Hi on Instagram</string>
     <string name="ui_link_source">Source code on GitHub</string>
     <string name="ui_link_privacy">Privacy policy</string>
     <string name="ui_filters_updated">Filters updated</string>
@@ -261,9 +263,6 @@
     <string name="ui_today_explore">Explore</string>
     <string name="ui_today_explore_value">%1$s of %2$s left</string>
     <string name="ui_today_explore_done">Done for today</string>
-    <string name="ui_today_reels">Reels in chats</string>
-    <string name="ui_today_reels_free">A few free swipes</string>
-    <string name="ui_today_reels_cooling">Free again in %1$s</string>
     <string name="ui_today_discover">Discover posts</string>
     <string name="ui_today_discover_value" tools:ignore="PluralsCandidate">%1$d of %2$d left</string>
     <string name="ui_today_section_removed">Removed today</string>

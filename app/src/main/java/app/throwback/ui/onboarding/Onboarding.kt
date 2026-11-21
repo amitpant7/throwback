@@ -3,6 +3,7 @@ package app.throwback.ui.onboarding
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -201,14 +202,14 @@ private fun InstagramFoundScreen(onKeep: () -> Unit, onRemove: () -> Unit, onLat
                     icon = R.drawable.ic_phone,
                     title = stringResource(R.string.ui_found_keep_title),
                     body = stringResource(R.string.ui_found_keep_body),
-                    accentBadge = true,
+                    recommended = true,
                     onClick = onKeep,
                 )
                 ChoiceCard(
                     icon = R.drawable.ic_trash,
                     title = stringResource(R.string.ui_found_remove_title),
                     body = stringResource(R.string.ui_found_remove_body),
-                    accentBadge = false,
+                    recommended = false,
                     onClick = onRemove,
                 )
             }
@@ -259,7 +260,7 @@ private fun ChoiceCard(
     @DrawableRes icon: Int,
     title: String,
     body: String,
-    accentBadge: Boolean,
+    recommended: Boolean,
     onClick: () -> Unit,
 ) {
     val colors = ThrowbackTheme.colors
@@ -268,6 +269,7 @@ private fun ChoiceCard(
         shape = RoundedCornerShape(20.dp),
         color = colors.surface,
         contentColor = colors.text,
+        border = if (recommended) BorderStroke(1.5.dp, colors.accent) else null,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
@@ -278,12 +280,15 @@ private fun ChoiceCard(
                 Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (accentBadge) colors.accent else colors.surface2),
+                    .background(if (recommended) colors.accent else colors.surface2),
                 contentAlignment = Alignment.Center,
             ) {
-                TbIcon(icon, tint = if (accentBadge) colors.onAccent else colors.text)
+                TbIcon(icon, tint = if (recommended) colors.onAccent else colors.text)
             }
             Column(Modifier.weight(1f)) {
+                if (recommended) {
+                    Text(stringResource(R.string.ui_found_recommended), style = UiText.fine.copy(fontWeight = FontWeight.Bold), color = colors.accentText)
+                }
                 Text(title, style = UiText.rowStrong.copy(fontWeight = FontWeight.Bold), color = colors.text)
                 Text(body, style = UiText.sub, color = colors.muted, modifier = Modifier.padding(top = 3.dp))
             }

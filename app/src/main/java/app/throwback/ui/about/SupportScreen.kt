@@ -60,7 +60,7 @@ import app.throwback.ui.common.SystemScreens
  */
 private enum class Tip(@DrawableRes val icon: Int, @StringRes val label: Int, @StringRes val line: Int, val amount: Int) {
     Beer(R.drawable.ui_tip_beer, R.string.ui_tip_beer, R.string.ui_tip_beer_line, 3),
-    RockShow(R.drawable.ui_tip_rock, R.string.ui_tip_rock, R.string.ui_tip_rock_line, 10),
+    GigTicket(R.drawable.ui_tip_rock, R.string.ui_tip_gig, R.string.ui_tip_gig_line, 10),
     Gta6(R.drawable.ui_tip_gta, R.string.ui_tip_gta, R.string.ui_tip_gta_line, 25),
 }
 
@@ -70,7 +70,7 @@ private enum class Tip(@DrawableRes val icon: Int, @StringRes val label: Int, @S
  * billing supplies the local ones.
  */
 @Composable
-internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
+internal fun SupportScreen(onBack: () -> Unit, onOpenPage: (String) -> Unit, showMessage: (String) -> Unit) {
     val colors = ThrowbackTheme.colors
     val context = LocalContext.current
     val tipsSoon = stringResource(R.string.ui_tips_soon)
@@ -188,6 +188,13 @@ internal fun SupportScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
             NavRow(title = stringResource(R.string.ui_support_how), onClick = { open(AboutLinks.HOW_TIPS_WORK_URL) })
             CardDivider()
             NavRow(title = stringResource(R.string.ui_link_report), onClick = { open(AboutLinks.REPORT_MISSED_URL) })
+            CardDivider()
+            // Opens in Throwback, in the feed's place (owner, 2026-11-21).
+            NavRow(
+                title = stringResource(R.string.ui_support_say_hi),
+                value = AboutLinks.DEV_INSTAGRAM_HANDLE,
+                onClick = { onOpenPage(AboutLinks.DEV_INSTAGRAM_URL) },
+            )
         }
         Spacer(Modifier.height(24.dp))
     }

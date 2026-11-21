@@ -74,9 +74,6 @@
   function dayStats() {
     var d = dayLog();
     var ex = state.c && state.c.explore;
-    var rv = state.c && state.c.reelViewer;
-    var log = reelLog();
-    var cool = rv && log.poster ? Math.max(0, log.poster + rv.cooldownMs - trustedNow()) : 0;
     var ds = discState();
     return JSON.stringify({
       areas: d.sec,
@@ -85,8 +82,7 @@
       exploreUsedSec: exploreLog().used,
       exploreAllowanceSec: ex && ex.dailySeconds ? ex.dailySeconds : 0,
       discoverShown: ds.count || 0,
-      discoverMax: DISCOVER.perDay,
-      reelCooldownMs: Math.round(cool)
+      discoverMax: DISCOVER.perDay
     });
   }
 

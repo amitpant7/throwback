@@ -15,10 +15,9 @@ class PageDayStatsTest {
         assertEquals(31, s.suggestionsRemoved)
         assertEquals(300, s.exploreAllowanceSec)
         assertNull(PageDayStats.parse("not json"))
-        // A fractional cooldown (pages from before 2026-11-21 sent one) is read, not a parse failure.
-        val cooling = PageDayStats.parse("""{"exploreUsedSec":12,"reelCooldownMs":3599123.4000000004}""")!!
-        assertEquals(3599123L, cooling.reelCooldownMs)
-        assertEquals(12, cooling.exploreUsedSec)
+        // A page loaded before an update still sends the old reel cooldown (a fraction): ignored, not a failure.
+        val old = PageDayStats.parse("""{"exploreUsedSec":12,"reelCooldownMs":3599123.4000000004}""")!!
+        assertEquals(12, old.exploreUsedSec)
         assertNull(PageDayStats.parse(null))
     }
 }

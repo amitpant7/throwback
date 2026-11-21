@@ -1,11 +1,7 @@
 package app.throwback.ui.settings
 
-import app.throwback.R
-import app.throwback.ui.messages.InstagramApp
-import app.throwback.ui.messages.LimitConnectOffer
-import app.throwback.ui.messages.MessagesOffHooks
-import app.throwback.ui.messages.MessagesSettingsScreen
-import app.throwback.ui.messages.MessagesWizard
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
@@ -41,12 +37,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.throwback.MainActivity
+import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.core.ui.UiText
 import app.throwback.ui.SettingsStart
 import app.throwback.ui.UiPrefs
 import app.throwback.ui.about.AboutScreen
 import app.throwback.ui.about.SupportScreen
-import app.throwback.core.ui.UiText
+import app.throwback.ui.messages.InstagramApp
+import app.throwback.ui.messages.LimitConnectOffer
+import app.throwback.ui.messages.MessagesOffHooks
+import app.throwback.ui.messages.MessagesSettingsScreen
+import app.throwback.ui.messages.MessagesWizard
 import app.throwback.ui.shortcut.ShortcutScreen
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -120,6 +123,7 @@ internal fun SettingsRootContent(
                         back = back,
                         push = push,
                         replace = replace,
+                        closeSettings = onClose,
                         showMessage = showMessage,
                         timeLimitScreen = timeLimitScreen,
                         todayScreen = todayScreen,
@@ -149,6 +153,7 @@ private fun RouteContent(
     back: () -> Unit,
     push: (SettingsRoute) -> Unit,
     replace: (SettingsRoute) -> Unit,
+    closeSettings: () -> Unit,
     showMessage: (String) -> Unit,
     timeLimitScreen: @Composable (onClose: () -> Unit, onLimitSet: () -> Unit) -> Unit,
     todayScreen: @Composable (onClose: () -> Unit) -> Unit,
@@ -255,7 +260,18 @@ private fun RouteContent(
             ShortcutScreen(onBack = back, onOpenSupport = { push(SettingsRoute.Support) }, showMessage = showMessage)
         }
 
-        SettingsRoute.Support -> Box(padded) { SupportScreen(onBack = back, showMessage = showMessage) }
+        SettingsRoute.Support -> Box(padded) {
+            val context = LocalContext.current
+            SupportScreen(
+                onBack = back,
+                // An instagram.com page in Throwback's feed: the same way in as a link from another app.
+                onOpenPage = { url ->
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url), context, MainActivity::class.java))
+                    closeSettings()
+                },
+                showMessage = showMessage,
+            )
+        }
         SettingsRoute.About -> Box(padded) { AboutScreen(onBack = back, showMessage = showMessage) }
     }
 }

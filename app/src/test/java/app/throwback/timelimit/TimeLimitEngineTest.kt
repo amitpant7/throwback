@@ -512,6 +512,22 @@ class TimeLimitEngineTest {
     // ---- Settings changes -------------------------------------------------------------------
 
     @Test
+    fun `setting a limit up again keeps the clock, the day and a due guard turn-off`() {
+        h.setup(30)
+        h.act { s, r -> h.engine.scheduleGuardOff(s, r, pinOk = true) }
+        h.act { s, r -> h.engine.turnOff(s, r, pinOk = true) }
+        h.advanceToMidnight()
+        h.refresh()
+        assertEquals(LockState.Disabled, h.view().lockState)
+        assertTrue(h.s.guardOffDue) // The app hasn't turned the guard off yet...
+        val clock = Triple(h.s.day, h.s.dayStart, h.s.zone)
+        h.zone = ZoneId.of("Pacific/Kiritimati") // ...and the phone is now where it's already tomorrow.
+        assertEquals(ActionResult.Done, h.setup(15))
+        assertTrue(h.s.guardOffDue)
+        assertEquals(clock, Triple(h.s.day, h.s.dayStart, h.s.zone))
+    }
+
+    @Test
     fun `raising the limit needs the PIN and takes effect the next day`() {
         h.setup(30)
         assertEquals(ActionResult.PinRequired, h.act { s, r -> h.engine.setLimit(s, r, 60) })

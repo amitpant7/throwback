@@ -148,9 +148,26 @@ class TimeLimitEngine {
     }
 
     /** No limit any more: nothing protects a scheduled guard turn-off, so it is due at once. */
-    private fun turnedOff(s: TimeLimitState) = TimeLimitState(
-        day = s.day, anchor = s.anchor, session = s.session, zone = s.zone, dayStart = s.dayStart,
-        guardOffDue = s.guardOffDue || s.pendingGuardOff != null,
+    private fun turnedOff(s: TimeLimitState) = withoutLimit(s).copy(guardOffDue = s.guardOffDue || s.pendingGuardOff != null)
+
+    /**
+     * [s] with the limit and everything that belongs to it reset (PIN, today's use, locks, pending
+     * changes, a PIN reset). The clock (anchor, day, its start and zone), the session and a due guard
+     * turn-off stay: dropping them would let the day restart or forget the turn-off.
+     */
+    private fun withoutLimit(s: TimeLimitState) = s.copy(
+        limitMinutes = null,
+        pin = null,
+        usedMillis = 0,
+        extensionsUsed = 0,
+        lockedAt = null,
+        pendingLimit = null,
+        pendingPin = null,
+        pinResetRequestedAt = null,
+        wrongPinAttempts = 0,
+        pinBlockedAt = null,
+        pendingGuardOff = null,
+        grantShowing = false,
     )
 
     /**
@@ -201,13 +218,7 @@ class TimeLimitEngine {
         val (st, at) = sync(s, r)
         if (st.enabled) return Outcome(st, ActionResult.NotAllowed("A limit is already set"))
         if (minutes !in Rules.LIMIT_CHOICES) return Outcome(st, ActionResult.NotAllowed("Unsupported limit"))
-        val on = TimeLimitState(
-            limitMinutes = minutes,
-            pin = pin,
-            day = st.day,
-            anchor = st.anchor,
-            session = st.session,
-        )
+        val on = withoutLimit(st).copy(limitMinutes = minutes, pin = pin)
         return Outcome(settleLock(on, at), ActionResult.Done)
     }
 

@@ -1,19 +1,17 @@
 package app.throwback.relay
 
-import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import app.throwback.MainActivity
 import app.throwback.R
+import app.throwback.ui.messages.Permissions
 
 /** Throwback's own notifications: relayed messages and activity, and the guard's ongoing one. */
 internal object RelayNotifier {
@@ -61,11 +59,7 @@ internal object RelayNotifier {
      */
     fun showGuardOff(context: Context, permissionOff: Boolean = false) {
         ensureChannels(context)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
+        if (!Permissions.canPostNotifications(context)) return
         val open = PendingIntent.getActivity(
             context,
             GUARD_OFF_NOTIFICATION_ID,
@@ -142,11 +136,8 @@ internal object RelayNotifier {
             // text posted again (an update of the same message) doesn't.
             .setOnlyAlertOnce(shownText(context, id) == title to text)
             .build()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            return // the router keeps Instagram's own notification in this case (canPost is false)
-        }
+        // The router keeps Instagram's own notification in this case (canPost is false).
+        if (!Permissions.canPostNotifications(context)) return
         try {
             NotificationManagerCompat.from(context).notify(TAG_RELAYED, id, notification)
         } catch (e: SecurityException) {

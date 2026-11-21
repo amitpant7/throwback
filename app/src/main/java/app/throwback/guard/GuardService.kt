@@ -1,6 +1,5 @@
 package app.throwback.guard
 
-import android.Manifest
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
@@ -11,7 +10,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.hardware.camera2.CameraManager
 import android.media.AudioManager
@@ -37,6 +35,7 @@ import app.throwback.relay.MessagesFeature
 import app.throwback.relay.RelayDebug
 import app.throwback.relay.RelayListenerService
 import app.throwback.relay.RelayNotifier
+import app.throwback.ui.messages.Permissions
 import app.throwback.web.rules.AppStoryRules
 import app.throwback.web.rules.DEFAULT_CALL_GRACE_SECONDS
 import app.throwback.web.rules.FilterRules
@@ -212,11 +211,7 @@ class GuardService : Service() {
     private fun updateStatus(paused: Boolean) {
         if (paused == statusPaused) return
         statusPaused = paused
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
+        if (!Permissions.canPostNotifications(this)) return
         try {
             NotificationManagerCompat.from(this).notify(RelayNotifier.GUARD_NOTIFICATION_ID, statusNotification(paused))
         } catch (e: SecurityException) {

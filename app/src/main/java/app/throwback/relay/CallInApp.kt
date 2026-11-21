@@ -34,7 +34,7 @@ internal object CallInApp {
     }
 
     fun open(context: Context, thread: String?, user: String? = null): Result {
-        val pkg = installedInstagram(context) ?: return Result.NO_APP
+        val pkg = InstagramPackages.installed(context) ?: return Result.NO_APP
         // Instagram not connected: no guard, so no pass and nothing to count (still loading: count).
         val guarded = MessagesFeature.setUpNow != false
         val now = if (guarded) PassLedger.now(context) ?: return Result.NOT_READY else null
@@ -69,7 +69,7 @@ internal object CallInApp {
      * limit is reached, and it ends when the user leaves Instagram.
      */
     fun visit(context: Context): VisitResult {
-        val pkg = installedInstagram(context) ?: return VisitResult.NO_APP
+        val pkg = InstagramPackages.installed(context) ?: return VisitResult.NO_APP
         val launch = context.packageManager.getLaunchIntentForPackage(pkg) ?: return VisitResult.NO_APP
         // Still loading: its screen has no "not ready" message yet (it handles every result).
         val now = PassLedger.now(context) ?: return VisitResult.USED_TODAY
@@ -104,7 +104,7 @@ internal object CallInApp {
      * the daily limit is reached.
      */
     fun create(context: Context): AppPass {
-        val pkg = installedInstagram(context) ?: return AppPass.NO_APP
+        val pkg = InstagramPackages.installed(context) ?: return AppPass.NO_APP
         val now = PassLedger.now(context) ?: return AppPass.NOT_READY
         if (PassLedger.locked(context) == true) return AppPass.LOCKED
         if (!PassLedger.read(context).createAllowed(now.epochDay)) return AppPass.CREATE_USED_UP
@@ -198,7 +198,7 @@ internal object CallInApp {
      * ended by posting or leaving; then a cooldown (see [storyAvailable]).
      */
     fun story(context: Context): StoryResult {
-        val pkg = installedInstagram(context) ?: return StoryResult.NO_APP
+        val pkg = InstagramPackages.installed(context) ?: return StoryResult.NO_APP
         val now = PassLedger.now(context) ?: return StoryResult.NOT_READY
         if (PassLedger.locked(context) == true) return StoryResult.LOCKED
         val ledger = PassLedger.read(context)
@@ -250,7 +250,7 @@ internal object CallInApp {
      * a day, and not while the daily limit is reached.
      */
     fun settings(context: Context): AppPass {
-        val pkg = installedInstagram(context) ?: return AppPass.NO_APP
+        val pkg = InstagramPackages.installed(context) ?: return AppPass.NO_APP
         val now = PassLedger.now(context) ?: return AppPass.NOT_READY
         if (PassLedger.locked(context) == true) return AppPass.LOCKED
         if (!PassLedger.read(context).settingsAllowed(now.epochDay)) return AppPass.SETTINGS_USED_UP
@@ -261,8 +261,6 @@ internal object CallInApp {
         return AppPass.OPENED
     }
 
-    private fun installedInstagram(context: Context): String? = InstagramPackages.ALL.firstOrNull { isInstalled(context, it) }
-
     /** Starts [intent] in a new task; false if nothing could open it. */
     private fun start(context: Context, intent: Intent): Boolean = try {
         context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -270,13 +268,6 @@ internal object CallInApp {
     } catch (e: ActivityNotFoundException) {
         false
     } catch (e: SecurityException) {
-        false
-    }
-
-    private fun isInstalled(context: Context, pkg: String): Boolean = try {
-        context.packageManager.getPackageInfo(pkg, 0)
-        true
-    } catch (e: Exception) {
         false
     }
 }

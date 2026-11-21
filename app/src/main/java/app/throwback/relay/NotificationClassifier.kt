@@ -3,13 +3,6 @@ package app.throwback.relay
 import app.throwback.web.rules.NotificationMatch
 import app.throwback.web.rules.NotificationRules
 
-/** Which Instagram app packages the relay and the guard look at. Nothing else is ever read. */
-internal object InstagramPackages {
-    const val APP = "com.instagram.android"
-    const val LITE = "com.instagram.lite"
-    val ALL = setOf(APP, LITE)
-}
-
 /**
  * The parts of an Instagram notification the classifier looks at, copied out of a
  * StatusBarNotification (see RelayListenerService.factsOf) so the logic is plain Kotlin.

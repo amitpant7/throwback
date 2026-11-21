@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The Instagram app connection: relay and guard (app.throwback.relay, app.throwback.guard). -->
+<!-- The Instagram app connection: relay and guard (app.throwback.connect). -->
 <resources>
     <!-- Notification channels (shown in Android's notification settings for Throwback). -->
     <string name="relay_channel_messages">Messages</string>

@@ -33,8 +33,8 @@ internal enum class ExtraNotification(val key: String) {
 }
 
 /**
- * The ui area's persisted flags. Implements the [UiPreferences] contract and adds what the
- * ui screens need internally. Everything defaults to off / not done.
+ * Small saved flags (DataStore `ui_prefs`): onboarding, the mindful pause, the Instagram app setup,
+ * notification switches, one-time hints. Everything defaults to off / not done.
  */
 internal class AppPrefs(private val store: DataStore<Preferences>) {
 

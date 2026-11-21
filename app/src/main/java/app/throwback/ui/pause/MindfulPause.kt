@@ -56,7 +56,11 @@ internal object PauseTiming {
     fun isDone(elapsedMillis: Long): Boolean = elapsedMillis >= DURATION_MILLIS
 }
 
-/** See UiApi.MindfulPauseScreen. */
+/**
+ * Optional mindful pause before Instagram loads: a short line and a 4-second countdown, no buttons.
+ * [onContinue] when the time is up; [onBack] is system Back (it leaves the app). [backEnabled] is
+ * false while another layer is on top (AppRoot's Layer), so Back reaches that one.
+ */
 @Composable
 internal fun MindfulPauseScreen(onContinue: () -> Unit, onBack: () -> Unit, backEnabled: Boolean = true) {
     val colors = ThrowbackTheme.colors

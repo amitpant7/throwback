@@ -59,7 +59,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Messages & calls relay (app.throwback.relay): only Android can bind it, and only after the
+        <!-- Messages & calls relay (app.throwback.connect.relay): only Android can bind it, and only after the
              user grants notification access. It reads the Instagram apps' notifications only. -->
         <service
             android:name=".connect.relay.RelayListenerService"
@@ -71,7 +71,7 @@
             </intent-filter>
         </service>
 
-        <!-- Messages & calls guard (app.throwback.guard). targetSdk 34+ needs a foreground service type.
+        <!-- Messages & calls guard (app.throwback.connect.guard). targetSdk 34+ needs a foreground service type.
              None of the specific types fits (it is not dataSync, mediaPlayback, location, phoneCall…):
              it watches which app is in front so the hidden Instagram app can't be used outside calls,
              a digital-wellbeing use that Play lists under specialUse. The subtype text is what Play

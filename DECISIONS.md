@@ -321,3 +321,12 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
        Settings): they give the spirit; Explore's 5 minutes and Discover are explained where they show.
     p. **"Report something Throwback missed" will open the website's contact form**
        (amitpant.com.np/throwback) once it is live, instead of a GitHub issue (no account needed).
+    q. **instagram.com in other browsers is out of scope** (Chrome or any other browser isn't
+       limited): blocking it would need an accessibility service or a local VPN (Play policy,
+       battery), which a speed bump doesn't justify.
+    r. **Filter rules stay unsigned**, fetched over HTTPS from this repository. The validator already
+       limits what a bad file can do (hosts, patterns, buttons the page may press, Reels and the
+       feed stay blocked where they must); the GitHub account keeps two-factor login.
+    s. **Code layout: dependencies go one way** (docs/ARCHITECTURE.md, "Code layers"). Moving the
+       notification listener meant allowing Notification access once more after the update; accepted,
+       since only test installs existed.

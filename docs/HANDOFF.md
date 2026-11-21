@@ -173,6 +173,19 @@ with its two-factor/checkpoint steps (a step that opens in the browser needs its
 `hosts.loginPaths`: a rules change); a real Instagram call (its screen stays open; leaving it to browse
 gets covered); logout twice.
 
+**Restructure (2026-11-21, later).** The packages depended on each other in circles (`core` was both
+the shared kit and the wiring; `relay` and `guard` called each other; saved flags lived with the
+screens). Now dependencies go one way: `core` ← `web`, `timelimit` ← `connect` (relay, guard,
+passes) ← `ui` ← the entry point (`MainActivity`, `AppRoot`); measured, no cycles between them. The
+`UiApi` wrappers and two one-implementation interfaces went; `OpenThrowback` builds every intent to the
+main screen. Two flaws found on the way: notification access was checked per package, so after the
+listener's class moved Android kept the old name and Throwback thought access was on while the
+listener couldn't connect (the guard then let the Instagram app open); it's now checked for the class.
+And a tapped notification loaded its chat under Settings; Settings now closes. Verified on the
+emulator: update → "guard is off" + setup shows the permission → allow again → relay and guard back.
+**Installing this build over an older one needs Notification access allowed once more.**
+[ARCHITECTURE.md](ARCHITECTURE.md) now starts with diagrams and the main flows step by step.
+
 ## 5. Open items
 
 **Release prep (M6):**
@@ -255,7 +268,11 @@ Google Play button gets the store link when the app is published.
 ## 8. Conventions
 
 - **Commits:** small and focused, with a clear subject and a body saying what and why.
-- **Tests:** pure logic in plain Kotlin with JVM tests; page-script changes checked on the emulator.
+- **Tests:** pure logic in plain Kotlin with JVM tests, in the same folder as the code;
+  page-script changes checked on the emulator.
+- **Structure:** a folder uses only the layers below it (ARCHITECTURE.md, "Code layers"); open the
+  main screen with `OpenThrowback`. Don't rename the classes and files in "Names that must not
+  change" there (launcher and shortcuts, notification access, Auto Backup).
 - **UI:** components from `core/ui`, colours from `ThrowbackTheme.colors`, type from
   `MaterialTheme.typography`; user-visible strings in `strings_<area>.xml`.
 - **Page script:** ES5 style, one area per file (see its README); run `tools/pagescript-lint.sh`.

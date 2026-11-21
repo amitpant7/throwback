@@ -6,7 +6,7 @@ import app.throwback.web.UrlRouter
 import kotlinx.serialization.Serializable
 
 /*
- * Optional rules section "notifications": how the Messages & calls relay (app.throwback.relay) sorts
+ * Optional rules section "notifications": how the Messages & calls relay (app.throwback.connect.relay) sorts
  * the Instagram app's notifications (DECISIONS.md #26). Kept in its own file so the web area's
  * FilterRules only gains one field.
  *

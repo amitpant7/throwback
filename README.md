@@ -39,7 +39,7 @@ A standard single-module Android project: all source code is under `app/src/`.
 
 | Path | What's there |
 |---|---|
-| `app/src/main/java/app/throwback/` | The app (Kotlin, Jetpack Compose), one package per area: `core` (wiring, theme, shared UI), `web` (the Instagram WebView, filter rules, page bridge), `timelimit` (daily limit, PIN, lock screens), `ui` (settings, onboarding, other screens), `relay` and `guard` (the optional Instagram app connection) |
+| `app/src/main/java/app/throwback/` | The app (Kotlin, Jetpack Compose). The entry point (`MainActivity`, `AppRoot`) sits in the root folder, with one folder per area: `ui` (Settings and its screens, onboarding), `connect` (the optional Instagram app connection: relay, guard, passes), `web` (the Instagram WebView, filter rules, page bridge), `timelimit` (daily limit, PIN, lock screens), `core` (shared types, theme, UI kit). [Architecture](docs/ARCHITECTURE.md) shows how they fit |
 | `app/src/main/pagescript/` | The page script injected into instagram.com (JavaScript, one file per area; the build joins them). Its [README](app/src/main/pagescript/README.md) lists the files |
 | `app/src/main/res/`, `app/src/main/assets/` | Resources and the page's CSS |
 | `app/src/test/` | Unit tests (JVM) |

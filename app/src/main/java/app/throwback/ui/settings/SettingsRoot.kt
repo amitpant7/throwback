@@ -58,7 +58,11 @@ private val StackSaver = Saver<List<SettingsRoute>, ArrayList<String>>(
     restore = { SettingsNav.restore(it) },
 )
 
-/** See UiApi.SettingsRoot. A small back stack; system back pops it and closes Settings at the root. */
+/**
+ * Settings and everything reachable from it. The time-limit screens and "Your day" come in as
+ * [timeLimitScreen] and [todayScreen] (AppRoot builds them), so this package doesn't depend on the
+ * time limit. A small back stack: system Back pops it and calls [onClose] at the root.
+ */
 @Composable
 internal fun SettingsRoot(
     onClose: () -> Unit,

@@ -55,8 +55,8 @@ import app.throwback.ui.connect.InstagramApp
 import kotlinx.coroutines.flow.first
 
 /**
- * First launch. The "Instagram app found" choice is shown after login (InstagramAppPrompt).
- * See UiApi.OnboardingFlow for the contract.
+ * First launch. "Log in to Instagram" calls [onFinished]; the login itself happens on Instagram's
+ * page. The "Instagram app found" choice is shown after login (InstagramAppPrompt).
  */
 @Composable
 internal fun OnboardingFlow(onFinished: () -> Unit) {

@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -268,28 +269,31 @@ private fun PermissionsStep(onNext: () -> Unit, showMessage: (String) -> Unit) {
                 onAllow = { if (!SystemScreens.openOverlaySettings(context)) showMessage(failed) },
             )
         }
+        // Android 13+ blocks notification access for apps installed from a downloaded file (not an
+        // app store) until the user allows "restricted settings" in App info. Right under the list,
+        // so it's seen; never for installs from Google Play, where it doesn't happen.
+        val restrictedPossible = remember { Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !InstallSource.fromPlay(context) }
+        if (restrictedPossible && !state.notificationAccess) {
+            TbCard(
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 6.dp),
+                modifier = Modifier.padding(top = 12.dp),
+            ) {
+                Text(stringResource(R.string.ui_perm_restricted_title), style = UiText.body14, color = colors.text)
+                Text(stringResource(R.string.ui_perm_restricted_hint), style = UiText.sub, color = colors.muted, modifier = Modifier.padding(top = 4.dp))
+                TbButton(
+                    stringResource(R.string.ui_perm_app_info),
+                    onClick = { if (!SystemScreens.openOwnAppDetails(context)) showMessage(failed) },
+                    modifier = Modifier.padding(top = 2.dp),
+                    style = TbButtonStyle.Quiet,
+                )
+            }
+        }
         Row(
             Modifier.padding(top = 16.dp, start = 4.dp, end = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             TbIcon(R.drawable.ic_shield, size = 18.dp, tint = colors.muted)
             Text(stringResource(R.string.ui_perm_privacy), style = UiText.sub, color = colors.muted)
-        }
-        // Android 13+ blocks notification access for apps installed outside an app store until the
-        // user allows "restricted settings" in App info (APKs from GitHub Releases).
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !state.notificationAccess) {
-            Text(
-                stringResource(R.string.ui_perm_restricted_hint),
-                style = UiText.sub,
-                color = colors.muted,
-                modifier = Modifier.padding(top = 14.dp, start = 4.dp, end = 4.dp),
-            )
-            TbButton(
-                stringResource(R.string.ui_perm_app_info),
-                onClick = { if (!SystemScreens.openOwnAppDetails(context)) showMessage(failed) },
-                modifier = Modifier.padding(top = 2.dp),
-                style = TbButtonStyle.Quiet,
-            )
         }
     }
 }

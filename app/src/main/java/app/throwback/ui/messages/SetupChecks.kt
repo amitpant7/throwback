@@ -101,3 +101,20 @@ internal object Permissions {
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 }
+
+/** Where Throwback was installed from. */
+internal object InstallSource {
+    private const val PLAY_STORE = "com.android.vending"
+
+    /** Installed by Google Play (not from a downloaded APK, adb or another store). */
+    fun fromPlay(context: Context): Boolean = runCatching {
+        val pm = context.packageManager
+        val installer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            pm.getInstallSourceInfo(context.packageName).installingPackageName
+        } else {
+            @Suppress("DEPRECATION")
+            pm.getInstallerPackageName(context.packageName)
+        }
+        installer == PLAY_STORE
+    }.getOrDefault(false)
+}

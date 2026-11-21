@@ -134,6 +134,7 @@ internal fun MessagesSettingsScreen(
                         CallInApp.VisitResult.NO_APP -> showMessage(notInstalled)
                         CallInApp.VisitResult.USED_TODAY -> showMessage(context.getString(R.string.ui_visit_used))
                         CallInApp.VisitResult.LOCKED -> showMessage(context.getString(R.string.ui_visit_locked))
+                        CallInApp.VisitResult.NOT_READY -> showMessage(context.getString(R.string.app_pass_not_ready))
                     }
                 },
                 modifier = Modifier.padding(top = 4.dp),

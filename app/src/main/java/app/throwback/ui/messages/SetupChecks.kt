@@ -16,19 +16,7 @@ internal object InstagramApp {
     const val PACKAGE = InstagramPackages.APP
 
     /** The installed (and enabled) Instagram package, preferring the full app, or null. */
-    fun installedPackage(context: Context): String? =
-        InstagramPackages.ALL.firstOrNull { isInstalled(context.packageManager, it) }
-
-    private fun isInstalled(pm: PackageManager, packageName: String): Boolean = try {
-        val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            pm.getApplicationInfo(packageName, PackageManager.ApplicationInfoFlags.of(0))
-        } else {
-            pm.getApplicationInfo(packageName, 0)
-        }
-        info.enabled
-    } catch (_: PackageManager.NameNotFoundException) {
-        false
-    }
+    fun installedPackage(context: Context): String? = InstagramPackages.installed(context)
 }
 
 /** Live state of everything the connected Instagram app needs. */

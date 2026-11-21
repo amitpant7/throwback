@@ -62,7 +62,8 @@ internal object CallInApp {
     /** "Open Instagram for 5 minutes" (switch accounts, change its settings). */
     const val VISIT_PASS_MS = 5 * 60_000L
 
-    enum class VisitResult { OPENED, NO_APP, USED_TODAY, LOCKED }
+    /** NOT_READY: the time limit (which counts the visit) is still loading, a moment after start. */
+    enum class VisitResult { OPENED, NO_APP, USED_TODAY, LOCKED, NOT_READY }
 
     /**
      * Opens the Instagram app with a pass of up to [VISIT_PASS_MS]: once a day, not while the daily
@@ -71,8 +72,7 @@ internal object CallInApp {
     fun visit(context: Context): VisitResult {
         val pkg = InstagramPackages.installed(context) ?: return VisitResult.NO_APP
         val launch = context.packageManager.getLaunchIntentForPackage(pkg) ?: return VisitResult.NO_APP
-        // Still loading: its screen has no "not ready" message yet (it handles every result).
-        val now = PassLedger.now(context) ?: return VisitResult.USED_TODAY
+        val now = PassLedger.now(context) ?: return VisitResult.NOT_READY
         val locked = PassLedger.locked(context) == true
         if (!PassLedger.read(context).visitAllowed(now.epochDay, locked)) {
             return if (locked) VisitResult.LOCKED else VisitResult.USED_TODAY

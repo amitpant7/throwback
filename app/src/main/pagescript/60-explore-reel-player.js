@@ -326,6 +326,7 @@
    * closing the player waits for them (closeClipPlayer).
    */
   var clipActs = [];
+  var CLIP_ACT_OPPOSITE = { like: 'unlike', unlike: 'like', save: 'unsave', unsave: 'save' };
 
   function clipAct(code, action, done) {
     clipActs.push({ code: code, action: action, done: done });
@@ -345,25 +346,30 @@
       a.done(ok);
       runClipAct();
     };
-    var ex = state.c && state.c.explore;
-    var labels = ex && ex.actions && ex.actions[a.action];
+    var actions = state.c && state.c.explore && state.c.explore.actions;
+    var labels = actions && actions[a.action];
     if (!labels || !labels.length) return finish(false);
+    var doneLabels = actions[CLIP_ACT_OPPOSITE[a.action]] || []; // the button once done ("Unlike")
     var code = a.code;
     clipUnderneath('/p/' + code + '/');
     var tries = 0;
     (function look() {
       var main = document.querySelector('main');
-      var btn = null;
+      // The post's own button is the first one with either label ("Like" or "Unlike"): the data's
+      // has_liked can be stale, and with the post already liked the first "Like" is a comment's.
+      var svg = null;
       if (main && main.querySelector('a[href*="/' + code + '/"]')) {
         var svgs = main.querySelectorAll('svg[aria-label]');
-        for (var i = 0; i < svgs.length && !btn; i++) {
-          if (labels.indexOf(svgs[i].getAttribute('aria-label')) !== -1) {
-            btn = svgs[i].closest('[role=button],button') || svgs[i].parentElement;
-          }
+        for (var i = 0; i < svgs.length && !svg; i++) {
+          var label = svgs[i].getAttribute('aria-label');
+          if (labels.indexOf(label) !== -1 || doneLabels.indexOf(label) !== -1) svg = svgs[i];
         }
       }
-      if (btn) {
-        clickElement(btn);
+      if (svg) {
+        // Showing the other label: already liked (or saved), nothing to press.
+        if (labels.indexOf(svg.getAttribute('aria-label')) !== -1) {
+          clickElement(svg.closest('[role=button],button') || svg.parentElement);
+        }
         pauseUnderPlayer();
         return finish(true);
       }

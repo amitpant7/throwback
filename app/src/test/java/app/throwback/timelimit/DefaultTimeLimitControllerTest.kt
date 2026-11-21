@@ -28,8 +28,8 @@ import java.time.LocalDateTime
 @OptIn(ExperimentalCoroutinesApi::class)
 class DefaultTimeLimitControllerTest {
 
-    /** Saves go through the JSON codec, like the real DataStore file. [failReads] reads fail first. */
-    private class MemoryStore(var text: String? = null, var failReads: Int = 0) : StateStore {
+    /** Saves go through the JSON codec, like the real DataStore file. The next [failReads] reads and [failWrites] writes fail. */
+    private class MemoryStore(var text: String? = null, var failReads: Int = 0, var failWrites: Int = 0) : StateStore {
         var saves = 0
         override suspend fun load(): TimeLimitState {
             if (failReads > 0) {
@@ -40,6 +40,10 @@ class DefaultTimeLimitControllerTest {
             return StateCodec.decode(t) ?: throw IOException("unreadable")
         }
         override suspend fun save(state: TimeLimitState) {
+            if (failWrites > 0) {
+                failWrites--
+                throw IOException("write failed")
+            }
             text = StateCodec.encode(state.persistent())
             saves++
         }
@@ -141,6 +145,19 @@ class DefaultTimeLimitControllerTest {
         c.setup(15, "1234")
         runCurrent()
         assertEquals(loaded + 3, store.saves)
+    }
+
+    @Test
+    fun `a failed write is sent again with the next update`() = runTest {
+        val store = MemoryStore()
+        val c = controller(store)
+        store.failWrites = 1
+        c.setup(15, "1234")
+        runCurrent()
+        assertNull(store.stored()!!.limitMinutes)
+        c.refresh() // Only the clock reading changed since, but the limit isn't on disk yet.
+        runCurrent()
+        assertEquals(15, store.stored()!!.limitMinutes)
     }
 
     @Test

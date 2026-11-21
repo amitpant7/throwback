@@ -56,7 +56,11 @@ internal class DefaultTimeLimitController(
 
     /** The saved state couldn't be read: it is kept (not written over) until the user sets up a new limit. */
     private var keepStored = false
+
+    /** What the store last wrote successfully. */
     private var lastSaved: TimeLimitState? = null
+
+    /** When the last save was sent (the stopwatch); paces the periodic saves. */
     private var lastSaveElapsed: Long? = null
     private var ticker: Job? = null
     private val saves = Channel<TimeLimitState>(Channel.CONFLATED)
@@ -76,7 +80,8 @@ internal class DefaultTimeLimitController(
 
     init {
         scope.launch(ioDispatcher) {
-            for (s in saves) runCatching { store.save(s) }
+            // Only a written state counts as saved: after a failed write the next update sends it again.
+            for (s in saves) runCatching { store.save(s) }.onSuccess { synchronized(lock) { lastSaved = s } }
         }
         scope.launch {
             val stored = withContext(ioDispatcher) { loadStored() }
@@ -288,7 +293,6 @@ internal class DefaultTimeLimitController(
             else -> true
         }
         if (due) {
-            lastSaved = p
             lastSaveElapsed = r.elapsedMillis
             saves.trySend(p)
         }

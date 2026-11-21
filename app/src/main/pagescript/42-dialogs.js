@@ -1,11 +1,14 @@
   // ---------------------------------------------------------------- dialogs
 
-  var DIALOG_MAX_CHECKS = 20; // a dialog that never matches (a chat, the story viewer) stops being read
+  // Each dialog is read at most the rules' dismissMaxAttempts times, at most every DIALOG_CHECK_MS: one
+  // that never matches (the story viewer) or whose button never shows stops being read. Capped, so a
+  // large value can't keep a dialog being read for minutes.
+  var DIALOG_MAX_CHECKS = 120; // a minute
   var DIALOG_TEXT_MAX = 4000;
 
   function dismissDialogs() {
     var c = state.c;
-    if (!c.dialogs.length || !dialogTries) return;
+    if (!c.dialogs.length || !dialogChecked) return;
     // At most every 200 ms (a whole-document query); a timer makes sure the check still runs.
     var nowD = Date.now();
     if (nowD - (state.lastDialogScan || 0) < 200) {
@@ -13,16 +16,15 @@
       return;
     }
     state.lastDialogScan = nowD;
+    var maxChecks = Math.min(c.dismissMaxAttempts, DIALOG_MAX_CHECKS);
     var dialogs = document.querySelectorAll('[role="dialog"], [aria-modal="true"]');
     for (var i = 0; i < dialogs.length; i++) {
       var d = dialogs[i];
-      var tries = dialogTries.get(d) || 0;
-      if (tries >= c.dismissMaxAttempts) continue;
       // Reading a dialog's text costs (it may be a whole DM thread or story viewer): at most every
-      // 500 ms, and at most DIALOG_MAX_CHECKS times.
+      // 500 ms, and at most maxChecks times (n is Infinity once dismissed).
       var now = Date.now();
       var seen = dialogChecked.get(d) || { at: 0, n: 0 };
-      if (seen.n >= DIALOG_MAX_CHECKS) continue;
+      if (seen.n >= maxChecks) continue;
       if (now - seen.at < DIALOG_CHECK_MS) {
         recheckDialogsIn(DIALOG_CHECK_MS); // even if nothing else changes on the page by then
         continue;
@@ -35,10 +37,9 @@
           return text.indexOf(w) >= 0;
         });
         if (!hit) continue;
-        dialogTries.set(d, tries + 1);
         var button = findButton(d, rule);
         if (button) {
-          dialogTries.set(d, Infinity);
+          dialogChecked.set(d, { at: now, n: Infinity });
           clickElement(button);
         }
         break;

@@ -68,7 +68,6 @@
   };
   var styleEl = null;
   var styleCss = null; // what styleEl currently holds
-  var dialogTries = typeof WeakMap === 'function' ? new WeakMap() : null;
   var dialogChecked = typeof WeakMap === 'function' ? new WeakMap() : null;
   var DIALOG_CHECK_MS = 500;
 

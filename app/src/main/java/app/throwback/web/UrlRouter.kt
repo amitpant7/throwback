@@ -72,12 +72,12 @@ class UrlRouter(private val rules: FilterRules) {
     private fun decideUrl(url: String, mode: WebMode, currentUrl: String?): Decision {
         if (UrlParts.hasAmbiguousChars(url)) return Decision.Ignore
         val parts = UrlParts.parse(url) ?: return Decision.Ignore
-        // Links into the Instagram app, an app store or the phone's files do nothing, whatever the rules say.
+        // Links into the Instagram app, an app store or the phone's files, and made-up documents, do nothing.
         if (parts.scheme in BLOCKED_SCHEMES) return Decision.Ignore
         if (blockedUrls.any { it.containsMatchIn(url.capped()) }) return Decision.Ignore
         return when (parts.scheme) {
             "http", "https" -> decideWeb(url, parts, mode, currentUrl)
-            "about", "data", "blob", "javascript" -> Decision.Load
+            "about" -> Decision.Load
             // mailto:, tel:, sms:, whatsapp:, ... belong to other apps.
             else -> Decision.External(url)
         }
@@ -201,9 +201,10 @@ class UrlRouter(private val rules: FilterRules) {
 
         /**
          * Never followed, whatever the rules say: schemes that open the Instagram app or an app store,
-         * and the phone's own files (another app can't open a file: link, and Android throws on it).
+         * the phone's own files (another app can't open a file: link, and Android throws on it), and
+         * documents a page makes up itself (data:, blob:, javascript:), which would show unfiltered.
          */
-        private val BLOCKED_SCHEMES = setOf("intent", "instagram", "market", "file", "content")
+        private val BLOCKED_SCHEMES = setOf("intent", "instagram", "market", "file", "content", "data", "blob", "javascript")
 
         /**
          * Instagram's short-link sites (ig.me/m/<user> opens a chat, instagr.am/p/<code> a post). Loaded

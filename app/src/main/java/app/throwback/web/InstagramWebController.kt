@@ -445,6 +445,29 @@ internal class InstagramWebController(
         return true // blocked content is never loaded
     }
 
+    /** The main frame's address as last committed or pushed: where the next one comes from. */
+    private var shownUrl: String? = null
+
+    /**
+     * The backstop for loads shouldOverrideUrlLoading never sees (form posts, back/forward): a page
+     * outside Instagram that the router wouldn't load, reached from [from], is left at once (back, else
+     * home). Instagram's own pages are the page script's to check. True when it left.
+     */
+    private fun leaveIfNotAllowed(url: String, from: String?): Boolean {
+        val router = router ?: return false
+        if (router.isInstagram(url)) return false
+        return when (val d = router.decide(url, mode, from, userGesture = false)) {
+            UrlRouter.Decision.Load -> false
+            is UrlRouter.Decision.Redirect -> redirect(d)
+            else -> {
+                Log.w(TAG, "Left a page outside Instagram that this mode doesn't load")
+                webView.stopLoading()
+                if (webView.canGoBack()) webView.goBack() else load(router.homeUrl(mode))
+                true
+            }
+        }
+    }
+
     /** The page has no Throwback script (error page, Facebook login): apply the mode from here. */
     private fun enforceModeNatively() {
         val router = router ?: return
@@ -700,6 +723,9 @@ internal class InstagramWebController(
         }
 
         override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
+            val from = shownUrl
+            shownUrl = url
+            if (url != from && leaveIfNotAllowed(url, from)) return
             reportLocation(url) // also called for pushState, a backup for the page script's report
         }
 

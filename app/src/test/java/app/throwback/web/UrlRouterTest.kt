@@ -250,6 +250,13 @@ class UrlRouterTest {
         assertEquals(Decision.Load, decide("about:blank"))
     }
 
+    @Test
+    fun `documents a page makes up never load as the page`() {
+        // They would show without the page script, so without filters.
+        listOf("data:text/html,<h1>x</h1>", "blob:https://www.instagram.com/0b1c2d3e", "javascript:alert(1)", "DATA:text/plain,x")
+            .forEach { assertEquals(it, Decision.Ignore, decide(it)) }
+    }
+
     // ---- URLs Chromium reads differently
 
     @Test

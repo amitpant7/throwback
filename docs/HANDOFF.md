@@ -158,12 +158,10 @@ editor screens (they can't render on the emulator).
    declined still counts, so switching from a WhatsApp call to an Instagram call is never covered.)
 2. With a daily limit on and the Instagram app installed but not connected, the limit covers only
    Throwback. Offer to connect the app when turning on a limit?
-3. Profiles of people you don't follow, and "Suggested for you" lists on profiles and notifications,
-   allow endless browsing with no budget. Intended?
-4. Remote rules can press named buttons in dialogs (cookie banner); a compromised rules file could
+3. Remote rules can press named buttons in dialogs (cookie banner); a compromised rules file could
    press others. Limit to dismiss-type labels?
-5. The chat reel viewer's detection and its Close labels are in code; move them into the rules?
-6. Instagram app in a work profile, Private Space or a dual-app clone is invisible to the guard. Say
+4. The chat reel viewer's detection and its Close labels are in code; move them into the rules?
+5. Instagram app in a work profile, Private Space or a dual-app clone is invisible to the guard. Say
    so in the setup?
 
 ## 6. How the home feed is filtered

@@ -69,14 +69,11 @@
   function learnFeedMedia(media) {
     if (!media || typeof media !== 'object') return;
     var id = typeof media.code === 'string' ? media.code : null;
-    if (!id || feedAhead.ids[id]) return;
+    if (!id) return;
     var first = media.carousel_media && media.carousel_media[0] ? media.carousel_media[0] : media;
-    feedAhead.ids[id] = 1;
     // Parsed later, only for the posts that come into the look-ahead window (parsing every post's
     // video manifest here ran inside Instagram's JSON.parse: ~24 ms per feed page on a slow phone).
-    feedAhead.items.push({ id: id, media: first, reps: null, cands: null });
-    feedAhead.stats.learned++;
-    if (feedAhead.items.length > 400) feedAhead.items.splice(0, feedAhead.items.length - 400);
+    learnAhead(feedAhead, id, id, first, 400);
   }
 
   /** The post on screen (from the feed list) → look ahead from there. */

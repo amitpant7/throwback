@@ -13,9 +13,9 @@
    */
   var nativeFetch = null;
   var STORY_AUDIO_BYTES = 64 * 1024;
-  // A look-ahead state: items in viewing order, what is kept in memory (store) or was sent to the
-  // disk cache (images), the quality/size Instagram uses, and where the user is. One for stories,
-  // one for the home feed; each is cleared when leaving its page.
+  // A look-ahead state: items in viewing order (and by key in ids), what is kept in memory (store) or
+  // was sent to the disk cache (images), the quality/size Instagram uses, and where the user is. One
+  // for stories, one for the home feed; each is cleared when leaving its page.
   function newAhead() {
     return {
       items: [], ids: {}, store: {}, images: {}, nImages: 0, height: 0, imgWidth: 0, current: -1,
@@ -65,14 +65,38 @@
       var it = items[i];
       if (!it) continue;
       var id = String(it.pk || it.id || '');
-      if (!id || stories.ids[id]) continue;
+      if (!id) continue;
       if (typeof it.video_dash_manifest !== 'string' && !it.video_versions && !(it.image_versions2 && it.image_versions2.candidates)) continue;
-      stories.ids[id] = 1;
-      stories.items.push({ id: id.split('_')[0], media: it, reps: null, cands: null });
-      stories.stats.learned++;
+      learnAhead(stories, id, id.split('_')[0], it, 300);
     }
-    if (stories.items.length > 300) stories.items.splice(0, stories.items.length - 300);
     noteStoryLocation(); // the data may arrive after the address already shows the story
+  }
+
+  /**
+   * Adds an item to a look-ahead list (key: what the data calls it; id: what the address or the
+   * page shows). One known already keeps its place, and if it was released its fresh data makes it
+   * usable again (Instagram sends it again when it comes back into view: re-watching someone's
+   * stories, scrolling back up the feed). The list keeps its last `max` items, the key map only those.
+   */
+  function learnAhead(la, key, id, media, max) {
+    var known = la.ids[key];
+    if (known) {
+      if (known.reps === RELEASED) {
+        known.media = media;
+        known.reps = known.cands = null;
+      }
+      return;
+    }
+    var item = { key: key, id: id, media: media, reps: null, cands: null };
+    la.ids[key] = item;
+    la.items.push(item);
+    la.stats.learned++;
+    if (la.items.length <= max) return;
+    var gone = la.items.splice(0, la.items.length - max);
+    gone.forEach(function (old) {
+      delete la.ids[old.key];
+    });
+    la.current = la.current >= gone.length ? la.current - gone.length : -1; // indexes moved down
   }
 
   /**
@@ -283,12 +307,19 @@
   }
 
   var RELEASED = [];
+  var RELEASE_BEHIND = 10;
 
-  /** Items well behind the one on screen won't be looked ahead again: drop what was parsed for them. */
+  /**
+   * Items more than RELEASE_BEHIND behind the one on screen drop what was kept or parsed for them
+   * (each one checked: one learned again since may sit behind released ones). Items ahead keep theirs:
+   * the look-ahead needs it when the user gets there, and once parsed it is only a few addresses.
+   */
   function releaseBehind(la) {
-    for (var j = la.current - 10; j >= 0 && la.items[j].reps !== RELEASED; j--) {
-      la.items[j].reps = la.items[j].cands = RELEASED;
-      la.items[j].media = null;
+    for (var j = 0; j < la.current - RELEASE_BEHIND; j++) {
+      var it = la.items[j];
+      if (it.reps === RELEASED) continue;
+      it.reps = it.cands = RELEASED;
+      it.media = null;
     }
   }
 

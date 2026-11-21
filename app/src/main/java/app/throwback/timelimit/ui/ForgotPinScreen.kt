@@ -31,7 +31,7 @@ import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.TbProgressBar
 import app.throwback.core.ui.UiText
 import app.throwback.core.ui.longDurationText
-import app.throwback.timelimit.DefaultTimeLimitController
+import app.throwback.timelimit.TimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.TimeLimitView
 
@@ -41,7 +41,7 @@ import app.throwback.timelimit.engine.TimeLimitView
  */
 @Composable
 internal fun ForgotPinScreen(
-    controller: DefaultTimeLimitController,
+    controller: TimeLimitController,
     view: TimeLimitView,
     onBack: () -> Unit,
     onNewPinSaved: () -> Unit = onBack,

@@ -28,13 +28,13 @@ import app.throwback.core.ui.SectionLabel
 import app.throwback.core.ui.SettingsScaffold
 import app.throwback.core.ui.TbButton
 import app.throwback.core.ui.TbCard
-import app.throwback.timelimit.DefaultTimeLimitController
+import app.throwback.timelimit.TimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 
 // ---- Mockup 7: set up -----------------------------------------------------------------------
 
 @Composable
-internal fun SetupScreen(controller: DefaultTimeLimitController, onClose: () -> Unit, onLimitSet: () -> Unit = onClose) {
+internal fun SetupScreen(controller: TimeLimitController, onClose: () -> Unit, onLimitSet: () -> Unit = onClose) {
     val c = ThrowbackTheme.colors
     var minutes by rememberSaveable { mutableIntStateOf(30) }
     // The PIN is created only after "Turn on" (owner: an empty PIN box first was confusing), and it

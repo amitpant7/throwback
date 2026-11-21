@@ -4,8 +4,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 /*
- * Types shared by the app's areas (web, timelimit, ui) and the code that joins them (MainActivity,
- * AppRoot). See docs/ARCHITECTURE.md.
+ * Types shared by the app's features (web, timelimit, connect, ui) and the shell that joins them.
+ * See docs/ARCHITECTURE.md.
  */
 
 /** What the Instagram WebView is allowed to show. */
@@ -17,23 +17,9 @@ enum class WebMode {
     MESSAGES_ONLY,
 }
 
-/**
- * What the main screen needs from the daily time limit (app.throwback.timelimit): its lock state,
- * and when Instagram is in use. The rest of the app (settings, lock screens, relay, guard, passes)
- * uses the DefaultTimeLimitController that TimeLimitModule makes.
- */
-interface TimeLimitController {
-    val state: StateFlow<LockState>
-
-    /** Throwback's main screen is visible and in use (activity resumed, screen on). */
-    fun onForeground(mode: WebMode)
-
-    /** Throwback's main screen is no longer visible. */
-    fun onBackground()
-}
 
 sealed interface LockState {
-    /** No limit configured (also what [TimeLimitController.state] says until the saved state has loaded). */
+    /** No limit configured (also what the time limit says until its saved state has loaded). */
     data object Disabled : LockState
 
     /** Limit configured and time is left today. */
@@ -43,9 +29,3 @@ sealed interface LockState {
     data object Locked : LockState
 }
 
-/** Small persisted flags owned by app.throwback.ui. */
-interface UiPreferences {
-    val onboardingDone: Flow<Boolean>
-    val mindfulPause: Flow<Boolean>
-    suspend fun setOnboardingDone()
-}

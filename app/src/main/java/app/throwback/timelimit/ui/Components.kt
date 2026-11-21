@@ -25,7 +25,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.timelimit.DefaultTimeLimitController
+import app.throwback.timelimit.TimeLimitController
 import app.throwback.timelimit.engine.TimeLimitView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -44,7 +44,7 @@ import kotlinx.coroutines.launch
  * Instagram is in front). Stops when the app goes to the background: each refresh may save.
  */
 @Composable
-internal fun rememberLiveView(controller: DefaultTimeLimitController): State<TimeLimitView> {
+internal fun rememberLiveView(controller: TimeLimitController): State<TimeLimitView> {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(controller, lifecycle) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {

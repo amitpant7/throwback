@@ -62,7 +62,7 @@
         <!-- Messages & calls relay (app.throwback.relay): only Android can bind it, and only after the
              user grants notification access. It reads the Instagram apps' notifications only. -->
         <service
-            android:name=".relay.RelayListenerService"
+            android:name=".connect.relay.RelayListenerService"
             android:exported="true"
             android:label="@string/app_name"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
@@ -77,7 +77,7 @@
              a digital-wellbeing use that Play lists under specialUse. The subtype text is what Play
              review reads; the Play Console declaration must say the same (docs/PLAY_POLICY.md). -->
         <service
-            android:name=".guard.GuardService"
+            android:name=".connect.guard.GuardService"
             android:exported="false"
             android:foregroundServiceType="specialUse">
             <property
@@ -86,7 +86,7 @@
         </service>
 
         <receiver
-            android:name=".guard.BootReceiver"
+            android:name=".connect.guard.BootReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

@@ -30,7 +30,7 @@ import app.throwback.core.ui.SwitchRow
 import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.UiText
-import app.throwback.ui.UiPrefs
+import app.throwback.core.prefs.AppPrefs
 
 /** The saved settings Settings home shows: the pause switch and the Instagram row's value. */
 internal data class HomeValues(val mindfulPause: Boolean, val instagramConnected: Boolean)
@@ -41,7 +41,7 @@ internal data class HomeValues(val mindfulPause: Boolean, val instagramConnected
  * a default, no "Set up" flashing before "Connected").
  */
 @Composable
-internal fun SettingsHomeScreen(values: HomeValues, prefs: UiPrefs, onBack: () -> Unit, onOpen: (SettingsRoute) -> Unit) {
+internal fun SettingsHomeScreen(values: HomeValues, prefs: AppPrefs, onBack: () -> Unit, onOpen: (SettingsRoute) -> Unit) {
     SettingsScaffold(stringResource(R.string.ui_settings_title), onBack = onBack) {
         RemovesCard()
 

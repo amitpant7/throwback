@@ -20,7 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import app.throwback.relay.RelayListenerService
+import app.throwback.connect.relay.RelayListenerService
 
 /**
  * Opens Android and Play Store screens. Every function returns false instead of crashing when

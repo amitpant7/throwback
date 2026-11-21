@@ -57,7 +57,7 @@ import app.throwback.core.ui.UiText
 import app.throwback.core.ui.blockTouches
 import app.throwback.core.ui.hoursMinutesText
 import app.throwback.core.ui.minSecText
-import app.throwback.timelimit.DefaultTimeLimitController
+import app.throwback.timelimit.TimeLimitController
 import app.throwback.timelimit.engine.LockPhase
 import app.throwback.timelimit.engine.Rules
 import app.throwback.timelimit.engine.TimeLimitView
@@ -72,7 +72,7 @@ private enum class LockPage { Main, Pin, Reset }
  */
 @Composable
 internal fun LockOverlay(
-    controller: DefaultTimeLimitController,
+    controller: TimeLimitController,
     onOpenMessagesOnly: () -> Unit,
     onCloseApp: () -> Unit,
     modifier: Modifier = Modifier,

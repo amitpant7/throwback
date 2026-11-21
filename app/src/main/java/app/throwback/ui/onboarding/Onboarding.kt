@@ -49,19 +49,19 @@ import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.ThrowbackLogo
 import app.throwback.core.ui.UiText
 import app.throwback.core.ui.blockTouches
-import app.throwback.ui.UiPrefs
+import app.throwback.core.prefs.AppPrefs
 import app.throwback.ui.common.SystemScreens
-import app.throwback.ui.messages.InstagramApp
+import app.throwback.ui.connect.InstagramApp
 import kotlinx.coroutines.flow.first
 
 /**
- * First launch. The "Instagram app found" choice is shown after login (InstagramAppPromptContent).
+ * First launch. The "Instagram app found" choice is shown after login (InstagramAppPrompt).
  * See UiApi.OnboardingFlow for the contract.
  */
 @Composable
-internal fun OnboardingFlowContent(onFinished: () -> Unit) {
+internal fun OnboardingFlow(onFinished: () -> Unit) {
     // "Log in to Instagram" ends onboarding; the login itself happens on Instagram's own page.
-    // The "Instagram app found" choice comes after login (see InstagramAppPromptContent).
+    // The "Instagram app found" choice comes after login (see InstagramAppPrompt).
     WelcomeScreen(onLogIn = onFinished)
 }
 
@@ -70,13 +70,13 @@ internal fun OnboardingFlowContent(onFinished: () -> Unit) {
  * and the user hasn't seen the choice yet.
  */
 internal suspend fun shouldOfferInstagramPrompt(context: Context): Boolean =
-    InstagramApp.installedPackage(context) != null && !UiPrefs.from(context).instagramPromptShown.first()
+    InstagramApp.installedPackage(context) != null && !AppPrefs.from(context).instagramPromptShown.first()
 
 /** The "You still have the Instagram app" choice, shown once after the first login. */
 @Composable
-internal fun InstagramAppPromptContent(onOpenMessagesSetup: () -> Unit, onDone: () -> Unit, backEnabled: Boolean = true) {
+internal fun InstagramAppPrompt(onOpenMessagesSetup: () -> Unit, onDone: () -> Unit, backEnabled: Boolean = true) {
     val context = LocalContext.current
-    val prefs = remember { UiPrefs.from(context) }
+    val prefs = remember { AppPrefs.from(context) }
     val found = remember { InstagramApp.installedPackage(context) }
     LaunchedEffect(Unit) { prefs.write { setInstagramPromptShown() } }
     BackHandler(enabled = backEnabled, onBack = onDone)

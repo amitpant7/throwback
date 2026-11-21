@@ -58,7 +58,7 @@ internal object PauseTiming {
 
 /** See UiApi.MindfulPauseScreen. */
 @Composable
-internal fun MindfulPauseContent(onContinue: () -> Unit, onBack: () -> Unit, backEnabled: Boolean = true) {
+internal fun MindfulPauseScreen(onContinue: () -> Unit, onBack: () -> Unit, backEnabled: Boolean = true) {
     val colors = ThrowbackTheme.colors
     val context = LocalContext.current
     val continueNow by rememberUpdatedState(onContinue)

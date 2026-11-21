@@ -36,7 +36,7 @@ import app.throwback.core.ui.SettingsScaffold
 import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.longDurationText
 import app.throwback.core.ui.remainingText
-import app.throwback.timelimit.DefaultTimeLimitController
+import app.throwback.timelimit.TimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.LockPhase
 import app.throwback.timelimit.engine.Rules
@@ -67,7 +67,7 @@ private sealed interface Notice {
 }
 
 @Composable
-internal fun ManageScreen(controller: DefaultTimeLimitController, view: TimeLimitView, onClose: () -> Unit) {
+internal fun ManageScreen(controller: TimeLimitController, view: TimeLimitView, onClose: () -> Unit) {
     val scope = rememberCoroutineScope()
     // Plain remember: ChangePinNew holds a PIN, which must never land in saved instance state.
     var page by remember { mutableStateOf<ManagePage>(ManagePage.Home) }

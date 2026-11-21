@@ -1,6 +1,8 @@
 package app.throwback.ui.settings
 
-import app.throwback.ui.SettingsStart
+
+/** Where Settings opens: its home, Connect › Instagram, or Support. */
+enum class SettingsStart { Home, ConnectInstagram, Support }
 
 /** Screens reachable inside SettingsRoot. */
 internal enum class SettingsRoute {

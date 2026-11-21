@@ -9,17 +9,16 @@ import android.content.Context
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import android.app.Application
-import app.throwback.core.UiPreferences
-import app.throwback.relay.MessagesFeature
-import app.throwback.timelimit.DefaultTimeLimitController
+import app.throwback.core.prefs.AppPrefs
+import app.throwback.connect.MessagesFeature
+import app.throwback.timelimit.TimeLimitController
 import app.throwback.timelimit.ServerTimeHint
 import app.throwback.timelimit.TimeLimitModule
-import app.throwback.ui.UiModule
 
 /** Owned by integration. Holds the app-wide singletons; no DI framework needed at this size. */
 class ThrowbackApp : Application() {
-    internal val timeLimit: DefaultTimeLimitController by lazy { TimeLimitModule.create(this) }
-    val uiPreferences: UiPreferences by lazy { UiModule.create(this) }
+    internal val timeLimit: TimeLimitController by lazy { TimeLimitModule.create(this) }
+    internal val prefs: AppPrefs by lazy { AppPrefs.from(this) }
 
     override fun onCreate() {
         super.onCreate()
@@ -46,8 +45,8 @@ class ThrowbackApp : Application() {
     private fun warmUp() {
         val context: Context = this
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-            launch { runCatching { uiPreferences.onboardingDone.first() } }
-            launch { runCatching { uiPreferences.mindfulPause.first() } }
+            launch { runCatching { prefs.onboardingDone.first() } }
+            launch { runCatching { prefs.mindfulPause.first() } }
             launch { runCatching { RulesRepository.get(context).load() } }
             launch { runCatching { MessagesFeature.isSetUp(context) } }
         }

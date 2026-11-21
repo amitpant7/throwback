@@ -23,13 +23,13 @@ import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.TbBackButton
 import app.throwback.core.ui.TbTopBar
-import app.throwback.timelimit.DefaultTimeLimitController
+import app.throwback.timelimit.TimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.TimeLimitView
 
 /** "Disconnect Instagram" while a limit is on: PIN, then it disconnects tomorrow. */
 @Composable
-internal fun GuardOffPin(controller: DefaultTimeLimitController, onScheduled: () -> Unit, onBack: () -> Unit) {
+internal fun GuardOffPin(controller: TimeLimitController, onScheduled: () -> Unit, onBack: () -> Unit) {
     // Live, so the 30-second pause after wrong PINs counts down and ends here too.
     val view by rememberLiveView(controller)
     var forgot by remember { mutableStateOf(false) }

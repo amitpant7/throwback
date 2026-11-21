@@ -16,21 +16,21 @@ import kotlinx.coroutines.SupervisorJob
 
 /*
  * Entry points of the timelimit area for the rest of the app: TimeLimitModule makes the app-wide
- * DefaultTimeLimitController (the rules are in engine/TimeLimitEngine.kt, persistence and ticking in
+ * TimeLimitController (the rules are in engine/TimeLimitEngine.kt, persistence and ticking in
  * the controller), and the composables below show its screens (ui/).
  */
 
 internal object TimeLimitModule {
     @Volatile
-    private var instance: DefaultTimeLimitController? = null
+    private var instance: TimeLimitController? = null
 
     /** The app-wide controller, made on the first call (ThrowbackApp's start); later calls return the same one. */
-    fun create(context: Context): DefaultTimeLimitController =
+    fun create(context: Context): TimeLimitController =
         instance ?: synchronized(this) {
             instance ?: build(context.applicationContext).also { instance = it }
         }
 
-    private fun build(app: Context) = DefaultTimeLimitController(
+    private fun build(app: Context) = TimeLimitController(
         clock = AndroidClock.create(app),
         store = DataStoreStateStore.create(app),
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
@@ -47,7 +47,7 @@ internal object TimeLimitModule {
  */
 @Composable
 internal fun TimeLimitOverlay(
-    controller: DefaultTimeLimitController,
+    controller: TimeLimitController,
     onOpenMessagesOnly: () -> Unit,
     onCloseApp: () -> Unit,
     modifier: Modifier = Modifier,
@@ -58,7 +58,7 @@ internal fun TimeLimitOverlay(
 
 /** Small "18 min left" chip. Draws nothing when the limit is disabled. */
 @Composable
-internal fun TimeRemainingChip(controller: DefaultTimeLimitController, modifier: Modifier = Modifier) {
+internal fun TimeRemainingChip(controller: TimeLimitController, modifier: Modifier = Modifier) {
     RemainingChip(controller, modifier)
 }
 
@@ -67,7 +67,7 @@ internal fun TimeRemainingChip(controller: DefaultTimeLimitController, modifier:
  * (PIN-protected). [onLimitSet] instead of [onClose] once a new limit is on.
  */
 @Composable
-internal fun TimeLimitSettingsScreen(controller: DefaultTimeLimitController, onClose: () -> Unit, onLimitSet: () -> Unit = onClose) {
+internal fun TimeLimitSettingsScreen(controller: TimeLimitController, onClose: () -> Unit, onLimitSet: () -> Unit = onClose) {
     TimeLimitSettings(controller, onClose, onLimitSet)
 }
 
@@ -76,6 +76,6 @@ internal fun TimeLimitSettingsScreen(controller: DefaultTimeLimitController, onC
  * controller's view then has pendingGuardOff, and guardOffDue on that day).
  */
 @Composable
-internal fun GuardOffPinScreen(controller: DefaultTimeLimitController, onScheduled: () -> Unit, onBack: () -> Unit) {
+internal fun GuardOffPinScreen(controller: TimeLimitController, onScheduled: () -> Unit, onBack: () -> Unit) {
     GuardOffPin(controller, onScheduled, onBack)
 }

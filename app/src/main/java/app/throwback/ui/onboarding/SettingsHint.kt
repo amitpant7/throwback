@@ -24,18 +24,18 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.ui.UiPrefs
+import app.throwback.core.prefs.AppPrefs
 import app.throwback.core.ui.PillButton
 import app.throwback.core.ui.UiText
 import kotlinx.coroutines.flow.first
 
 /** Whether the one-time settings hint is still to be shown. */
 internal suspend fun shouldShowSettingsHint(context: Context): Boolean =
-    !UiPrefs.from(context).settingsHintShown.first()
+    !AppPrefs.from(context).settingsHintShown.first()
 
 /** Marks the hint as done, e.g. when the user found Throwback's settings on their own. */
 internal suspend fun markSettingsHintShown(context: Context) {
-    UiPrefs.from(context).setSettingsHintShown()
+    AppPrefs.from(context).setSettingsHintShown()
 }
 
 /**
@@ -43,13 +43,13 @@ internal suspend fun markSettingsHintShown(context: Context) {
  * Throwback's settings. Shown once, on the feed, after setup.
  */
 @Composable
-internal fun SettingsHintContent(onDone: () -> Unit, modifier: Modifier = Modifier) {
+internal fun SettingsHint(onDone: () -> Unit, modifier: Modifier = Modifier) {
     val colors = ThrowbackTheme.colors
     val context = LocalContext.current
     val done: () -> Unit = {
         // Process-wide write: onDone removes this card, and a scope of its own would be cancelled
         // with it, possibly before the write.
-        UiPrefs.from(context).write { setSettingsHintShown() }
+        AppPrefs.from(context).write { setSettingsHintShown() }
         onDone()
     }
     BoxWithConstraints(modifier.fillMaxWidth()) {

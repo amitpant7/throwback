@@ -1,6 +1,6 @@
 package app.throwback.ui.shortcut
 
-import android.content.ComponentName
+import app.throwback.core.OpenThrowback
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -71,7 +71,6 @@ import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.throwback.MainActivity
 import app.throwback.R
 import app.throwback.core.Supporter
 import app.throwback.core.theme.ThrowbackTheme
@@ -119,9 +118,7 @@ internal enum class PinResult { Requested, Unsupported }
 internal object HomeShortcut {
     fun request(context: Context, name: String, icon: IconCompat): PinResult {
         if (!ShortcutManagerCompat.isRequestPinShortcutSupported(context)) return PinResult.Unsupported
-        val intent = Intent(Intent.ACTION_MAIN)
-            .addCategory(Intent.CATEGORY_LAUNCHER)
-            .setComponent(ComponentName(context, MainActivity::class.java))
+        val intent = OpenThrowback.intent(context, Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val shortcut = ShortcutInfoCompat.Builder(context, "throwback-home-${System.currentTimeMillis()}")
             .setShortLabel(name)
             .setLongLabel(name)

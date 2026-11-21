@@ -4,7 +4,7 @@
     <application>
         <!-- Protected by DUMP, which `adb shell` has and normal apps can't get. -->
         <receiver
-            android:name=".relay.DebugRelayReceiver"
+            android:name=".connect.relay.DebugRelayReceiver"
             android:exported="true"
             android:permission="android.permission.DUMP" />
     </application>

@@ -31,7 +31,7 @@ import app.throwback.core.ui.blockTouches
  * page underneath.
  */
 @Composable
-internal fun ReelPosterContent(onBack: () -> Unit, backEnabled: Boolean = true) {
+internal fun ReelPoster(onBack: () -> Unit, backEnabled: Boolean = true) {
     val colors = ThrowbackTheme.colors
     BackHandler(enabled = backEnabled, onBack = onBack)
     // Centred, and scrolls when it doesn't fit (large font sizes): the last line is the only way-out hint.

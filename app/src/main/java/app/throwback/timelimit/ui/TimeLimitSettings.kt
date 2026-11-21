@@ -31,12 +31,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.timelimit.DefaultTimeLimitController
+import app.throwback.timelimit.TimeLimitController
 import app.throwback.timelimit.engine.Rules
 
 /** Settings → Daily time limit: first-time setup, or managing an existing limit. */
 @Composable
-internal fun TimeLimitSettings(controller: DefaultTimeLimitController, onClose: () -> Unit, onLimitSet: () -> Unit = onClose) {
+internal fun TimeLimitSettings(controller: TimeLimitController, onClose: () -> Unit, onLimitSet: () -> Unit = onClose) {
     val view by rememberLiveView(controller)
     val ready by controller.ready.collectAsStateWithLifecycle()
 

@@ -1,5 +1,6 @@
 package app.throwback.timelimit.ui
 
+import app.throwback.timelimit.TimeLimitController
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -21,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.R
 import app.throwback.core.LockState
-import app.throwback.core.TimeLimitController
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.Durations
 import app.throwback.core.ui.TbIcon

@@ -49,6 +49,7 @@ data class FilterRules(
     val appCreate: AppCreateRules? = null,
     /** Instagram app settings from Instagram's settings page (when the app is connected). */
     val appSettings: AppSettingsRules? = null,
+    val appCall: AppCallRules? = null,
     val nav: NavRules? = null,
     val dismissMaxAttempts: Int = 40,
     /** Where Throwback adds its own section to Instagram's settings page (null: no section). */
@@ -366,6 +367,13 @@ data class AppCreateTrigger(
     val text: List<String> = emptyList(),
     /** ...and that holds a file input (the web's own "add to story" picker). */
     val fileInput: Boolean = false,
+)
+
+/** During an Instagram call only its call screens may show (DECISIONS.md #34b). */
+@Serializable
+data class AppCallRules(
+    /** Regex on the activity class: Instagram's call screens. */
+    val screens: String,
 )
 
 @Serializable

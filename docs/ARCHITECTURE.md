@@ -124,7 +124,9 @@ the setup and the permissions.
   Instagram stays on screen the cover stays, stepping aside briefly every 8 s so its window can be
   closed. The guard writes a heartbeat; when it was stopped, the Instagram app's time since then is
   added to the day's usage when Throwback next runs. Call audio counts as Instagram's only after an
-  Instagram call notification or when it starts while Instagram is in front.
+  Instagram call notification or when it starts while Instagram is in front. During a call only
+  Instagram's call screens (`appCall.screens`) may be active, once one has been seen in that call
+  (`CallScreens`); until then all of Instagram is allowed, so a renamed call screen never cuts a call.
 - **Passes** (one ledger on the trusted clock, `relay/CallInApp`): call button (30 s, 3 taps an hour),
   "Open Instagram for 5 minutes" (once a day, not while locked), posting (Instagram's create screens,
   20 minutes, 10 a day, not while locked), Instagram's settings (its settings screens, 10 minutes,

@@ -140,6 +140,7 @@ object RulesValidator {
             check(a.otherScreenMinutes in 0..30) { "appSettings.otherScreenMinutes out of range" }
             checkPackages(a.flowPackages, "appSettings.flowPackages", errors)
         }
+        rules.appCall?.let { a -> checkScreens(a.screens, "appCall.screens", errors) }
         rules.appCreate?.let { a ->
             check(a.link.startsWith("instagram://")) { "appCreate.link must be an instagram:// link" }
             checkScreens(a.screens, "appCreate.screens", errors)

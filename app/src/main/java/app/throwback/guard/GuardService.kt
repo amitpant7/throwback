@@ -92,6 +92,7 @@ class GuardService : Service() {
 
     /** Whether the call audio is an Instagram call. */
     private val callAudio = CallAudioLink()
+    private val callScreens = CallScreens()
 
     /** Since when the notification listener is disconnected, and the last rebind request. */
     private var listenerDownSince: Long? = null
@@ -267,15 +268,19 @@ class GuardService : Service() {
             if (callAudio.update(inCallAudio, tracker.current in watched, igCallRecently)) callAudioAt = now
             instagramInFront = tracker.current in watched // for the camera callbacks (main thread too)
             if (GuardPass.active(now)) followPass(now, tracker.current, calls, inCallAudio)
+            val grace = rules().callGraceMillis // read each time: a rules update applies at once
+            val inCall = GuardPolicy.inCall(now, calls, grace, callAudioAt)
+            val callScreensOk = callScreens.allow(inCall, tracker.activeScreens(watched), rules().callScreens)
             val action = GuardPolicy.decide(
                 instagramOnScreen = instagramOnScreen,
                 now = now,
                 calls = calls,
-                graceMillis = rules().callGraceMillis, // read each time: a rules update applies at once
+                graceMillis = grace,
                 allowUntil = GuardPass.allowUntil,
                 coverShownAt = coverShownAt.takeIf { overlay.showing },
                 noCoverUntil = noCoverUntil,
                 callAudioAt = callAudioAt,
+                callScreensOk = callScreensOk,
             )
             if (!instagramOnScreen) windowLeftOpen = false
             when (action) {
@@ -497,6 +502,9 @@ class GuardService : Service() {
         val createScreens = PassRules.screensPattern(source?.appCreate?.screens)
         val settingsScreens = PassRules.screensPattern(source?.appSettings?.screens)
         val settingsOtherMillis = (source?.appSettings?.otherScreenMinutes ?: 0) * 60_000L
+
+        /** Instagram's call screens (`appCall.screens`): during a call only these may show. */
+        val callScreens = PassRules.screensPattern(source?.appCall?.screens)
 
         /** Android screens Instagram opens on the way (`appCreate.flowPackages`; for settings also `appSettings.flowPackages`). */
         val createFlow: Set<String> = source?.appCreate?.flowPackages.orEmpty().toSet()

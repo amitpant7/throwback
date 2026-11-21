@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112039,
+  "version": 2026112040,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -130,6 +130,11 @@
       "clickSelector": "svg[aria-label='Close'], [role='button'][aria-label='Close']",
       "note": "'Use the app' sheets and the web push prompt (a WebView can't receive web push anyway)." }
   ],
+
+  "appCall": {
+    "screens": "^com\\.instagram\\.rtc\\.",
+    "note": "During an Instagram call only its call screens may show (owner, 2026-11-21): the rest of the Instagram app is covered, also in split screen next to the call. That starts once a call screen has been seen in the call; if Instagram renames it, all of Instagram stays allowed during calls, as before, so a call is never cut off. Read from the Instagram app's manifest on the emulator 2026-11-21: com.instagram.rtc.activity.RtcCallActivity (the call) and RtcCallIntentHandlerActivity (opens it)."
+  },
 
   "appSettings": {
     "link": "instagram://settings",

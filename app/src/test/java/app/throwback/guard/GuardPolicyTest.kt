@@ -36,6 +36,47 @@ class GuardPolicyTest {
     // ---- Covering ---------------------------------------------------------------------------
 
     @Test
+    fun `during a call only its screens once seen, before that or after a rename all of Instagram`() {
+        val callScreen = "com.instagram.rtc.activity.RtcCallActivity"
+        val pattern = PassRules.screensPattern("^com\\.instagram\\.rtc\\.")
+        val rule = CallScreens()
+        assertTrue("not seen yet: allowed as before", rule.allow(true, listOf(feed), pattern))
+        assertTrue(rule.allow(true, listOf(callScreen), pattern))
+        assertFalse("feed in front of the call", rule.allow(true, listOf(feed), pattern))
+        assertFalse("feed in split screen next to the call", rule.allow(true, listOf(callScreen, feed), pattern))
+        assertTrue("an unknown screen counts as the call's", rule.allow(true, listOf(callScreen, ""), pattern))
+        assertTrue("no call: not this rule's business", rule.allow(false, listOf(feed), pattern))
+        assertTrue("a new call starts unseen again", rule.allow(true, listOf(feed), pattern))
+        assertTrue("no pattern in the rules: all allowed", CallScreens().allow(true, listOf(callScreen), null).also {
+            assertTrue(CallScreens().allow(true, listOf(feed), null))
+        })
+    }
+
+    @Test
+    fun `a call that doesn't allow the screen covers it, but a pass still allows it`() {
+        val inCall = CallSnapshot(listenerConnected = true, activeCalls = setOf("call"))
+        assertEquals(GuardAction.COVER, GuardPolicy.decide(true, now, inCall, grace, callScreensOk = false))
+        assertEquals(GuardAction.NONE, GuardPolicy.decide(true, now, inCall, grace, callScreensOk = true))
+        assertEquals(GuardAction.NONE, GuardPolicy.decide(true, now, inCall, grace, allowUntil = now + 1_000, callScreensOk = false))
+    }
+
+    @Test
+    fun `active screens leave out paused ones (picture-in-picture, the screen being left)`() {
+        val call = "com.instagram.rtc.activity.RtcCallActivity"
+        val t = ForegroundTracker()
+        t.onEvent(ACTIVITY_RESUMED, ig, feed)
+        t.onEvent(ACTIVITY_PAUSED, ig, feed) // the chat, while the call screen opens
+        t.onEvent(ACTIVITY_RESUMED, ig, call)
+        assertEquals(listOf(call), t.activeScreens(watched))
+        t.onEvent(ACTIVITY_STOPPED, ig, feed)
+        t.onEvent(ACTIVITY_PAUSED, ig, call) // the call shrinks to picture-in-picture
+        t.onEvent(ACTIVITY_RESUMED, ig, feed) // and the feed comes back in front
+        assertEquals(listOf(feed), t.activeScreens(watched))
+        assertTrue(t.onScreen(watched))
+    }
+
+
+    @Test
     fun `covers the Instagram app (and Lite) outside a call, nothing else`() {
         val t = ForegroundTracker()
         t.onEvent(ACTIVITY_RESUMED, "app.throwback", "app.throwback.MainActivity")

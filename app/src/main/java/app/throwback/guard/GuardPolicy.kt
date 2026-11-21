@@ -53,6 +53,14 @@ internal class ForegroundTracker(private val stopEvents: Boolean = true) {
     /** Whether any of [packages] is on screen, in front or not. */
     fun onScreen(packages: Set<String>): Boolean = packages.any { !visible[it].isNullOrEmpty() }
 
+    /**
+     * The screens (activity classes; "" when unknown) of [packages] that are active: resumed, so in
+     * front or in split screen. Not one only paused on screen (picture-in-picture, or the one being
+     * left while Android switches screens).
+     */
+    fun activeScreens(packages: Set<String>): List<String> =
+        packages.flatMap { pkg -> visible[pkg]?.filterValues { it }?.keys.orEmpty() }
+
     /** Start over (the screen went off, or a check from scratch): the events replayed next rebuild it. */
     fun clear() {
         visible.clear()
@@ -123,6 +131,7 @@ internal object GuardPolicy {
      * @param callAudioAt the last time the phone's audio was in call mode for an Instagram call, or
      *        null. Instagram shows no notification once a call is answered (seen on the owner's
      *        phone), so the call notification alone ended the call too early.
+     * @param callScreensOk what is on screen is allowed during a call (see [CallScreens]).
      */
     fun decide(
         instagramOnScreen: Boolean,
@@ -133,8 +142,9 @@ internal object GuardPolicy {
         coverShownAt: Long? = null,
         noCoverUntil: Long = 0L,
         callAudioAt: Long? = null,
+        callScreensOk: Boolean = true,
     ): GuardAction {
-        val blocked = instagramOnScreen && !allowed(now, calls, graceMillis, allowUntil, callAudioAt)
+        val blocked = instagramOnScreen && !allowed(now, calls, graceMillis, allowUntil, callAudioAt, callScreensOk)
         if (coverShownAt == null) return if (blocked && now >= noCoverUntil) GuardAction.COVER else GuardAction.NONE
         val shownFor = now - coverShownAt
         return when {
@@ -145,12 +155,49 @@ internal object GuardPolicy {
         }
     }
 
-    /** Instagram may be on screen now: a call (or just after one), Instagram call audio, or a pass. */
-    private fun allowed(now: Long, calls: CallSnapshot, graceMillis: Long, allowUntil: Long, callAudioAt: Long?): Boolean =
+    /** An Instagram call runs (or just ended): its notification, or Instagram call audio. */
+    fun inCall(now: Long, calls: CallSnapshot, graceMillis: Long, callAudioAt: Long?): Boolean =
+        calls.inCallOrGrace(now, graceMillis) || (callAudioAt != null && now - callAudioAt in 0..graceMillis)
+
+    /** Instagram may be on screen now: a call (its screens), or a pass. */
+    private fun allowed(
+        now: Long,
+        calls: CallSnapshot,
+        graceMillis: Long,
+        allowUntil: Long,
+        callAudioAt: Long?,
+        callScreensOk: Boolean,
+    ): Boolean =
         !calls.listenerConnected ||
-            calls.inCallOrGrace(now, graceMillis) ||
-            (callAudioAt != null && now - callAudioAt in 0..graceMillis) ||
+            (inCall(now, calls, graceMillis, callAudioAt) && callScreensOk) ||
             now < allowUntil
+}
+
+/**
+ * During an Instagram call only its call screens may be on screen (DECISIONS.md #34b): browsing the
+ * rest of Instagram next to a call, or in front of it, is covered. That starts once a call screen
+ * has been seen in this call; until then (Instagram renamed it, or it hasn't shown yet) all of
+ * Instagram is allowed, as before, so a call is never cut off. Pure, for tests.
+ */
+internal class CallScreens {
+    private var seen = false
+
+    /**
+     * Called once per check. @param inCall an Instagram call runs. @param active Instagram's active
+     * screens (ForegroundTracker.activeScreens; "" when unknown, which counts as a call screen): a
+     * call shrunk to picture-in-picture is only paused, so the feed in front of it is what counts,
+     * and the screen being left while the call screen opens doesn't. @param pattern `appCall.screens`.
+     * @return whether the call allows what is on screen.
+     */
+    fun allow(inCall: Boolean, active: List<String>, pattern: Regex?): Boolean {
+        if (!inCall || pattern == null) {
+            seen = false
+            return true
+        }
+        fun isCall(screen: String) = screen.isEmpty() || pattern.containsMatchIn(screen)
+        if (active.any { it.isNotEmpty() && pattern.containsMatchIn(it) }) seen = true
+        return !seen || active.all(::isCall)
+    }
 }
 
 /**

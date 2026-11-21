@@ -10,6 +10,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -226,6 +227,19 @@ class RulesRepositoryTest {
         repo.refreshIfDue()
         assertEquals(listOf(null, "\"abc\""), fetchCalls)
         assertEquals(bundledVersion + 1, repo.rules.value?.version)
+    }
+
+    @Test
+    fun `two starts at once check only once`() = runTest {
+        val repo = repository()
+        nextFetch = FetchResult.NotModified
+        repo.load()
+        // Both read the last check before either records it, unless that happens under one lock.
+        val first = launch { repo.refreshIfDue() }
+        val second = launch { repo.refreshIfDue() }
+        first.join()
+        second.join()
+        assertEquals(1, fetchCalls.size)
     }
 
     @Test

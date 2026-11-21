@@ -66,6 +66,9 @@ class RulesRepository internal constructor(
 
     private val mutex = Mutex()
 
+    /** Held while deciding whether a remote check is due and recording it. */
+    private val checkLock = Mutex()
+
     /**
      * Whether [load] found a valid downloaded copy. The stored ETag describes that copy: without it,
      * a "not modified" answer would keep the app on its bundled rules for good.
@@ -91,14 +94,18 @@ class RulesRepository internal constructor(
         if (rulesUrl.isBlank() || !rulesUrl.startsWith("https://")) return
         load()
         try {
-            val prefs = store.data.first()
-            if (!RulesSchedule.isFetchDue(prefs[KEY_LAST_CHECK], now())) return
-            // An ETag without the copy it names goes (the cache is missing or invalid).
-            val etag = prefs[KEY_ETAG]?.takeIf { cacheUsable }
-            // Record the attempt first: a failing server must not be retried on every launch.
-            store.edit {
-                it[KEY_LAST_CHECK] = now()
-                if (etag == null) it.remove(KEY_ETAG)
+            // Decided and recorded under one lock: a second start right after finds the check done.
+            val etag = checkLock.withLock {
+                val prefs = store.data.first()
+                if (!RulesSchedule.isFetchDue(prefs[KEY_LAST_CHECK], now())) return
+                // An ETag without the copy it names goes (the cache is missing or invalid).
+                val etag = prefs[KEY_ETAG]?.takeIf { cacheUsable }
+                // Record the attempt first: a failing server must not be retried on every launch.
+                store.edit {
+                    it[KEY_LAST_CHECK] = now()
+                    if (etag == null) it.remove(KEY_ETAG)
+                }
+                etag
             }
             when (val result = fetcher.fetch(rulesUrl, etag)) {
                 is FetchResult.NotModified -> Unit

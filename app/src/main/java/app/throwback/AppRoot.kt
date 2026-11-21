@@ -153,6 +153,7 @@ fun AppRoot(
                 app = app,
                 deepLink = deepLink,
                 settingsOpen = settingsOpen != null,
+                settingsFound = settingsOpen == SettingsStart.Home,
                 onSplashHold = onSplashHold,
                 onCloseApp = onCloseApp,
                 onOpenSettings = { settingsOpen = SettingsStart.Home },
@@ -193,6 +194,7 @@ private fun MainScreen(
     app: ThrowbackApp,
     deepLink: String?,
     settingsOpen: Boolean,
+    settingsFound: Boolean,
     onSplashHold: (Boolean) -> Unit,
     onCloseApp: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -225,8 +227,9 @@ private fun MainScreen(
     // Reel allowance in Instagram's swipe viewer used up: the poster, then back to the chat.
     var reelPoster by rememberSaveable { mutableStateOf(false) }
 
-    // Once, after setup: where Throwback's settings are (long-press Home). Opening settings any other
-    // way also counts as found.
+    // Once, after setup: where Throwback's settings are (long-press Home). Settings opened at its home
+    // (profile icon, Home long-press, the app-icon shortcut) counts as found; opened by Throwback for the
+    // Instagram app setup or for Support, it doesn't, so the hint still shows afterwards.
     var settingsHint by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(loggedIn) {
         if (loggedIn && shouldShowSettingsHint(context)) {
@@ -234,9 +237,9 @@ private fun MainScreen(
             settingsHint = true
         }
     }
-    LaunchedEffect(settingsOpen) {
-        if (settingsOpen) {
-            pauseSkipped = true
+    LaunchedEffect(settingsOpen) { if (settingsOpen) pauseSkipped = true }
+    LaunchedEffect(settingsFound) {
+        if (settingsFound) {
             markSettingsHintShown(context)
             settingsHint = false
         }

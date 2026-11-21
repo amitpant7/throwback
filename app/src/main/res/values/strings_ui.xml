@@ -82,6 +82,8 @@
     <string name="ui_limit_connect_title">Cover the Instagram app too</string>
     <string name="ui_limit_connect_body">The Instagram app is on this phone, so opening it would skip your daily limit. Connect Instagram to Throwback, and Throwback covers it.</string>
     <string name="ui_limit_connect_button">Connect the Instagram app</string>
+    <string name="ui_install_perms">Step 2 asks for three Android permissions, each explained there. Throwback needs them to pass on Instagram\'s notifications and keep you out of its app.</string>
+    <string name="ui_install_perms_four">Step 2 asks for four Android permissions, each explained there. Throwback needs them to pass on Instagram\'s notifications and keep you out of its app.</string>
     <string name="ui_install_clones">Only the Instagram app in your main profile is covered. A second copy (in a work profile, a phone\'s dual apps or Private Space) isn\'t.</string>
 
     <string name="ui_quiet_keep_on">Keep on</string>

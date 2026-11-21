@@ -334,3 +334,9 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
        Instagram: "Throwback collects nothing" (shield) and "Code is public" (`</>`). Not "no data
        leaves your phone": Instagram still gets your Instagram activity. Kept apart from the "No
        Reels" list so it doesn't read as if Instagram's own tracking were gone.
+    u. **Connecting the Instagram app right after login returns to the feed** when the setup is
+       finished (not to its "Ready" screen), and the "long-press Home for settings" tip still shows:
+       only Settings opened at its home counts as "found" (the tip used to be skipped because the
+       setup had opened Settings).
+    v. **The setup's first step says that step 2 asks for permissions** (four on Android 13+, else
+       three), and why.

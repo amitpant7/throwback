@@ -143,6 +143,10 @@ private fun StepLayout(
 
 // ---------------------------------------------------------------------------------- step 1
 
+/** Android 13+: step 2 also asks for the permission to post notifications (four permissions, not three). */
+private val asksNotificationPermission: Boolean
+    get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+
 @Composable
 private fun InstallStep(onNext: () -> Unit, onNotNow: () -> Unit, showMessage: (String) -> Unit) {
     val colors = ThrowbackTheme.colors
@@ -204,6 +208,19 @@ private fun InstallStep(onNext: () -> Unit, onNotNow: () -> Unit, showMessage: (
                 )
             }
         }
+        // Said up front, so the permissions on the next step don't come as a surprise.
+        Row(
+            Modifier.padding(top = 16.dp, start = 4.dp, end = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            TbIcon(R.drawable.ic_lock, size = 18.dp, tint = colors.accentText)
+            Text(
+                stringResource(if (asksNotificationPermission) R.string.ui_install_perms_four else R.string.ui_install_perms),
+                style = UiText.sub,
+                color = colors.text,
+            )
+        }
         // Android shows Throwback only the main profile's apps (DECISIONS.md #34f).
         Text(
             stringResource(R.string.ui_install_clones),
@@ -239,7 +256,7 @@ private fun PermissionsStep(onNext: () -> Unit, showMessage: (String) -> Unit) {
     }
     // The same permission as a row of its own (Android 13+): Settings counts it as missing, and once
     // denied twice Android no longer asks, so Allow then opens Throwback's notification settings.
-    val postRowAsks = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+    val postRowAsks = asksNotificationPermission
     val askPostFromRow = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (!granted && !SystemScreens.openAppNotificationSettings(context, context.packageName)) showMessage(failed)
     }

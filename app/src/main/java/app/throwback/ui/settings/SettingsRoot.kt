@@ -123,6 +123,7 @@ internal fun SettingsRoot(
                 Box(Modifier.fillMaxSize().background(colors.bg)) {
                     RouteContent(
                         route = current.last(),
+                        atRoot = current.size == 1,
                         prefs = prefs,
                         homeValues = homeValues,
                         back = back,
@@ -153,6 +154,7 @@ internal fun SettingsRoot(
 @Composable
 private fun RouteContent(
     route: SettingsRoute,
+    atRoot: Boolean,
     prefs: AppPrefs,
     homeValues: HomeValues?,
     back: () -> Unit,
@@ -231,7 +233,9 @@ private fun RouteContent(
                         onExit = back,
                         onFinish = {
                             prefs.write { setMessagesSetupDone(true) }
-                            showSettings = true
+                            // Settings was opened just for this setup ("Instagram app found" after login,
+                            // or the call button without the app): back to Instagram. From Settings: "Ready".
+                            if (atRoot) closeSettings() else showSettings = true
                         },
                         showMessage = showMessage,
                     )

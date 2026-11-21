@@ -6,8 +6,9 @@
    * DevTools with __throwback.perf(). Nothing is sent anywhere.
    */
   var PERF_SETTLE_MS = 300;
+  var PERF_GIVE_UP_MS = 15000; // a page whose DOM never stops changing never settles: stop checking
   var PERF_LOG_MAX = 30;
-  var perf = { lastTap: 0, rec: null, lastChange: 0, timer: 0, log: [] };
+  var perf = { lastTap: 0, rec: null, since: 0, lastChange: 0, timer: 0, log: [] };
 
   /** Adds a record to the in-memory log read by __throwback.perf() (the last PERF_LOG_MAX). */
   function perfNote(rec) {
@@ -26,6 +27,7 @@
     var tap = now - perf.lastTap < 2000 ? perf.lastTap : now;
     perf.rec = { page: pageKind(path), tapToUrl: Math.round(now - tap), tap: tap };
     if (!state.readySent) perf.rec.tap = 0; // the page's own first load: count everything since it began
+    perf.since = now;
     perf.lastChange = now;
     perfCheck();
   }
@@ -39,8 +41,15 @@
     perf.timer = setTimeout(function () {
       var rec = perf.rec;
       if (!rec) return;
-      var idle = performance.now() - perf.lastChange;
-      if (idle < PERF_SETTLE_MS) return perfCheck();
+      var now = performance.now();
+      if (now - perf.since > PERF_GIVE_UP_MS) { // noted as never settled; no more checks until the next page
+        delete rec.tap;
+        rec.settled = false;
+        perfNote(rec);
+        perf.rec = null;
+        return;
+      }
+      if (now - perf.lastChange < PERF_SETTLE_MS) return perfCheck();
       rec.tapToSettled = Math.round(perf.lastChange - rec.tap);
       if (WARM_PAGES.indexOf(rec.page) !== -1) learnCodeAssets(rec.tap - 50, perf.lastChange, rec);
       delete rec.tap;

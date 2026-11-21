@@ -104,6 +104,13 @@ androidComponents {
     }
 }
 
+// Tests read the page script parts and the rules from the source tree (PageScriptTest, RulesParserTest):
+// declare them, or a change to them alone leaves the tests "up to date" and unrun.
+tasks.withType<Test>().configureEach {
+    inputs.dir("src/main/pagescript").withPropertyName("pageScript")
+    inputs.file("../filters/rules.json").withPropertyName("rules")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)

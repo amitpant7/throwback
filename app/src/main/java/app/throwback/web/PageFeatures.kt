@@ -27,10 +27,5 @@ internal data class PageFeatures(
          * passes each change to the page while it is in front.
          */
         val current = MutableStateFlow(PageFeatures())
-
-        /** For relay.CallInApp (another area), which sets this one field directly. */
-        var storyInApp: Boolean
-            get() = current.value.storyInApp
-            set(value) = current.update { it.copy(storyInApp = value) }
     }
 }

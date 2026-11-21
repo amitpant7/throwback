@@ -34,16 +34,21 @@ internal object MessagesFeature {
     /** Called once from ThrowbackApp.onCreate. Cheap: one DataStore read, no services started unless set up. */
     fun install(app: Application) {
         scope.launch {
-            UiPrefs.from(app).messagesSetupDone.distinctUntilChanged().collect { syncGuard(app, it) }
+            var before: Boolean? = null
+            UiPrefs.from(app).messagesSetupDone.distinctUntilChanged().collect { setUp ->
+                // Connected again after being off: the time it was off never counts.
+                if (setUp && before == false) GuardHeartbeat.clear(app)
+                before = setUp
+                syncGuard(app, setUp)
+            }
         }
         // Permissions may have been granted or revoked in Android's settings while Throwback was away.
         // If that (or Android) stopped the guard, the Instagram app's time since counts first.
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
                 scope.launch {
-                    val setUp = isSetUp(app)
-                    if (setUp) withContext(Dispatchers.IO) { GuardHeartbeat.catchUp(app) }
-                    syncGuard(app, setUp)
+                    if (isSetUp(app)) withContext(Dispatchers.IO) { GuardHeartbeat.catchUp(app) }
+                    syncGuard(app, isSetUp(app)) // read again: a scheduled turn-off may have come due meanwhile
                 }
             }
         })

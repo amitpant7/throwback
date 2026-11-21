@@ -86,7 +86,7 @@
       exploreAllowanceSec: ex && ex.dailySeconds ? ex.dailySeconds : 0,
       discoverShown: ds.count || 0,
       discoverMax: DISCOVER.perDay,
-      reelCooldownMs: cool
+      reelCooldownMs: Math.round(cool)
     });
   }
 

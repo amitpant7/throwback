@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -193,7 +194,9 @@ private fun MainScreen(
 ) {
     val timeLimit = app.timeLimit
     StartTrace.mark("mainscreen")
-    val lockState by timeLimit.state.collectAsStateWithLifecycle()
+    // Only whether it is locked: the state itself changes every second while a limit runs.
+    val lockState = timeLimit.state.collectAsStateWithLifecycle()
+    val locked by remember { derivedStateOf { lockState.value is LockState.Locked } }
     // null while loading, so the feed never flashes for a frame before the pause screen.
     val mindfulPause by app.uiPreferences.mindfulPause.collectAsStateWithLifecycle(initialValue = null)
     var pauseDone by rememberSaveable { mutableStateOf(false) }
@@ -241,8 +244,8 @@ private fun MainScreen(
     }
 
     // Leaving the lock (extension granted, or a new day) returns to the full app.
-    LaunchedEffect(lockState) {
-        if (lockState !is LockState.Locked && mode == WebMode.MESSAGES_ONLY) mode = WebMode.FULL
+    LaunchedEffect(locked) {
+        if (!locked && mode == WebMode.MESSAGES_ONLY) mode = WebMode.FULL
     }
     // Only time actually spent on Instagram counts: not while Throwback's own settings or the
     // mindful pause cover it, and not while the activity is paused.
@@ -261,8 +264,8 @@ private fun MainScreen(
     // Straight from ON_RESUME / ON_PAUSE: a "resumed" state read in an effect only re-ran if a frame
     // came between ON_PAUSE and ON_STOP, so after the power button counting might not restart.
     LifecycleResumeEffect(onInstagram, mode) {
-        if (onInstagram) timeLimit.onForeground(mode) else timeLimit.onBackground()
-        onPauseOrDispose { timeLimit.onBackground() }
+        if (onInstagram) timeLimit.onForeground(mode)
+        onPauseOrDispose { timeLimit.onBackground() } // also when Settings opens or the mode changes
     }
 
     // Hold the system splash only until preferences are loaded. It must not wait for the WebView:
@@ -274,7 +277,8 @@ private fun MainScreen(
     if (mindfulPause == null) return
     StartTrace.mark("mainscreen-ready")
 
-    val lockShowing = mode == WebMode.FULL && lockState is LockState.Locked
+    val lockShowing = mode == WebMode.FULL && locked
+    val promptShowing = offerInstagramPrompt && !lockShowing && !pauseShowing && !settingsOpen && !reelPoster
 
     Box(Modifier.fillMaxSize()) {
         InstagramScreen(
@@ -294,7 +298,8 @@ private fun MainScreen(
                     CallInApp.Result.LIMITED -> Toast.makeText(context, R.string.call_too_many, Toast.LENGTH_LONG).show()
                 }
             },
-            backEnabled = !settingsOpen && !pauseShowing && !reelPoster,
+            // Back reaches the page only when nothing covers it (a layer's own Back comes first).
+            backEnabled = !settingsOpen && !pauseShowing && !reelPoster && !lockShowing && !promptShowing,
             covered = settingsOpen || pauseShowing || lockShowing || reelPoster,
             onReelLimit = { reelPoster = true },
             // A calm, positive moment: after a month (30 days, 10 days of use), Google Play's rating card, asked once.
@@ -302,14 +307,19 @@ private fun MainScreen(
             onCreateInApp = { story ->
                 if (story) {
                     val result = CallInApp.story(context)
-                    PageFeatures.current.update { it.copy(storyInApp = CallInApp.storyAvailable(context)) }
-                    val msg = when (result) {
-                        CallInApp.StoryResult.OPENED -> R.string.story_in_app_hint
-                        CallInApp.StoryResult.USED_UP -> R.string.story_in_app_used_up
-                        CallInApp.StoryResult.LOCKED -> R.string.app_pass_locked
-                        CallInApp.StoryResult.NO_APP -> R.string.create_in_app_failed
+                    CallInApp.storyAvailabilityChanged(context)
+                    val res = context.resources
+                    val text = when (result) {
+                        CallInApp.StoryResult.OPENED -> CallInApp.storyMinutes(context).let { m -> res.getQuantityString(R.plurals.story_in_app_hint, m, m) }
+                        CallInApp.StoryResult.USED_UP -> CallInApp.storiesPerDay(context).let { n -> res.getQuantityString(R.plurals.story_in_app_used_up, n, n) }
+                        CallInApp.StoryResult.WAIT -> (CallInApp.storyWaitMinutes(context) ?: 1).coerceAtLeast(1).let { m ->
+                            res.getQuantityString(R.plurals.story_in_app_wait, m, m)
+                        }
+                        CallInApp.StoryResult.NOT_READY -> res.getString(R.string.story_in_app_not_ready)
+                        CallInApp.StoryResult.LOCKED -> res.getString(R.string.app_pass_locked)
+                        CallInApp.StoryResult.NO_APP -> res.getString(R.string.create_in_app_failed)
                     }
-                    Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, text, Toast.LENGTH_LONG).show()
                 } else {
                     CallInApp.create(context).message?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
                 }
@@ -320,16 +330,23 @@ private fun MainScreen(
             },
             onSupportThanks = onOpenSupport,
             onStoryWeb = {
-                val text = CallInApp.storyWaitMinutes(context)?.let { m ->
-                    context.resources.getQuantityString(R.plurals.story_web_wait, m, m)
-                } ?: context.getString(R.string.story_web_tomorrow)
+                // The page sent the tap to the website because it believed the app route was closed;
+                // it may be a step behind (a wait just ended), so it learns the current state too.
+                val minutes = CallInApp.storyWaitMinutes(context)
+                CallInApp.storyAvailabilityChanged(context)
+                val text = when {
+                    minutes == null -> CallInApp.storiesPerDay(context).let { n -> context.resources.getQuantityString(R.plurals.story_web_tomorrow, n, n) }
+                    minutes > 0 -> context.resources.getQuantityString(R.plurals.story_web_wait, minutes, minutes)
+                    else -> context.getString(R.string.story_web_ready)
+                }
                 Toast.makeText(context, text, Toast.LENGTH_LONG).show()
             },
             onSettingsInApp = {
                 CallInApp.settings(context).message?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
             },
-            // While locked, paused or showing the reel poster, screen readers must not reach the feed underneath.
-            modifier = if (lockShowing || pauseShowing || reelPoster) Modifier.clearAndSetSemantics {} else Modifier,
+            // While Settings, the lock, the pause or the reel poster covers it, screen readers must not
+            // reach the feed underneath.
+            modifier = if (settingsOpen || lockShowing || pauseShowing || reelPoster) Modifier.clearAndSetSemantics {} else Modifier,
         )
 
         // No Throwback button on the feed (owner's decision): Settings opens from the page (profile icon,
@@ -349,7 +366,7 @@ private fun MainScreen(
 
         // The layers below Settings leave system Back to it (backEnabled): Android gives Back to the
         // handler added last, and a layer can appear while Settings is open (the lock engaging).
-        if (offerInstagramPrompt && !lockShowing && !pauseShowing && !settingsOpen) {
+        if (promptShowing) {
             InstagramAppPrompt(
                 onOpenMessagesSetup = {
                     offerInstagramPrompt = false

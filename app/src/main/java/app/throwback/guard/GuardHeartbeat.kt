@@ -74,10 +74,17 @@ internal object GuardHeartbeat {
         prefs(context).edit { putLong(KEY, wallNow) }
     }
 
-    /** The guard was turned off on purpose (Instagram disconnected): nothing to count. */
+    /**
+     * The guard was turned off on purpose (Instagram disconnected), or turned on again after that:
+     * nothing before now counts. A catch-up running at the same moment doesn't write its beat back.
+     */
     fun clear(context: Context) {
+        clears++
         prefs(context).edit { remove(KEY) }
     }
+
+    @Volatile
+    private var clears = 0
 
     /** One catch-up at a time: Throwback coming to the front and the guard starting can race. */
     private val catchingUp = Mutex()
@@ -91,6 +98,7 @@ internal object GuardHeartbeat {
     }
 
     private suspend fun countSinceLastBeat(context: Context) {
+        val clearsAtStart = clears
         val p = prefs(context)
         if (!p.contains(KEY)) return
         val last = p.getLong(KEY, 0L)
@@ -117,7 +125,7 @@ internal object GuardHeartbeat {
                 }
             }
         }
-        beat(context, now) // counted up to now
+        if (clears == clearsAtStart) beat(context, now) // counted up to now (unless turned off meanwhile)
     }
 
     /** The watched apps' activity events, or null if Android won't give them. */

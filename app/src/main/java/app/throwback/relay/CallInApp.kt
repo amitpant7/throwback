@@ -4,8 +4,6 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
 import android.os.SystemClock
 import androidx.annotation.StringRes
 import app.throwback.R
@@ -14,8 +12,8 @@ import app.throwback.guard.GuardPass
 import app.throwback.guard.PassLedger
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.TimeLimitModule
-import app.throwback.web.InstagramWebController
 import app.throwback.web.PageFeatures
+import kotlinx.coroutines.flow.update
 import app.throwback.web.rules.RulesRepository
 
 /**
@@ -109,11 +107,15 @@ internal object CallInApp {
     /** Longest a story pass lasts; its minutes without the camera end it much sooner (see GuardService). */
     private const val STORY_PASS_MS = 30 * 60_000L
 
-    enum class StoryResult { OPENED, NO_APP, USED_UP, LOCKED }
+    /** OPENED; NO_APP; USED_UP (no more today); WAIT (the wait after a pass); NOT_READY (the time limit is still loading); LOCKED. */
+    enum class StoryResult { OPENED, NO_APP, USED_UP, WAIT, NOT_READY, LOCKED }
 
     private fun storyRules(context: Context) = RulesRepository.get(context).rules.value?.appCreate?.story
 
-    private fun storiesPerDay(context: Context) = storyRules(context)?.perDay ?: 3
+    fun storiesPerDay(context: Context) = storyRules(context)?.perDay ?: 3
+
+    /** Minutes of Instagram a story pass gives (time with Instagram's camera on doesn't count). */
+    fun storyMinutes(context: Context) = storyRules(context)?.editMinutes ?: 5
 
     /**
      * Whether "Your story" can open the Instagram app now (else the website's story upload). Only
@@ -126,18 +128,18 @@ internal object CallInApp {
     }
 
     /** Today's use of the Instagram app through Throwback's passes ("Your day"). */
-    data class AppDay(val storiesUsed: Int, val storiesMax: Int, val storyWaitMinutes: Int?, val visitUsed: Boolean, val appMinutes: Int)
+    data class AppDay(val storiesUsed: Int, val storiesMax: Int, val storyWaitMinutes: Int?, val visitUsed: Boolean, val appMillis: Long)
 
     fun appDay(context: Context): AppDay {
         val perDay = storiesPerDay(context)
-        val now = PassLedger.now(context) ?: return AppDay(0, perDay, 0, visitUsed = false, appMinutes = 0)
+        val now = PassLedger.now(context) ?: return AppDay(0, perDay, 0, visitUsed = false, appMillis = 0L)
         val book = PassLedger.read(context)
         return AppDay(
             storiesUsed = book.storiesOn(now.epochDay),
             storiesMax = perDay,
             storyWaitMinutes = book.storyWaitMinutes(now.epochDay, now.wallMillis, perDay),
             visitUsed = !book.visitAllowed(now.epochDay, locked = false),
-            appMinutes = (book.appMillisOn(now.epochDay) / 60_000).toInt(),
+            appMillis = book.appMillisOn(now.epochDay),
         )
     }
 
@@ -160,8 +162,12 @@ internal object CallInApp {
     fun story(context: Context): StoryResult {
         val pkg = installedInstagram(context) ?: return StoryResult.NO_APP
         if (locked(context)) return StoryResult.LOCKED
-        val now = PassLedger.now(context) ?: return StoryResult.USED_UP
-        if (!PassLedger.read(context).storyAllowed(now.epochDay, now.wallMillis, storiesPerDay(context))) return StoryResult.USED_UP
+        val now = PassLedger.now(context) ?: return StoryResult.NOT_READY
+        val ledger = PassLedger.read(context)
+        if (!ledger.storyAllowed(now.epochDay, now.wallMillis, storiesPerDay(context))) {
+            val wait = ledger.storyWaitMinutes(now.epochDay, now.wallMillis, storiesPerDay(context))
+            return if (wait != null && wait > 0) StoryResult.WAIT else StoryResult.USED_UP
+        }
         val link = storyRules(context)?.link ?: "instagram://story-camera"
         if (!start(context, Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(pkg))) return StoryResult.NO_APP
         GuardPass.grant(SystemClock.elapsedRealtime(), STORY_PASS_MS, GuardPass.Kind.STORY)
@@ -190,10 +196,10 @@ internal object CallInApp {
         storyAvailabilityChanged(context)
     }
 
-    /** Tells the page whether "Your story" opens the app now. */
-    private fun storyAvailabilityChanged(context: Context) {
-        PageFeatures.storyInApp = storyAvailable(context)
-        Handler(Looper.getMainLooper()).post { InstagramWebController.current?.get()?.pushFeatures() }
+    /** Tells the page whether "Your story" opens the app now (only with the Instagram app connected). */
+    fun storyAvailabilityChanged(context: Context) {
+        val available = storyAvailable(context)
+        PageFeatures.current.update { it.copy(storyInApp = it.createInApp && available) }
     }
 
     /** Longest a settings pass lasts. */

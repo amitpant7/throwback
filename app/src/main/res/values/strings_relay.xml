@@ -25,17 +25,32 @@
     <string name="guard_off_text">Android stopped it. Tap to turn it back on.</string>
     <string name="guard_cover_title">Use Throwback instead</string>
     <string name="guard_cover_body">The Instagram app is only for calls and posting. Taking you back…</string>
-    <string name="story_in_app_hint">Swipe right for the story camera. 5 minutes; posting ends it.</string>
+    <plurals name="story_in_app_hint">
+        <item quantity="one">Swipe right for the story camera. %d minute; posting ends it.</item>
+        <item quantity="other">Swipe right for the story camera. %d minutes; posting ends it.</item>
+    </plurals>
     <plurals name="story_web_wait">
         <item quantity="one">Instagram\'s story editor opens again in %d min, after a story pass without a post. Using the website for now.</item>
         <item quantity="other">Instagram\'s story editor opens again in %d min, after a story pass without a post. Using the website for now.</item>
     </plurals>
-    <string name="story_web_tomorrow">Instagram\'s story editor opens again tomorrow (3 story passes without a post today). Using the website for now.</string>
+    <plurals name="story_web_tomorrow">
+        <item quantity="one">Instagram\'s story editor opens again tomorrow (%d story pass without a post today). Using the website for now.</item>
+        <item quantity="other">Instagram\'s story editor opens again tomorrow (%d story passes without a post today). Using the website for now.</item>
+    </plurals>
     <string name="guard_cover_window_title">Close Instagram\'s window</string>
     <string name="guard_cover_window_body">The Instagram app is still on screen, in split screen or a small window. This cover steps aside for a moment so you can close it.</string>
     <string name="guard_cover_story_title">Story time\'s up</string>
     <string name="guard_cover_story_body">Thought you could sneak a scroll…? Nahhh.</string>
-    <string name="story_in_app_used_up">That\'s 3 stories through the Instagram app today. Back tomorrow.</string>
+    <plurals name="story_in_app_used_up">
+        <item quantity="one">That\'s %d story through the Instagram app today. Back tomorrow.</item>
+        <item quantity="other">That\'s %d stories through the Instagram app today. Back tomorrow.</item>
+    </plurals>
+    <plurals name="story_in_app_wait">
+        <item quantity="one">Instagram\'s story editor opens again in %d min (the wait after a story pass without a post).</item>
+        <item quantity="other">Instagram\'s story editor opens again in %d min (the wait after a story pass without a post).</item>
+    </plurals>
+    <string name="story_in_app_not_ready">One moment… then tap “Your story” again.</string>
+    <string name="story_web_ready">Instagram\'s story editor is ready again: tap “Your story” once more to use it.</string>
     <string name="create_in_app_failed">Couldn\'t open the Instagram app.</string>
     <string name="create_in_app_used_up">That\'s 10 posts through the Instagram app today. Back tomorrow.</string>
     <string name="settings_in_app_used_up">That\'s 5 visits to the Instagram app\'s settings today. Back tomorrow.</string>

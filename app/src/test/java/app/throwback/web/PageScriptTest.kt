@@ -78,13 +78,13 @@ class PageScriptTest {
     }
 
     @Test
-    fun `features change through one state, and the relay's own setter lands there too`() {
+    fun `features change through one state, sent to the page under the names it reads`() {
         val before = PageFeatures.current.value
         try {
-            PageFeatures.storyInApp = true // as relay.CallInApp does
-            assertEquals(true, PageFeatures.current.value.storyInApp)
-            PageFeatures.current.value = before.copy(storyInApp = false)
-            assertEquals(false, PageFeatures.storyInApp)
+            PageFeatures.current.value = PageFeatures(createInApp = true, storyInApp = true, supportAsk = "first")
+            val fields = PageFeatures.current.value.configFields()
+            assertEquals(listOf("createInApp", "storyInApp", "supportAsk"), fields.keys.toList())
+            assertEquals("true", fields["storyInApp"].toString())
         } finally {
             PageFeatures.current.value = before
         }

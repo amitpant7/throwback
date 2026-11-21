@@ -39,7 +39,7 @@ internal fun TodayRoute(timeLimit: TimeLimitController, onClose: () -> Unit) {
                 val connected = MessagesFeature.isSetUp(context)
                 alerts = if (connected) RelayStats.otherGroupLastDays(context, days = 1) else null
                 appDay = if (connected) app.throwback.relay.CallInApp.appDay(context).let {
-                    TodayStats.InstagramAppDay(it.storiesUsed, it.storiesMax, it.storyWaitMinutes, it.visitUsed, it.appMinutes)
+                    TodayStats.InstagramAppDay(it.storiesUsed, it.storiesMax, it.storyWaitMinutes, it.visitUsed, it.appMillis)
                 } else null
                 delay(2_000)
             }

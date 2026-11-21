@@ -55,7 +55,7 @@ data class TodayStats(
     /** The connected Instagram app today; null when it isn't connected. */
     val instagramApp: InstagramAppDay? = null,
 ) {
-    data class InstagramAppDay(val storiesUsed: Int, val storiesMax: Int, val storyWaitMinutes: Int?, val visitUsed: Boolean, val appMinutes: Int)
+    data class InstagramAppDay(val storiesUsed: Int, val storiesMax: Int, val storyWaitMinutes: Int?, val visitUsed: Boolean, val appMillis: Long)
 
     sealed interface Limit {
         data object None : Limit
@@ -132,7 +132,7 @@ internal fun TodayScreen(stats: TodayStats, onBack: () -> Unit) {
                 CardDivider()
                 AllowanceRow(
                     title = stringResource(R.string.ui_today_app_time),
-                    value = elapsedText(ig.appMinutes * 60_000L),
+                    value = elapsedText(ig.appMillis),
                 )
             }
         }

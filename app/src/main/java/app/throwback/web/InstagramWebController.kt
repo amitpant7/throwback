@@ -326,14 +326,38 @@ internal class InstagramWebController(
         webView.onResume()
         webView.resumeTimers()
         if (wasStopped) refreshClock()
+        handler.removeCallbacks(clockTick)
+        handler.postDelayed(clockTick, if (clockSent) CLOCK_REFRESH_MS else CLOCK_RETRY_MS)
     }
 
     private var wasStopped = false
+
+    /** A trusted clock has reached this controller's script (the time limit had loaded). */
+    private var clockSent = PageClock.json() != null
+
+    /**
+     * While in front, the page gets a fresh clock now and then: the trusted time can move without any
+     * system broadcast (network time arriving after a reboot), and the time limit may finish loading
+     * after the page was ready (then every 2 s until it has, and the script is updated once).
+     */
+    private val clockTick = object : Runnable {
+        override fun run() {
+            if (destroyed) return
+            val clock = if (started) PageClock.json() else null
+            if (clock != null) {
+                if (!clockSent) installScript(clock) // new pages start with it too
+                clockSent = true
+                injector.configureLive(PageScript.config(clock = clock)) {}
+            }
+            handler.postDelayed(this, if (clockSent) CLOCK_REFRESH_MS else CLOCK_RETRY_MS)
+        }
+    }
 
     /** In the background: stop timers and animations (saves battery), keep the login. */
     fun onStop() {
         if (destroyed) return
         wasStopped = true
+        handler.removeCallbacks(clockTick)
         webView.onPause()
         webView.pauseTimers()
         CookieManager.getInstance().flush()
@@ -352,12 +376,6 @@ internal class InstagramWebController(
         installScript(PageClock.json())
         if (started) injector.configureLive(PageScript.config(features = value)) {}
     }
-
-    /**
-     * Kept for relay.CallInApp (another area), which still calls it after changing [PageFeatures]:
-     * the change already reaches the page through [PageFeatures.current], while Throwback is in front.
-     */
-    fun pushFeatures() = Unit
 
     private fun share(url: String) {
         val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, url)
@@ -723,6 +741,10 @@ internal class InstagramWebController(
     }
 
     companion object {
+        /** How often the page's clock is refreshed while in front, and retried until the first one. */
+        private const val CLOCK_REFRESH_MS = 5 * 60_000L
+        private const val CLOCK_RETRY_MS = 2_000L
+
         /** The live page (one at a time), for screens that read from it, such as "Your day". */
         @Volatile
         var current: WeakReference<InstagramWebController>? = null

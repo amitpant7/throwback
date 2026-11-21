@@ -35,9 +35,12 @@
     }
   }
 
-  /** The app's trusted time now, in ms (the phone's clock until a fresh clock has arrived). */
+  /**
+   * The app's trusted time now, in whole ms like Date.now() (the phone's clock until a fresh clock has
+   * arrived). Whole: these times are stored and sent to the app, which reads them as integers.
+   */
   function trustedNow() {
-    return clock.fresh ? clock.base + (performance.now() - clock.mono) : Date.now();
+    return clock.fresh ? Math.round(clock.base + (performance.now() - clock.mono)) : Date.now();
   }
 
   /** Today's date ("Fri Nov 20 2026") by the trusted clock; never goes backwards. */

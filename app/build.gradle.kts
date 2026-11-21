@@ -16,6 +16,13 @@ plugins {
  *   keyPassword=...
  * Without the file, release builds are unsigned (Google Play then refuses the upload).
  */
+/*
+ * Google Play tips (DECISIONS.md #4e), a switch in gradle.properties: throwback.playTips. Their code,
+ * texts and artwork live in src/playTips and go into the build, with Play Billing, only when it is
+ * true; otherwise src/webTips (Support links to the website's support page) and no billing library.
+ */
+val playTips: Boolean = providers.gradleProperty("throwback.playTips").orNull.toBoolean()
+
 val uploadKey: Properties? = rootProject.file("keystore.properties").takeIf { it.isFile }?.let { file ->
     Properties().apply { file.inputStream().use { load(it) } }
 }
@@ -31,6 +38,7 @@ android {
         targetSdk = 36
         versionCode = 4
         versionName = "0.2.0"
+        buildConfigField("boolean", "PLAY_TIPS", playTips.toString())
     }
 
     signingConfigs {
@@ -66,6 +74,11 @@ android {
     }
     testOptions {
         unitTests.isReturnDefaultValues = true
+    }
+    sourceSets.getByName("main") {
+        val tips = if (playTips) "src/playTips" else "src/webTips"
+        java.srcDir("$tips/java")
+        res.srcDir("$tips/res")
     }
 }
 
@@ -153,7 +166,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     // Google Play's in-app review card (asked once, after a month of use; see core/RateAsk.kt).
     implementation(libs.play.review.ktx)
-    implementation(libs.play.billing)
+    if (playTips) implementation(libs.play.billing)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

@@ -52,12 +52,24 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     same product is bought again, so one stays on record. At start the app asks Play for owned tips
     (queryPurchasesAsync) and sets the flag. A refunded tip leaves the flag as it is. **Built
     2026-11-21** (`billing/`, Play Billing 9.1); a pending payment unlocks once Google Play has it.
+4e. **Google Play tips parked; support on the website** (owner, 2026-11-21: Google Play can't pay
+    out to a developer in Nepal). The tips stay as code in `app/src/playTips` (the billing client,
+    the tip rows, their texts and artwork), built only with `throwback.playTips=true` in
+    gradle.properties; the default build has no billing library and no BILLING permission
+    (`app/src/webTips` instead). Support has one row, "Support me" (no subtext; owner), opening the
+    website's support page (amitpant.com.np/throwback/support/), which links to Ko-fi
+    (ko-fi.com/amitpant); the app never links to a payment page itself. "Support me" rather than
+    "Buy me a coffee": Google Play's payments policy may object to donation links (some apps were
+    flagged, even for a homepage that asks for donations); the wording doesn't settle that, but it
+    keeps payment words out of the app. If review flags it, the row goes and Support keeps reporting
+    and Say Hi. Nothing is locked: Make It Yours is free while tips are parked
+    (`Supporter.makeItYours`).
 5. **Privacy:** no analytics, no accounts, no server. Nothing leaves the phone except traffic to
    Instagram itself and a daily fetch of the public filter rules.
 6. **Disclaimer:** "Not affiliated with Instagram or Meta" on the store listing and the About screen.
    No Instagram name or logo in the app's branding.
-7. **Releases: Google Play only** (owner, 2026-11-21): tips and Make It Yours need Google Play billing,
-   and Android 13+ makes downloaded APKs ask for "restricted settings" (#28). No APKs on GitHub
+7. **Releases: Google Play only** (owner, 2026-11-21): tips and Make It Yours needed Google Play
+   billing (tips are parked since, #4e), and Android 13+ makes downloaded APKs ask for "restricted settings" (#28). No APKs on GitHub
    Releases; the code stays public there.
 
 ## How it works

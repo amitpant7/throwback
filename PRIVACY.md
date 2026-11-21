@@ -18,7 +18,7 @@ Throwback shows Instagram's website (instagram.com) inside the app and hides par
 - **"Your day"**: time spent today and how many ads and suggestions were removed. Counted on the phone, reset at midnight.
 - **Small counters** for the app's own features (for example how much of today's Explore time is left), stored in the app's storage for instagram.com on your phone.
 
-Android's own backup (to your Google account, if you have it on) includes only the time-limit settings and whether you have left a tip, so a reinstall keeps them. Nothing else is backed up.
+Android's own backup (to your Google account, if you have it on) includes only the time-limit settings, so a reinstall keeps them. Nothing else is backed up.
 
 ## Optional: the connected Instagram app
 
@@ -28,12 +28,13 @@ If you connect the Instagram app (Settings → Connect → Instagram), Throwback
 - **Usage access**, to notice when the Instagram app opens, so it can be covered outside calls. Android reports which app is on screen; Throwback uses that only to tell when it's Instagram, and stores or sends none of it.
 - **Display over other apps**, to show that cover.
 
-For the story feature, Throwback notices whether a camera is in use (not what it sees). It does not use the camera, microphone, contacts or location itself.
+For the story feature, Throwback counts how long you spend in the Instagram app during a story pass and notices Instagram's own "posting" notification. It does not use the camera, microphone, contacts or location.
 
 ## Other services
 
 - **GitHub**: once a day the app downloads its filter rules (a public file) from GitHub, which sees an ordinary download request from your phone's internet address.
-- **Google**: tips are paid through Google Play, which handles the payment; Throwback only learns that a tip went through. The rating card comes from Google Play too. On Android 13 and newer the app reads Android's network time, which keeps the daily limit honest; on older Android it uses the time in Instagram's own replies. Neither sends anything.
+- **Google**: the rating card comes from Google Play. The app has no payments. On Android 13 and newer the app reads Android's network time, which keeps the daily limit honest; on older Android it uses the time in Instagram's own replies. Neither sends anything.
+- **Ko-fi**: if you buy me a coffee from the website's support page (amitpant.com.np/throwback/support/), Ko-fi handles the payment under its own privacy policy. The app isn't involved and learns nothing about it.
 - **This website** is hosted by Netlify. If you use the contact form, your message and email address are stored by Netlify and used only to reply to you.
 
 ## Sharing and selling

@@ -83,7 +83,7 @@ internal fun SettingsHomeScreen(values: HomeValues, prefs: AppPrefs, onBack: () 
 
         SectionLabel(stringResource(R.string.ui_section_app))
         TbCard {
-            val iconUnlocked by Supporter.tipped(LocalContext.current).collectAsStateWithLifecycle()
+            val iconUnlocked by Supporter.makeItYours(LocalContext.current).collectAsStateWithLifecycle()
             NavRow(
                 icon = R.drawable.ic_add_home,
                 title = stringResource(R.string.ui_shortcut_title),

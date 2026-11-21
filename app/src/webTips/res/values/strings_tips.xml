@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Support without Google Play tips (DECISIONS.md #4e): the website's support page. -->
+<resources>
+    <string name="ui_support_intro">Throwback is free and stays free, with nothing locked. If it gave you some time back, you can support it on its website.</string>
+    <string name="ui_support_me">Support me</string>
+</resources>

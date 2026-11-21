@@ -42,8 +42,14 @@ internal object AboutLinks {
     /** The website's contact form (no GitHub account needed); it has a "Something Throwback missed" topic. */
     const val REPORT_MISSED_URL = "${WEBSITE_URL}#contact"
 
-    /** The website's section on tips (Play Billing only; no other payment links: Play policy). */
+    /** The website's section on Google Play tips (builds with them only, DECISIONS.md #4e). */
     const val HOW_TIPS_WORK_URL = "${WEBSITE_URL}#support"
+
+    /**
+     * The website's support page (builds without Google Play tips, #4e): it links to Ko-fi. The app
+     * opens this page, never a payment page itself.
+     */
+    const val SUPPORT_URL = "${WEBSITE_URL}support/"
 
     /** The developer on Instagram (Support → Say Hi), opened in Throwback. */
     const val DEV_INSTAGRAM_HANDLE = "@97m.it"

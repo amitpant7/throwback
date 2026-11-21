@@ -169,25 +169,6 @@
     <!-- 6 · About & support -->
     <string name="ui_about_version">v%1$s</string>
     <string name="ui_support_title">Support Throwback</string>
-    <string name="ui_tip_beer">A beer</string>
-    <string name="ui_tip_gig">A gig ticket</string>
-    <string name="ui_tip_gta">GTA 6</string>
-    <string name="ui_tips_not_play">Tips work in the Google Play version of Throwback.</string>
-    <string name="ui_tips_unavailable">Google Play can\'t take tips right now. Try again later.</string>
-    <string name="ui_tip_thanks">Thank you! Make It Yours is unlocked.</string>
-    <string name="ui_tip_pending">Thank you! Make It Yours unlocks once Google Play has the payment.</string>
-    <string name="ui_tip_failed">The tip didn\'t go through. Try again later.</string>
-    <string name="ui_support_intro">Throwback is free and stays free. If it gave you some time back, you can say thanks, and any tip gets you Make It Yours: your own name and icon on the home screen.</string>
-    <string name="ui_support_leave_tip">Leave a tip</string>
-    <string name="ui_tip_beer_line">A cold one, on you</string>
-    <string name="ui_tip_gig_line">Toward the next show</string>
-    <string name="ui_tip_gta_line">Toward the next game</string>
-    <!-- The currency, in this one place, until Google Play billing supplies the local prices. -->
-    <string name="ui_tip_currency">$</string>
-    <!-- A price: the currency, then the amount, e.g. "$3". -->
-    <string name="ui_tip_price">%1$s%2$d</string>
-    <string name="ui_support_fine">Paid through Google Play. Prices shown in your currency.</string>
-    <string name="ui_support_how">How tips work</string>
     <string name="ui_support_say_hi">Say Hi on Instagram</string>
     <string name="ui_link_website">Website</string>
     <string name="ui_link_source">Source code on GitHub</string>

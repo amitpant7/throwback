@@ -195,6 +195,10 @@ emulator: update → "guard is off" + setup shows the permission → allow again
   crashes or missing classes in the log.
 - The androidx/Compose/Kotlin libraries are still the 2024 versions (lint lists newer ones). Updating
   them is optional for Play; do it as its own change, then the on-device checklist (7).
+- **Play Billing is parked (2026-11-21, DECISIONS.md #4e):** Google Play can't pay out to Nepal,
+  so the default build leaves it out (`throwback.playTips=false` in gradle.properties; the code is in
+  `app/src/playTips`). Support's "Support me" opens the website's Ko-fi page instead. What follows
+  is how billing works when switched back on.
 - **Play Billing is built (2026-11-21, `billing/`, Play Billing 9.1):** three one-time products,
   `tip_small` ($3), `tip_medium` ($10), `tip_large` ($25); owned tips restore Make It Yours at start,
   paid ones are acknowledged, a tip is used up only just before it is bought again (DECISIONS.md #4d).

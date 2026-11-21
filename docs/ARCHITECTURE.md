@@ -84,7 +84,7 @@ Every layer also uses `core`; the entry point uses all of them.
 | `connect` | What the relay, the guard and the screens share: `MessagesFeature` (starts or stops the guard), `Permissions`, `CallInApp` (opens the Instagram app for a call, a post, a story or its settings), `PassLedger` and `GuardPass` (passes), `CallState` |
 | `connect/relay` | `RelayListenerService` and the notification logic (`NotificationClassifier`, `RelayRouting`, `RelayNotifier`, `RelayStats`) |
 | `connect/guard` | `GuardService`, its pure policy (`GuardPolicy`, `CallScreens`, `PassRules`), the cover (`GuardOverlay`), `GuardHeartbeat`, restart after boot |
-| `billing` | Tips through Google Play Billing: `Tips` (the client: restore owned tips at start, prices, the purchase sheet) and its pure rules (`TipRules`, `TipProduct`: `tip_small`, `tip_medium`, `tip_large`) |
+| `billing` | Tips through Google Play Billing, parked (DECISIONS.md #4e): the pure rules (`TipRules`, `TipProduct`) stay in `main`; the client `Tips` and Support's tip rows (`ui/about/SupportTips.kt`) are in `app/src/playTips`, built only with `throwback.playTips=true`. The default build uses `app/src/webTips` (Support links to the website) and has no billing library |
 | `ui/*` | `settings` (navigation), `connect` (Connect › Instagram setup and settings), `today`, `about` (About, Support), `shortcut` (Make It Yours), `onboarding`, `pause`, `reels` (the reel poster) |
 
 The page script is in `app/src/main/pagescript/`, one file per area; its

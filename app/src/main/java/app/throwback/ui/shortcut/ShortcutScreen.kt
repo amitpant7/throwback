@@ -135,15 +135,15 @@ internal object HomeShortcut {
 
 /**
  * Make It Yours (DECISIONS.md #31, #4d): a home-screen shortcut with the user's name and a preset
- * icon or their own picture. Unlocked by one tip; until then everything can be tried out, and the
- * button leads to Support instead of adding the shortcut.
+ * icon or their own picture. Free in builds without Google Play tips (#4e); with them, unlocked by
+ * one tip, and until then everything can be tried out and the button leads to Support instead.
  */
 @Composable
 internal fun ShortcutScreen(onBack: () -> Unit, onOpenSupport: () -> Unit, showMessage: (String) -> Unit) {
     val colors = ThrowbackTheme.colors
     val context = LocalContext.current
     val focus = LocalFocusManager.current
-    val unlocked by Supporter.tipped(context).collectAsStateWithLifecycle()
+    val unlocked by Supporter.makeItYours(context).collectAsStateWithLifecycle()
     val defaultName = stringResource(R.string.ui_shortcut_default_name)
     var name by rememberSaveable { mutableStateOf(defaultName) }
     var style by rememberSaveable { mutableStateOf(ShortcutStyle.App) }

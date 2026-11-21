@@ -17,9 +17,9 @@ import app.throwback.web.rules.RulesRepository
 import app.throwback.web.rules.UNKNOWN_KEEP
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -37,20 +37,35 @@ import kotlinx.coroutines.withTimeoutOrNull
  */
 class RelayListenerService : NotificationListenerService() {
 
-    // One notification at a time, in arrival order: a "removed" never overtakes its "posted".
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    /**
+     * What Android reports, and the notifications to relay: two queues, each handled in arrival order
+     * and one item at a time to its end. (A dispatcher limited to one thread still interleaves
+     * coroutines where they wait: while the rules or the time limit loaded, a call's "removed" ran
+     * before its "posted", which kept the call, and Instagram, allowed for good; an older message
+     * could replace a newer one.) Calls are followed in the first queue, so a relay waiting for the
+     * time limit (up to 2 s at a cold start) never delays the guard seeing a call.
+     */
+    private val events = Channel<Event>(Channel.UNLIMITED)
+    private val toRelay = Channel<Pair<NotificationFacts, NotificationKind>>(Channel.UNLIMITED)
+    @Volatile
     private var classifier: Pair<NotificationRules?, NotificationClassifier>? = null
 
+    private sealed interface Event {
+        class Connected(val active: List<NotificationFacts>) : Event
+        class Posted(val facts: NotificationFacts) : Event
+        class Removed(val key: String, val at: Long) : Event
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        scope.launch { for (e in events) follow(e) }
+        scope.launch { for ((facts, kind) in toRelay) relay(facts, kind) }
+    }
+
     override fun onListenerConnected() {
-        val active = snapshotActive()
-        scope.launch {
-            val c = classifier()
-            CallState.tracker.onConnected(active.filter { c.classify(it) == NotificationKind.CALL }.map { it.key }.toSet())
-            // Notifications that arrived while the relay wasn't running are sorted now.
-            active.forEach { handle(it, alreadyTracked = true) }
-            MessagesFeature.sync(applicationContext)
-        }
+        events.trySend(Event.Connected(snapshotActive()))
     }
 
     override fun onListenerDisconnected() {
@@ -59,16 +74,12 @@ class RelayListenerService : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         sbn ?: return
-        if (!isRelevant(sbn)) return
-        val facts = factsOf(sbn)
-        scope.launch { handle(facts, alreadyTracked = false) }
+        if (isRelevant(sbn)) events.trySend(Event.Posted(factsOf(sbn)))
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?) {
         sbn ?: return
-        if (!isRelevant(sbn)) return
-        val key = sbn.key
-        scope.launch { CallState.tracker.onRemoved(key, SystemClock.elapsedRealtime()) }
+        if (isRelevant(sbn)) events.trySend(Event.Removed(sbn.key, SystemClock.elapsedRealtime()))
     }
 
     override fun onDestroy() {
@@ -76,11 +87,39 @@ class RelayListenerService : NotificationListenerService() {
         super.onDestroy()
     }
 
-    private suspend fun handle(facts: NotificationFacts, alreadyTracked: Boolean) {
+    /** Calls (for the guard) and a pass ended by posting; then the notification goes to the relay. */
+    private suspend fun follow(e: Event) {
+        when (e) {
+            is Event.Connected -> {
+                val c = classifier()
+                val sorted = e.active.map { it to c.classify(it) }
+                CallState.tracker.onConnected(sorted.filter { it.second == NotificationKind.CALL }.map { it.first.key }.toSet())
+                // Notifications that arrived while the relay wasn't running are sorted now.
+                sorted.forEach { toRelay.send(it) }
+                MessagesFeature.sync(applicationContext)
+            }
+            is Event.Posted -> {
+                val kind = classifier().classify(e.facts)
+                // Instagram started posting (a story or post made through a pass): the pass has done its job.
+                endPassWhenPosting(e.facts)
+                if (kind == NotificationKind.CALL) {
+                    CallState.tracker.onCallShowing(e.facts.key)
+                } else {
+                    // An updated notification that stopped being a call (e.g. "Missed call") ends it.
+                    CallState.tracker.onRemoved(e.facts.key, SystemClock.elapsedRealtime())
+                }
+                toRelay.send(e.facts to kind)
+            }
+            is Event.Removed -> {
+                CallState.tracker.onRemoved(e.key, e.at)
+                // And any call no longer showing: a removal Android never reported must not keep it going.
+                activeKeys()?.let { CallState.tracker.keepOnly(it, e.at) }
+            }
+        }
+    }
+
+    private suspend fun relay(facts: NotificationFacts, kind: NotificationKind) {
         val rules = notificationRules()
-        val kind = classifier().classify(facts)
-        // Instagram started posting (a story or post made through a pass): the pass has done its job.
-        endPassWhenPosting(facts)
         if (BuildConfig.DEBUG) {
             // Test builds: Instagram's real notification labels, to fill the rules from a real phone.
             // Labels only: never the title, text, names, tags, groups or thread ids.
@@ -91,14 +130,6 @@ class RelayListenerService : NotificationListenerService() {
                     "summary=${facts.groupSummary} fullScreen=${facts.fullScreenIntent} " +
                     "grouped=${facts.group != null} -> ${kind.ruleName}",
             )
-        }
-        if (!alreadyTracked) {
-            if (kind == NotificationKind.CALL) {
-                CallState.tracker.onCallShowing(facts.key)
-            } else {
-                // An updated notification that stopped being a call (e.g. "Missed call") ends it.
-                CallState.tracker.onRemoved(facts.key, SystemClock.elapsedRealtime())
-            }
         }
         if (kind == NotificationKind.CALL) return
         if (!MessagesFeature.isSetUp(this)) return
@@ -168,6 +199,13 @@ class RelayListenerService : NotificationListenerService() {
         emptyList()
     }
 
+    /** Keys of the relevant notifications showing now, or null if Android won't say. */
+    private fun activeKeys(): Set<String>? = try {
+        activeNotifications.orEmpty().filter(::isRelevant).map { it.key }.toSet()
+    } catch (e: RuntimeException) {
+        null // not connected (SecurityException) or being (un)bound
+    }
+
     private fun isRelevant(sbn: StatusBarNotification): Boolean =
         sbn.packageName in InstagramPackages.ALL || RelayDebug.isFake(sbn.packageName, packageName, sbn.tag)
 
@@ -211,7 +249,7 @@ class RelayListenerService : NotificationListenerService() {
         }
     }
 
-    /** Instagram started posting (a story or post made through a pass): the pass has done its job. */
+    /** Ends a story or create pass when Instagram's posting notification shows. */
     private fun endPassWhenPosting(facts: NotificationFacts) {
         val now = SystemClock.elapsedRealtime()
         if (!GuardPass.active(now)) return

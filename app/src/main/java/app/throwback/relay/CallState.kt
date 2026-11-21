@@ -45,6 +45,16 @@ internal class CallTracker {
         val left = it.activeCalls - key
         it.copy(activeCalls = left, lastCallEndedAt = if (left.isEmpty()) now else it.lastCallEndedAt)
     }
+
+    /**
+     * Keeps only the calls still [showing] (the keys of the notifications Android shows now): a
+     * removal that was never reported must not keep a call, and with it Instagram, allowed.
+     */
+    fun keepOnly(showing: Set<String>, now: Long) = _state.update {
+        val left = it.activeCalls intersect showing
+        if (left.size == it.activeCalls.size) return@update it
+        it.copy(activeCalls = left, lastCallEndedAt = if (left.isEmpty()) now else it.lastCallEndedAt)
+    }
 }
 
 /** The process-wide call state (relay and guard run in the same process). */

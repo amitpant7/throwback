@@ -36,6 +36,20 @@ class CallTrackerTest {
     }
 
     @Test
+    fun `calls no longer showing are dropped, others kept`() {
+        val t = CallTracker()
+        t.onConnected(setOf("a", "b"))
+        t.keepOnly(setOf("a", "message"), now = 1_000)
+        assertEquals(setOf("a"), t.state.value.activeCalls)
+        assertNull(t.state.value.lastCallEndedAt)
+        t.keepOnly(setOf("a"), now = 2_000) // nothing to drop
+        assertNull(t.state.value.lastCallEndedAt)
+        t.keepOnly(emptySet(), now = 3_000) // its removal was never reported
+        assertFalse(t.state.value.inCall)
+        assertEquals(3_000L, t.state.value.lastCallEndedAt)
+    }
+
+    @Test
     fun `grace after a call`() {
         val s = CallSnapshot(listenerConnected = true, lastCallEndedAt = 10_000)
         assertTrue(s.inCallOrGrace(now = 10_000, graceMillis = 5_000))

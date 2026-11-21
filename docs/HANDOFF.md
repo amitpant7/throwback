@@ -152,6 +152,11 @@ editor screens (they can't render on the emulator).
 - `ui_prefs` is not in Auto Backup, so a reinstall forgets the Instagram connection (the owner
   accepted reinstalling as the emergency exit).
 
+**Website (owner, 2026-11-21):** pages for `amitpant.com.np/throwback` (app page with a Netlify contact
+form, privacy policy, thanks page) were handed over as a zip for the site's repository; `PRIVACY.md`
+here is the same policy. To do once the page is live: About's links (privacy policy, contact, website)
+point there, and the page's Google Play button gets the store link when the app is published.
+
 **Owner's answers of 2026-11-21, built** (DECISIONS.md #34):
 - [x] a. Suggested people in the home feed and on Discover people
 - [x] b. Calls unlock only the call screen (allowed as before when it can't be recognised)

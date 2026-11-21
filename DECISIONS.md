@@ -85,7 +85,7 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     shown, tagged "Discover · not someone you follow". Per 5 minutes of time actually spent on the feed:
     at most 1 video/reel and 1 photo post; at most 20 a day; only after 8 posts from people you follow
     since the previous one; never after "You're all caught up". Always on, no setting.
-13h. **Suggested people stay** (owner, 2026-11-21): "Suggested for you" lists of accounts on the
+13k. **Suggested people stay** (owner, 2026-11-21): "Suggested for you" lists of accounts on the
     notifications page and on profiles, and profiles of people you don't follow, are shown as
     Instagram shows them. Only suggested posts in the feed are filtered (13b, 13d).
 13d. **Filter the feed data, not the drawn page** (decided 2026-11-20): ads and suggestions are removed

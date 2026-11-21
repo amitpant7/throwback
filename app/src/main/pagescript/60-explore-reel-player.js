@@ -13,11 +13,17 @@
    */
   var CLIP_MAX = 300;
   var CLIP_ID = '__tb_clips';
-  var clips = { byCode: {}, order: [] };
+  // Each reel notes the pages (clipPage) whose data had it, numbered in the order it came on each.
+  var clips = { byCode: {}, order: [], seq: 0 };
   var clipPlayer = null;
 
   function onExploreOrSearch() {
     return !!state.c && pageActive('explore');
+  }
+
+  /** The Explore page the user is on: its path, plus the query of keyword results (?q=…). */
+  function clipPage() {
+    return location.pathname + location.search;
   }
 
   function cdnUrl(url) {
@@ -48,11 +54,19 @@
   }
 
   function addClip(m) {
-    if (!/^[A-Za-z0-9_-]{5,40}$/.test(m.code) || clips.byCode[m.code]) return;
+    if (!/^[A-Za-z0-9_-]{5,40}$/.test(m.code)) return;
+    var known = clips.byCode[m.code];
+    if (known) {
+      var page = clipPage(); // the same reel on another page (Explore and a hashtag)
+      if (!known.pages[page]) known.pages[page] = ++clips.seq;
+      return;
+    }
     var v = pickClipVideo(m.video_versions);
     if (!v) return;
     var cands = m.image_versions2 && m.image_versions2.candidates;
     var poster = cands && cands[0] && cdnUrl(cands[0].url) ? cands[0].url : null;
+    var pages = {};
+    pages[clipPage()] = ++clips.seq;
     clips.byCode[m.code] = {
       code: m.code,
       video: v.url,
@@ -64,6 +78,7 @@
       likes: typeof m.like_count === 'number' ? m.like_count : null,
       comments: typeof m.comment_count === 'number' ? m.comment_count : null,
       saved: !!m.has_viewer_saved,
+      pages: pages
     };
     clips.order.push(m.code);
     if (clips.order.length > CLIP_MAX) delete clips.byCode[clips.order.shift()];
@@ -74,8 +89,11 @@
     return m ? m[1] : null;
   }
 
-  /** Reel codes in the order the page shows them, then any others Explore loaded. */
-  function clipList() {
+  /**
+   * Reel codes in the order the page shows them, then the others Explore loaded for that page (not
+   * yet drawn, or already dropped by its list), not those of pages seen before (DECISIONS.md #13i).
+   */
+  function clipList(page) {
     var seen = {};
     var out = [];
     var tiles = document.querySelectorAll('main a[href^="/p/"]');
@@ -86,13 +104,13 @@
         out.push(c);
       }
     }
-    for (var j = 0; j < clips.order.length; j++) {
-      if (!seen[clips.order[j]]) {
-        seen[clips.order[j]] = 1;
-        out.push(clips.order[j]);
-      }
-    }
-    return out;
+    var rest = clips.order.filter(function (code) {
+      return !seen[code] && clips.byCode[code].pages[page];
+    });
+    rest.sort(function (a, b) {
+      return clips.byCode[a].pages[page] - clips.byCode[b].pages[page];
+    });
+    return out.concat(rest);
   }
 
   function openClipFromTap(e) {
@@ -410,7 +428,8 @@
   }
 
   function openClipPlayer(code) {
-    var list = clipList();
+    var page = clipPage();
+    var list = clipList(page);
     var start = Math.max(0, list.indexOf(code));
     var root = document.createElement('div');
     root.id = CLIP_ID;
@@ -440,7 +459,7 @@
     mute.className = 'tbc-mute';
     root.appendChild(mute);
     clipPlayer = { root: root, strip: strip, left: left, mute: mute, list: [], clips: [], slides: [], current: -1,
-      muted: false, observer: null, muteTimer: 0 };
+      muted: false, observer: null, muteTimer: 0, page: page };
     for (var i = 0; i < list.length; i++) addClipSlide(list[i]);
     clipPlayer.observer = typeof IntersectionObserver === 'function' ? new IntersectionObserver(function (entries) {
       for (var k = 0; k < entries.length; k++) {
@@ -538,7 +557,7 @@
     // Near the end: let Explore load its next page underneath, and take what it learned.
     if (i >= p.slides.length - 3) {
       if (onExploreGrid()) window.scrollBy(0, (window.innerHeight || 800) * 3);
-      var more = clipList();
+      var more = clipList(p.page); // the address may show a post's page meanwhile (like, save)
       for (var j = 0; j < more.length; j++) addClipSlide(more[j]);
     }
   }

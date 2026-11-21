@@ -26,7 +26,7 @@ internal enum class RelayTarget {
 internal data class RelayContext(
     /** The daily time limit is locked right now. */
     val locked: Boolean,
-    /** The extra types the user switched on in Settings → Messages & calls. */
+    /** The extra types the user switched on in Settings → Connect → Instagram. */
     val extras: Set<ExtraNotification>,
     /** Throwback may post notifications (Android 13+ permission, channel not blocked). */
     val canPost: Boolean,

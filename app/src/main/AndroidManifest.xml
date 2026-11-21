@@ -82,7 +82,7 @@
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Digital wellbeing: while the user has turned on Messages and calls, detects when the Instagram app is opened outside a call and returns the user to Throwback." />
+                android:value="Digital wellbeing: while the user has connected the Instagram app to Throwback (Settings, Connect, Instagram), detects when that app is opened outside a call or posting and returns the user to Throwback." />
         </service>
 
         <receiver

@@ -54,12 +54,10 @@ internal object RelayNotifier {
     }
 
     /**
-     * Android refused to (re)start the guard from the background (Android 12+ may): say so, instead
-     * of leaving the Instagram app open without a word. The tap opens Throwback, which starts it.
-     */
-    /**
-     * "Instagram guard is off": Android stopped it, or ([permissionOff]) a permission it needs was
-     * turned off; then the tap opens Settings, where Connect › Instagram says which one.
+     * "Instagram guard is off", instead of leaving the Instagram app open without a word: Android
+     * stopped it or refused to (re)start it from the background (Android 12+ may), and the tap opens
+     * Throwback, which starts it; or ([permissionOff]) a permission it needs was turned off, and the
+     * tap opens Settings, where Connect › Instagram says which one.
      */
     fun showGuardOff(context: Context, permissionOff: Boolean = false) {
         ensureChannels(context)

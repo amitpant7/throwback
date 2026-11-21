@@ -9,7 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
- * Restarts the guard after a reboot or an app update, if Messages & calls is set up. Android allows
+ * Restarts the guard after a reboot or an app update, if the Instagram app is connected. Android allows
  * starting a foreground service from these two broadcasts.
  */
 class BootReceiver : BroadcastReceiver() {

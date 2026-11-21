@@ -5,7 +5,7 @@ import java.time.LocalDate
 
 /**
  * How many notifications from Instagram's "Instagram" group (everything except messages and calls)
- * reached the relay per day, so the Messages & calls screen can suggest turning that group off at
+ * reached the relay per day, so the Connect › Instagram screen can suggest turning that group off at
  * the source. Android doesn't let Throwback read another app's notification switches, but this shows
  * they're on. Counts only: never which notification or what it said. Kept for 14 days.
  */

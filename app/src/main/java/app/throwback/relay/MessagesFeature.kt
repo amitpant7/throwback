@@ -19,8 +19,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * On/off switch for Messages & calls (relay + guard). Nothing runs until the wizard is finished
- * (`messages_setup_done` in ui_prefs) and the permissions are granted; "Turn off" in Settings stops it.
+ * On/off switch for the Instagram app connection (Settings › Connect › Instagram: relay + guard;
+ * "Messages & calls" before 2026-11-20, hence the code's names). Nothing runs until the wizard is
+ * finished (`messages_setup_done` in ui_prefs) and the permissions are granted; "Disconnect
+ * Instagram" stops it.
  *
  * - The relay (RelayListenerService) is bound by Android whenever notification access is granted;
  *   it checks [isSetUp] for every notification and does nothing while it is false.

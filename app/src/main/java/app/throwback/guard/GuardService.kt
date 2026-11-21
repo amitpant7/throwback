@@ -60,8 +60,8 @@ import kotlinx.coroutines.withContext
  * window or picture-in-picture) and no call or pass allows it, it covers the screen with "Use
  * Throwback instead" (display over other apps) and brings Throwback to the front. The cover stays
  * while Instagram stays on screen, stepping aside for a moment now and then so a window left open
- * can be closed. During a call it does nothing; when the call ends and the app is still open, it
- * covers it then.
+ * can be closed. During an Instagram call only its call screens may show (#34b); when the call ends
+ * and the app is still open, it covers it then.
  *
  * Why a foreground service: Android has no callback for "another app came to the front" without an
  * accessibility service (which Play reserves for accessibility tools), so the guard has to ask, and
@@ -480,10 +480,9 @@ class GuardService : Service() {
         private const val SCREEN_OFF_MARGIN_MS = 5_000L
         private const val PERMISSION_CHECK_MS = 10_000L
 
-        /** True while the service is in the foreground (for Settings' status line). */
+        /** True while the service is in the foreground: a refused start then isn't reported as "off". */
         @Volatile
-        var running: Boolean = false
-            private set
+        private var running: Boolean = false
 
         fun start(context: Context) {
             try {

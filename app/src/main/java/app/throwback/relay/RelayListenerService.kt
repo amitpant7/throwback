@@ -23,7 +23,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
- * The Messages & calls relay (DECISIONS.md #26). Android binds it while the user has granted
+ * The Instagram app's notification relay (DECISIONS.md #26). Android binds it while the user has granted
  * notification access.
  *
  * Only the Instagram apps' notifications in this profile are looked at; every other app's are

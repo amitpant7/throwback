@@ -27,8 +27,6 @@ posting, with a guard that keeps the app out of reach otherwise).
 - **"A speed bump, not a cage":** be honest about what the time limit can and can't stop.
 - **Branding:** no Instagram name or logo in Throwback's own branding; "Not affiliated with Instagram
   or Meta" stays on About.
-- **Process:** the owner reviews decisions; propose, then build. They answer quickly and briefly;
-  when something is ambiguous, ask one focused question.
 
 ## 2. Where things are
 
@@ -37,11 +35,9 @@ posting, with a guard that keeps the app out of reach otherwise).
 | Code | github.com/amitpant7/throwback, branch `main`; layout in the [README](../README.md#repository-layout) |
 | Product decisions | `DECISIONS.md` |
 | Architecture, bridge, storage | `docs/ARCHITECTURE.md` |
-| Google Play release: steps and drafts for every form | `docs/PLAY_RELEASE.md` |
 | Page script (one file per area) | `app/src/main/pagescript/` and its README |
 | Filter rules (remote-updatable) | `filters/rules.json` (bundled; fetched daily from `main`) |
 | Development tools | `tools/` and its README |
-| Design mockups (Sage theme, private) | https://claude.ai/artifact/JVunY8kiNTP8abRP43LSGV (Claude can read it with the Artifact tool) |
 
 **Editing `filters/rules.json` changes installed apps within a day** (they fetch it from `main`):
 bump its `version` (yyyymmddNN), keep the rules tests passing, and only push rules the released app
@@ -59,7 +55,7 @@ tools/sort-kotlin-imports.py                             # import order; --fix s
 State at handoff: build passes; 362 unit tests pass; lint has 0 errors and only "newer version
 available" warnings (dependencies date from December 2024; see 5). The page script lints clean as ES5.
 
-Bump `versionCode`/`versionName` in `app/build.gradle.kts` for each build handed to the owner.
+Bump `versionCode`/`versionName` in `app/build.gradle.kts` for each build handed out.
 
 **Debug builds** allow WebView remote debugging: `chrome://inspect`, or the scripts in `tools/`
 (evaluate in the page or inside the page script's scope, memory and CPU profiles, request counts,
@@ -70,10 +66,6 @@ in Throwback and the real Instagram app installed. Start it with
 `sg kvm -c "$HOME/Android/Sdk/emulator/emulator -avd tb35 -no-window -no-audio -no-boot-anim -gpu swangle_indirect -feature -Vulkan"`
 (Vulkan crashes with the Instagram app). Instagram blocks logins from the workstation ("Log in on
 another device"), so never log the emulator out; don't like, follow or save with the test account.
-
-**Owner's phone** (only with the owner present): a reverse SSH tunnel, `adb -H localhost -P 15037`.
-Before every command check `ss -ltnp 'sport = :15037'` shows the tunnel, not a local adb server (kill
-one with `adb -P 15037 kill-server`). Never open stories on the owner's account (it marks them seen).
 
 **Test-build switches** (debug only):
 
@@ -170,10 +162,10 @@ show. Measured on the emulator: 2 errors on each of 3 cold starts with the filte
 (nothing else changed). Hidden by the loading cover; avoiding it would mean letting ads into the first
 render.
 
-**Owner checks on the phone** (can't be done here): "Continue with Facebook" on Instagram's login,
-with its two-factor/checkpoint steps (a step that opens in the browser needs its path in
-`hosts.loginPaths`: a rules change); a real Instagram call (its screen stays open; leaving it to browse
-gets covered); logout twice.
+**Still to check on a phone:** "Continue with Facebook" on Instagram's login, with its
+two-factor/checkpoint steps (a step that opens in the browser needs its path in `hosts.loginPaths`: a
+rules change); a real Instagram call (its screen stays open; minimised, "Back to your Instagram call"
+returns to it); logout twice.
 
 **Restructure (2026-11-21, later).** The packages depended on each other in circles (`core` was both
 the shared kit and the wiring; `relay` and `guard` called each other; saved flags lived with the
@@ -207,17 +199,12 @@ emulator: update → "guard is off" + setup shows the permission → allow again
   `tip_small` ($3), `tip_medium` ($10), `tip_large` ($25); owned tips restore Make It Yours at start,
   paid ones are acknowledged, a tip is used up only just before it is bought again (DECISIONS.md #4d).
   Checked on the emulator only as far as a build not from Play goes ("Tips work in the Google Play
-  version"). **Owner, in Play Console:** a payments profile; the three products with those ids and
-  prices (India by hand, #4b); then a test purchase from a testing track with a license tester.
-  Still to settle: the gig ticket's prism image (`ui_tip_rock`), source and licence.
+  version"); a real purchase needs the products in Play Console and a license tester. Still to
+  settle: the gig ticket's prism image (`ui_tip_rock`), source and licence.
 - **Release signing is wired (2026-11-21):** `app/build.gradle.kts` signs release builds with the
   upload key named in a git-ignored `keystore.properties`; checked with a throwaway key (signed APK
-  and AAB), and without the file the build stays unsigned. The owner creates the real key
-  (docs/PLAY_RELEASE.md, 2).
-- **docs/PLAY_RELEASE.md** has the Play Console steps and drafts: listing texts, reviewer steps, the
-  foreground-service declaration, content rating, the tip products. **Owner's decision there:** the
-  Data safety answer (Google counts data sent through a web view the app controls). Still to do: the
-  owner's story in the README "Why" section.
+  and AAB), and without the file the build stays unsigned. The Play Console steps themselves are
+  kept outside the repository.
 - Optional: an enforced Kotlin formatter (ktlint via Gradle). Downloading and running it was not
   permitted in the 2026-11-20 session, so `.editorconfig`, Android lint and
   `tools/sort-kotlin-imports.py` (ktlint's import order) are the standard for now.
@@ -226,25 +213,6 @@ emulator: update → "guard is off" + setup shows the permission → allow again
 - Accessibility under the lock (`clearAndSetSemantics {}` on the WebView): verify with TalkBack.
 - `ui_prefs` is not in Auto Backup, so a reinstall forgets the Instagram connection (the owner
   accepted reinstalling as the emergency exit).
-
-**Website (owner, 2026-11-21):** pages for `amitpant.com.np/throwback` (app page with a Netlify contact
-form, privacy policy, thanks page) were handed over as a zip for the site's repository; `PRIVACY.md`
-here is the same policy. To do once the page is live: About's links (privacy policy, contact, website)
-and Support's "Report something Throwback missed" (DECISIONS.md #34p) point there, and the page's
-Google Play button gets the store link when the app is published.
-
-**Owner's answers of 2026-11-21, built** (DECISIONS.md #34):
-- [x] a. Suggested people in the home feed and on Discover people
-- [x] b. Calls unlock only the call screen (allowed as before when it can't be recognised)
-- [x] c. Offer to connect the Instagram app after turning a limit on
-- [x] d. Remote rules tap only dismiss buttons
-- [x] e. Chat reel viewer detection and Close labels into the rules
-- [x] f. Connect › Instagram setup mentions clones and work profiles
-- [x] g. "Connect Instagram to Throwback" marked Recommended after the first login
-- [x] i. Welcome screen: "Free, and the code is public on GitHub"
-- [x] n. A profile's Tagged tab shows again
-- [ ] p. Report link to the website's contact form (once the site is live)
-- h, j, k, l, m, o need no code (decisions; the design canvas was updated on 2026-11-21).
 
 ## 6. How the home feed is filtered
 

@@ -9,7 +9,7 @@ plugins {
 
 /*
  * Release signing with the Google Play upload key, kept outside the repository. A git-ignored
- * keystore.properties at the repository root names it (docs/PLAY_RELEASE.md, "Upload key"):
+ * keystore.properties at the repository root names it:
  *   storeFile=/absolute/path/to/throwback-upload.jks
  *   storePassword=...
  *   keyAlias=upload

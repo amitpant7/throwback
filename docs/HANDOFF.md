@@ -157,7 +157,7 @@ editor screens (they can't render on the emulator).
 - [ ] b. Calls unlock only the call screen (allowed as before when it can't be recognised)
 - [x] c. Offer to connect the Instagram app after turning a limit on
 - [x] d. Remote rules tap only dismiss buttons
-- [ ] e. Chat reel viewer detection and Close labels into the rules
+- [x] e. Chat reel viewer detection and Close labels into the rules
 - [x] f. Connect › Instagram setup mentions clones and work profiles
 
 ## 6. How the home feed is filtered

@@ -260,6 +260,17 @@ data class ReelViewerRules(
     val windowMinutes: Int = 10,
     /** After the poster showed, no free swipes for this many minutes (the opened reel still plays). */
     val cooldownMinutes: Int = 60,
+    /**
+     * How the viewer is found from a video playing in a chat: the nearest ancestor, at most [maxDepth]
+     * up, that matches [viewerSelector] (when set) or else scroll-snaps along [snapAxis], and holds at
+     * least [minVideos] videos.
+     */
+    val viewerSelector: String? = null,
+    val snapAxis: String = "y",
+    val minVideos: Int = 2,
+    val maxDepth: Int = 14,
+    /** The viewer's own Close button (its aria-label), which the page presses after the poster. Dismiss labels only. */
+    val closeLabels: List<String> = listOf("Close"),
 )
 
 @Serializable

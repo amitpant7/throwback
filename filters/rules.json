@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112038,
+  "version": 2026112039,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -207,11 +207,15 @@
     "videoKB": 400
   },
   "reelViewer": {
-    "note": "A reel opened from a chat plays in Instagram's full-screen swipe viewer (same address, a vertical scroll-snap strip of videos). The opened reel is free; the poster shows on a random swipe between posterOnSwipeMin and posterOnSwipeMax (picked each time a new count starts; swipes count within windowMinutes), then the viewer stops. After the poster, no free swipes for cooldownMinutes (stored on the device, so restarting doesn't reset it).",
+    "note": "A reel opened from a chat plays in Instagram's full-screen swipe viewer (same address, a vertical scroll-snap strip of videos). The opened reel is free; the poster shows on a random swipe between posterOnSwipeMin and posterOnSwipeMax (picked each time a new count starts; swipes count within windowMinutes), then the viewer stops and the page presses its Close (closeLabels, dismiss labels only). After the poster, no free swipes for cooldownMinutes (stored on the device, so restarting doesn't reset it). The viewer: the nearest ancestor of the playing video, at most maxDepth up, matching viewerSelector if set, else scroll-snapping along snapAxis, with at least minVideos videos.",
     "posterOnSwipeMin": 1,
     "posterOnSwipeMax": 4,
     "windowMinutes": 10,
-    "cooldownMinutes": 60
+    "cooldownMinutes": 60,
+    "snapAxis": "y",
+    "minVideos": 2,
+    "maxDepth": 14,
+    "closeLabels": ["Close", "Schließen", "Fermer", "Cerrar", "Fechar", "Chiudi"]
   },
   "stories": {
     "note": "Seen on the owner's phone 2026-11-20: stories come from /graphql/query (PolarisStoriesV3ReelPageGallery[Pagination]Query, key xdt_api__v1__feed__reels_media__connection) in batches covering upcoming people; story ads come separately (PolarisStoriesV3AdsPoolQuery, key xdt_injected_story_units) and are emptied. Videos are fetched in pieces (bytestart/byteend). Look-ahead keeps the first prefetchKB of the next prefetchAhead videos in memory and hands them to the player.",

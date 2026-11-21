@@ -24,12 +24,15 @@
     saveJson(REELS_KEY, log);
   }
 
-  /** The swipe viewer around a video: a vertical scroll-snap container holding several videos. */
-  function reelViewerOf(video) {
+  /**
+   * The swipe viewer around a video (rules: reelViewer): the nearest ancestor that matches the rules'
+   * selector, or else scroll-snaps along their axis (a vertical strip), holding enough videos.
+   */
+  function reelViewerOf(video, rv) {
     var n = video.parentElement;
-    for (var depth = 0; n && depth < 14 && n !== document.body; depth++, n = n.parentElement) {
-      var snap = getComputedStyle(n).scrollSnapType || '';
-      if (snap.indexOf('y') === 0 && n.querySelectorAll('video').length >= 2) return n;
+    for (var depth = 0; n && depth < rv.maxDepth && n !== document.body; depth++, n = n.parentElement) {
+      var isViewer = rv.selector ? n.matches(rv.selector) : (getComputedStyle(n).scrollSnapType || '').indexOf(rv.snapAxis) === 0;
+      if (isViewer && n.querySelectorAll('video').length >= rv.minVideos) return n;
     }
     return null;
   }
@@ -41,7 +44,7 @@
     if (reels.viewer && !reels.viewer.isConnected) reels.viewer = reels.current = null;
     // Chats only (DECISIONS 13f): every other video play (the feed autoplays) skips the style lookups.
     if (!rv || !v || v.tagName !== 'VIDEO' || !pageActive('direct') || clipPlayer) return;
-    var viewer = reelViewerOf(v);
+    var viewer = reelViewerOf(v, rv);
     if (!viewer) return;
     if (viewer.hasAttribute(ATTR_REEL_STOP)) {
       v.pause();
@@ -74,9 +77,6 @@
     saveReelLog(log);
   }
 
-  // Instagram's label on the viewer's close button (top left), in the languages the rules cover.
-  var CLOSE_LABELS = ['Close', 'Schließen', 'Fermer', 'Cerrar', 'Fechar', 'Chiudi'];
-
   /**
    * Stops the viewer (no more swiping, videos paused), closes it with its own Close button so the
    * poster appears over the chat, and asks the app for the poster. Closing is done here, by the page,
@@ -94,29 +94,29 @@
   }
 
   /**
-   * Clicks the viewer's own Close: the visible, top-most element labelled Close (the chat underneath
-   * has hidden ones too). True when a stopped viewer was there and the button was found.
+   * Clicks the viewer's own Close: the visible, top-most element labelled as the rules' closeLabels
+   * (the chat underneath has hidden ones too). True when a stopped viewer was there and the button was found.
    */
   function closeReelViewer() {
     var viewer = document.querySelector('[' + ATTR_REEL_STOP + ']');
-    if (!viewer || !viewer.isConnected) return false;
+    var rv = state.c && state.c.reelViewer;
+    if (!viewer || !viewer.isConnected || !rv) return false;
     var best = null;
     var bestScore = Infinity;
-    CLOSE_LABELS.forEach(function (label) {
-      var els = document.querySelectorAll('[aria-label="' + label + '"]');
-      for (var i = 0; i < els.length; i++) {
-        var b = els[i].closest('[role="button"], button, a') || els[i];
-        var r = b.getBoundingClientRect();
-        if (r.width <= 0 || r.height <= 0 || r.bottom <= 0 || r.top >= window.innerHeight) continue;
-        var hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-        if (!hit || !(hit === b || b.contains(hit))) continue;
-        var score = r.top + r.left;
-        if (score < bestScore) {
-          bestScore = score;
-          best = b;
-        }
+    var labelled = document.querySelectorAll('[aria-label]');
+    for (var i = 0; i < labelled.length; i++) {
+      if (!rv.closeLabels.has(norm(labelled[i].getAttribute('aria-label')))) continue;
+      var b = labelled[i].closest('[role="button"], button, a') || labelled[i];
+      var r = b.getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0 || r.bottom <= 0 || r.top >= window.innerHeight) continue;
+      var hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      if (!hit || !(hit === b || b.contains(hit))) continue;
+      var score = r.top + r.left;
+      if (score < bestScore) {
+        bestScore = score;
+        best = b;
       }
-    });
+    }
     if (!best) return false;
     viewer.removeAttribute(ATTR_REEL_STOP);
     reels.viewer = null;

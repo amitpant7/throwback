@@ -28,6 +28,9 @@ object RulesValidator {
 
     private const val MAX_SELECTOR = 1000
     private const val MAX_LIST = 300
+
+    /** Values of CSS scroll-snap-type's axis that the reel viewer's strip may snap along. */
+    private val SNAP_AXES = setOf("y", "x", "block", "inline", "both")
     private const val MAX_PACKAGES = 20
 
     fun validate(rules: FilterRules): List<String> {
@@ -183,6 +186,11 @@ object RulesValidator {
             }
             check(rv.windowMinutes in 1..1440) { "reelViewer.windowMinutes out of range" }
             check(rv.cooldownMinutes in 0..1440) { "reelViewer.cooldownMinutes out of range" }
+            rv.viewerSelector?.let { checkSelector(it, "reelViewer.viewerSelector", errors) }
+            check(rv.snapAxis in SNAP_AXES) { "reelViewer.snapAxis must be one of $SNAP_AXES" }
+            check(rv.minVideos in 1..10 && rv.maxDepth in 1..30) { "reelViewer.minVideos or maxDepth out of range" }
+            check(rv.closeLabels.isNotEmpty() && rv.closeLabels.size <= MAX_LIST) { "reelViewer.closeLabels size" }
+            rv.closeLabels.forEach { check(DismissLabels.allows(it)) { "reelViewer.closeLabels: '$it' is not a dismiss button" } }
         }
         rules.settingsSection?.let { ss ->
             pattern(ss.path, "settingsSection.path")

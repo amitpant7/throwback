@@ -127,7 +127,12 @@
       minSwipe: typeof rv.posterOnSwipeMin === 'number' ? rv.posterOnSwipeMin : 1,
       maxSwipe: typeof rv.posterOnSwipeMax === 'number' ? rv.posterOnSwipeMax : 4,
       windowMs: (typeof rv.windowMinutes === 'number' ? rv.windowMinutes : 10) * 60000,
-      cooldownMs: (typeof rv.cooldownMinutes === 'number' ? rv.cooldownMinutes : 60) * 60000
+      cooldownMs: (typeof rv.cooldownMinutes === 'number' ? rv.cooldownMinutes : 60) * 60000,
+      selector: validSelector(rv.viewerSelector) ? rv.viewerSelector : null,
+      snapAxis: typeof rv.snapAxis === 'string' ? rv.snapAxis : 'y',
+      minVideos: typeof rv.minVideos === 'number' ? rv.minVideos : 2,
+      maxDepth: typeof rv.maxDepth === 'number' ? rv.maxDepth : 14,
+      closeLabels: textSet(rv.closeLabels && rv.closeLabels.length ? rv.closeLabels : ['Close'])
     } : null;
     var ss = rules.settingsSection;
     var ssRe = ss && toRegex(ss.path);

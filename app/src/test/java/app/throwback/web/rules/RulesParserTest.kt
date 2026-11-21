@@ -152,6 +152,12 @@ class RulesParserTest {
     }
 
     @Test
+    fun `the chat reel viewer's close labels must be dismiss buttons`() { // DECISIONS.md #34d, #34e
+        assertRejected(TestRules.bundledWith { it.replace("\"closeLabels\": [\"Close\",", "\"closeLabels\": [\"Follow\",") }, "not a dismiss button")
+        assertRejected(TestRules.bundledWith { it.replace("\"snapAxis\": \"y\"", "\"snapAxis\": \"diagonal\"") }, "snapAxis")
+    }
+
+    @Test
     fun `duplicate rule ids are rejected`() {
         assertRejected(TestRules.bundledWith { it.replace("\"id\": \"tagged-tab\"", "\"id\": \"reels-links\"") }, "duplicate rule id")
     }

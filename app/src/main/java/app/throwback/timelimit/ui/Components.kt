@@ -5,7 +5,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -21,7 +27,9 @@ import androidx.lifecycle.repeatOnLifecycle
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.engine.TimeLimitView
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /*
  * Pieces shared by the lock screens and the limit settings. The UI kit both areas use is in core/ui;
@@ -47,6 +55,37 @@ internal fun rememberLiveView(controller: DefaultTimeLimitController): State<Tim
         }
     }
     return controller.view.collectAsStateWithLifecycle()
+}
+
+// ---- Actions ------------------------------------------------------------------------------
+
+/**
+ * One action at a time on a screen (checking a PIN, saving a limit): [running] is true from the tap
+ * until the work has ended, also when it failed or the screen went away. It is set before the work's
+ * coroutine starts (that only happens on the next frame), so a quick second tap does nothing.
+ */
+@Stable
+internal class BusyAction(private val scope: CoroutineScope) {
+    var running by mutableStateOf(false)
+        private set
+
+    fun run(work: suspend () -> Unit) {
+        if (running) return
+        running = true
+        scope.launch {
+            try {
+                work()
+            } finally {
+                running = false
+            }
+        }
+    }
+}
+
+@Composable
+internal fun rememberBusyAction(): BusyAction {
+    val scope = rememberCoroutineScope()
+    return remember(scope) { BusyAction(scope) }
 }
 
 // ---- Text ---------------------------------------------------------------------------------

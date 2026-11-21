@@ -14,7 +14,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,7 +26,6 @@ import app.throwback.core.ui.TbTopBar
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.TimeLimitView
-import kotlinx.coroutines.launch
 
 /** "Turn off Messages & calls" while a limit is on: PIN, then it turns off tomorrow. */
 @Composable
@@ -70,8 +68,7 @@ internal fun PinPrompt(
     subtitle: String? = null,
     showHeader: Boolean = true,
 ) {
-    val scope = rememberCoroutineScope()
-    var busy by remember { mutableStateOf(false) }
+    val checking = rememberBusyAction()
     var attempt by remember { mutableIntStateOf(0) }
     var lastResult by remember { mutableStateOf<ActionResult?>(null) }
 
@@ -82,15 +79,13 @@ internal fun PinPrompt(
                 title = title,
                 eyebrow = eyebrow,
                 subtitle = subtitle,
-                message = if (busy) stringResource(R.string.tl_checking) else pinProblemText(lastResult, view.pinBlockedMillis),
-                enabled = !busy && view.pinBlockedMillis == 0L,
+                message = if (checking.running) stringResource(R.string.tl_checking) else pinProblemText(lastResult, view.pinBlockedMillis),
+                enabled = !checking.running && view.pinBlockedMillis == 0L,
                 clearKey = attempt,
                 topPadding = if (showHeader) 16.dp else 64.dp,
                 onPin = { pin ->
-                    scope.launch {
-                        busy = true
+                    checking.run {
                         val result = check(pin)
-                        busy = false
                         lastResult = result
                         val ok = result == ActionResult.Done || result is ActionResult.Scheduled
                         when {

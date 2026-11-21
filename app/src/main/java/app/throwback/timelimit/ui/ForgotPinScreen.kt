@@ -14,7 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
@@ -35,7 +34,6 @@ import app.throwback.core.ui.longDurationText
 import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.TimeLimitView
-import kotlinx.coroutines.launch
 
 /**
  * "Forgot PIN?" (mockup 12): start the 3-day reset, watch it count down, cancel it, and once it's
@@ -49,10 +47,9 @@ internal fun ForgotPinScreen(
     onNewPinSaved: () -> Unit = onBack,
 ) {
     val c = ThrowbackTheme.colors
-    val scope = rememberCoroutineScope()
     val reset = view.pinReset
     var settingNewPin by remember { mutableStateOf(false) }
-    var busy by remember { mutableStateOf(false) }
+    val saving = rememberBusyAction()
     var failed by remember { mutableStateOf(false) }
 
     BackHandler { if (settingNewPin) settingNewPin = false else onBack() }
@@ -62,13 +59,11 @@ internal fun ForgotPinScreen(
             headerTitle = stringResource(R.string.tl_reset_title),
             firstTitle = stringResource(R.string.tl_new_pin_title),
             onBack = { settingNewPin = false },
-            busy = busy,
+            busy = saving.running,
             message = if (failed) stringResource(R.string.tl_error_generic) else null,
             onCreated = { pin ->
-                scope.launch {
-                    busy = true
+                saving.run {
                     val result = controller.completePinReset(pin)
-                    busy = false
                     if (result == ActionResult.Done) {
                         settingNewPin = false
                         onNewPinSaved()

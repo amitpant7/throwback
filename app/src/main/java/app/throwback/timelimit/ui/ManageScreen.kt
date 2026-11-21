@@ -135,19 +135,17 @@ internal fun ManageScreen(controller: DefaultTimeLimitController, view: TimeLimi
             onSuccessWithPin = { pin -> page = ManagePage.ChangePinNew(pin) },
         )
         is ManagePage.ChangePinNew -> {
-            var busy by remember { mutableStateOf(false) }
+            val saving = rememberBusyAction()
             var failed by remember { mutableStateOf<ActionResult?>(null) }
             CreatePinFlow(
                 headerTitle = stringResource(R.string.tl_title),
                 firstTitle = stringResource(R.string.tl_new_pin_title),
                 onBack = { home() },
-                busy = busy,
+                busy = saving.running,
                 message = pinProblemText(failed, view.pinBlockedMillis),
                 onCreated = { newPin ->
-                    scope.launch {
-                        busy = true
+                    saving.run {
                         val result = controller.changePin(p.currentPin, newPin)
-                        busy = false
                         if (result is ActionResult.Scheduled) home(Notice.PinChanged) else failed = result
                     }
                 },

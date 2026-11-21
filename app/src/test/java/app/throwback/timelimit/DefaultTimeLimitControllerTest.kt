@@ -22,15 +22,23 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.IOException
 import java.time.LocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DefaultTimeLimitControllerTest {
 
-    /** Saves go through the JSON codec, like the real DataStore file. */
-    private class MemoryStore(var text: String? = null) : StateStore {
+    /** Saves go through the JSON codec, like the real DataStore file. [failReads] reads fail first. */
+    private class MemoryStore(var text: String? = null, var failReads: Int = 0) : StateStore {
         var saves = 0
-        override suspend fun load(): TimeLimitState = text?.let(StateCodec::decode) ?: TimeLimitState()
+        override suspend fun load(): TimeLimitState {
+            if (failReads > 0) {
+                failReads--
+                throw IOException("read failed")
+            }
+            val t = text ?: return TimeLimitState()
+            return StateCodec.decode(t) ?: throw IOException("unreadable")
+        }
         override suspend fun save(state: TimeLimitState) {
             text = StateCodec.encode(state.persistent())
             saves++
@@ -210,6 +218,39 @@ class DefaultTimeLimitControllerTest {
         assertEquals(0, store.saves)
         runCurrent()
         assertEquals(45, store.stored()!!.limitMinutes)
+    }
+
+    @Test
+    fun `a failed read is tried again before the limit is taken as missing`() = runTest {
+        val store = MemoryStore(StateCodec.encode(TimeLimitState(limitMinutes = 30)), failReads = 2)
+        val c = controller(store)
+        advanceTimeBy(SEC)
+        runCurrent()
+        assertTrue(c.ready.value)
+        assertEquals(30, c.view.value.limitMinutes)
+    }
+
+    @Test
+    fun `a saved state that can't be read is kept until a new limit is set up`() = runTest {
+        // E.g. restored from a newer version's backup. Throwback works without a limit meanwhile...
+        val unreadable = StateCodec.encode(TimeLimitState(limitMinutes = 30)).replace("\"version\":1", "\"version\":2")
+        val store = MemoryStore(unreadable)
+        val c = controller(store)
+        advanceTimeBy(SEC)
+        runCurrent()
+        assertTrue(c.ready.value)
+        assertEquals(LockState.Disabled, c.state.value)
+        // ...but doesn't write "no limit" over it: the next start (or an update) can still read it.
+        c.onForeground(WebMode.FULL)
+        advanceTimeBy(20 * MIN)
+        c.onBackground()
+        runCurrent()
+        assertEquals(0, store.saves)
+        assertEquals(unreadable, store.text)
+        // A limit the user sets up replaces it.
+        assertEquals(ActionResult.Done, c.setup(15, "1234"))
+        runCurrent()
+        assertEquals(15, store.stored()!!.limitMinutes)
     }
 
     @Test

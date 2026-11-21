@@ -13,6 +13,7 @@ import app.throwback.timelimit.engine.TimeLimitEngine
 import app.throwback.timelimit.engine.TimeLimitState
 import app.throwback.timelimit.engine.TimeLimitView
 import app.throwback.timelimit.engine.TrustedTime
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -52,6 +53,9 @@ internal class DefaultTimeLimitController(
     private val lock = Any()
     private var current = TimeLimitState()
     private var loaded = false
+
+    /** The saved state couldn't be read: it is kept (not written over) until the user sets up a new limit. */
+    private var keepStored = false
     private var lastSaved: TimeLimitState? = null
     private var lastSaveElapsed: Long? = null
     private var ticker: Job? = null
@@ -75,14 +79,31 @@ internal class DefaultTimeLimitController(
             for (s in saves) runCatching { store.save(s) }
         }
         scope.launch {
-            val stored = withContext(ioDispatcher) { runCatching { store.load() }.getOrNull() } ?: TimeLimitState()
+            val stored = withContext(ioDispatcher) { loadStored() }
             synchronized(lock) {
                 loaded = true
+                // Unreadable: Throwback works without a limit for now, but the saved state stays for the
+                // next start (a passing I/O error) or an update that can read it.
+                keepStored = stored == null
                 // Keep a foreground session that was opened while loading.
-                update(Save.Now) { s, r -> engine.refresh(stored.copy(session = s.session), r) }
+                update(Save.Now) { s, r -> engine.refresh((stored ?: TimeLimitState()).copy(session = s.session), r) }
             }
             _ready.value = true
         }
+    }
+
+    /** The saved state, with a few tries; null if it can't be read. */
+    private suspend fun loadStored(): TimeLimitState? {
+        for (attempt in 1..LOAD_TRIES) {
+            try {
+                return store.load()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (attempt < LOAD_TRIES) delay(LOAD_RETRY_MILLIS)
+            }
+        }
+        return null
     }
 
     // ---- TimeLimitController ---------------------------------------------------------------
@@ -116,7 +137,10 @@ internal class DefaultTimeLimitController(
         if (!loaded) return NOT_READY
         if (!PinHasher.isValidPin(pin)) return BAD_PIN
         val hash = withContext(hashDispatcher) { hasher.hash(pin) }
-        return act { s, r -> engine.setup(s, r, minutes, hash) }
+        return act { s, r ->
+            // A new limit, chosen by the user, replaces a saved state that couldn't be read.
+            engine.setup(s, r, minutes, hash).also { if (it.result == ActionResult.Done) keepStored = false }
+        }
     }
 
     /** Lowering (or picking today's limit again) needs no PIN; raising needs [pin]. */
@@ -249,7 +273,7 @@ internal class DefaultTimeLimitController(
      * every 10 s while Throwback was open, with or without a limit.)
      */
     private fun persist(s: TimeLimitState, r: ClockReading, save: Save) {
-        if (!loaded) return // Never overwrite the stored state with the blank pre-load one.
+        if (!loaded || keepStored) return // Never overwrite the stored state with a blank one.
         val p = s.persistent()
         val previous = lastSaved
         if (p == previous) return
@@ -271,6 +295,8 @@ internal class DefaultTimeLimitController(
     }
 
     private companion object {
+        const val LOAD_TRIES = 3
+        const val LOAD_RETRY_MILLIS = 300L
         val NOT_READY = ActionResult.NotAllowed("Still loading")
         val BAD_PIN = ActionResult.NotAllowed("PIN must be 4 digits")
     }

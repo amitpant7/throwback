@@ -14,10 +14,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import java.io.IOException
 
 /** Where the controller loads and saves the engine state. */
 internal interface StateStore {
+    /**
+     * The saved state, or a blank one (no limit) when nothing is saved. Throws when something is saved
+     * but can't be read (an I/O error, or a state this version doesn't understand), so that it isn't
+     * taken for "no limit" and written over.
+     */
     suspend fun load(): TimeLimitState
+
     suspend fun save(state: TimeLimitState)
 }
 
@@ -27,8 +34,10 @@ internal interface StateStore {
  */
 internal class DataStoreStateStore(private val dataStore: DataStore<Preferences>) : StateStore {
 
-    override suspend fun load(): TimeLimitState =
-        dataStore.data.first()[KEY]?.let(StateCodec::decode) ?: TimeLimitState()
+    override suspend fun load(): TimeLimitState {
+        val text = dataStore.data.first()[KEY] ?: return TimeLimitState()
+        return StateCodec.decode(text) ?: throw IOException("The saved time-limit state can't be read")
+    }
 
     override suspend fun save(state: TimeLimitState) {
         val text = StateCodec.encode(state.persistent())

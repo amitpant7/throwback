@@ -16,22 +16,22 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
 /*
- * Public entry points of the timelimit area, used by core/AppRoot.kt (signatures fixed by the
- * scaffold). The rules live in engine/TimeLimitEngine.kt; DefaultTimeLimitController adds
- * persistence and ticking; ui/ holds the screens.
+ * Entry points of the timelimit area for the rest of the app: TimeLimitModule makes the app-wide
+ * DefaultTimeLimitController (the rules are in engine/TimeLimitEngine.kt, persistence and ticking in
+ * the controller), and the composables below show its screens (ui/).
  */
 
-object TimeLimitModule {
+internal object TimeLimitModule {
     @Volatile
-    private var instance: TimeLimitController? = null
+    private var instance: DefaultTimeLimitController? = null
 
-    /** Called once by ThrowbackApp; return the app-wide controller. Repeat calls return the same one. */
-    fun create(context: Context): TimeLimitController =
+    /** The app-wide controller, made on the first call (ThrowbackApp's start); later calls return the same one. */
+    fun create(context: Context): DefaultTimeLimitController =
         instance ?: synchronized(this) {
             instance ?: build(context.applicationContext).also { instance = it }
         }
 
-    private fun build(app: Context): TimeLimitController = DefaultTimeLimitController(
+    private fun build(app: Context) = DefaultTimeLimitController(
         clock = AndroidClock.create(app),
         store = DataStoreStateStore.create(app),
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),

@@ -22,9 +22,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * The app-wide [TimeLimitController]: wraps [TimeLimitEngine] with persistence, a once-a-second
@@ -129,13 +131,24 @@ internal class DefaultTimeLimitController(
     fun refresh() = update(Save.Periodic) { s, r -> engine.refresh(s, r) }
 
     /**
-     * The lock state right now. [state] is only recomputed when something updates the controller,
+     * The lock state right now, or null until the saved state has loaded ([state] says Disabled until
+     * then, whatever the limit). [state] is only recomputed when something updates the controller,
      * so in the background (the relay, the passes) it could still say Locked the next morning:
      * this refreshes first.
      */
-    fun currentLockState(): LockState {
+    fun currentLockState(): LockState? = synchronized(lock) {
+        if (!loaded) return null
         refresh()
-        return state.value
+        state.value
+    }
+
+    /**
+     * [currentLockState], once the saved state has loaded: for the relay and the guard, which can
+     * start the process themselves. Waits at most [LOAD_WAIT_MILLIS]; null if it hasn't loaded by then.
+     */
+    suspend fun awaitLockState(): LockState? {
+        withTimeoutOrNull(LOAD_WAIT_MILLIS) { ready.first { it } }
+        return currentLockState()
     }
 
     suspend fun setup(minutes: Int, pin: String): ActionResult {
@@ -169,8 +182,10 @@ internal class DefaultTimeLimitController(
     /**
      * Trusted time for the page's own daily counters (Explore minutes, Discover, reel cooldown):
      * how far the trusted wall time is from the phone's clock, and the saved zone's UTC offset then.
+     * Null until the saved state has loaded (before that it would be the phone's own clock).
      */
-    fun pageClock(): PageClockInfo = synchronized(lock) {
+    fun pageClock(): PageClockInfo? = synchronized(lock) {
+        if (!loaded) return null
         val r = clock.now()
         val wall = engine.trustedWall(current.anchor, r)
         val zone = engine.savedZone(current, r)
@@ -301,6 +316,7 @@ internal class DefaultTimeLimitController(
     private companion object {
         const val LOAD_TRIES = 3
         const val LOAD_RETRY_MILLIS = 300L
+        const val LOAD_WAIT_MILLIS = 2_000L
         val NOT_READY = ActionResult.NotAllowed("Still loading")
         val BAD_PIN = ActionResult.NotAllowed("PIN must be 4 digits")
     }

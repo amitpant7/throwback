@@ -4,10 +4,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 /*
- * Contracts between the three feature areas (web, timelimit, ui) and the integration
- * code in MainActivity / AppRoot. Owned by integration: feature agents implement these,
- * they do not change them. If a contract is missing something, say so in your report.
- * See docs/ARCHITECTURE.md.
+ * Types shared by the app's areas (web, timelimit, ui) and the code that joins them (MainActivity,
+ * AppRoot). See docs/ARCHITECTURE.md.
  */
 
 /** What the Instagram WebView is allowed to show. */
@@ -19,7 +17,11 @@ enum class WebMode {
     MESSAGES_ONLY,
 }
 
-/** Daily time limit, implemented in app.throwback.timelimit. */
+/**
+ * What the main screen needs from the daily time limit (app.throwback.timelimit): its lock state,
+ * and when Instagram is in use. The rest of the app (settings, lock screens, relay, guard, passes)
+ * uses the DefaultTimeLimitController that TimeLimitModule makes.
+ */
 interface TimeLimitController {
     val state: StateFlow<LockState>
 
@@ -31,7 +33,7 @@ interface TimeLimitController {
 }
 
 sealed interface LockState {
-    /** No limit configured. */
+    /** No limit configured (also what [TimeLimitController.state] says until the saved state has loaded). */
     data object Disabled : LockState
 
     /** Limit configured and time is left today. */

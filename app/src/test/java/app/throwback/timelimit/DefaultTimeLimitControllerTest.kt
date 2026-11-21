@@ -300,6 +300,18 @@ class DefaultTimeLimitControllerTest {
     }
 
     @Test
+    fun `the lock state is unknown until the saved state has loaded`() = runTest {
+        val reached = TimeLimitState(limitMinutes = 15, usedMillis = 15 * MIN)
+        val d = StandardTestDispatcher(testScheduler)
+        val c = DefaultTimeLimitController(TestClock(this), MemoryStore(StateCodec.encode(reached)), backgroundScope, d, d, PinHasher(1_000))
+        assertEquals(LockState.Disabled, c.state.value) // what the main screen sees meanwhile
+        assertNull(c.currentLockState()) // not Disabled: a pass must not go through on it
+        assertNull(c.pageClock())
+        assertEquals(LockState.Locked, c.awaitLockState()) // waits for the saved state
+        assertNotNull(c.pageClock())
+    }
+
+    @Test
     fun `in the background the lock state is current once asked for, past midnight too`() = runTest {
         val c = controller(MemoryStore())
         c.setup(15, "1234")

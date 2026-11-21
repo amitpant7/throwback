@@ -148,8 +148,8 @@ sealed interface LockPhase {
     /** An extension was just granted (confirmation screen). */
     data object Granted : LockPhase
 
-    /** Both extensions used: locked until local midnight. */
-    data class DoneForToday(val untilMidnightMillis: Long) : LockPhase
+    /** Both extensions used: locked until the next day begins (local midnight, later after a time-zone change). */
+    data class DoneForToday(val untilNextDayMillis: Long) : LockPhase
 }
 
 /** Running "Forgot PIN" countdown. */

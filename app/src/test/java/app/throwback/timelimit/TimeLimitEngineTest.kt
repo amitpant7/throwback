@@ -10,8 +10,10 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 class TimeLimitEngineTest {
 
@@ -216,7 +218,7 @@ class TimeLimitEngineTest {
         h.useUntilLocked() // 09:35
 
         val phase = h.view().lock as LockPhase.DoneForToday
-        assertEquals(14 * HOUR + 25 * MIN, phase.untilMidnightMillis)
+        assertEquals(14 * HOUR + 25 * MIN, phase.untilNextDayMillis)
         // No third extension, no matter how long they wait.
         h.tick(2 * HOUR)
         assertTrue(h.view().lock is LockPhase.DoneForToday)
@@ -357,6 +359,52 @@ class TimeLimitEngineTest {
         h.moveClock(MIN)
         h.refresh()
         assertEquals(day.plusDays(1), h.s.day)
+    }
+
+    /** The review's example: Berlin, then the phone switched to UTC+14 (where it's already tomorrow). */
+    private fun berlinThenKiritimati() = EngineHarness().apply {
+        setup(15)
+        zone = ZoneId.of("Pacific/Kiritimati")
+    }
+
+    private fun EngineHarness.advanceTo(utc: LocalDateTime) {
+        advance(utc.toInstant(ZoneOffset.UTC).toEpochMilli() - real)
+        refresh()
+    }
+
+    @Test
+    fun `after a time-zone switch, every new day still needs 23 hours after the last one began`() {
+        val e = berlinThenKiritimati()
+        e.advanceTo(LocalDateTime.of(2026, 11, 20, 23, 0, 1)) // Midnight in Berlin, the saved zone.
+        assertEquals(LocalDate.of(2026, 11, 21), e.today)
+        e.advanceTo(LocalDateTime.of(2026, 11, 21, 21, 59, 59)) // Long past midnight at UTC+14 (10:00Z)...
+        assertEquals(LocalDate.of(2026, 11, 21), e.today)
+        e.advanceTo(LocalDateTime.of(2026, 11, 21, 22, 0, 1)) // ...but 23 h after this day began.
+        assertEquals(LocalDate.of(2026, 11, 22), e.today)
+        // The next day too counts from when this one really began (22:00Z), not from its midnight (10:00Z).
+        e.advanceTo(LocalDateTime.of(2026, 11, 22, 20, 59, 59))
+        assertEquals(LocalDate.of(2026, 11, 22), e.today)
+        assertEquals(LocalDateTime.of(2026, 11, 22, 21, 0).toInstant(ZoneOffset.UTC).toEpochMilli(), e.engine.pageDay(e.s, e.reading()).second)
+        e.advanceTo(LocalDateTime.of(2026, 11, 22, 21, 0, 1))
+        assertEquals(LocalDate.of(2026, 11, 23), e.today)
+    }
+
+    @Test
+    fun `done for today counts down to when the next day really begins`() {
+        val e = berlinThenKiritimati()
+        e.advanceTo(LocalDateTime.of(2026, 11, 20, 23, 0, 1)) // A new day, now counted at UTC+14.
+        repeat(Rules.MAX_EXTENSIONS_PER_DAY) {
+            e.useUntilLocked()
+            e.tick(5 * MIN)
+            e.extend(pinOk = true)
+            e.acknowledge()
+        }
+        e.useUntilLocked()
+        val phase = e.view().lock as LockPhase.DoneForToday
+        // Not to midnight at UTC+14 (10:00Z): this day began at 23:00Z, so the next one comes at 22:00Z.
+        val next = LocalDateTime.of(2026, 11, 21, 22, 0).toInstant(ZoneOffset.UTC).toEpochMilli()
+        assertEquals(next - e.real, phase.untilNextDayMillis)
+        assertEquals(next, e.engine.pageDay(e.s, e.reading()).second)
     }
 
     @Test
@@ -757,6 +805,6 @@ class TimeLimitEngineTest {
         dst.acknowledge()
         dst.useUntilLocked() // 01:05, before the jump
         val phase = dst.view().lock as LockPhase.DoneForToday
-        assertEquals(21 * HOUR + 55 * MIN, phase.untilMidnightMillis)
+        assertEquals(21 * HOUR + 55 * MIN, phase.untilNextDayMillis)
     }
 }

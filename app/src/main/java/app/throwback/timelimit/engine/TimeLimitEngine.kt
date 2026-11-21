@@ -77,13 +77,23 @@ class TimeLimitEngine {
 
     private fun startOf(day: LocalDate, at: At): Long = day.atStartOfDay(at.zone).toInstant().toEpochMilli()
 
+    /**
+     * When [day] really begins: its midnight in the saved zone, but not before [Rules.MIN_DAY_MILLIS]
+     * after the day before began ([previousStart]), which after a time-zone change can be hours past
+     * midnight. A start taken from midnight instead would let the following day come that much sooner.
+     */
+    private fun dayBegins(day: LocalDate, previousStart: Long?, at: At): Long =
+        max(startOf(day, at), previousStart?.plus(Rules.MIN_DAY_MILLIS) ?: Long.MIN_VALUE)
+
+    /** When the day after [today] begins. [s] is up to date, so its [TimeLimitState.dayStart] is today's. */
+    private fun nextDayBegins(today: LocalDate, s: TimeLimitState, at: At): Long =
+        dayBegins(today.plusDays(1), s.dayStart, at)
+
     /** For the page's daily counters: today, and the trusted time from which the next day may start. */
     internal fun pageDay(s: TimeLimitState, r: ClockReading): Pair<LocalDate, Long> {
-        val at = at(s, r)
-        val today = today(s, at)
-        val next = startOf(today.plusDays(1), at)
-        val earliest = (s.dayStart ?: Long.MIN_VALUE / 2) + Rules.MIN_DAY_MILLIS
-        return today to maxOf(next, earliest)
+        val (st, at) = sync(s, r)
+        val today = st.day!!
+        return today to nextDayBegins(today, st, at)
     }
 
     // ---- Keeping up with time --------------------------------------------------------------
@@ -125,7 +135,7 @@ class TimeLimitEngine {
         if (s.day == null) return s.copy(day = today, dayStart = startOf(today, at))
         return s.copy(
             day = today,
-            dayStart = startOf(today, at),
+            dayStart = dayBegins(today, s.dayStart, at),
             zone = at.reading.zone.id, // a new day: now the phone's current zone counts
             usedMillis = 0,
             extensionsUsed = 0,
@@ -387,7 +397,7 @@ class TimeLimitEngine {
         val phase = when {
             !locked -> null
             s.grantShowing -> LockPhase.Granted
-            extensionsLeft == 0 -> LockPhase.DoneForToday(untilMidnight(today, at))
+            extensionsLeft == 0 -> LockPhase.DoneForToday(max(0L, nextDayBegins(today, s, at) - at.wall))
             else -> {
                 val waited = s.lockedAt?.let { millisSince(it, at) } ?: 0L
                 val left = max(0L, Rules.WAIT_MILLIS - waited)
@@ -410,10 +420,5 @@ class TimeLimitEngine {
             pinReset = reset,
             pinBlockedMillis = blockedFor(s, at),
         )
-    }
-
-    private fun untilMidnight(today: LocalDate, at: At): Long {
-        val midnight = today.plusDays(1).atStartOfDay(at.zone).toInstant().toEpochMilli()
-        return max(0L, midnight - at.wall)
     }
 }

@@ -318,7 +318,7 @@ private fun DoneForTodayScreen(phase: LockPhase.DoneForToday, onOpenMessagesOnly
         Text(stringResource(R.string.tl_done_body), style = UiText.lead, color = c.muted, textAlign = TextAlign.Center)
 
         Spacer(Modifier.height(40.dp))
-        val until = hoursMinutesText(phase.untilMidnightMillis)
+        val until = hoursMinutesText(phase.untilNextDayMillis)
         val untilLabel = stringResource(R.string.tl_until_unlock)
         val untilDescription = stringResource(R.string.tl_until_unlock_cd, until)
         // A card as wide as its text, not the full width.

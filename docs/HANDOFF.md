@@ -81,6 +81,10 @@ one with `adb -P 15037 kill-server`). Never open stories on the owner's account 
 | `files/debug_noscript` | No page script: plain Instagram in the same WebView, as a baseline |
 | `am start … --es debug_open settings` or `messages` | Opens Settings or Connect › Instagram directly |
 | `am start … --ez debug_supporter true` | Acts as if a tip went through: unlocks Make It Yours (stays set) |
+
+APKs installed outside Google Play on Android 13+ get "App was denied access" (Android 15's wording)
+when turning on Notification access: first allow it in Throwback's App info → ⋮ → "Allow restricted
+settings" (the setup's card says so; confirmed on the owner's phone, 2026-11-21).
 | `DebugRelayReceiver` broadcasts | Fake Instagram notifications; make the guard watch another app (see `app/src/debug/`) |
 
 ```bash

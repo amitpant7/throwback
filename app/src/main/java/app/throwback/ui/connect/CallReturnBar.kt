@@ -28,7 +28,7 @@ import app.throwback.core.ui.UiText
 import kotlinx.coroutines.delay
 
 /**
- * "Back to your Instagram call", over everything while an Instagram call runs (DECISIONS.md #34x):
+ * "Back to your Instagram call", over everything (at the bottom) while an Instagram call runs (#34x):
  * the guard keeps the rest of Instagram covered during a call, so a call minimised to its chat
  * lands the user here; this opens the call screen again. Shown only when the tap can work.
  */

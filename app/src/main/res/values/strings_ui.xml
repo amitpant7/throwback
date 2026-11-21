@@ -193,6 +193,7 @@
     <string name="ui_support_fine">Paid through Google Play. Prices shown in your currency.</string>
     <string name="ui_support_how">How tips work</string>
     <string name="ui_support_say_hi">Say Hi on Instagram</string>
+    <string name="ui_link_website">Website</string>
     <string name="ui_link_source">Source code on GitHub</string>
     <string name="ui_link_privacy">Privacy policy</string>
     <string name="ui_filters_updated">Filters updated</string>

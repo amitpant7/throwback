@@ -34,10 +34,16 @@ import app.throwback.web.rules.RulesRepository
 /** Links shown on About & support. */
 internal object AboutLinks {
     const val REPO_URL = "https://github.com/amitpant7/throwback"
-    const val PRIVACY_POLICY_URL = "$REPO_URL/blob/main/PRIVACY.md"
-    const val REPORT_MISSED_URL = "$REPO_URL/issues/new"
-    /** README section explaining tips (Play Billing only; no other payment links: Play policy). */
-    const val HOW_TIPS_WORK_URL = "$REPO_URL#how-tips-work"
+
+    /** The app's page on the developer's website (DECISIONS.md #34p): privacy policy, contact form. */
+    const val WEBSITE_URL = "https://amitpant.com.np/throwback/"
+    const val PRIVACY_POLICY_URL = "${WEBSITE_URL}privacy/"
+
+    /** The website's contact form (no GitHub account needed); it has a "Something Throwback missed" topic. */
+    const val REPORT_MISSED_URL = "${WEBSITE_URL}#contact"
+
+    /** The website's section on tips (Play Billing only; no other payment links: Play policy). */
+    const val HOW_TIPS_WORK_URL = "${WEBSITE_URL}#support"
 
     /** The developer on Instagram (Support → Say Hi), opened in Throwback. */
     const val DEV_INSTAGRAM_HANDLE = "@97m.it"
@@ -74,6 +80,12 @@ internal fun AboutScreen(onBack: () -> Unit, showMessage: (String) -> Unit) {
 
         // Links
         TbCard {
+            NavRow(
+                title = stringResource(R.string.ui_link_website),
+                onClick = { open(AboutLinks.WEBSITE_URL) },
+                minHeight = 52.dp,
+            )
+            CardDivider()
             NavRow(
                 title = stringResource(R.string.ui_link_source),
                 onClick = { open(AboutLinks.REPO_URL) },

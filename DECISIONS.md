@@ -322,8 +322,9 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     n. **A profile's Tagged tab shows** (#13k), like the rest of the profile.
     o. **The short lines stay** ("No Explore grid", "No suggested posts" on the welcome screen and in
        Settings): they give the spirit; Explore's 5 minutes and Discover are explained where they show.
-    p. **"Report something Throwback missed" will open the website's contact form**
-       (amitpant.com.np/throwback) once it is live, instead of a GitHub issue (no account needed).
+    p. **"Report something Throwback missed" opens the website's contact form**
+       (amitpant.com.np/throwback, live since 2026-11-21) instead of a GitHub issue (no account
+       needed). About also links the website and its privacy page; "How tips work" its support section.
     q. **instagram.com in other browsers is out of scope** (Chrome or any other browser isn't
        limited): blocking it would need an accessibility service or a local VPN (Play policy,
        battery), which a speed bump doesn't justify.

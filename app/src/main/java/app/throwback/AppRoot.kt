@@ -200,7 +200,8 @@ fun AppRoot(
         }
 
         // Over everything, Settings and the lock screen included: calls are never blocked (#34x).
-        CallReturnBar(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 8.dp))
+        // At the bottom, just above Instagram's tab bar (owner, 2026-11-21).
+        CallReturnBar(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 64.dp))
     }
 }
 

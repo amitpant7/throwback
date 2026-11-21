@@ -35,6 +35,10 @@ import app.throwback.relay.MessagesFeature
 import app.throwback.relay.RelayDebug
 import app.throwback.relay.RelayListenerService
 import app.throwback.relay.RelayNotifier
+import app.throwback.timelimit.DefaultTimeLimitController
+import app.throwback.timelimit.GuardOffApi
+import app.throwback.timelimit.TimeLimitModule
+import app.throwback.ui.UiPrefs
 import app.throwback.ui.messages.Permissions
 import app.throwback.web.rules.AppStoryRules
 import app.throwback.web.rules.DEFAULT_CALL_GRACE_SECONDS
@@ -238,6 +242,7 @@ class GuardService : Service() {
             val now = SystemClock.elapsedRealtime()
             if (now - lastPermissionCheck > PERMISSION_CHECK_MS) {
                 lastPermissionCheck = now
+                disconnectIfDue()
                 val setUp = MessagesFeature.isSetUp(this)
                 if (!setUp || !MessagesFeature.guardPossible(this)) {
                     Log.i(TAG, "permissions gone or turned off: stopping")
@@ -298,6 +303,21 @@ class GuardService : Service() {
             }
             delay(POLL_MS)
         }
+    }
+
+    /**
+     * A "Disconnect Instagram" scheduled with the PIN (DECISIONS.md #27b) takes effect on the new day
+     * by itself, not only once Throwback is opened (AppRoot does the same then). Disconnected, the
+     * next check stops the guard.
+     */
+    private suspend fun disconnectIfDue() {
+        val limit = TimeLimitModule.create(this) as? DefaultTimeLimitController ?: return
+        if (!limit.ready.value) return
+        limit.refresh() // in the background nothing else moves it to the new day
+        if (GuardOffApi.view(limit)?.value?.guardOffDue != true) return
+        Log.i(TAG, "a scheduled disconnect is due: disconnecting the Instagram app")
+        UiPrefs.from(this).setMessagesSetupDone(false)
+        GuardOffApi.handled(limit)
     }
 
     private fun poll(usm: UsageStatsManager) {

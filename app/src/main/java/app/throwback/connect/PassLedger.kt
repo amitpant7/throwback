@@ -96,7 +96,7 @@ internal data class PassBook(
     private fun countOn(day: Long?, count: Int, today: Long) = if (day != null && day >= today) count else 0
 
     companion object {
-        const val CALL_TAPS_PER_HOUR = 3
+        const val CALL_TAPS_PER_HOUR = 10
         const val SETTINGS_PER_DAY = 5
         const val CREATE_PER_DAY = 10
         private const val HOUR_MS = 3_600_000L

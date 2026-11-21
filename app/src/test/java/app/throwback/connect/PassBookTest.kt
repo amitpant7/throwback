@@ -33,22 +33,24 @@ class PassBookTest {
     }
 
     @Test
-    fun `call button allows 3 tries an hour`() {
+    fun `call button allows 10 tries an hour`() {
+        val max = PassBook.CALL_TAPS_PER_HOUR
+        assertEquals(10, max)
         var b = PassBook()
-        repeat(3) { i ->
+        repeat(max) { i ->
             assertTrue(b.callAllowed(noon + i * m))
             b = b.callTapped(noon + i * m)
         }
-        assertFalse(b.callAllowed(noon + 3 * m))
+        assertFalse(b.callAllowed(noon + max * m))
         assertFalse(b.callAllowed(noon + h - 1)) // the first tap is not yet an hour old
         assertTrue(b.callAllowed(noon + h)) // now it is
-        assertEquals(3, b.callTapped(noon + h).callTaps.size) // and it is dropped
+        assertEquals(max, b.callTapped(noon + h).callTaps.size) // and it is dropped
     }
 
     @Test
     fun `call taps from a clock that was ahead still count`() {
         // Before, a tap "in the future" didn't count, so moving the clock back an hour reset them.
-        val b = PassBook().callTapped(noon).callTapped(noon).callTapped(noon)
+        val b = (1..PassBook.CALL_TAPS_PER_HOUR).fold(PassBook()) { book, _ -> book.callTapped(noon) }
         assertFalse(b.callAllowed(noon - 30 * m))
     }
 

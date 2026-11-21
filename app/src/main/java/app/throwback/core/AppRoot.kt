@@ -44,7 +44,6 @@ import app.throwback.R
 import app.throwback.ThrowbackApp
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.relay.CallInApp
-import app.throwback.timelimit.GuardOffApi
 import app.throwback.timelimit.GuardOffPinScreen
 import app.throwback.timelimit.TimeLimitOverlay
 import app.throwback.timelimit.TimeLimitSettingsScreen
@@ -69,7 +68,6 @@ import app.throwback.web.WebReadiness
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -126,12 +124,12 @@ fun AppRoot(
     // A disconnect of the Instagram app scheduled with the PIN is due (a new day): turn it off now.
     // Only this flag: the whole view changes every second while a limit runs, recomposing AppRoot.
     val guardOffDue by remember {
-        GuardOffApi.view(app.timeLimit)?.map { it.guardOffDue }?.distinctUntilChanged() ?: flowOf(false)
+        app.timeLimit.view.map { it.guardOffDue }.distinctUntilChanged()
     }.collectAsStateWithLifecycle(initialValue = false)
     LaunchedEffect(guardOffDue) {
         if (guardOffDue) {
             UiPrefs.from(appContext).setMessagesSetupDone(false)
-            GuardOffApi.handled(app.timeLimit)
+            app.timeLimit.guardOffHandled()
         }
     }
 
@@ -170,13 +168,12 @@ fun AppRoot(
                         // Mapped and distinct, so the screen doesn't recompose with every tick of the view.
                         state = {
                             remember {
-                                GuardOffApi.view(app.timeLimit)
-                                    ?.map { MessagesOffState(limitOn = it.limitMinutes != null, pendingDate = it.pendingGuardOff) }
-                                    ?.distinctUntilChanged()
-                                    ?: flowOf(MessagesOffState())
+                                app.timeLimit.view
+                                    .map { MessagesOffState(limitOn = it.limitMinutes != null, pendingDate = it.pendingGuardOff) }
+                                    .distinctUntilChanged()
                             }.collectAsStateWithLifecycle(initialValue = MessagesOffState()).value
                         },
-                        cancel = { GuardOffApi.cancel(app.timeLimit) },
+                        cancel = { app.timeLimit.cancelGuardOff() },
                         pinScreen = { onScheduled, onBack -> GuardOffPinScreen(app.timeLimit, onScheduled, onBack) },
                     )
                 },

@@ -11,17 +11,14 @@ import app.throwback.guard.ForegroundTracker.Companion.ACTIVITY_PAUSED
 import app.throwback.guard.ForegroundTracker.Companion.ACTIVITY_RESUMED
 import app.throwback.guard.ForegroundTracker.Companion.ACTIVITY_STOPPED
 import app.throwback.relay.RelayDebug
-import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.TimeLimitModule
 import app.throwback.ui.messages.Permissions
 import app.throwback.web.rules.RulesRepository
 import java.time.LocalDate
 import kotlin.math.max
 import kotlin.math.min
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeoutOrNull
 
 /** One activity event from UsageStatsManager ([time] in the phone's wall ms), copied out so the sum is plain Kotlin. */
 internal data class ActivityEvent(val time: Long, val type: Int, val packageName: String, val className: String?)
@@ -68,7 +65,6 @@ internal object GuardHeartbeat {
 
     /** Read a little before the last beat, to know whether Instagram was already in front then. */
     private const val READ_BEFORE_MS = 10 * 60_000L
-    private const val LOAD_WAIT_MS = 2_000L
     private const val FILE = "guard_heartbeat"
     private const val KEY = "beat"
     private const val TAG = "ThrowbackGuard"
@@ -109,9 +105,9 @@ internal object GuardHeartbeat {
         if (now - last in 0 until STALE_MS) return
         // Without usage access Android returns no events (not an error): keep the beat, count later.
         if (!Permissions.hasUsageAccess(context)) return
-        val limit = TimeLimitModule.create(context) as? DefaultTimeLimitController ?: return
-        withTimeoutOrNull(LOAD_WAIT_MS) { limit.ready.first { it } } ?: return
-        if (limit.currentLockState() != LockState.Disabled) {
+        val limit = TimeLimitModule.create(context)
+        val lockState = limit.awaitLockState() ?: return
+        if (lockState != LockState.Disabled) {
             val today = limit.trustedTime() ?: return
             // Only today's time counts: from midnight of the trusted day, on the phone's clock (the
             // events'). Taken as is, or moved by the phone's clock's offset from the trusted time,

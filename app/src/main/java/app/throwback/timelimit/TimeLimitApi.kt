@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ProcessLifecycleOwner
-import app.throwback.core.TimeLimitController
 import app.throwback.timelimit.data.DataStoreStateStore
 import app.throwback.timelimit.ui.GuardOffPin
 import app.throwback.timelimit.ui.LockOverlay
@@ -47,20 +46,19 @@ internal object TimeLimitModule {
  * [backEnabled] false leaves system Back alone (while Settings covers the lock).
  */
 @Composable
-fun TimeLimitOverlay(
-    controller: TimeLimitController,
+internal fun TimeLimitOverlay(
+    controller: DefaultTimeLimitController,
     onOpenMessagesOnly: () -> Unit,
     onCloseApp: () -> Unit,
     modifier: Modifier = Modifier,
     backEnabled: Boolean = true,
 ) {
-    val impl = controller as? DefaultTimeLimitController ?: return
-    LockOverlay(impl, onOpenMessagesOnly, onCloseApp, modifier, backEnabled)
+    LockOverlay(controller, onOpenMessagesOnly, onCloseApp, modifier, backEnabled)
 }
 
 /** Small "18 min left" chip. Draws nothing when the limit is disabled. */
 @Composable
-fun TimeRemainingChip(controller: TimeLimitController, modifier: Modifier = Modifier) {
+internal fun TimeRemainingChip(controller: DefaultTimeLimitController, modifier: Modifier = Modifier) {
     RemainingChip(controller, modifier)
 }
 
@@ -69,30 +67,15 @@ fun TimeRemainingChip(controller: TimeLimitController, modifier: Modifier = Modi
  * (PIN-protected). [onLimitSet] instead of [onClose] once a new limit is on.
  */
 @Composable
-fun TimeLimitSettingsScreen(controller: TimeLimitController, onClose: () -> Unit, onLimitSet: () -> Unit = onClose) {
-    val impl = controller as? DefaultTimeLimitController ?: return
-    TimeLimitSettings(impl, onClose, onLimitSet)
+internal fun TimeLimitSettingsScreen(controller: DefaultTimeLimitController, onClose: () -> Unit, onLimitSet: () -> Unit = onClose) {
+    TimeLimitSettings(controller, onClose, onLimitSet)
 }
 
 /**
- * Disconnecting the Instagram app while a daily limit is on (needs the PIN, takes effect tomorrow).
- * The [view]'s limitMinutes and pendingGuardOff describe the current state; its guardOffDue means the
- * app should disconnect it now and call [handled].
+ * Disconnecting the Instagram app while a daily limit is on: the PIN, then it happens tomorrow (the
+ * controller's view then has pendingGuardOff, and guardOffDue on that day).
  */
-object GuardOffApi {
-    fun view(controller: TimeLimitController) = (controller as? DefaultTimeLimitController)?.view
-
-    fun cancel(controller: TimeLimitController) {
-        (controller as? DefaultTimeLimitController)?.cancelGuardOff()
-    }
-
-    fun handled(controller: TimeLimitController) {
-        (controller as? DefaultTimeLimitController)?.guardOffHandled()
-    }
-}
-
 @Composable
-fun GuardOffPinScreen(controller: TimeLimitController, onScheduled: () -> Unit, onBack: () -> Unit) {
-    val impl = controller as? DefaultTimeLimitController ?: return
-    GuardOffPin(impl, onScheduled, onBack)
+internal fun GuardOffPinScreen(controller: DefaultTimeLimitController, onScheduled: () -> Unit, onBack: () -> Unit) {
+    GuardOffPin(controller, onScheduled, onBack)
 }

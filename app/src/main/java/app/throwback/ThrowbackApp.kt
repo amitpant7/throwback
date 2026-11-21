@@ -9,7 +9,6 @@ import android.content.Context
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import android.app.Application
-import app.throwback.core.TimeLimitController
 import app.throwback.core.UiPreferences
 import app.throwback.relay.MessagesFeature
 import app.throwback.timelimit.DefaultTimeLimitController
@@ -19,7 +18,7 @@ import app.throwback.ui.UiModule
 
 /** Owned by integration. Holds the app-wide singletons; no DI framework needed at this size. */
 class ThrowbackApp : Application() {
-    val timeLimit: TimeLimitController by lazy { TimeLimitModule.create(this) }
+    internal val timeLimit: DefaultTimeLimitController by lazy { TimeLimitModule.create(this) }
     val uiPreferences: UiPreferences by lazy { UiModule.create(this) }
 
     override fun onCreate() {
@@ -32,7 +31,7 @@ class ThrowbackApp : Application() {
         // its saved state is loaded (before that it would be the phone's own clock), else none.
         PageClock.serverTimeSink = { ServerTimeHint.note(it) }
         PageClock.provider = {
-            (timeLimit as? DefaultTimeLimitController)?.takeIf { it.ready.value }?.pageClock()?.let {
+            timeLimit.pageClock()?.let {
                 PageClock.Reading(it.offsetMs, it.zoneOffsetMin, it.day, it.nextDayAt, readAt = System.currentTimeMillis())
             }
         }

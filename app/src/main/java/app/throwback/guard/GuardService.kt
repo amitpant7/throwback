@@ -35,8 +35,6 @@ import app.throwback.relay.MessagesFeature
 import app.throwback.relay.RelayDebug
 import app.throwback.relay.RelayListenerService
 import app.throwback.relay.RelayNotifier
-import app.throwback.timelimit.DefaultTimeLimitController
-import app.throwback.timelimit.GuardOffApi
 import app.throwback.timelimit.TimeLimitModule
 import app.throwback.ui.UiPrefs
 import app.throwback.ui.messages.Permissions
@@ -311,13 +309,13 @@ class GuardService : Service() {
      * next check stops the guard.
      */
     private suspend fun disconnectIfDue() {
-        val limit = TimeLimitModule.create(this) as? DefaultTimeLimitController ?: return
+        val limit = TimeLimitModule.create(this)
         if (!limit.ready.value) return
         limit.refresh() // in the background nothing else moves it to the new day
-        if (GuardOffApi.view(limit)?.value?.guardOffDue != true) return
+        if (!limit.view.value.guardOffDue) return
         Log.i(TAG, "a scheduled disconnect is due: disconnecting the Instagram app")
         UiPrefs.from(this).setMessagesSetupDone(false)
-        GuardOffApi.handled(limit)
+        limit.guardOffHandled()
     }
 
     private fun poll(usm: UsageStatsManager) {

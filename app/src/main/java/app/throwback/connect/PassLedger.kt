@@ -20,11 +20,10 @@ import kotlinx.coroutines.withTimeoutOrNull
 internal data class PassBook(
     /** The day "Open Instagram for 5 minutes" was last used. */
     val visitDay: Long? = null,
-    /** [storyCount] story passes were used on [storyDay]. */
-    val storyDay: Long? = null,
-    val storyCount: Int = 0,
-    /** No story pass before this. */
-    val storyWaitUntil: Long? = null,
+    /** Story time used since the last lock (DECISIONS.md #34cc): a post costs a fixed amount, a pass without one its time. */
+    val storyUsedMillis: Long = 0,
+    /** The story budget ran out: no story pass through the app before this (the website's upload meanwhile). */
+    val storyLockUntil: Long? = null,
     /** When the chat's call button opened Instagram (the last hour is enough). */
     val callTaps: List<Long> = emptyList(),
     /** "Your day": [appMillis] of the Instagram app in front during passes on [appDay]. */
@@ -43,30 +42,30 @@ internal data class PassBook(
 
     fun visited(today: Long) = copy(visitDay = today)
 
-    // ---- "Your story": [perDay] a day, with a wait after each.
+    // ---- "Your story": a budget of story time (DECISIONS.md #34cc). Each pass is charged when it ends:
+    // a post a fixed amount, a pass without one the exact time spent in Instagram. Once the budget is
+    // used up, a lock; after it the budget starts again from nothing.
 
-    fun storiesOn(today: Long): Int = countOn(storyDay, storyCount, today)
+    fun storyAllowed(now: Long): Boolean = storyLockUntil == null || now >= storyLockUntil
 
-    fun storyAllowed(today: Long, now: Long, perDay: Int): Boolean = storiesOn(today) < perDay && !storyWaiting(now)
-
-    /** Minutes until the next story pass (at least 1 while waiting), 0 if one is available, null if none is left today. */
-    fun storyWaitMinutes(today: Long, now: Long, perDay: Int): Int? {
-        if (storiesOn(today) >= perDay) return null
-        val until = storyWaitUntil ?: return 0
+    /** Minutes left of the lock (at least 1 while locked), 0 when a story pass is available. */
+    fun storyLockMinutes(now: Long): Int {
+        val until = storyLockUntil ?: return 0
         return if (now >= until) 0 else ((until - now + 59_999) / 60_000).toInt()
     }
 
-    fun storyStarted(today: Long, now: Long, waitMillis: Long) =
-        copy(storyDay = today, storyCount = storiesOn(today) + 1, storyWaitUntil = now + waitMillis)
+    /** Story time used now (none while locked or after a lock: the lock starts the budget again). */
+    fun storyUsed(now: Long): Long = if (storyAllowed(now)) storyUsedMillis else 0L
 
-    /** The pass ended with a post (owner: a real upload means no cheating): it doesn't count, no wait. */
-    fun storyPosted(today: Long) = copy(storyCount = (storiesOn(today) - 1).coerceAtLeast(0), storyWaitUntil = null)
-
-    /** Left early having shown little but the camera: it doesn't count, but a short wait follows. */
-    fun storyLeftEarly(today: Long, now: Long) =
-        copy(storyCount = (storiesOn(today) - 1).coerceAtLeast(0), storyWaitUntil = now + PassRules.FREE_LEAVE_WAIT_MS)
-
-    private fun storyWaiting(now: Long) = storyWaitUntil != null && now < storyWaitUntil
+    /** A story pass ended, costing [millis]; reaching [budgetMillis] locks story passes for [lockMillis]. */
+    fun storyCharged(now: Long, millis: Long, budgetMillis: Long, lockMillis: Long): PassBook {
+        val used = storyUsed(now) + millis.coerceAtLeast(0)
+        return if (used >= budgetMillis) {
+            copy(storyUsedMillis = 0, storyLockUntil = now + lockMillis)
+        } else {
+            copy(storyUsedMillis = used, storyLockUntil = storyLockUntil?.takeIf { now < it })
+        }
+    }
 
     // ---- The chat's call button: [CALL_TAPS_PER_HOUR] an hour.
 
@@ -126,9 +125,8 @@ internal object PassLedger {
         val p = prefs(context)
         return PassBook(
             visitDay = p.longOrNull(VISIT_DAY),
-            storyDay = p.longOrNull(STORY_DAY),
-            storyCount = p.getInt(STORY_COUNT, 0),
-            storyWaitUntil = p.longOrNull(STORY_WAIT_UNTIL),
+            storyUsedMillis = p.getLong(STORY_USED, 0L),
+            storyLockUntil = p.longOrNull(STORY_LOCK_UNTIL),
             callTaps = p.getString(CALL_TAPS, null).orEmpty().split(',').mapNotNull { it.toLongOrNull() },
             appDay = p.longOrNull(APP_DAY),
             appMillis = p.getLong(APP_MILLIS, 0L),
@@ -145,9 +143,9 @@ internal object PassLedger {
         val b = change(read(context))
         prefs(context).edit {
             putOrRemove(VISIT_DAY, b.visitDay)
-            putOrRemove(STORY_DAY, b.storyDay)
-            putInt(STORY_COUNT, b.storyCount)
-            putOrRemove(STORY_WAIT_UNTIL, b.storyWaitUntil)
+            putLong(STORY_USED, b.storyUsedMillis)
+            putOrRemove(STORY_LOCK_UNTIL, b.storyLockUntil)
+            OLD_STORY_KEYS.forEach { remove(it) } // the count-and-wait rule before #34cc
             putString(CALL_TAPS, b.callTaps.joinToString(","))
             putOrRemove(APP_DAY, b.appDay)
             putLong(APP_MILLIS, b.appMillis)
@@ -167,9 +165,9 @@ internal object PassLedger {
     }
 
     private const val VISIT_DAY = "visitDay"
-    private const val STORY_DAY = "storyDay"
-    private const val STORY_COUNT = "storyCount"
-    private const val STORY_WAIT_UNTIL = "storyWaitUntil"
+    private const val STORY_USED = "storyUsed"
+    private const val STORY_LOCK_UNTIL = "storyLockUntil"
+    private val OLD_STORY_KEYS = listOf("storyDay", "storyCount", "storyWaitUntil")
     private const val CALL_TAPS = "callTaps"
     private const val APP_DAY = "appDay"
     private const val APP_MILLIS = "appMillis"

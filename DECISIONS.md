@@ -238,20 +238,11 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     most 10 minutes, 5 a day, not while the daily limit is reached (2026-11-20 review: Saved and
     Archive live inside that screen). Instagram's main screen (the feed; Back out of settings lands there, and Accounts Center opens there too) is never allowed during this pass, after the first 3 seconds while the screen opens (owner, 2026-11-20: Back to the feed was a loophole); Accounts Center is on Instagram's website.
     Leaving Instagram ends the pass (pickers and Chrome's in-app pages excepted). Rules `appSettings`.
-27f. **"Your story" through the Instagram app** (owner, 2026-11-20): Instagram's story camera, gallery
-    and editor share the app's main screen with the feed, and its story link lands on the feed. So
-    "Your story" opens the app with a hint ("Swipe right for the story camera") and gives **5 minutes**
-    of Instagram (rules `appCreate.story.editMinutes`), not counting time while the phone's camera is
-    on (Android reports camera use to every app: confirmed on the owner's phone). Instagram's posting
-    notification or leaving the app ends it; at most 3 a day. Throwback can't swipe for the user
-    (that would need the accessibility permission, avoided). The top bar's "+" opens the post/reel
-    editor (its own screen, no time window). **Wait between story passes: 30 minutes** (rules
-    `cooldownMinutes`), at most 3 a day (`perDay`); meanwhile "Your story" uses Instagram's website story
-    upload in Throwback. A pass that ended with a post (Instagram's posting notification) starts no wait
-    and doesn't count (owner: a real upload means no cheating). One left early counts nothing only if
-    at most 30 seconds of it were spent outside the camera (a change of mind), and even then a
-    10-minute wait follows (2026-11-20 review: leaving within 3 minutes allowed endless 3-minute
-    visits to the whole app).
+27f. **"Your story" through the Instagram app** (owner, 2026-11-20; the budget below replaced the
+    first rule on 2026-11-21, #34cc): "Your story" opens the Instagram app's story link with a hint
+    ("Swipe right for the story camera": the link lands on its feed) and a story pass of 5 minutes in
+    Instagram. Throwback can't swipe for the user (that would need the accessibility permission,
+    avoided). The top bar's "+" opens the post/reel editor (its own screen, no time window).
 28. A 2-step setup wizard: install Instagram (via the Play Store), then grant the permissions
     (notification access, usage access, display over other apps; Android 13+ also asks to allow
     notifications). No "hide the icon" step: the guard sends the user back to Throwback anyway, and
@@ -378,3 +369,24 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
         to Instagram's notification settings; Throwback still hides what isn't wanted. Android doesn't
         let Throwback read the switches, so the card says whether the relay has seen anything from the
         'Instagram' group in the last 7 days.
+    cc. **Story budget** (owner, 2026-11-21; replaces the first rule in #27f: camera-time counting, the
+        30-minute wait, the "change of mind" exception and 3 a day). Throwback can't tell Instagram's
+        story editor, gallery and feed apart (one screen), so the rule counts time and posts:
+        - each "Your story" gives 5 minutes in Instagram (from when it comes to the front);
+        - a pass that ends with Instagram's posting notification (also up to 90 s after the user left)
+          costs 2:00 and brings the user back to Throwback; one without costs its exact time in
+          Instagram (minutes and seconds, not rounded);
+        - while the 10-minute budget isn't used up, every pass gets its full 5 minutes; once it is
+          used up, no story pass for 30 minutes ("Your story" uses the website's own upload, which
+          stays the default while locked), then the budget starts again; no daily cap;
+        - Instagram's own story uploader is opened as it is ("keep the uploader clean").
+        Needs Instagram's 'Instagram' notification group on (#34bb). Numbers in the rules
+        (`appCreate.story`: editMinutes, budgetMinutes, postMinutes, lockMinutes).
+    dd. **"+" on "Your story" once a story is up** (owner, 2026-11-21: people often post several
+        stories). Instagram's website shows its "+" only while there is no story; after that the
+        bubble opens the story, and more come from the top bar's "+" menu (Post / Story). Throwback
+        adds its own "+" (Instagram's blue) when the website's is missing. It routes like "Your
+        story": the Instagram app with a story pass while the story budget is open (#34cc), else the
+        website's upload, which Throwback opens by choosing "Story" in that menu (the hidden upload
+        input alone doesn't work). Without the app connected it is the website's upload too.
+        Rules: `stories.addStory`; page script `27-add-story.js`.

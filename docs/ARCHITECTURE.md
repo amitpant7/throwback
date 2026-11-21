@@ -293,11 +293,11 @@ setup and the permissions. Notification access is checked for Throwback's listen
 - **Passes** (`PassLedger` on the trusted clock; `CallInApp` opens the app): call button (15 s, 15 taps
   an hour), "Open Instagram for 5 minutes" (once a day, not while locked), posting (Instagram's create
   screens, 20 minutes, 10 a day, not while locked), Instagram's settings (its settings screens,
-  10 minutes, 5 a day, not while locked), story (5 minutes of Instagram time without the camera, a
-  30-minute wait, 3 a day, not while locked; a pass ended by posting doesn't count; one left with at
-  most 30 s outside the camera doesn't count either but starts a 10-minute wait). Only Instagram's own
-  camera stops the clock: a camera that went into use while Instagram was in front. Screen patterns
-  that fail or are missing allow nothing beyond a 3-second grace.
+  10 minutes, 5 a day, not while locked), story (a story budget, #34cc: each pass is 5 minutes in
+  Instagram, charged when it ends: 2 minutes if Instagram's posting notification shows, also up to
+  90 s after leaving, else the exact time spent; 10 minutes of budget, then 30 minutes locked, when
+  "Your story" uses the website's upload; not while the daily limit is reached). Screen patterns that
+  fail or are missing allow nothing beyond a 3-second grace.
 - Pure rules (`GuardPolicy`, `RelayRouting`, the classifier) are unit-tested; test builds can post
   fake notifications and watch another app (`RelayDebug`, `app/src/debug/`).
 

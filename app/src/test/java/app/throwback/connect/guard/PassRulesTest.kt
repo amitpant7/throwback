@@ -15,12 +15,6 @@ class PassRulesTest {
     }
 
     @Test
-    fun `story pass gives 5 minutes not counting camera time`() {
-        assertTrue(PassRules.storyPassHolds(cameraOffMillis = 5 * 60_000L, limitMillis = 5 * 60_000L))
-        assertFalse(PassRules.storyPassHolds(cameraOffMillis = 5 * 60_000L + 1, limitMillis = 5 * 60_000L))
-    }
-
-    @Test
     fun `a create pass holds only on a creation screen, and fails closed`() {
         val screens = PassRules.screensPattern("^instagram\\.features\\.creation\\.")
         val editor = "instagram.features.creation.capture.MediaCaptureActivity"
@@ -47,14 +41,5 @@ class PassRulesTest {
         assertFalse(PassRules.onScreens("com.instagram.mainactivity.InstagramMainActivity", settings))
     }
 
-    @Test
-    fun `a story pass left early is forgiven only if it showed little but the camera`() {
-        val m = 60_000L
-        fun leftEarly(since: Long, cameraOff: Long) = PassRules.storyLeftEarly(since, cameraOff, freeLeaveMillis = 3 * m)
-        assertTrue(leftEarly(since = 2 * m, cameraOff = 0)) // opened the camera, changed their mind
-        assertTrue(leftEarly(since = 2 * m + 50_000, cameraOff = 30_000)) // a few seconds on the feed first
-        // The loop the review found: "Your story", scroll the feed for ~2:50, Home, again.
-        assertFalse(leftEarly(since = 2 * m + 50_000, cameraOff = 2 * m + 45_000))
-        assertFalse(leftEarly(since = 3 * m, cameraOff = 0)) // stayed past the free-leave minutes
-    }
+
 }

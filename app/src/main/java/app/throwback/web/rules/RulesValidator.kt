@@ -170,9 +170,9 @@ object RulesValidator {
             a.story?.let { st ->
                 check(st.link.startsWith("instagram://")) { "appCreate.story.link must be an instagram:// link" }
                 check(st.editMinutes in 1..15) { "appCreate.story.editMinutes out of range" }
-                check(st.cooldownMinutes in 0..240) { "appCreate.story.cooldownMinutes out of range" }
-                check(st.perDay in 0..20) { "appCreate.story.perDay out of range" }
-                check(st.freeLeaveMinutes in 0..15) { "appCreate.story.freeLeaveMinutes out of range" }
+                check(st.budgetMinutes in 1..120) { "appCreate.story.budgetMinutes out of range" }
+                check(st.postMinutes in 0..st.budgetMinutes) { "appCreate.story.postMinutes out of range" }
+                check(st.lockMinutes in 0..240) { "appCreate.story.lockMinutes out of range" }
                 // Any notification on a matching channel counts as "posted" (the pass is forgiven).
                 checkNarrow(st.postingChannels, "appCreate.story.postingChannels", "notification channel", errors)
             }
@@ -201,6 +201,13 @@ object RulesValidator {
             (st.connections + st.adKeys).forEach { check(FIELD.matches(it)) { "stories: bad field '$it'" } }
             check(st.prefetchAhead in 0..10) { "stories.prefetchAhead out of range" }
             check(st.prefetchKB in 0..2048) { "stories.prefetchKB out of range" }
+            st.addStory?.let { a ->
+                checkTexts(a.yourStory, "stories.addStory.yourStory", errors)
+                checkTexts(a.storyItem, "stories.addStory.storyItem", errors)
+                checkSelector(a.ownPlus, "stories.addStory.ownPlus", errors)
+                checkSelector(a.menuButton, "stories.addStory.menuButton", errors)
+                checkSelector(a.menuItem, "stories.addStory.menuItem", errors)
+            }
         }
         rules.reelViewer?.let { rv ->
             check(rv.posterOnSwipeMin in 1..50 && rv.posterOnSwipeMax in rv.posterOnSwipeMin..50) {

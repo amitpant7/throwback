@@ -249,6 +249,21 @@ data class StoryRules(
     val prefetchAhead: Int = 3,
     /** How much of each upcoming video's start to keep in memory, in KB. */
     val prefetchKB: Int = 400,
+    /** Throwback's "+" on "Your story" once a story is up (pagescript 27-add-story.js). */
+    val addStory: AddStoryRules? = null,
+)
+
+@Serializable
+data class AddStoryRules(
+    /** The "Your story" bubble's label, per language. */
+    val yourStory: List<String> = emptyList(),
+    /** Inside the bubble: Instagram's own "+" or upload, there while the user has no story. */
+    val ownPlus: String = "",
+    /** The website's top-bar "+" (its menu: Post, Story). */
+    val menuButton: String = "",
+    /** The menu's items, and the label of its "Story" item per language. */
+    val menuItem: String = "",
+    val storyItem: List<String> = emptyList(),
 )
 
 @Serializable
@@ -345,17 +360,13 @@ data class AppCreateRules(
 data class AppStoryRules(
     /** Opens the app's story camera. */
     val link: String,
-    /** Once the camera is off (editing), minutes left before the pass ends. */
+    /** Minutes of Instagram one story pass gives (DECISIONS.md #34cc). */
     val editMinutes: Int = 5,
-    /** Minutes between story passes; meanwhile "Your story" uses the website's own story upload. */
-    val cooldownMinutes: Int = 30,
-    /** Story passes a day; after that, the website's story upload. */
-    val perDay: Int = 3,
-    /**
-     * A pass left within this many minutes, at most 30 s of it outside the camera, was a change of
-     * mind: it doesn't count, but a 10-minute wait still follows (DECISIONS.md #27f).
-     */
-    val freeLeaveMinutes: Int = 3,
+    /** The story budget, in minutes: a post costs [postMinutes], a pass without one its exact time. */
+    val budgetMinutes: Int = 10,
+    val postMinutes: Int = 2,
+    /** Once the budget is used up: no story pass through the app for this long (the website's upload meanwhile). */
+    val lockMinutes: Int = 30,
     /** Notification channels Instagram shows while posting (regex); posting ends the pass. */
     val postingChannels: String = "^(uploads|ig_posting_status)$",
 )

@@ -271,10 +271,10 @@
     <string name="ui_today_discover_value" tools:ignore="PluralsCandidate">%1$d of %2$d left</string>
     <string name="ui_today_section_removed">Removed today</string>
     <string name="ui_today_section_app">Instagram app</string>
-    <string name="ui_today_story_passes">Story passes</string>
-    <string name="ui_today_story_ready" tools:ignore="PluralsCandidate">%1$d of %2$d used · ready</string>
-    <string name="ui_today_story_wait" tools:ignore="PluralsCandidate">%1$d of %2$d used · next in %3$d min</string>
-    <string name="ui_today_story_tomorrow" tools:ignore="PluralsCandidate">%1$d of %2$d used · tomorrow</string>
+    <!-- Story budget (DECISIONS.md #34cc): %1$s used, %2$s the budget, as m:ss. -->
+    <string name="ui_today_story_time">Story time</string>
+    <string name="ui_today_story_used">%1$s of %2$s used</string>
+    <string name="ui_today_story_locked" tools:ignore="PluralsCandidate">Used up · back in %1$d min</string>
     <string name="ui_today_visit">Open Instagram for 5 minutes</string>
     <string name="ui_today_visit_used">Used today</string>
     <string name="ui_today_visit_free">Available</string>

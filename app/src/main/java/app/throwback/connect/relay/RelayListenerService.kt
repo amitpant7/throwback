@@ -282,18 +282,25 @@ class RelayListenerService : NotificationListenerService() {
         }
     }
 
-    /** Ends a story or create pass when Instagram's posting notification shows. */
+    /**
+     * Instagram's posting notification: it ends a story or create pass, and a story pass costs the
+     * fixed post amount (#34cc), also one the user left moments before the notification came.
+     */
     private fun endPassWhenPosting(facts: NotificationFacts) {
-        val now = SystemClock.elapsedRealtime()
-        if (!GuardPass.active(now)) return
-        val kind = GuardPass.kind
-        if (kind != GuardPass.Kind.STORY && kind != GuardPass.Kind.CREATE) return
         val pattern = RulesRepository.get(this).rules.value?.appCreate?.story?.postingChannels ?: return
         val channel = facts.channelId ?: return
-        if (facts.packageName in InstagramPackages.ALL && runCatching { Regex(pattern).containsMatchIn(channel) }.getOrDefault(false)) {
-            Log.i(TAG, "Instagram is posting: pass ends")
-            // Forgiven only if this ended it (the guard may just have ended it for leaving Instagram).
-            if (GuardPass.endIfActive(now) && kind == GuardPass.Kind.STORY) CallInApp.storyPosted(this)
+        if (facts.packageName !in InstagramPackages.ALL || !runCatching { Regex(pattern).containsMatchIn(channel) }.getOrDefault(false)) return
+        val now = SystemClock.elapsedRealtime()
+        if (!GuardPass.active(now)) {
+            CallInApp.storyPosted(this, passWasRunning = false) // a story pass that ended just before, if any
+            return
         }
+        val kind = GuardPass.kind
+        if (kind != GuardPass.Kind.STORY && kind != GuardPass.Kind.CREATE) return
+        Log.i(TAG, "Instagram is posting: pass ends")
+        // Charged as a post only if this ended it (the guard may just have ended it, charging its time:
+        // storyPosted then finds it as just ended).
+        val endedHere = GuardPass.endIfActive(now)
+        if (kind == GuardPass.Kind.STORY) CallInApp.storyPosted(this, passWasRunning = endedHere)
     }
 }

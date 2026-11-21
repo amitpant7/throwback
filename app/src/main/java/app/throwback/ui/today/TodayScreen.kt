@@ -54,7 +54,14 @@ data class TodayStats(
     /** The connected Instagram app today; null when it isn't connected. */
     val instagramApp: InstagramAppDay? = null,
 ) {
-    data class InstagramAppDay(val storiesUsed: Int, val storiesMax: Int, val storyWaitMinutes: Int?, val visitUsed: Boolean, val appMillis: Long)
+    /** Story time used of its budget (or the lock's minutes left), the 5-minute visit, time in the app. */
+    data class InstagramAppDay(
+        val storyUsedMillis: Long,
+        val storyBudgetMillis: Long,
+        val storyLockMinutes: Int,
+        val visitUsed: Boolean,
+        val appMillis: Long,
+    )
 
     sealed interface Limit {
         data object None : Limit
@@ -106,11 +113,11 @@ internal fun TodayScreen(stats: TodayStats, onBack: () -> Unit) {
             SectionLabel(stringResource(R.string.ui_today_section_app))
             TbCard {
                 AllowanceRow(
-                    title = stringResource(R.string.ui_today_story_passes),
-                    value = when {
-                        ig.storyWaitMinutes == null -> stringResource(R.string.ui_today_story_tomorrow, ig.storiesUsed, ig.storiesMax)
-                        ig.storyWaitMinutes > 0 -> stringResource(R.string.ui_today_story_wait, ig.storiesUsed, ig.storiesMax, ig.storyWaitMinutes)
-                        else -> stringResource(R.string.ui_today_story_ready, ig.storiesUsed, ig.storiesMax)
+                    title = stringResource(R.string.ui_today_story_time),
+                    value = if (ig.storyLockMinutes > 0) {
+                        stringResource(R.string.ui_today_story_locked, ig.storyLockMinutes)
+                    } else {
+                        stringResource(R.string.ui_today_story_used, minSecText(ig.storyUsedMillis), minSecText(ig.storyBudgetMillis))
                     },
                 )
                 CardDivider()

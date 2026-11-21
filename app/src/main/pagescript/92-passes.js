@@ -21,6 +21,7 @@
     updateProfileEntry,
     updateCallEntry,
     updateSettingsSection,
+    updateAddStory,
     function approveMain() {
       approvePosts(document.querySelector('main'));
     },

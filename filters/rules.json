@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112101,
+  "version": 2026112103,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -157,11 +157,11 @@
     "story": {
       "link": "instagram://story-camera",
       "editMinutes": 5,
-      "cooldownMinutes": 30,
-      "perDay": 3,
-      "freeLeaveMinutes": 3,
+      "budgetMinutes": 10,
+      "postMinutes": 2,
+      "lockMinutes": 30,
       "postingChannels": "^(uploads|ig_posting_status)$",
-      "note": "Instagram's story camera, gallery and editor live in its main screen (with the feed); the link lands on the feed (owner's phone), so the user swipes right for the camera. The pass gives editMinutes of Instagram, not counting time with the camera on (Android reports camera use to every app; seen on the owner's phone); Instagram's posting notification ends it. Then cooldownMinutes (30) before the next one, at most perDay a day; meanwhile 'Your story' uses the website's own story upload in Throwback (owner, 2026-11-20)."
+      "note": "Story budget (owner, 2026-11-21, DECISIONS #34cc): 'Your story' opens the Instagram app for editMinutes (from when it comes to the front). A pass is charged when it ends: postMinutes if Instagram's posting notification shows (also up to 90 s after the user left), else the exact time spent in Instagram. Once budgetMinutes are used, no story pass for lockMinutes ('Your story' uses the website's own upload meanwhile); then the budget starts again. The link lands on Instagram's feed on the owner's phone, so the user swipes right for the camera. Posting is seen only while Instagram's 'Instagram' notification group is on (#34bb)."
     },
     "note": "The top bar's '+' (opens Post/Story) is an a[href='#'] whose icon Instagram labels 'Home' (2026-11-20); the story bubble's '+' badge is 'Plus icon'. With the Instagram app connected, '+' and 'Your story' open the app's create screen (better editor). The guard allows only its creation screens (activity class pattern); the feed after posting ends the pass. The link opened MediaCaptureActivity on the emulator (2026-11-20)."
   },
@@ -227,7 +227,15 @@
     "connections": ["xdt_api__v1__feed__reels_media__connection", "xdt_api__v1__feed__reels_media"],
     "adKeys": ["xdt_injected_story_units"],
     "prefetchAhead": 5,
-    "prefetchKB": 400
+    "prefetchKB": 400,
+    "addStory": {
+      "yourStory": ["Your story", "Deine Story", "Votre story", "Tu historia", "Seu story", "La tua storia"],
+      "ownPlus": "input[type=file], svg[aria-label='Plus icon']",
+      "menuButton": "header a[href='#']",
+      "menuItem": "[role=dialog] [role=button], [role=dialog] button",
+      "storyItem": ["Story", "Historia", "Storia"],
+      "note": "Instagram's website shows its '+' on 'Your story' only with no story up; after that the bubble opens the story and more come from the top bar's '+' menu (Post / Story). Seen on the emulator 2026-11-21: the menu's 'Story' item reads 'StoryStory' (label twice); its upload input only works after 'Story' was chosen in the menu (clicking the hidden input directly did nothing). Throwback adds its own '+' when ownPlus is missing."
+    }
   },
   "notifications": {
     "note": "Messages & calls relay (DECISIONS 26): how the Instagram app's notifications are sorted. Calls are always recognised by Android's own signals (category 'call', CallStyle, a full-screen intent) before these rules and are never touched. 'classify' is checked in order, first match wins; every field set must match (channel, template, group, tag: regex; category: exact; ongoing: true/false). Kinds: call, message, missedCall, likes, comments, follows, mentions, live, other. Without a match: category 'missed_call' = missedCall, category 'msg' or MessagingStyle = message (and no rule may turn those into anything removed), ongoing = kept, counted as a call only with internet-call audio or Instagram's call screen, anything else = unknown, handled by 'unknown' (cancel or keep). threadId: where a message notification carries the chat id (from: shortcut, tag or group; pattern's first group, 5-40 digits), null = open the inbox. callGraceSeconds: the guard keeps allowing the Instagram app this long after the last call notification goes away. Channel ids read from the owner's phone on 2026-11-20 (Android's channel list for com.instagram.android, app metadata only): ig_direct, ig_direct_requests (messages); ig_direct_video_chat (calls); ig_likes, ig_comment_likes, ig_likes_and_comments_on_photos_of_you; ig_heads_up_comments; ig_new_followers, ig_connections, ig_private_user_follow_request; ig_mentions_in_bio, ig_photos_of_you; ig_live_videos; calls in progress may use channels created only during a call, so any channel naming call/rtc/video_chat is a call and the catch-all 'other' never takes an ongoing notification (ongoing = call by default); missed calls (category missed_call) are messages, not calls; ig_alerts (security and login alerts, e.g. 'Was this you?') are kept untouched; only ongoing notifications on call channels count as calls; uploads/ig_posting_status are other; everything else (ig_highlights, ig_first_posts_and_stories, ig_shopping_drops, ig_product_announcements, ig_view_counts, ig_alerts, ig_other, reminders, uploads, ...) = other.",

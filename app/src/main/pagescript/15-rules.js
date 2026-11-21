@@ -126,6 +126,15 @@
       ahead: typeof stR.prefetchAhead === 'number' ? stR.prefetchAhead : 3,
       bytes: (typeof stR.prefetchKB === 'number' ? stR.prefetchKB : 400) * 1024
     } : null;
+    var asR = stR && stR.addStory;
+    c.addStory = asR && validSelector(asR.menuButton) && validSelector(asR.menuItem) && validSelector(asR.ownPlus) &&
+      Array.isArray(asR.yourStory) && Array.isArray(asR.storyItem) ? {
+        yourStory: asR.yourStory,
+        storyItem: asR.storyItem,
+        menuButton: asR.menuButton,
+        menuItem: asR.menuItem,
+        ownPlus: asR.ownPlus
+      } : null;
     var rv = rules.reelViewer;
     c.reelViewer = rv ? {
       minSwipe: typeof rv.posterOnSwipeMin === 'number' ? rv.posterOnSwipeMin : 1,

@@ -122,19 +122,15 @@ internal object CallInApp {
         return AppPass.OPENED
     }
 
-    /** Longest a story pass lasts; its minutes without the camera end it much sooner (see GuardService). */
-    private const val STORY_PASS_MS = 30 * 60_000L
-
-    /** OPENED; NO_APP; USED_UP (no more today); WAIT (the wait after a pass); NOT_READY (the time limit is still loading); LOCKED. */
-    enum class StoryResult { OPENED, NO_APP, USED_UP, WAIT, NOT_READY, LOCKED }
+    /** OPENED; NO_APP; WAIT (the story budget is used up: its lock); NOT_READY (the time limit is still loading); LOCKED (the daily limit). */
+    enum class StoryResult { OPENED, NO_APP, WAIT, NOT_READY, LOCKED }
 
     /** What to tell the user after "Your story" ([story]'s result). */
     fun storyMessage(context: Context, result: StoryResult): String {
         val res = context.resources
         return when (result) {
             StoryResult.OPENED -> storyMinutes(context).let { m -> res.getQuantityString(R.plurals.story_in_app_hint, m, m) }
-            StoryResult.USED_UP -> storiesPerDay(context).let { n -> res.getQuantityString(R.plurals.story_in_app_used_up, n, n) }
-            StoryResult.WAIT -> (storyWaitMinutes(context) ?: 1).coerceAtLeast(1).let { m -> res.getQuantityString(R.plurals.story_in_app_wait, m, m) }
+            StoryResult.WAIT -> storyLockMinutes(context).coerceAtLeast(1).let { m -> res.getQuantityString(R.plurals.story_in_app_wait, m, m) }
             StoryResult.NOT_READY -> res.getString(R.string.story_in_app_not_ready)
             StoryResult.LOCKED -> res.getString(R.string.app_pass_locked)
             StoryResult.NO_APP -> res.getString(R.string.create_in_app_failed)
@@ -143,24 +139,22 @@ internal object CallInApp {
 
     /**
      * What to tell the user when the page sent "Your story" to the website because it believed the
-     * app route was closed. It may be a step behind (a wait just ended): then it says so.
+     * app route was closed (the story budget's lock). It may be a step behind (the lock just ended).
      */
     fun storyWebMessage(context: Context): String {
+        val minutes = storyLockMinutes(context)
         val res = context.resources
-        val minutes = storyWaitMinutes(context)
-        return when {
-            minutes == null -> storiesPerDay(context).let { n -> res.getQuantityString(R.plurals.story_web_tomorrow, n, n) }
-            minutes > 0 -> res.getQuantityString(R.plurals.story_web_wait, minutes, minutes)
-            else -> res.getString(R.string.story_web_ready)
-        }
+        return if (minutes > 0) res.getQuantityString(R.plurals.story_web_wait, minutes, minutes) else res.getString(R.string.story_web_ready)
     }
 
     private fun storyRules(context: Context) = RulesRepository.get(context).rules.value?.appCreate?.story
 
-    fun storiesPerDay(context: Context) = storyRules(context)?.perDay ?: 3
-
-    /** Minutes of Instagram a story pass gives (time with Instagram's camera on doesn't count). */
+    /** Minutes of Instagram one story pass gives. */
     fun storyMinutes(context: Context) = storyRules(context)?.editMinutes ?: 5
+
+    private fun storyBudgetMillis(context: Context) = (storyRules(context)?.budgetMinutes ?: 10) * 60_000L
+    private fun storyPostMillis(context: Context) = (storyRules(context)?.postMinutes ?: 2) * 60_000L
+    private fun storyLockMillis(context: Context) = (storyRules(context)?.lockMinutes ?: 30) * 60_000L
 
     /**
      * Whether "Your story" can open the Instagram app now (else the website's story upload). Only
@@ -169,20 +163,26 @@ internal object CallInApp {
      */
     fun storyAvailable(context: Context): Boolean {
         val now = PassLedger.now(context) ?: return true
-        return PassLedger.read(context).storyAllowed(now.epochDay, now.wallMillis, storiesPerDay(context))
+        return PassLedger.read(context).storyAllowed(now.wallMillis)
     }
 
     /** Today's use of the Instagram app through Throwback's passes ("Your day"). */
-    data class AppDay(val storiesUsed: Int, val storiesMax: Int, val storyWaitMinutes: Int?, val visitUsed: Boolean, val appMillis: Long)
+    data class AppDay(
+        val storyUsedMillis: Long,
+        val storyBudgetMillis: Long,
+        val storyLockMinutes: Int,
+        val visitUsed: Boolean,
+        val appMillis: Long,
+    )
 
     fun appDay(context: Context): AppDay {
-        val perDay = storiesPerDay(context)
-        val now = PassLedger.now(context) ?: return AppDay(0, perDay, 0, visitUsed = false, appMillis = 0L)
+        val budget = storyBudgetMillis(context)
+        val now = PassLedger.now(context) ?: return AppDay(0L, budget, 0, visitUsed = false, appMillis = 0L)
         val book = PassLedger.read(context)
         return AppDay(
-            storiesUsed = book.storiesOn(now.epochDay),
-            storiesMax = perDay,
-            storyWaitMinutes = book.storyWaitMinutes(now.epochDay, now.wallMillis, perDay),
+            storyUsedMillis = book.storyUsed(now.wallMillis),
+            storyBudgetMillis = budget,
+            storyLockMinutes = book.storyLockMinutes(now.wallMillis),
             visitUsed = !book.visitAllowed(now.epochDay, locked = false),
             appMillis = book.appMillisOn(now.epochDay),
         )
@@ -194,52 +194,67 @@ internal object CallInApp {
         PassLedger.update(context) { it.withAppTime(now.epochDay, millis) }
     }
 
-    /** Why "Your story" uses the website now: minutes until the next pass, or null = not today. */
-    fun storyWaitMinutes(context: Context): Int? {
+    /** Minutes left of the story budget's lock (0: not locked). */
+    fun storyLockMinutes(context: Context): Int {
         val now = PassLedger.now(context) ?: return 0
-        return PassLedger.read(context).storyWaitMinutes(now.epochDay, now.wallMillis, storiesPerDay(context))
+        return PassLedger.read(context).storyLockMinutes(now.wallMillis)
     }
 
     /**
-     * "Your story": the Instagram app with a STORY pass: a few minutes (camera time not counted),
-     * ended by posting or leaving; then a cooldown (see [storyAvailable]).
+     * "Your story": the Instagram app with a STORY pass of [storyMinutes] (the guard ends it then, or
+     * when the user leaves Instagram). Charged when it ends ([storyEnded], [storyPosted]); while the
+     * story budget is locked, the website's own upload instead (DECISIONS.md #34cc).
      */
     fun story(context: Context): StoryResult {
         val pkg = InstagramPackages.installed(context) ?: return StoryResult.NO_APP
         val now = PassLedger.now(context) ?: return StoryResult.NOT_READY
         if (PassLedger.locked(context) == true) return StoryResult.LOCKED
-        val ledger = PassLedger.read(context)
-        if (!ledger.storyAllowed(now.epochDay, now.wallMillis, storiesPerDay(context))) {
-            val wait = ledger.storyWaitMinutes(now.epochDay, now.wallMillis, storiesPerDay(context))
-            return if (wait != null && wait > 0) StoryResult.WAIT else StoryResult.USED_UP
-        }
+        if (!PassLedger.read(context).storyAllowed(now.wallMillis)) return StoryResult.WAIT
         val link = storyRules(context)?.link ?: "instagram://story-camera"
         if (!start(context, Intent(Intent.ACTION_VIEW, link.toUri()).setPackage(pkg))) return StoryResult.NO_APP
-        GuardPass.grant(SystemClock.elapsedRealtime(), STORY_PASS_MS, GuardPass.Kind.STORY)
-        val wait = (storyRules(context)?.cooldownMinutes ?: 30) * 60_000L
-        PassLedger.update(context) { it.storyStarted(now.epochDay, now.wallMillis, wait) }
+        // A little longer than the pass itself: the guard ends it after its minutes in Instagram,
+        // which start once Instagram is in front, not at the tap.
+        GuardPass.grant(SystemClock.elapsedRealtime(), (storyMinutes(context) + 1) * 60_000L, GuardPass.Kind.STORY)
+        lastStoryEnd = null
         return StoryResult.OPENED
     }
 
     /**
-     * The story pass ended with Instagram posting (owner, 2026-11-20: a real upload means no
-     * cheating): it neither starts the wait nor counts toward the day's passes.
+     * A story pass ended without a post (left, or its minutes ran out): charged the time spent in
+     * Instagram. Remembered for a moment, since Instagram's posting notification can come just after.
      */
-    fun storyPosted(context: Context) {
+    fun storyEnded(context: Context, spentMillis: Long) {
         val now = PassLedger.now(context) ?: return
-        PassLedger.update(context) { it.storyPosted(now.epochDay) }
+        val before = PassLedger.read(context)
+        lastStoryEnd = StoryEnd(SystemClock.elapsedRealtime(), before.storyUsedMillis, before.storyLockUntil)
+        PassLedger.update(context) { it.storyCharged(now.wallMillis, spentMillis, storyBudgetMillis(context), storyLockMillis(context)) }
         storyAvailabilityChanged(context)
     }
 
     /**
-     * The story pass was left early, having shown little but the camera (a change of mind): it
-     * doesn't count toward the day's passes, but a short wait follows so this can't be repeated.
+     * Instagram is posting: the story pass that is running (the caller ended it), or one that ended
+     * moments before ([LATE_POST_MS]), costs the fixed post amount instead of its time.
      */
-    fun storyLeftEarly(context: Context) {
+    fun storyPosted(context: Context, passWasRunning: Boolean) {
         val now = PassLedger.now(context) ?: return
-        PassLedger.update(context) { it.storyLeftEarly(now.epochDay, now.wallMillis) }
+        val late = lastStoryEnd?.takeIf { SystemClock.elapsedRealtime() - it.at <= LATE_POST_MS }
+        if (!passWasRunning && late == null) return
+        lastStoryEnd = null
+        PassLedger.update(context) { book ->
+            val base = if (late != null) book.copy(storyUsedMillis = late.usedBefore, storyLockUntil = late.lockBefore) else book
+            base.storyCharged(now.wallMillis, storyPostMillis(context), storyBudgetMillis(context), storyLockMillis(context))
+        }
         storyAvailabilityChanged(context)
     }
+
+    /** The last story pass that ended without a post: when (elapsed ms), and the budget before its charge. */
+    private class StoryEnd(val at: Long, val usedBefore: Long, val lockBefore: Long?)
+
+    @Volatile
+    private var lastStoryEnd: StoryEnd? = null
+
+    /** Instagram's posting notification may come this long after the user left the editor. */
+    private const val LATE_POST_MS = 90_000L
 
     /** Tells the page whether "Your story" opens the app now (only with the Instagram app connected). */
     fun storyAvailabilityChanged(context: Context) {

@@ -7,6 +7,7 @@
    */
   function createInAppTap(e) {
     var ac = state.c && state.c.appCreate;
+    if (addStoryClicking) return false; // Throwback opening the website's story upload (27-add-story.js)
     if (!state.createInApp || !ac || state.mode === MODE_MESSAGES || !e.target || !e.target.closest) return false;
     var hit = false;
     var kind = 'post';
@@ -22,7 +23,7 @@
       }
     }
     if (!hit) return false;
-    // Story through the app only when a story pass is available (30 min apart, a few a day);
+    // Story through the app only while the story budget isn't locked (DECISIONS.md #34cc);
     // otherwise the website's own story upload runs as usual.
     if (kind === 'story' && !state.storyInApp) {
       send({ t: 'storyWeb' }); // the app says why (the wait), then the website's own upload runs

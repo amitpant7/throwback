@@ -55,34 +55,43 @@ class PassBookTest {
     }
 
     @Test
-    fun `story passes - 3 a day, 30 minutes apart`() {
+    fun `story budget - a post costs 2 minutes, a pass without one its exact time`() {
+        val budget = 10 * m
+        val lock = 30 * m
         var b = PassBook()
-        val wait = 30 * m
-        assertTrue(b.storyAllowed(today, noon, perDay = 3))
-        b = b.storyStarted(today, noon, wait)
-        assertEquals(1, b.storiesOn(today))
-        assertFalse(b.storyAllowed(today, noon + 29 * m, perDay = 3))
-        assertEquals(1, b.storyWaitMinutes(today, noon + 29 * m, perDay = 3))
-        assertEquals(30, b.storyWaitMinutes(today, noon, perDay = 3))
-        assertTrue(b.storyAllowed(today, noon + 30 * m, perDay = 3))
-        b = b.storyStarted(today, noon + h, wait).storyStarted(today, noon + 2 * h, wait)
-        assertFalse(b.storyAllowed(today, noon + 5 * h, perDay = 3)) // 3 a day
-        assertNull(b.storyWaitMinutes(today, noon + 5 * h, perDay = 3)) // not today
-        assertTrue(b.storyAllowed(today + 1, noon + 12 * h, perDay = 3)) // a new day
-        assertEquals(0, b.storyWaitMinutes(today + 1, noon + 12 * h, perDay = 3))
+        assertTrue(b.storyAllowed(noon))
+        b = b.storyCharged(noon, 2 * m, budget, lock) // posted
+        assertEquals(2 * m, b.storyUsed(noon))
+        b = b.storyCharged(noon + m, 70_000, budget, lock) // left after 1:10 without a post: not rounded
+        assertEquals(2 * m + 70_000, b.storyUsed(noon + m))
+        assertTrue(b.storyAllowed(noon + m))
+        assertEquals(0, b.storyLockMinutes(noon + m))
     }
 
     @Test
-    fun `a story pass that posted is free, one left early is free but starts a short wait`() {
-        val started = PassBook().storyStarted(today, noon, waitMillis = 30 * m)
-        val posted = started.storyPosted(today)
-        assertEquals(0, posted.storiesOn(today))
-        assertTrue(posted.storyAllowed(today, noon + m, perDay = 3))
+    fun `story budget - used up, a 30-minute lock, then it starts again from nothing`() {
+        val budget = 10 * m
+        val lock = 30 * m
+        var b = PassBook()
+        repeat(4) { b = b.storyCharged(noon, 2 * m, budget, lock) } // 4 posts: 8 minutes
+        assertTrue(b.storyAllowed(noon)) // with 8 used, the next pass still gets its full 5 minutes
+        b = b.storyCharged(noon + 5 * m, 5 * m, budget, lock) // no post: 13 minutes, past the budget
+        assertFalse(b.storyAllowed(noon + 5 * m))
+        assertEquals(30, b.storyLockMinutes(noon + 5 * m))
+        assertEquals(1, b.storyLockMinutes(noon + 34 * m + 1))
+        assertEquals(0L, b.storyUsed(noon + 10 * m)) // shown as nothing during the lock
+        assertTrue(b.storyAllowed(noon + 35 * m))
+        assertEquals(0L, b.storyUsed(noon + 35 * m))
+        b = b.storyCharged(noon + 40 * m, 2 * m, budget, lock)
+        assertEquals(2 * m, b.storyUsed(noon + 40 * m))
+        assertEquals(null, b.storyLockUntil) // the old lock is gone
+    }
 
-        val left = started.storyLeftEarly(today, noon + 2 * m)
-        assertEquals(0, left.storiesOn(today))
-        assertFalse(left.storyAllowed(today, noon + 11 * m, perDay = 3))
-        assertTrue(left.storyAllowed(today, noon + 2 * m + PassRules.FREE_LEAVE_WAIT_MS, perDay = 3))
+    @Test
+    fun `story budget - five posts in a row reach it exactly`() {
+        var b = PassBook()
+        repeat(5) { b = b.storyCharged(noon, 2 * m, 10 * m, 30 * m) }
+        assertFalse(b.storyAllowed(noon))
     }
 
     @Test

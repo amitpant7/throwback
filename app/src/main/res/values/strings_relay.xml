@@ -31,22 +31,14 @@
         <item quantity="other">Swipe right for the story camera. %d minutes; posting ends it.</item>
     </plurals>
     <plurals name="story_web_wait">
-        <item quantity="one">Instagram\'s story editor opens again in %d min, after a story pass without a post. Using the website for now.</item>
-        <item quantity="other">Instagram\'s story editor opens again in %d min, after a story pass without a post. Using the website for now.</item>
-    </plurals>
-    <plurals name="story_web_tomorrow">
-        <item quantity="one">Instagram\'s story editor opens again tomorrow (%d story pass without a post today). Using the website for now.</item>
-        <item quantity="other">Instagram\'s story editor opens again tomorrow (%d story passes without a post today). Using the website for now.</item>
+        <item quantity="one">Instagram\'s story editor is back in %d min. Using the website for now.</item>
+        <item quantity="other">Instagram\'s story editor is back in %d min. Using the website for now.</item>
     </plurals>
     <string name="guard_cover_story_title">Story time\'s up</string>
     <string name="guard_cover_story_body">Thought you could sneak a scroll…? Nahhh.</string>
-    <plurals name="story_in_app_used_up">
-        <item quantity="one">That\'s %d visit to Instagram\'s story editor without a post today. Back tomorrow.</item>
-        <item quantity="other">That\'s %d visits to Instagram\'s story editor without a post today. Back tomorrow.</item>
-    </plurals>
     <plurals name="story_in_app_wait">
-        <item quantity="one">Instagram\'s story editor opens again in %d min (the wait after a story pass without a post).</item>
-        <item quantity="other">Instagram\'s story editor opens again in %d min (the wait after a story pass without a post).</item>
+        <item quantity="one">Story time is used up. Instagram\'s story editor is back in %d min.</item>
+        <item quantity="other">Story time is used up. Instagram\'s story editor is back in %d min.</item>
     </plurals>
     <string name="story_in_app_not_ready">One moment… then tap “Your story” again.</string>
     <string name="story_web_ready">Instagram\'s story editor is ready again: tap “Your story” once more to use it.</string>

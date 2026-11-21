@@ -38,6 +38,7 @@ fallback way and must still run there.
 | `20-page-state.js` | Which rules apply on this page; the style element; the viewport |
 | `25-entry-points.js` | Ways into Throwback's settings: profile icon, settings-page section, Home long-press |
 | `26-chat-call.js` | The call button in chats (opens the chat in the Instagram app) |
+| `27-add-story.js` | A "+" on "Your story" once a story is up (another story: the app, or the website's upload) |
 | `28-instagram-app.js` | Posting and Instagram's own settings through the Instagram app |
 | `30-feed-end.js` | The bottom of the feed: "You're all caught up" and the support line |
 | `35-routing.js` | Which pages may show (mirrors `web/UrlRouter.kt`); in-page navigation |

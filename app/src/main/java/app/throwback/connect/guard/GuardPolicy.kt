@@ -272,27 +272,6 @@ internal object PassRules {
 
     fun partOfInstagramFlow(pkg: String, extra: Set<String> = emptySet()): Boolean = pkg in FLOW_PACKAGES || pkg in extra
 
-    /**
-     * Story pass (owner, 2026-11-20): Instagram's story camera, gallery and editor share the app's main
-     * screen with the feed, so the user gets a few minutes of Instagram ([limitMillis], counted only
-     * while the phone's camera is off: taking photos never uses it up). False when it should end.
-     */
-    fun storyPassHolds(cameraOffMillis: Long, limitMillis: Long): Boolean = cameraOffMillis <= limitMillis
-
-    /** Camera-off time (the feed, Reels…) a story pass left early may have used and still be a change of mind. */
-    const val FREE_LEAVE_CAMERA_OFF_MS = 30_000L
-
-    /** Even a story pass left early is followed by this wait, so leaving early can't be repeated back to back. */
-    const val FREE_LEAVE_WAIT_MS = 10 * 60_000L
-
-    /**
-     * A story pass left within [freeLeaveMillis] of its start was a change of mind (owner): it doesn't
-     * count. Only if it showed almost nothing but the camera, though, since the story link opens on
-     * Instagram's feed: otherwise "Your story", ~3 minutes of feed, Home, again… would never count.
-     */
-    fun storyLeftEarly(sinceGrant: Long, cameraOffMillis: Long, freeLeaveMillis: Long): Boolean =
-        sinceGrant < freeLeaveMillis && cameraOffMillis <= FREE_LEAVE_CAMERA_OFF_MS
-
     /** Instagram's own redirects while the create (or settings) screen opens, from its first screen on. */
     const val CREATE_GRACE_MS = 3_000L
 
@@ -317,25 +296,3 @@ internal object PassRules {
         pattern?.let { runCatching { Regex(it) }.getOrNull() }?.takeUnless { it.containsMatchIn("") }
 }
 
-/**
- * Which cameras Instagram is using, for the story pass (pure, for tests). Android tells every app
- * that a camera is in use, not by whom: a camera counts as Instagram's when it went into use while
- * Instagram was in front. A camera another app opened before (a camera app next to Instagram in split
- * screen) stays someone else's until it is released.
- */
-internal class CameraUse {
-    private val byInstagram = mutableSetOf<String>()
-
-    @Synchronized
-    fun opened(cameraId: String, instagramInFront: Boolean) {
-        if (instagramInFront) byInstagram += cameraId else byInstagram -= cameraId
-    }
-
-    @Synchronized
-    fun closed(cameraId: String) {
-        byInstagram -= cameraId
-    }
-
-    @Synchronized
-    fun instagramCamera(): Boolean = byInstagram.isNotEmpty()
-}

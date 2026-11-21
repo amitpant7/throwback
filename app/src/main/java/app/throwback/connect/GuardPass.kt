@@ -19,14 +19,11 @@ internal object GuardPass {
         /** "Open settings in the Instagram app": its settings screens. */
         SETTINGS,
 
-        /** "Your story": a few minutes of Instagram, not counting time with the camera on. */
+        /** "Your story": a few minutes of Instagram, charged to the story budget when it ends (DECISIONS.md #34cc). */
         STORY,
     }
 
-    /**
-     * Time that uses the pass up: SETTINGS, time on the app's screens other than its settings;
-     * STORY, time with the camera off (see GuardService).
-     */
+    /** Time that uses a SETTINGS pass up: on the app's screens other than its settings (see GuardService). */
     @Volatile
     var outsideMillis: Long = 0L
 
@@ -77,8 +74,8 @@ internal object GuardPass {
     }
 
     /**
-     * Ends the pass if it still runs; true only for the one caller that ended it. The guard (left
-     * early) and the relay (posted) can both see a story pass end: only one may forgive it.
+     * Ends the pass if it still runs; true only for the one caller that ended it. The guard (left, or
+     * time up) and the relay (posted) can both see a story pass end: only one may charge it.
      */
     @Synchronized
     fun endIfActive(now: Long): Boolean {

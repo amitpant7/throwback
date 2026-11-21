@@ -398,19 +398,5 @@ class GuardPolicyTest {
         assertFalse(t.inFront(watched))
     }
 
-    @Test
-    fun `a camera counts as Instagram's only when it opened while Instagram was in front`() {
-        val use = CameraUse()
-        assertFalse(use.instagramCamera())
-        use.opened("0", instagramInFront = false) // a camera app in split screen, opened before switching
-        assertFalse(use.instagramCamera())
-        use.opened("1", instagramInFront = true) // Instagram's story camera
-        assertTrue(use.instagramCamera())
-        use.closed("1")
-        assertFalse(use.instagramCamera())
-        use.opened("0", instagramInFront = true) // the other app released it, then Instagram took it
-        assertTrue(use.instagramCamera())
-        use.closed("0")
-        assertFalse(use.instagramCamera())
-    }
+
 }

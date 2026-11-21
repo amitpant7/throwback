@@ -103,9 +103,10 @@ class RulesParserTest {
     }
 
     @Test
-    fun `story pass numbers are range-checked`() {
-        assertRejected(TestRules.bundledWith { it.replace("\"freeLeaveMinutes\": 3", "\"freeLeaveMinutes\": 600") }, "freeLeaveMinutes")
-        assertRejected(TestRules.bundledWith { it.replace("\"freeLeaveMinutes\": 3", "\"freeLeaveMinutes\": -1") }, "freeLeaveMinutes")
+    fun `story budget numbers are range-checked`() {
+        assertRejected(TestRules.bundledWith { it.replace("\"budgetMinutes\": 10", "\"budgetMinutes\": 600") }, "budgetMinutes")
+        assertRejected(TestRules.bundledWith { it.replace("\"postMinutes\": 2", "\"postMinutes\": 11") }, "postMinutes")
+        assertRejected(TestRules.bundledWith { it.replace("\"lockMinutes\": 30", "\"lockMinutes\": -1") }, "lockMinutes")
     }
 
     @Test

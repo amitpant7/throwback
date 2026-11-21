@@ -11,13 +11,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
-import android.hardware.camera2.CameraManager
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.os.Build
-import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
 import android.os.PowerManager
 import android.os.SystemClock
 import android.service.notification.NotificationListenerService
@@ -132,7 +129,6 @@ class GuardService : Service() {
     override fun onCreate() {
         super.onCreate()
         overlay = GuardOverlay(this)
-        watchCameras(true)
         RelayNotifier.ensureChannels(this)
         goForeground()
         screenOn.value = getSystemService(PowerManager::class.java)?.isInteractive != false
@@ -150,7 +146,6 @@ class GuardService : Service() {
     }
 
     override fun onDestroy() {
-        watchCameras(false)
         running = false
         CallState.appCall.value = false
         scope.cancel()
@@ -274,7 +269,6 @@ class GuardService : Service() {
             val appCall = appCallSession.update(now, callScreenShown, voiceCallSound())
             if (CallState.appCall.value != appCall) CallState.appCall.value = appCall
             if (igCallAudio || appCall) callAudioAt = now
-            instagramInFront = tracker.current in watched // for the camera callbacks (main thread too)
             if (GuardPass.active(now)) followPass(now, tracker.current, calls, igCallAudio || appCall, callScreenShown)
             val grace = rules().callGraceMillis // read each time: a rules update applies at once
             val callSigns = CallAudioLink.isCallAudio(audioMode) || callScreenShown || appCall
@@ -383,7 +377,7 @@ class GuardService : Service() {
             GuardPass.Kind.VISIT -> Unit
             GuardPass.Kind.CREATE -> if (inInstagram) createPass(now)
             GuardPass.Kind.SETTINGS -> if (inInstagram) settingsPass(now)
-            GuardPass.Kind.STORY -> if (inInstagram) storyPass()
+            GuardPass.Kind.STORY -> if (inInstagram) storyPass(now)
         }
     }
 
@@ -396,20 +390,13 @@ class GuardService : Service() {
         }
     }
 
-    /**
-     * Left Instagram: the rest of the pass isn't kept for later. A story pass left within a few
-     * minutes, having shown little but the camera, was a change of mind (owner): it doesn't count,
-     * and only a short wait follows.
-     */
+    /** Left Instagram: the rest of the pass isn't kept for later. A story pass is charged its time (#34cc). */
     private fun leftInstagram(now: Long) {
-        val leftEarly = GuardPass.kind == GuardPass.Kind.STORY && PassRules.storyLeftEarly(
-            sinceGrant = now - GuardPass.grantedAt,
-            cameraOffMillis = GuardPass.outsideMillis,
-            freeLeaveMillis = (rules().story?.freeLeaveMinutes ?: 3) * 60_000L,
-        )
-        // Only if this ended it: the relay may just have ended it as posted (and forgiven it).
+        val story = GuardPass.kind == GuardPass.Kind.STORY
+        val spent = GuardPass.inFrontFor(now)
+        // Only if this ended it: the relay may just have ended it as posted (and charged the post).
         if (!GuardPass.endIfActive(now)) return
-        if (leftEarly) CallInApp.storyLeftEarly(this)
+        if (story) CallInApp.storyEnded(this, spent)
     }
 
     /**
@@ -455,14 +442,13 @@ class GuardService : Service() {
         }
     }
 
-    /** Minutes of Instagram for a story; time with Instagram's camera on doesn't count. */
-    private fun storyPass() {
-        if (!cameras.instagramCamera()) GuardPass.outsideMillis += POLL_MS
-        if (!PassRules.storyPassHolds(GuardPass.outsideMillis, (rules().story?.editMinutes ?: 5) * 60_000L)) {
-            Log.i(TAG, "story pass: time is up")
-            storyTimeUp = true
-            GuardPass.end()
-        }
+    /** A story pass gives its minutes in Instagram (from when Instagram came to the front), then ends: charged that time. */
+    private fun storyPass(now: Long) {
+        val spent = GuardPass.inFrontFor(now)
+        if (spent < CallInApp.storyMinutes(this) * 60_000L) return
+        Log.i(TAG, "story pass: time is up")
+        storyTimeUp = true
+        if (GuardPass.endIfActive(now)) CallInApp.storyEnded(this, spent)
     }
 
     /** Covers Instagram and brings Throwback to the front; the cover stays while Instagram is on screen. */
@@ -557,36 +543,5 @@ class GuardService : Service() {
         val current = RulesRepository.get(this).rules.value
         rulesCache?.takeIf { it.source === current }?.let { return it }
         return GuardRules(current).also { rulesCache = it }
-    }
-
-    /**
-     * Cameras in use (Android reports this to every app, not by whom). One that went into use while
-     * Instagram was in front is Instagram's (its story camera); one another app opened first, e.g. a
-     * camera app next to Instagram in split screen, doesn't stop the story pass's clock.
-     */
-    private val cameras = CameraUse()
-
-    /** Whether Instagram was in front at the last check; read by the camera callbacks (main thread). */
-    private var instagramInFront = false
-    private val cameraCallback = object : CameraManager.AvailabilityCallback() {
-        override fun onCameraUnavailable(cameraId: String) {
-            cameras.opened(cameraId, instagramInFront)
-            if (BuildConfig.DEBUG) Log.d(TAG, "camera $cameraId in use (Instagram in front: $instagramInFront)")
-        }
-
-        override fun onCameraAvailable(cameraId: String) {
-            cameras.closed(cameraId)
-            if (BuildConfig.DEBUG) Log.d(TAG, "camera $cameraId free")
-        }
-    }
-
-    private fun watchCameras(on: Boolean) {
-        val cm = getSystemService(CameraManager::class.java) ?: return
-        try {
-            if (on) cm.registerAvailabilityCallback(cameraCallback, Handler(Looper.getMainLooper()))
-            else cm.unregisterAvailabilityCallback(cameraCallback)
-        } catch (e: RuntimeException) {
-            Log.w(TAG, "camera watch unavailable: ${e.javaClass.simpleName}")
-        }
     }
 }

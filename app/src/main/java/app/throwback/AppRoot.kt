@@ -41,6 +41,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import app.throwback.connect.CallInApp
+import app.throwback.connect.PassBook
 import app.throwback.core.LockState
 import app.throwback.core.RateAsk
 import app.throwback.core.StartTrace
@@ -328,7 +329,8 @@ private fun MainScreen(
             onOpenSettings = onOpenSettings,
             onCallInApp = { thread, user ->
                 val result = CallInApp.open(context, thread, user)
-                result.message?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
+                // Only "too many" has a number in it (the taps an hour); the others ignore it.
+                result.message?.let { Toast.makeText(context, context.getString(it, PassBook.CALL_TAPS_PER_HOUR), Toast.LENGTH_LONG).show() }
                 // No Instagram app: the Connect › Instagram setup installs it.
                 if (result == CallInApp.Result.NO_APP) onOpenMessagesSetup()
             },

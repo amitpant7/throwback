@@ -58,6 +58,7 @@
     <string name="app_pass_locked">Not while your daily limit is reached.</string>
     <string name="app_pass_not_ready">One moment… then tap again.</string>
     <string name="call_not_ready">One moment… then tap the call button again.</string>
-    <string name="call_too_many">That\'s 3 tries this hour. Incoming calls still ring as usual.</string>
+    <!-- %1$d: the call button's taps an hour (PassBook.CALL_TAPS_PER_HOUR). -->
+    <string name="call_too_many">The call button\'s hourly limit is used up (%1$d). Incoming calls still ring as usual.</string>
     <string name="call_needs_instagram_app">Calls start in the Instagram app. Connect Instagram to Throwback in Settings → Connect → Instagram.</string>
 </resources>

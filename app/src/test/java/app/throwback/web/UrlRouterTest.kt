@@ -206,8 +206,8 @@ class UrlRouterTest {
 
     @Test
     fun `app and store schemes do nothing even when the rules don't list them`() {
-        val bare = UrlRouter(FallbackRules.rules)
-        assertTrue(FallbackRules.rules.hosts.blockedUrls.isEmpty())
+        val fallback = FallbackRules.rules
+        val bare = UrlRouter(fallback.copy(hosts = fallback.hosts.copy(blockedUrls = emptyList())))
         listOf("intent://instagram.com/#Intent;scheme=https;end", "INTENT:#Intent;end", "instagram://user?username=x", "market://details?id=x")
             .forEach { assertEquals(it, Decision.Ignore, bare.decide(it, FULL, "$ig/")) }
         assertEquals(Decision.External("mailto:a@b.c"), bare.decide("mailto:a@b.c", FULL, "$ig/"))
@@ -361,6 +361,25 @@ class UrlRouterTest {
         val match = Regex("^/(.*)$").find("//evil.example/x")!!
         assertEquals("/evil.example/x", UrlRouter.expandTemplate("/$1", match))
         assertEquals("/p//", UrlRouter.expandTemplate("/p/$2/", match)) // a missing group is empty
+    }
+
+    @Test
+    fun `the built-in fallback routes like the bundled rules`() {
+        val fallback = UrlRouter(FallbackRules.rules)
+        val urls = listOf(
+            "$ig/", "$ig/?variant=x", "$ig/reels/", "$ig/reel/C1a2B3c4D5e/", "$ig/some.user/reel/C1a2B3c4D5e/", "$ig/some.user/reels/",
+            "$ig/p/X/", inbox, "$ig/direct/t/1/", "$ig/call/?thread_id=1", "https://m.instagram.com/direct/inbox/",
+            "$ig/accounts/login/two_factor?next=%2F", "$ig/accounts/emailsignup/", "$ig/challenge/x/", "$ig/auth_platform/codeentry/",
+            "https://accountscenter.instagram.com/", "https://accountscenter.meta.com/", "https://www.facebook.com/login.php",
+            "https://www.facebook.com/", "https://auth.meta.com/login/", "https://lm.facebook.com/l.php?u=https%3A%2F%2Fexample.com%2F",
+            "https://play.google.com/store/apps/details?id=com.instagram.android", "https://apps.apple.com/app/x",
+        )
+        for (mode in WebMode.entries) {
+            for (current in listOf("$ig/", "$ig/accounts/login/", inbox)) {
+                urls.forEach { assertEquals("$it ($mode, from $current)", router.decide(it, mode, current), fallback.decide(it, mode, current)) }
+            }
+            assertEquals(router.allowsPullToRefresh(inbox), fallback.allowsPullToRefresh(inbox))
+        }
     }
 
     // ---- Loop guard and helpers

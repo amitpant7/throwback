@@ -202,8 +202,9 @@ class RulesRepository internal constructor(
 
 /**
  * Last-resort rules if both the bundled and the cached file are unusable (should never happen: a
- * unit test validates the bundled file). Keeps the essentials: the home feed, no Reels pages,
- * messages-only mode.
+ * unit test validates the bundled file). Routes like filters/rules.json (a test compares them): the
+ * home feed, no Reels pages, messages-only mode with calls and logins, Accounts Center, Facebook
+ * login. Page filtering keeps only the Reels links.
  */
 internal object FallbackRules {
     val rules = FilterRules(
@@ -213,19 +214,36 @@ internal object FallbackRules {
         homeVariants = listOf("home", "following", "favorites"),
         messagesUrl = "https://www.instagram.com/direct/inbox/",
         hosts = Hosts(
-            instagram = listOf("instagram.com", "www.instagram.com"),
-            login = listOf("facebook.com", "*.facebook.com"),
+            instagram = listOf("instagram.com", "www.instagram.com", "m.instagram.com"),
+            internal = listOf("accountscenter.instagram.com", "accountscenter.facebook.com", "accountscenter.meta.com"),
+            login = listOf("facebook.com", "*.facebook.com", "meta.com", "*.meta.com"),
             loginPaths = listOf(
                 "^/(login|checkpoint|recover|two_step_verification|two_factor|auth_platform|dialog|privacy/consent|cookie|r|reg|confirmemail|security)(/|\\.php|$)",
                 "^/v[0-9.]+/dialog/",
             ),
-            linkShims = listOf(LinkShim("l.instagram.com", "u")),
+            linkShims = listOf(LinkShim("l.instagram.com", "u"), LinkShim("l.facebook.com", "u"), LinkShim("lm.facebook.com", "u")),
+            // intent:, instagram: and market: links are refused by the router itself.
+            blockedUrls = listOf(
+                "^https?://play\\.google\\.com/store/apps/details\\?id=com\\.(instagram|facebook)\\.",
+                "^https?://(apps|itunes)\\.apple\\.com/",
+            ),
         ),
         paths = Paths(
-            blocked = listOf(BlockedPath(pattern = "^/reels?(/|$)", kind = "reels")),
-            alwaysAllowed = listOf("^/accounts/(login|onetap|password|two_factor)(/|$)", "^/challenge(/|$)"),
-            auth = listOf("^/accounts/", "^/challenge(/|$)"),
+            blocked = listOf(
+                BlockedPath(pattern = "^/reels?/([A-Za-z0-9_-]{9,})/?$", redirect = "/p/$1/", kind = "reels"),
+                BlockedPath(pattern = "^/[A-Za-z0-9._]+/reels?/([A-Za-z0-9_-]{9,})/?$", redirect = "/p/$1/", kind = "reels"),
+                BlockedPath(pattern = "^/([A-Za-z0-9._]+)/reels/?$", redirect = "/$1/", kind = "reels"),
+                BlockedPath(pattern = "^/reels?(/|$)", kind = "reels"),
+            ),
+            alwaysAllowed = listOf(
+                "^/accounts/(login|onetap|emailsignup|signup|password|suspended|disabled|logout|confirm_email)(/|$)",
+                "^/challenge(/|$)",
+                "^/auth_platform(/|$)",
+                "^/call(/|$)",
+            ),
+            auth = listOf("^/accounts/", "^/challenge(/|$)", "^/auth_platform(/|$)"),
             messagesOnly = listOf("^/direct(/|$)"),
+            pullToRefresh = listOf("^/$", "^/accounts/activity/?$", "^/direct/inbox/?$"),
         ),
         hide = listOf(HideRule(id = "reels-links", selector = "a[href^='/reels/'], a[href$='/reels/']")),
     )

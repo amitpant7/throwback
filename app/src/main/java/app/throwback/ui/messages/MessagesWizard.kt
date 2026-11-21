@@ -202,6 +202,13 @@ private fun InstallStep(onNext: () -> Unit, onNotNow: () -> Unit, showMessage: (
                 )
             }
         }
+        // Android shows Throwback only the main profile's apps (DECISIONS.md #34f).
+        Text(
+            stringResource(R.string.ui_install_clones),
+            style = UiText.sub,
+            color = colors.muted,
+            modifier = Modifier.padding(top = 12.dp, start = 4.dp, end = 4.dp),
+        )
     }
 }
 

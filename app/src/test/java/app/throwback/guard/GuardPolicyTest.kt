@@ -396,6 +396,20 @@ class GuardPolicyTest {
     }
 
     @Test
+    fun `a create pass's grace starts when Instagram comes to the front, not at the tap`() {
+        val screens = PassRules.screensPattern("^instagram\\.features\\.creation\\.")
+        GuardPass.grant(now, 60_000, GuardPass.Kind.CREATE)
+        assertEquals(0L, GuardPass.inFrontFor(now + 5_000)) // Instagram still starting
+        GuardPass.inFront(now + 5_000) // its main screen first, then the editor
+        GuardPass.inFront(now + 6_000) // later checks don't move it
+        assertTrue(PassRules.createPassHolds(feed, screens, GuardPass.inFrontFor(now + 7_000)))
+        assertFalse(PassRules.createPassHolds(feed, screens, GuardPass.inFrontFor(now + 8_000)))
+        GuardPass.grant(now + 9_000, 60_000, GuardPass.Kind.CREATE) // a new pass starts over
+        assertEquals(null, GuardPass.firstInFrontAt)
+        GuardPass.end()
+    }
+
+    @Test
     fun `below Android 10 a pause ends it (there are no stop events)`() {
         val t = ForegroundTracker(stopEvents = false)
         t.onEvent(ACTIVITY_RESUMED, ig, feed)

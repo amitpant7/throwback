@@ -301,9 +301,10 @@ internal object GuardPass {
     var kind: Kind = Kind.VISIT
         private set
 
-    /** Instagram was in front during this pass. */
+    /** When Instagram was first in front during this pass (elapsed millis), or null. */
     @Volatile
-    var sawInstagram: Boolean = false
+    var firstInFrontAt: Long? = null
+        private set
 
     @Synchronized
     fun grant(now: Long, durationMs: Long, kind: Kind) {
@@ -311,8 +312,19 @@ internal object GuardPass {
         outsideMillis = 0L
         allowUntil = now + durationMs
         this.kind = kind
-        sawInstagram = false
+        firstInFrontAt = null
     }
+
+    /** Instagram is in front now (the guard calls this at each check during a pass). */
+    fun inFront(now: Long) {
+        if (firstInFrontAt == null) firstInFrontAt = now
+    }
+
+    /**
+     * How long since Instagram first came to the front in this pass (0 before). The screen rules'
+     * grace counts from then, not from the grant: Instagram can take seconds to start.
+     */
+    fun inFrontFor(now: Long): Long = firstInFrontAt?.let { now - it } ?: 0L
 
     fun active(now: Long): Boolean = now < allowUntil
 
@@ -371,16 +383,17 @@ internal object PassRules {
     fun storyLeftEarly(sinceGrant: Long, cameraOffMillis: Long, freeLeaveMillis: Long): Boolean =
         sinceGrant < freeLeaveMillis && cameraOffMillis <= FREE_LEAVE_CAMERA_OFF_MS
 
-    /** Instagram's own redirects while the create screen opens. */
+    /** Instagram's own redirects while the create (or settings) screen opens, from its first screen on. */
     const val CREATE_GRACE_MS = 3_000L
 
     /**
      * A create pass stays only while Instagram shows a creation screen ([screens], from the rules);
      * any other screen (the feed after posting, Reels) ends it. Fails closed: without a usable
-     * pattern or a known screen, only the grace while the editor opens.
+     * pattern or a known screen, only the grace while the editor opens ([inFrontFor]: see
+     * GuardPass.inFrontFor).
      */
-    fun createPassHolds(className: String?, screens: Regex?, sinceGrant: Long): Boolean =
-        sinceGrant < CREATE_GRACE_MS || onScreens(className, screens)
+    fun createPassHolds(className: String?, screens: Regex?, inFrontFor: Long): Boolean =
+        inFrontFor < CREATE_GRACE_MS || onScreens(className, screens)
 
     /** [className] is one of [screens] (a creation or settings screen). Unknown screen or no pattern: no. */
     fun onScreens(className: String?, screens: Regex?): Boolean =

@@ -360,8 +360,8 @@ class GuardService : Service() {
         val flow = if (GuardPass.kind == GuardPass.Kind.SETTINGS) rules().settingsFlow else rules().createFlow
         if (inInstagram) {
             countAppTime()
-            GuardPass.sawInstagram = true
-        } else if (GuardPass.sawInstagram && fg != null && !PassRules.partOfInstagramFlow(fg, flow)) {
+            GuardPass.inFront(now)
+        } else if (GuardPass.firstInFrontAt != null && fg != null && !PassRules.partOfInstagramFlow(fg, flow)) {
             leftInstagram(now)
         }
         when (GuardPass.kind) {
@@ -410,7 +410,7 @@ class GuardService : Service() {
 
     /** Posting: only Instagram's creation screens. */
     private fun createPass(now: Long) {
-        if (!PassRules.createPassHolds(tracker.currentClass, rules().createScreens, now - GuardPass.grantedAt)) {
+        if (!PassRules.createPassHolds(tracker.currentClass, rules().createScreens, GuardPass.inFrontFor(now))) {
             Log.i(TAG, "left Instagram's create screens: pass ends")
             GuardPass.end()
         }
@@ -418,7 +418,7 @@ class GuardService : Service() {
 
     /** Instagram's settings screens, and its other screens for at most `appSettings.otherScreenMinutes`. */
     private fun settingsPass(now: Long) {
-        if (now - GuardPass.grantedAt < PassRules.CREATE_GRACE_MS) return
+        if (GuardPass.inFrontFor(now) < PassRules.CREATE_GRACE_MS) return
         val rules = rules()
         if (!PassRules.onScreens(tracker.currentClass, rules.settingsScreens)) {
             GuardPass.outsideMillis += POLL_MS

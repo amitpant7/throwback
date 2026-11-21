@@ -24,7 +24,7 @@ Android's own backup (to your Google account, if you have it on) includes only t
 
 If you connect the Instagram app (Settings → Connect → Instagram), Throwback asks for three Android permissions. Each is used only for the Instagram app:
 
-- **Notification access**, to pass on Instagram's call and message notifications and remove the others. Throwback looks only at Instagram's notifications (Android shows a notification listener every app's, and Throwback ignores the others), shows them on your phone and keeps only daily counts.
+- **Notification access**, to pass on Instagram's call and message notifications and remove the others. Throwback looks only at Instagram's notifications (Android hands a notification listener every app's notifications; Throwback ignores the others), shows them on your phone and keeps only daily counts.
 - **Usage access**, to notice when the Instagram app opens, so it can be covered outside calls. Android reports which app is on screen; Throwback uses that only to tell when it's Instagram, and stores or sends none of it.
 - **Display over other apps**, to show that cover.
 

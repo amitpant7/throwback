@@ -1,6 +1,7 @@
 package app.throwback.relay
 
 import android.app.Notification
+import android.os.Process
 import android.os.SystemClock
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
@@ -25,8 +26,8 @@ import kotlinx.coroutines.launch
  * The Messages & calls relay (DECISIONS.md #26). Android binds it while the user has granted
  * notification access.
  *
- * Only the Instagram apps' notifications are looked at; every other app's are ignored without being
- * read. Calls are never touched. Messages are replaced by Throwback's own notification, other types
+ * Only the Instagram apps' notifications in this profile are looked at; every other app's are
+ * ignored without being read. Calls are never touched. Messages are replaced by Throwback's own notification, other types
  * follow the toggles in Settings. Nothing is stored and nothing leaves the phone: a notification's
  * sender and text are only copied into Throwback's replacement.
  *
@@ -197,8 +198,14 @@ class RelayListenerService : NotificationListenerService() {
         null // not connected (SecurityException) or being (un)bound
     }
 
+    /**
+     * Instagram's notifications in this profile only. A second copy of Instagram (work profile, dual
+     * apps, Private Space) isn't covered (DECISIONS.md #34f): its notifications are left alone, and
+     * its calls don't open this one.
+     */
     private fun isRelevant(sbn: StatusBarNotification): Boolean =
-        sbn.packageName in InstagramPackages.ALL || RelayDebug.isFake(sbn.packageName, packageName, sbn.tag)
+        sbn.user == Process.myUserHandle() &&
+            (sbn.packageName in InstagramPackages.ALL || RelayDebug.isFake(sbn.packageName, packageName, sbn.tag))
 
     private suspend fun notificationRules(): NotificationRules? =
         RulesRepository.get(this).let { it.rules.value ?: it.load() }.notifications

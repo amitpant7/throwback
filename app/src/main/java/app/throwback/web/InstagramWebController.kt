@@ -197,7 +197,7 @@ internal class InstagramWebController(
         val hadRules = rules != null
         rules = newRules
         router = UrlRouter(newRules)
-        installScript(PageClock.json())
+        installScript()
         if (hadRules && started) injector.configureLive(PageScript.config(rules = newRules)) {}
     }
 
@@ -244,7 +244,7 @@ internal class InstagramWebController(
         if (destroyed || newMode == mode) return
         mode = newMode
         if (rules == null) return
-        installScript(PageClock.json())
+        installScript()
         if (!started) return
         injector.configureLive(PageScript.config(mode = newMode)) { handled ->
             if (!handled && !destroyed) enforceModeNatively()
@@ -252,14 +252,17 @@ internal class InstagramWebController(
     }
 
     /**
-     * The script for documents loaded from now on: rules, mode and features as they are now, and
-     * [clock]. Rebuilt only when one of them changes, and for a fresh clock at [onStart] and when the
-     * phone's time changes: never per navigation (it is ~180 KB).
+     * The script for documents loaded from now on: rules, mode and features as they are now, and the
+     * trusted clock read now, which it returns (null while the time limit is still loading). Rebuilt
+     * only when one of them changes, and for a fresh clock at [onStart] and when the phone's time
+     * changes: never per navigation (it is ~180 KB).
      */
-    private fun installScript(clock: JsonObject?) {
-        val rules = rules ?: return
+    private fun installScript(): JsonObject? {
+        val rules = rules ?: return null
+        val clock = PageClock.json()
         injector.install(PageScript.build(assets.template, assets.css, rules, mode, clock, features))
         scriptHasClock = clock != null
+        return clock
     }
 
     /** Whether the installed script carries a trusted clock (none while the time limit was still loading). */
@@ -271,8 +274,7 @@ internal class InstagramWebController(
      */
     private fun refreshClock() {
         if (destroyed || !inFront) return
-        val clock = PageClock.json() ?: return
-        installScript(clock)
+        val clock = installScript() ?: return
         if (started) injector.configureLive(PageScript.config(clock = clock)) {}
     }
 
@@ -339,13 +341,10 @@ internal class InstagramWebController(
         webView.resumeTimers()
         if (wasStopped) refreshClock()
         handler.removeCallbacks(clockTick)
-        handler.postDelayed(clockTick, if (clockSent) CLOCK_REFRESH_MS else CLOCK_RETRY_MS)
+        handler.postDelayed(clockTick, if (scriptHasClock) CLOCK_REFRESH_MS else CLOCK_RETRY_MS)
     }
 
     private var wasStopped = false
-
-    /** A trusted clock has reached this controller's script (the time limit had loaded). */
-    private var clockSent = PageClock.json() != null
 
     /**
      * While in front, the page gets a fresh clock now and then: the trusted time can move without any
@@ -357,11 +356,10 @@ internal class InstagramWebController(
             if (destroyed) return
             val clock = if (started) PageClock.json() else null
             if (clock != null) {
-                if (!clockSent) installScript(clock) // new pages start with it too
-                clockSent = true
+                if (!scriptHasClock) installScript() // new pages start with it too
                 injector.configureLive(PageScript.config(clock = clock)) {}
             }
-            handler.postDelayed(this, if (clockSent) CLOCK_REFRESH_MS else CLOCK_RETRY_MS)
+            handler.postDelayed(this, if (scriptHasClock) CLOCK_REFRESH_MS else CLOCK_RETRY_MS)
         }
     }
 
@@ -392,7 +390,7 @@ internal class InstagramWebController(
         if (destroyed || value == features) return
         features = value
         // Pages loaded from now on (the script was built before the app knew), and the page on screen.
-        installScript(PageClock.json())
+        installScript()
         if (started) injector.configureLive(PageScript.config(features = value)) {}
     }
 
@@ -634,7 +632,7 @@ internal class InstagramWebController(
                 // Fresh trusted time for the page's daily counters (the phone's clock may have moved),
                 // and, once it is known, for the documents after this one too.
                 PageClock.json()?.let { clock ->
-                    if (!scriptHasClock) installScript(clock)
+                    if (!scriptHasClock) installScript()
                     injector.configureLive(PageScript.config(clock = clock)) {}
                 }
             }

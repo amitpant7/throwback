@@ -24,8 +24,8 @@ reasons are in [DECISIONS.md](../DECISIONS.md).
 | `timelimit/data`, `timelimit` | Storage (DataStore `timelimit`), the Android clock, `DefaultTimeLimitController` |
 | `timelimit/ui` | Setup, manage, PIN entry and prompt, lock screens, forgot PIN, the time-left chip |
 | `ui` | Settings and its screens (`settings`, `messages` = Connect › Instagram, `today`, `about`, `shortcut` = Make It Yours), onboarding, pause, reel poster; `UiPrefs` (DataStore `ui_prefs`) |
-| `relay` | Notification relay and the passes into the Instagram app (`CallInApp`, the pass ledger) |
-| `guard` | The guard service and its pure policy (`GuardPolicy`), the cover overlay, restart after boot |
+| `relay` | Notification relay; opening the Instagram app for a call, a post, a story or its settings (`CallInApp`), `MessagesFeature` (starts or stops the guard) |
+| `guard` | The guard service and its pure policy (`GuardPolicy`, `CallScreens`, `PassRules`), the pass ledger (`PassLedger`), the cover overlay, `GuardHeartbeat` (time while the guard was off), restart after boot |
 
 The page script is in `app/src/main/pagescript/`, one file per area; its
 [README](../app/src/main/pagescript/README.md) lists the files and the rules for editing them.
@@ -84,6 +84,7 @@ and the main frame only; old WebViews use a JavaScript interface that refuses th
 | `caughtUp` | "You're all caught up" was seen (rating ask, once) |
 | `supportAskShown`, `supportThanks` | The support line was seen / "Say thanks" tapped (opens Support) |
 | `share` | Share a reel link from the Explore reel player |
+| `serverTime` | The Date of Instagram's own response, for the trusted clock on phones without network time (`ServerTimeHint`) |
 
 **App → page** (`window.__throwback`): `configure(cfg)`, `setCovered(bool)` (pauses media, stops the
 page's clocks), and for "Your day" and DevTools `dayStats()`, `perf()`, `feedStats()`, `storyStats()`,
@@ -127,7 +128,7 @@ the setup and the permissions.
   Instagram call notification or when it starts while Instagram is in front. During a call only
   Instagram's call screens (`appCall.screens`) may be active, once one has been seen in that call
   (`CallScreens`); until then all of Instagram is allowed, so a renamed call screen never cuts a call.
-- **Passes** (one ledger on the trusted clock, `relay/CallInApp`): call button (30 s, 3 taps an hour),
+- **Passes** (one ledger on the trusted clock, `guard/PassLedger`; `relay/CallInApp` opens the app): call button (30 s, 3 taps an hour),
   "Open Instagram for 5 minutes" (once a day, not while locked), posting (Instagram's create screens,
   20 minutes, 10 a day, not while locked), Instagram's settings (its settings screens, 10 minutes,
   5 a day, not while locked), story (5 minutes of Instagram time without the camera, a 30-minute
@@ -142,12 +143,12 @@ the setup and the permissions.
 
 | Where | What |
 |---|---|
-| DataStore `web` | Rules cache, ETag, last check |
+| DataStore `web` | Rules ETag and last check (the downloaded rules themselves: `files/filters/rules.json`) |
 | DataStore `timelimit` | Time-limit state (Auto Backup) |
 | DataStore `ui_prefs` | Onboarding, pause, setup done, notification switches, hints |
-| SharedPreferences `guard_passes`, `relay_stats`, `rate_ask`, `support_ask`, `pause_lines` | Pass ledger, relay day counts, rating ask, support ask, the pause's line rotation |
+| SharedPreferences `guard_passes`, `guard_heartbeat`, `relay_stats`, `rate_ask`, `support_ask`, `pause_lines` | Pass ledger, the guard's last beat, relay day counts, rating ask, support ask, the pause's line rotation |
 | SharedPreferences `supporter` | Whether the user has tipped (unlocks Make It Yours; Auto Backup) |
-| instagram.com `localStorage` (the page) | `__tb_day` (Your day), `__tb_explore`, `__tb_discover`, `__tb_reels`, `__tb_totals` (support line), `__tb_lastday` (the page's day), `__tb_code_assets` (warm-up), `__tb_redirects` (loop guard) |
+| instagram.com `localStorage` (the page) | `__tb_day` (Your day), `__tb_explore`, `__tb_discover`, `__tb_reels`, `__tb_totals` (support line), `__tb_lastday` (the page's day), `__tb_code_assets` (warm-up); in `sessionStorage`: `__tb_redirects` (loop guard) |
 
 ## Build and tests
 

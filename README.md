@@ -17,13 +17,14 @@ Free. Source available for personal use (see Licence). No accounts, no tracking.
 - Optional connected Instagram app: calls, message alerts, and posting with Instagram's own editor; the app stays installed
   but out of reach. Calls ring and are answered there (a chat's call button starts one there);
   messages open in Throwback; other Instagram notifications are removed unless you switch them on
-- Optional mindful pause before opening
-- Your own home-screen name and icon
+  (security and login alerts always come through)
+- A mindful pause before opening (on by default; can be turned off)
+- Make It Yours: your own home-screen name and icon for Throwback (unlocked by any tip)
 
 ## Opening Throwback's settings
 
 There's no Throwback button on the feed, so it looks exactly like Instagram. Open Throwback's settings
-(Connect → Instagram, Your day, time limit, mindful pause, shortcut, Support, About) any of these ways:
+(Connect → Instagram, Your day, time limit, mindful pause, Make It Yours, Support, About) any of these ways:
 
 1. **Your profile:** the Throwback icon at the top right (where the Threads icon was).
 2. **Instagram's settings:** profile → gear → the **Throwback** section, right after "Your account".
@@ -44,8 +45,8 @@ A standard single-module Android project: all source code is under `app/src/`.
 | `app/src/test/` | Unit tests (JVM) |
 | `app/src/debug/` | Test-build helpers (fake notifications for the emulator) |
 | `filters/rules.json` | The filter rules: bundled into the app and fetched daily from this repository |
-| `tools/` | Development tools: DevTools scripts, emulator helpers, the page-script lint ([README](tools/README.md)) |
-| `docs/` | [Architecture](docs/ARCHITECTURE.md) and [handoff notes](docs/HANDOFF.md); [DECISIONS.md](DECISIONS.md) records the product decisions |
+| `tools/` | Development tools: DevTools scripts, emulator helpers, the page-script lint, the shortcut-icon generator ([README](tools/README.md)) |
+| `docs/` | [Architecture](docs/ARCHITECTURE.md) and [handoff notes](docs/HANDOFF.md); [DECISIONS.md](DECISIONS.md) records the product decisions, [PRIVACY.md](PRIVACY.md) the privacy policy |
 | `design/` | Logo masters |
 
 ## Building

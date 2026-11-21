@@ -4,7 +4,7 @@ For the next Claude Code session (or developer) picking this project up. Read th
 [`DECISIONS.md`](../DECISIONS.md) (what we're building and why) and
 [`ARCHITECTURE.md`](ARCHITECTURE.md) (how the code is organised).
 
-_Last updated 2026-11-20, at version 0.2.0 (versionCode 4)._
+_Last updated 2026-11-21, at version 0.2.0 (versionCode 4)._
 
 ---
 
@@ -54,7 +54,7 @@ export JAVA_HOME=$(ls -d ~/.local/opt/jdk-17* | head -1) ANDROID_HOME=~/Android/
 tools/pagescript-lint.sh                                 # after page-script changes (Node)
 ```
 
-State at handoff: build passes; 309 unit tests pass; lint has 0 errors and only "newer version
+State at handoff: build passes; 320 unit tests pass; lint has 0 errors and only "newer version
 available" warnings (dependencies date from December 2024; see 5). The page script lints clean as ES5.
 
 Bump `versionCode`/`versionName` in `app/build.gradle.kts` for each build handed to the owner.
@@ -81,11 +81,11 @@ one with `adb -P 15037 kill-server`). Never open stories on the owner's account 
 | `files/debug_noscript` | No page script: plain Instagram in the same WebView, as a baseline |
 | `am start … --es debug_open settings` or `messages` | Opens Settings or Connect › Instagram directly |
 | `am start … --ez debug_supporter true` | Acts as if a tip went through: unlocks Make It Yours (stays set) |
+| `DebugRelayReceiver` broadcasts | Fake Instagram notifications; make the guard watch another app (see `app/src/debug/`) |
 
 APKs installed outside Google Play on Android 13+ get "App was denied access" (Android 15's wording)
 when turning on Notification access: first allow it in Throwback's App info → ⋮ → "Allow restricted
 settings" (the setup's card says so; confirmed on the owner's phone, 2026-11-21).
-| `DebugRelayReceiver` broadcasts | Fake Instagram notifications; make the guard watch another app (see `app/src/debug/`) |
 
 ```bash
 adb shell "run-as app.throwback sh -c 'echo 60 23:55 > /data/data/app.throwback/files/debug_clock'"
@@ -94,7 +94,7 @@ adb shell am start -n app.throwback/.MainActivity --es debug_open settings
 
 Logs (`adb logcat -s <tag>`): `ThrowbackWeb`, `ThrowbackRules`, `ThrowbackRelay`,
 `ThrowbackRelayLabels` (test builds: labels of every Instagram notification, never their text),
-`ThrowbackGuard`, `ThrowbackTime`, `ThrowbackApp`, `ThrowbackStart`.
+`ThrowbackGuard`, `ThrowbackTime`, `ThrowbackRate`, `ThrowbackStart`, `ThrowbackRelayDebug` (test builds).
 
 ## 4. Review of 2026-11-20 (what was checked and fixed)
 
@@ -112,7 +112,7 @@ time limit and guard) and measurements on the emulator led to these changes:
   leave allowed unlimited 3-minute slices of the real app; clock forward + reboot (API 33+, via
   network time, and Instagram's server time below Android 13); split screen, pop-up windows and PiP left the real app uncovered; settings and
   posting passes were long and uncounted; any phone call kept the real app open; stopping the guard
-  hid the real app's time (now counted when Throwback next runs); the profile Tagged tab.
+  hid the real app's time (now counted when Throwback next runs); the profile Tagged tab (shown again since 2026-11-21: owner, DECISIONS.md #34n).
 - **Security:** a URL with a backslash could load another site full-screen through a deep link;
   remote rules are pinned to Instagram's hosts and patterns are checked for catastrophic
   backtracking and JavaScript compatibility; old WebViews' bridge can't grant passes.
@@ -143,8 +143,10 @@ editor screens (they can't render on the emulator).
   Raise `targetSdk`/`compileSdk` and update the dependencies (AGP 8.7, Compose BOM 2024.12 and
   androidx libraries are about two years old; lint lists them) in one focused change, then run the
   full on-device checklist (7).
-- Play Billing for the tips (product ids per tip; "Whatever you want" maps to fixed step products;
-  `SupportAsk.markTipped` once a tip is confirmed). Recheck third-party names ("GTA 6") as tip product
+- **Play Billing for the tips, before the first release** (Make It Yours stays locked without it;
+  the Support intro promises it): product ids per tip; "Whatever you want" maps to fixed step
+  products; `Supporter.markTipped` once a tip is confirmed; owned tips restore the unlock (plan in
+  DECISIONS.md #4d). Releases are on Google Play only (#7). Recheck third-party names ("GTA 6") as tip product
   names, and replace or license the gig ticket's prism image (`ui_tip_rock`).
 - Privacy policy, Play listing and data-safety form (nothing collected); release signing; the
   owner's story in the README "Why" section.
@@ -159,7 +161,8 @@ editor screens (they can't render on the emulator).
 **Website (owner, 2026-11-21):** pages for `amitpant.com.np/throwback` (app page with a Netlify contact
 form, privacy policy, thanks page) were handed over as a zip for the site's repository; `PRIVACY.md`
 here is the same policy. To do once the page is live: About's links (privacy policy, contact, website)
-point there, and the page's Google Play button gets the store link when the app is published.
+and Support's "Report something Throwback missed" (DECISIONS.md #34p) point there, and the page's
+Google Play button gets the store link when the app is published.
 
 **Owner's answers of 2026-11-21, built** (DECISIONS.md #34):
 - [x] a. Suggested people in the home feed and on Discover people
@@ -168,6 +171,11 @@ point there, and the page's Google Play button gets the store link when the app 
 - [x] d. Remote rules tap only dismiss buttons
 - [x] e. Chat reel viewer detection and Close labels into the rules
 - [x] f. Connect › Instagram setup mentions clones and work profiles
+- [x] g. "Connect Instagram to Throwback" marked Recommended after the first login
+- [x] i. Welcome screen: "Free, and the code is public on GitHub"
+- [x] n. A profile's Tagged tab shows again
+- [ ] p. Report link to the website's contact form (once the site is live)
+- h, j, k, l, m, o need no code (decisions; the design canvas was updated on 2026-11-21).
 
 ## 6. How the home feed is filtered
 

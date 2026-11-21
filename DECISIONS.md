@@ -10,8 +10,9 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
    "name: what it is" pattern; 20 of Play's 30 characters). Under the icon it is just "Throwback"
    (launchers cut longer names). **Logo** (owner, 2026-11-20): "Falling backwards": a figure
    falling backwards in a night-sky portal formed by a rewind arrow, on **Emerald #36A56E** (owner's pick from samples, 2026-11-20; the icon pack's mint was #8FD1AD). Masters in
-   `design/logo/`; the launcher (adaptive + legacy + round), splash, in-app logo, guard cover and the
-   white notification icon (made from the mark) all use it.
+   `design/logo/`; the launcher (adaptive + legacy + round), splash, in-app logo, guard cover, the
+   home-screen shortcut presets (#31) and the white notification icon (made from the mark) all use it.
+   The "Throwback settings" launcher shortcut shows a white gear on the Emerald (2026-11-21).
 3. **Repository:** public on GitHub (github.com/amitpant7/throwback). **Licence: PolyForm Strict 1.0.0**
    (owner, 2026-11-20, replacing GPL-3.0): personal and other non-commercial use only, no
    redistribution, no published changes. Source-available, not open source (so no F-Droid). The
@@ -21,15 +22,24 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
    for now). A beer and GTA 6 have original icons; A gig ticket uses a prism
    image supplied by the owner (source and licence to confirm before release). Before the Play
    release, recheck using third-party names as product names.
+4a. **Rating ask** (owner, 2026-11-20): **once, after a month, never again.** Google Play's own in-app
+    review card, at "You're all caught up", once the app is at least 30 days old and was used on 10
+    different days. Google may choose not to show it; there is no second try and no "do you like it?"
+    question first (Play policy). Builds not from Play do nothing.
 4b. **Support screen: design A "list rows"** (owner, 2026-11-20; mockups row 5): one row per tip with
     the existing icons, a one-liner and the price: A beer **$3** ("A cold one, on you"), A gig ticket
     **$10** ("Toward the next show"), GTA 6 **$25** ("Toward the next big game"), and **"Whatever you want"**:
     a field where the user types any amount (no starting value; owner). Play needs fixed prices, so
     billing will charge the closest tip product, set up in steps (each dollar to $100, then wider). India priced by hand (₹99 / ₹299 / ₹799 suggested).
-    Prices shown from Google Play in the user's currency. Fine print "Paid through Google Play", then
+    Prices shown from Google Play in the user's currency (until billing is set up: fixed dollar amounts). Fine print "Paid through Google Play", then
     "How tips work", "Report something Throwback missed" and "Say Hi on Instagram · @97m.it" (the
     developer's profile, opened in Throwback; owner, 2026-11-21). The intro says what a tip gets:
     Make It Yours (#4d). Renaming "GTA 6" and the prism image stay on the release list.
+4c. **Support ask** (owner, 2026-11-20, design C with boxes): in "You're all caught up", after 1 month
+    of use, then every 2 months, never once the user has tipped: "Your first month" (later "Your last 2
+    months"), two minimal boxes with the ads and suggested posts removed since the last ask, and
+    "Say thanks →" (opens Support). Skipped when fewer than 20 were removed. The card can be built
+    while still screens away; the support line and the rating ask (#4a) wait until it is on screen.
 4d. **One tip unlocks Make It Yours** (owner, 2026-11-21): any tip, once, unlocks the whole Make It
     Yours screen (#31) for good. Before that it can be tried out; its button leads to Support. The
     flag is kept on the phone and in Auto Backup (`core/Supporter`). Until billing is set up nobody
@@ -39,20 +49,13 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     purchase of each tip product stays owned (acknowledged), and is consumed only just before the
     same product is bought again, so one stays on record. At start the app asks Play for owned tips
     (queryPurchasesAsync) and sets the flag. A refunded tip leaves the flag as it is.
-4a. **Rating ask** (owner, 2026-11-20): **once, after a month, never again.** Google Play's own in-app
-    review card, at "You're all caught up", once the app is at least 30 days old and was used on 10
-    different days. Google may choose not to show it; there is no second try and no "do you like it?"
-    question first (Play policy). Builds not from Play do nothing.
-4c. **Support ask** (owner, 2026-11-20, design C with boxes): in "You're all caught up", after 1 month
-    of use, then every 2 months, never once the user has tipped: "Your first month" (later "Your last 2
-    months"), two minimal boxes with the ads and suggested posts removed since the last ask, and
-    "Say thanks →" (opens Support). Skipped when fewer than 20 were removed. The card can be built
-    while still screens away; the support line and the rating ask (#4a) wait until it is on screen.
 5. **Privacy:** no analytics, no accounts, no server. Nothing leaves the phone except traffic to
    Instagram itself and a daily fetch of the public filter rules.
 6. **Disclaimer:** "Not affiliated with Instagram or Meta" on the store listing and the About screen.
    No Instagram name or logo in the app's branding.
-7. **Releases:** Google Play, plus APKs on GitHub Releases.
+7. **Releases: Google Play only** (owner, 2026-11-21): tips and Make It Yours need Google Play billing,
+   and Android 13+ makes downloaded APKs ask for "restricted settings" (#28). No APKs on GitHub
+   Releases; the code stays public there.
 
 ## How it works
 
@@ -70,48 +73,24 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 13. Open at Instagram's regular home feed (stories included, Instagram's own ranking; decided
     2026-11-20, replacing the Following feed, which has no stories), then filter it: hide Reels (tab and pages), hide the Explore grid (search stays),
     hide suggested posts, hide sponsored posts.
-13i. **Explore, 5 minutes a day** (decided 2026-11-20): the Explore grid on the Search tab shows for
-    5 minutes a day of time actually on that tab (rules `explore.dailySeconds`), then it is hidden
-    as before and "Enough for today… Your time is yours. Keep it. Go have an argument with your sibling instead." shows in its
-    place until midnight. Search keeps working, and typing a search doesn't use the minutes (they
-    count on the grid pages and in the reel player). Stored on the device per day. **Design B** (owner,
-    2026-11-20): a calm scene above the lines, one picked at random each time from five drawn scenes
-    (sunset hills, misty lake, moonlit sea, aurora, dunes) plus photos listed in rules
-    `explore.images`, which must be served from Throwback's own GitHub repo (CC0 or own art).
-    **Reels there play as reels** (owner, 2026-11-20): Instagram's mobile site has no single-reel
-    player (a reel tile opens as a static post, even with Throwback off). So while the minutes last,
-    tapping a reel tile on Explore or in search opens Throwback's own full-screen swipe player with
-    the reels from that page, in the order shown. It uses the video, username and caption Explore
-    already loaded; no extra logged-in requests. Shows "m:ss left today"; tap = sound on/off; ✕ or
-    Back closes it; "Open post" shows the normal post (likes, comments, profile). The time counts
-    toward the 5 minutes, and at 0:00 it closes onto "Enough for today". Only 3 videos are loaded
-    at a time.
-    **Side bar like Instagram's** (owner, 2026-11-20): ♥ (and double-tap) and 🔖 save work by
-    rendering the post's own page under the player (Instagram's router, no reload) and pressing
-    Instagram's own button there, so Instagram's code sends the request and Throwback sends none
-    (labels in rules `explore.actions`, fixable remotely); the icon changes at once and goes back if
-    the button can't be found. 💬 opens the post's comments (Back returns to the player at that reel),
-    ↗ opens Android's share sheet with the reel link, the username opens the profile.
 13b. **A little discovery** (decided 2026-11-20): of Instagram's suggested posts (never ads), a few are
     shown, tagged "Discover · not someone you follow". Per 5 minutes of time actually spent on the feed:
     at most 1 video/reel and 1 photo post; at most 20 a day; only after 8 posts from people you follow
     since the previous one; never after "You're all caught up". Always on, no setting.
-13k. **Suggested people stay** (owner, 2026-11-21): "Suggested for you" lists of accounts (on the
-    notifications page, on profiles, in the home feed and on the Discover people page), and profiles
-    of people you don't follow, are shown as Instagram shows them (#34a). Only suggested posts in the
-    feed are filtered (13b, 13d).
+13c. **Feed bottom** (decided 2026-11-20): never blank space. "You're all caught up" appears only when only
+    suggestions are left, not at Instagram's own "seen all new posts" point (owner confirmed
+    2026-11-20; rules `feedData.endAtMarker` = false). Gaps between waves of followed posts show
+    Instagram's loading spinner; "You're all caught up" only when only suggestions are left: the data
+    filter ends the feed after 3 data pages in a row without a followed post (rules
+    `feedData.endAfterEmptyPages`); the page's own fallback is 20 hidden in a row, or nothing new for
+    10 s at the bottom. The next posts are loaded ahead for smooth scrolling.
 13d. **Filter the feed data, not the drawn page** (decided 2026-11-20): ads and suggestions are removed
     from Instagram's feed data before the page draws them (no flicker, exact end); as a safety net,
-    home-feed posts stay hidden until checked. No extra requests to Instagram. See HANDOFF 5c.
+    home-feed posts stay hidden until checked. No extra requests to Instagram. See HANDOFF §6.
 13e. **Warm-up** (decided 2026-11-20): Throwback remembers which of Instagram's public code files
     messages and the story viewer use, and prefetches them when the feed is idle on later starts
     (skipped with Data Saver; no logged-in requests). Measured: inbox 1.0 s → 0.88 s, 0 files
     downloaded; repeat warm-ups come from cache.
-13c. **Feed bottom** (decided 2026-11-20): never blank space. "You're all caught up" appears only when only
-    suggestions are left, not at Instagram's own "seen all new posts" point (owner confirmed
-    2026-11-20; rules `feedData.endAtMarker` = false). Gaps between waves of followed posts show
-    Instagram's loading spinner; "You're all caught up" only when only suggestions are left (20 hidden
-    in a row, or nothing new for 10 s at the bottom). The next posts are loaded ahead for smooth scrolling.
 13f. **Reels sent in chats** (decided 2026-11-20): a reel opened from a chat plays in Instagram's
     full-screen swipe viewer (same address, no history entry). The opened reel is free. Swipes to
     other reels are counted (per 10 minutes, across viewers, rules `reelViewer`); the poster shows on
@@ -139,6 +118,29 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     request's `variant` to "following" (3x real posts, but chronological instead of Instagram's
     ranking; owner keeps the ranking). Look-ahead: photos/thumbnails of the next 7 posts into the
     disk cache, start of the next 3 videos (400 KB + 64 KB audio) in memory, cleared off the feed.
+13i. **Explore, 5 minutes a day** (decided 2026-11-20): the Explore grid on the Search tab shows for
+    5 minutes a day of time actually on that tab (rules `explore.dailySeconds`), then it is hidden
+    as before and "Enough for today… Your time is yours. Keep it. Go have an argument with your sibling instead." shows in its
+    place until midnight. Search keeps working, and typing a search doesn't use the minutes (they
+    count on the grid pages and in the reel player). Stored on the device per day. **Design B** (owner,
+    2026-11-20): a calm scene above the lines, one picked at random each time from five drawn scenes
+    (sunset hills, misty lake, moonlit sea, aurora, dunes) plus photos listed in rules
+    `explore.images`, which must be served from Throwback's own GitHub repo (CC0 or own art).
+    **Reels there play as reels** (owner, 2026-11-20): Instagram's mobile site has no single-reel
+    player (a reel tile opens as a static post, even with Throwback off). So while the minutes last,
+    tapping a reel tile on Explore or in search opens Throwback's own full-screen swipe player with
+    the reels from that page, in the order shown. It uses the video, username and caption Explore
+    already loaded; no extra logged-in requests. Shows "m:ss left today"; tap = sound on/off; ✕ or
+    Back closes it. The time counts
+    toward the 5 minutes, and at 0:00 it closes onto "Enough for today". The caption shows two lines;
+    a tap shows all of it (#15). Only 3 videos are loaded
+    at a time.
+    **Side bar like Instagram's** (owner, 2026-11-20): ♥ (and double-tap) and 🔖 save work by
+    rendering the post's own page under the player (Instagram's router, no reload) and pressing
+    Instagram's own button there, so Instagram's code sends the request and Throwback sends none
+    (labels in rules `explore.actions`, fixable remotely); the icon changes at once and goes back if
+    the button can't be found. 💬 opens the post's comments (Back returns to the player at that reel),
+    ↗ opens Android's share sheet with the reel link, the username opens the profile.
 13j. **One trusted clock** (owner, 2026-11-20): the daily limit and the page's daily counters
     (Explore minutes, Discover, chat-reel cooldown, Your day) use the same tamper-resistant time:
     the phone's since-boot stopwatch plus the last trusted time, and the time zone saved with it. A
@@ -151,9 +153,15 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     Instagram's server time, from the Date of Instagram's own responses the page already receives:
     no extra request), and after a reboot without it the trusted time continues from the last one
     until it arrives. Closed on all versions (2026-11-21).
+13k. **Suggested people stay** (owner, 2026-11-21): "Suggested for you" lists of accounts (on the
+    notifications page, on profiles, in the home feed and on the Discover people page), and profiles
+    of people you don't follow, are shown as Instagram shows them (#34a), Tagged tab included (#34n).
+    Discover people doesn't use Explore's minutes. Only suggested posts in the feed are filtered
+    (13b, 13d).
 14. **No toggles.** Throwback is minimal; there is no setting to bring distractions back.
     Settings shows a read-only "Throwback removes" list.
-15. Video captions and descriptions must never be hidden (a known complaint about a competitor).
+15. Video captions and descriptions must never be hidden (a known complaint about a competitor). Where
+    space is short (the Explore reel player) they fold to two lines and a tap shows them whole.
 
 ## Daily time limit (optional, off by default)
 
@@ -162,40 +170,38 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 18. **Extensions:** wait 5 minutes, then enter the PIN for +5 minutes. This works twice a day, with
     the wait before each one. After that it stays locked until local midnight. There is no full-day unlock.
 19. **Messages-only mode while locked:** the inbox and chats only. Time there does not count.
-20. **Calls** never count and are never blocked.
+20. **Calls** never count and are never blocked: also not in the time counted after the guard was off
+    (#27b): Instagram's call screens are left out of it.
 21. **Anti-cheat:** turning the limit off, raising it, or changing the PIN needs the PIN and takes
     effect the next day. Lowering the limit is immediate. Changing the phone's clock does not reset usage.
 22. **Forgot PIN:** a 3-day countdown, then a new PIN can be set. The countdown can be cancelled.
     During the wait the limit stays on and extensions aren't possible.
 23. **Reinstall / clear data:** onboarding says honestly that Throwback is "a speed bump, not a cage".
-    The time-limit settings (limit, PIN hash, extension state, pending PIN reset) are included in
-    Android Auto Backup, so a reinstall restores them. Instagram login and WebView data are never
+    The time-limit settings (limit, PIN hash, extension state, pending PIN reset) and whether the user
+    has tipped (#4d) are included in Android Auto Backup, so a reinstall restores them. Instagram login and WebView data are never
     backed up. "Clear data" stays the emergency exit.
 24. The PIN is stored only as a salted PBKDF2 hash. The setup screen says "Write it down somewhere
     you won't see every day."
 
 ## Instagram app (optional; was "Messages & calls", renamed 2026-11-20 when posting was added)
 
-25. The real Instagram app stays installed (its icon is not hidden, see #28), only for notifications
-    and calls; the guard (#27) keeps the user out of it.
+25. The real Instagram app stays installed (its icon is not hidden, see #28), only for notifications,
+    calls, posting and its own settings; the guard (#27) keeps the user out of the rest.
 26. **Relay:** calls ring normally and are answered in the real app. Message notifications are replaced
     by Throwback's own, which open the Throwback inbox (or messages-only mode when locked). Other
-    notification types are per-type toggles, all off by default.
+    notification types are per-type toggles, all off by default, and not shown while the daily limit
+    is reached. Instagram's security and login alerts always come through.
 27. **Guard:** opening the real Instagram app outside a call shows "Use Throwback instead" and returns
-    the user to Throwback. During a call it is allowed. Throwback itself opens the app with a short
+    the user to Throwback. During a call its call screen is allowed (#34b). While Android has
+    Throwback's notification access disconnected (briefly, e.g. after an update) calls can't be seen,
+    so the guard lets the Instagram app open, uncounted (owner, 2026-11-21: rare and brief, #34m). Throwback itself opens the app with a short
     pass in two cases: a chat's call button (the mobile website has no calls) and "Open Instagram for
     5 minutes" on the Instagram app screen (switching accounts, Instagram's own settings).
-28. A 2-step setup wizard: install Instagram (via the Play Store), then grant the permissions
-    (notification access, usage access, display over other apps; Android 13+ also asks to allow
-    notifications). No "hide the icon" step: the guard sends the user back to Throwback anyway, and
-    "Remove it" covers uninstalling (decided 2026-11-20). "Quiet the Instagram app" is not a step but
-    an optional tip on the Instagram app screen ("For a quieter phone"), since the relay already
-    removes everything except messages and calls (owner, 2026-11-20).
 27a. **Passes into the real app are limited** (owner + red-team review, 2026-11-20).
     "Open Instagram for 5 minutes": once a day, not while the daily limit is reached, and the pass ends
     as soon as the user leaves Instagram (no saving it for later). The chat's 📞 button: a 30-second
-    pass, at most 3 taps an hour; it ends once the call is running (the call itself then keeps
-    Instagram allowed). Call audio counts as an Instagram call only after an Instagram call
+    pass, at most 3 taps an hour; it ends once the call is running (the call then keeps its call
+    screen allowed). "Open Instagram for 5 minutes" stays (owner, 2026-11-21, #34k). Call audio counts as an Instagram call only after an Instagram call
     notification, or when it starts while Instagram is in front (2026-11-20 review: any phone call
     used to count). All passes are counted on the time limit's trusted clock, so changing the
     phone's date or time zone gives no extra passes (2026-11-20 review).
@@ -205,8 +211,9 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     cancels it). Without a limit it is immediate (there is no PIN). If the limit itself is turned
     off, a scheduled guard turn-off becomes due with it. Not preventable in-app: force-stopping
     Throwback or revoking its permissions in Android settings. Since 2026-11-20, the real app's time
-    while the guard was stopped is counted against the daily limit when Throwback next runs, and a
-    notification says when the guard is off and can't restart itself.
+    while the guard was stopped is counted against the daily limit when Throwback next runs (call
+    screens excepted, #20), and a notification says when the guard is off: Android stopped it and it
+    can't restart itself, or a permission it needs was turned off (2026-11-21).
 27c. **Posting through the Instagram app** (owner, 2026-11-20): with the app connected, "+" and
     "Your story" in Throwback open the app's create screen (link `instagram://share`, its better
     editor: music, filters, reels). The guard then follows the app's *screen*, not just the app: it
@@ -221,7 +228,7 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     of Instagram's settings page, "Open settings in the Instagram app", opens the app's Settings and
     activity (`instagram://settings`). Settings screens (`com.instagram.urlhandlers.settings.*`): at
     most 10 minutes, 5 a day, not while the daily limit is reached (2026-11-20 review: Saved and
-    Archive live inside that screen). Instagram's main screen (the feed; Back out of settings lands there, and Accounts Center opens there too) is never allowed during this pass (owner, 2026-11-20: Back to the feed was a loophole); Accounts Center is on Instagram's website.
+    Archive live inside that screen). Instagram's main screen (the feed; Back out of settings lands there, and Accounts Center opens there too) is never allowed during this pass, after the first 3 seconds while the screen opens (owner, 2026-11-20: Back to the feed was a loophole); Accounts Center is on Instagram's website.
     Leaving Instagram ends the pass (pickers and Chrome's in-app pages excepted). Rules `appSettings`.
 27f. **"Your story" through the Instagram app** (owner, 2026-11-20): Instagram's story camera, gallery
     and editor share the app's main screen with the feed, and its story link lands on the feed. So
@@ -237,13 +244,21 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     at most 30 seconds of it were spent outside the camera (a change of mind), and even then a
     10-minute wait follows (2026-11-20 review: leaving within 3 minutes allowed endless 3-minute
     visits to the whole app).
+28. A 2-step setup wizard: install Instagram (via the Play Store), then grant the permissions
+    (notification access, usage access, display over other apps; Android 13+ also asks to allow
+    notifications). No "hide the icon" step: the guard sends the user back to Throwback anyway, and
+    "Remove it" covers uninstalling (decided 2026-11-20). "Quiet the Instagram app" is not a step but
+    an optional tip on the Instagram app screen ("For a quieter phone"), since the relay already
+    removes everything except messages and calls (owner, 2026-11-20).
 29. **Instagram app found:** after first login, if the Instagram app is installed, Throwback offers
-    "Keep it for calls & messages", "Remove it" (opens Android Settings) or "Decide later".
+    "Connect Instagram to Throwback" (Recommended, #34g), "Remove it" (opens Android Settings) or
+    "Decide later".
 
 ## Other
 
 30. **Mindful pause:** **on by default** (owner, 2026-11-20: Instagram loads underneath, so it hides the
-    page load), can be turned off in Settings. **4 seconds**, no buttons (Back still leaves). 30 short
+    page load), can be turned off in Settings. **4 seconds**, then "Almost there…" until the feed
+    underneath is ready (at most 5 s more); no buttons (Back still leaves). 30 short
     original lines in a shuffled order that goes through all of them before repeating.
 31. **Make It Yours** (owner, 2026-11-21; was "Add to home screen", then "Customize icon"): a home-screen shortcut with the
     user's own name and icon: the logo on the app colour, dark or light, a photo frame, or the user's
@@ -252,6 +267,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     pinned shortcut; most launchers add a small Throwback badge to it. Unlocked by one tip (#4d).
 32. **Theme: Sage.** Nunito type with a sage-green accent, following the phone's light/dark setting.
     The Instagram feed keeps Instagram's own colours.
+33. **Mockups:** https://claude.ai/artifact/JVunY8kiNTP8abRP43LSGV (private to the owner). Brought in
+    line with the app on 2026-11-21 (#34l); options not taken and dropped steps are labelled.
 33a. **Throwback settings ("portal") has no button on the feed** (decided 2026-11-20); the feed looks
     exactly like Instagram. Ways in:
     1. **Profile page:** Throwback's icon at the top right of your own profile, replacing the Threads icon.
@@ -263,23 +280,24 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     small card above the Home tab says long-press Home opens Throwback's settings (and mentions the
     profile icon and the section in Instagram's settings). Shown once; opening settings any other way
     also counts.
-33c. **Your day** (owner, 2026-11-20): first row in Settings. Time on Instagram today (split into
+33c. **Your day** (owner, 2026-11-20): first row of Settings' Focus section (after Connect). Time on Instagram today (split into
     feed, stories, messages, Explore, profiles and posts), the daily limit left, Explore minutes left,
     Discover posts left (no reels-in-chats row: it added nothing, owner 2026-11-21), and what was removed today (ads, suggested posts,
-    Instagram alerts). Counted on the phone only (page storage `__tb_day` + the app), reset at midnight.
-33. **Mockups:** https://claude.ai/artifact/JVunY8kiNTP8abRP43LSGV (private to the owner).
+    Instagram alerts); with the Instagram app connected also its story passes, the 5-minute visit and
+    time in the app. Counted on the phone only (page storage `__tb_day` + the app), reset at midnight.
 34. **Owner's answers of 2026-11-21** (multiple choice, from the reviews):
     a. **Suggested people show everywhere:** also the accounts block in the home feed and the
        Discover people page (`/explore/people`), as on notifications and profiles (#13k).
     b. **Calls unlock only the call screen:** during an Instagram call, the rest of the Instagram app
        is covered. If Throwback can't recognise the call screen (Instagram renamed it), the call is
        allowed as before, so a call is never cut off.
-    c. **Daily limit + unconnected Instagram app:** after turning a limit on, a one-time, skippable
-       offer to connect the Instagram app so the limit covers it too.
+    c. **Daily limit + unconnected Instagram app:** right after a limit is turned on (each time), a
+       skippable offer to connect the Instagram app so the limit covers it too.
     d. **Remote rules may only tap dismiss buttons** (Close, Not now, Decline, Cancel and the like,
        a fixed list in the app, `DismissLabels`): a rules file naming any other button is refused
        (the last good rules stay), and an element found by a rule's selector is pressed only when
-       its label is one of those.
+       its label is one of those. The same for the Explore reel player's Like and Save labels (rules
+       `explore.actions`, `ExploreActionLabels`).
     e. **The chat reel viewer's detection and its Close labels move into the rules**, so they can be
        fixed without an app update.
     f. **Clones:** the Connect › Instagram setup says that a second copy of Instagram (work profile,
@@ -289,3 +307,12 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     h. **No budget for browsing profiles or suggested accounts:** not worth the complexity.
     i. **Licence stays PolyForm Strict** (people may read the code, not publish copies), so the app
        says "the code is public on GitHub", not "open source" (welcome screen's small print).
+    j. **Releases on Google Play only** (#7).
+    k. **"Open Instagram for 5 minutes" stays**, once a day (#27a).
+    l. **The design canvas follows the app** (#33).
+    m. **The notification-access gap stays** (#27): rare and brief.
+    n. **A profile's Tagged tab shows** (#13k), like the rest of the profile.
+    o. **The short lines stay** ("No Explore grid", "No suggested posts" on the welcome screen and in
+       Settings): they give the spirit; Explore's 5 minutes and Discover are explained where they show.
+    p. **"Report something Throwback missed" will open the website's contact form**
+       (amitpant.com.np/throwback) once it is live, instead of a GitHub issue (no account needed).

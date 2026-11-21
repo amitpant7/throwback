@@ -48,10 +48,14 @@ class TimeLimitEngine {
         r.networkMillis?.let { return it }
         if (anchor == null) return r.wallMillis
         // The phone's clock isn't followed even for small differences: the anchor moves with every
-        // reading, so repeated small nudges would add up. Within a boot the stopwatch since the anchor;
-        // rebooted, the stopwatch restarted: the time since boot, until network time arrives.
-        val since = if (sameBoot(anchor, r)) r.elapsedMillis - anchor.elapsedMillis else r.elapsedMillis
-        return anchor.wallMillis + since
+        // reading, so repeated small nudges would add up. Within a boot: the stopwatch since the anchor.
+        if (sameBoot(anchor, r)) return anchor.wallMillis + (r.elapsedMillis - anchor.elapsedMillis)
+        // Rebooted, the stopwatch restarted: the time since boot on top of the last trusted time,
+        // until network time arrives. Or the phone's clock if that is earlier (never before the last
+        // trusted time): on a phone up for longer than the gap since the anchor (state restored from
+        // a backup onto another phone) the time since boot would put the day in the future, where it
+        // would stick. The earlier of the two can't help the clock-forward trick.
+        return max(anchor.wallMillis, min(anchor.wallMillis + r.elapsedMillis, r.wallMillis))
     }
 
     private fun at(s: TimeLimitState, r: ClockReading) = At(r, trustedWall(s.anchor, r), savedZone(s, r))

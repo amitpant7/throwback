@@ -3,8 +3,11 @@ package app.throwback.timelimit
 import app.throwback.core.LockState
 import app.throwback.core.WebMode
 import app.throwback.timelimit.engine.ActionResult
+import app.throwback.timelimit.engine.ClockReading
 import app.throwback.timelimit.engine.LockPhase
+import app.throwback.timelimit.engine.Moment
 import app.throwback.timelimit.engine.Rules
+import app.throwback.timelimit.engine.TimeLimitEngine
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -434,6 +437,21 @@ class TimeLimitEngineTest {
     }
 
     // ---- Clock forward + reboot (network time) -----------------------------------------------
+
+    @Test
+    fun `after a reboot without network time the trusted time never runs ahead of the phone's clock`() {
+        val e = TimeLimitEngine()
+        val t0 = 1_795_000_000_000L
+        val saved = Moment(bootCount = 5, elapsedMillis = HOUR, wallMillis = t0)
+        fun after(elapsed: Long, phone: Long) = e.trustedWall(saved, ClockReading(elapsed, phone, BERLIN, bootCount = 9))
+        // Restored from a backup onto a phone that has been up 10 days, a day after the backup: the
+        // phone's clock (a day later), not "saved + 10 days".
+        assertEquals(t0 + DAY, after(elapsed = 10 * DAY, phone = t0 + DAY))
+        // Clock forward + reboot: still only the time since boot.
+        assertEquals(t0 + 2 * MIN, after(elapsed = 2 * MIN, phone = t0 + 3 * DAY))
+        // Clock set back before the last trusted time: never earlier than that.
+        assertEquals(t0, after(elapsed = 2 * MIN, phone = t0 - DAY))
+    }
 
     /** The review's steps: Forgot PIN, date +3 days, reboot, set a new PIN. */
     private fun pinResetAfterClockForwardReboot(networkAfterBoot: Boolean): EngineHarness {

@@ -42,6 +42,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import java.lang.ref.WeakReference
+import kotlin.concurrent.thread
 
 /** A short message shown over the page. */
 internal enum class WebNotice { REELS, SUGGESTED, MESSAGES_ONLY, HIDDEN, NO_APP }
@@ -369,7 +370,13 @@ internal class InstagramWebController(
         handler.removeCallbacks(clockTick)
         webView.onPause()
         webView.pauseTimers()
-        CookieManager.getInstance().flush()
+        flushCookies()
+    }
+
+    /** Writes the login to disk. flush() waits for the disk, so it runs off the main thread. */
+    private fun flushCookies() {
+        val cookies = CookieManager.getInstance()
+        thread(name = "ThrowbackCookieFlush") { cookies.flush() }
     }
 
     fun deliverFiles(uris: Array<Uri>?) {
@@ -400,7 +407,7 @@ internal class InstagramWebController(
         context.applicationContext.unregisterReceiver(timeChanges)
         deliverFiles(null)
         injector.release()
-        CookieManager.getInstance().flush()
+        flushCookies()
         (webView.parent as? ViewGroup)?.removeView(webView)
         webView.stopLoading()
         webView.destroy()

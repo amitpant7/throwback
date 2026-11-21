@@ -31,7 +31,7 @@
     state.c.pages.forEach(function (p) {
       if (p.re.test(state.path)) want['tb-on-' + p.name] = true;
     });
-    if (state.leaving) want[CLASS_BLANK] = true;
+    if (state.leaving || state.stuck) want[CLASS_BLANK] = true;
     if (exploreAllowed()) want[CLASS_EXPLORE_OPEN] = true;
     var current = Array.prototype.slice.call(root.classList);
     current.forEach(function (cl) {

@@ -67,11 +67,14 @@
     if (r.kind) send({ t: 'blocked', kind: r.kind });
     if (loopGuard(r.to)) {
       location.replace(r.to);
-    } else if (!r.kind) {
-      // Instagram keeps undoing a plain normalisation: give up and show the page as it is.
-      state.leaving = false;
-      applyClasses();
-    } // Blocked content in a loop stays blank; the user can go back.
+      return;
+    }
+    // A loop: nothing leaves this document, so its in-page navigation (Back) must still be handled.
+    // Blocked content stays blank until the address changes; a plain normalisation that Instagram
+    // keeps undoing is given up and the page shows as it is.
+    state.leaving = false;
+    state.stuck = !!r.kind;
+    applyClasses();
   }
 
   /** In-page navigation through Instagram's own link, when one exists (no reload). */
@@ -92,6 +95,7 @@
     state.href = href;
     state.path = location.pathname;
     if (state.leaving) return;
+    state.stuck = false; // a new address: routed afresh below
     if (clipPlayer && !state.clipNav && state.path !== previousPath) closeClipPlayer(false);
     if (!state.clipNav && (source === 'push' || source === 'pop')) {
       state.clipLeave = null; // the user went on: don't step back for a player closed earlier

@@ -58,6 +58,7 @@
     href: null,
     path: '/',
     leaving: false, // a redirect away from this document is under way
+    stuck: false, // blocked content in a redirect loop: blank until the address changes
     readySent: false,
     lastBg: null,
     bgDirty: true,

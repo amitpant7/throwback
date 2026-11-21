@@ -48,8 +48,9 @@
             </intent-filter>
             <!-- Long-press the app icon: "Throwback settings" (there is no settings button on the feed). -->
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
-            <!-- Instagram links from other apps. Users enable this once in Android's "Open by default" settings. -->
-            <intent-filter>
+            <!-- Instagram links from other apps. Users enable this once in Android's "Open by default" settings;
+                 not an App Link (autoVerify false): only instagram.com itself could verify these. -->
+            <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />

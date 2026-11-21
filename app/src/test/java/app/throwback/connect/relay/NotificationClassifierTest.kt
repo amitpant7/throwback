@@ -1,11 +1,11 @@
 package app.throwback.connect.relay
 
+import app.throwback.connect.InstagramPackages
 import app.throwback.web.rules.NotificationMatch
 import app.throwback.web.rules.NotificationRules
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import app.throwback.connect.InstagramPackages
 
 class NotificationClassifierTest {
 

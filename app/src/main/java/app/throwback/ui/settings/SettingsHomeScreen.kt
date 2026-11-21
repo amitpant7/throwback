@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.R
 import app.throwback.core.Supporter
+import app.throwback.core.prefs.AppPrefs
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.CardDivider
 import app.throwback.core.ui.NavRow
@@ -30,7 +31,6 @@ import app.throwback.core.ui.SwitchRow
 import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.UiText
-import app.throwback.core.prefs.AppPrefs
 
 /** The saved settings Settings home shows: the pause switch and the Instagram row's value. */
 internal data class HomeValues(val mindfulPause: Boolean, val instagramConnected: Boolean)

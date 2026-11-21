@@ -23,6 +23,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.R
+import app.throwback.connect.CallInApp
+import app.throwback.core.prefs.AppPrefs
+import app.throwback.core.prefs.ExtraNotification
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.CardDivider
 import app.throwback.core.ui.ExpandableRow
@@ -35,9 +38,6 @@ import app.throwback.core.ui.TbButtonStyle
 import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.UiText
-import app.throwback.connect.CallInApp
-import app.throwback.core.prefs.ExtraNotification
-import app.throwback.core.prefs.AppPrefs
 import app.throwback.ui.common.rememberCheckedOnResume
 
 /** Labels for the "Also notify me about" toggles, in the order shown. */

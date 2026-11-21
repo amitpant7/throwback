@@ -1,6 +1,7 @@
 package app.throwback.core
 
 import android.content.Context
+import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,7 +23,7 @@ object Supporter {
 
     /** Called once Google Play billing confirms a tip (and by test builds, see MainActivity). */
     fun markTipped(context: Context) {
-        context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(TIPPED, true).apply()
+        context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putBoolean(TIPPED, true) }
         flow(context).value = true
     }
 

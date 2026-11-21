@@ -1,21 +1,21 @@
 package app.throwback
 
-import app.throwback.core.OpenThrowback
-import app.throwback.core.StartTrace
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
+import app.throwback.connect.relay.RelayLinks
+import app.throwback.core.OpenThrowback
 import app.throwback.core.RateAsk
+import app.throwback.core.StartTrace
 import app.throwback.core.Supporter
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.connect.relay.RelayLinks
 import app.throwback.web.PageAssets
 import app.throwback.web.UrlParts
 import kotlinx.coroutines.Dispatchers
@@ -119,7 +119,7 @@ class MainActivity : ComponentActivity() {
      */
     private fun Intent.instagramUrl(): String? = dataString?.takeIf { url ->
         !UrlParts.hasAmbiguousChars(url) &&
-            Uri.parse(url).let { it.scheme.equals("https", ignoreCase = true) && it.host?.lowercase() in DEEP_LINK_HOSTS }
+            url.toUri().let { it.scheme.equals("https", ignoreCase = true) && it.host?.lowercase() in DEEP_LINK_HOSTS }
     }
 
     companion object {

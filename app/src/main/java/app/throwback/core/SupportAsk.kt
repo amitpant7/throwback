@@ -1,6 +1,7 @@
 package app.throwback.core
 
 import android.content.Context
+import androidx.core.content.edit
 import java.time.LocalDate
 
 /**
@@ -29,6 +30,6 @@ object SupportAsk {
     }
 
     fun markShown(context: Context, today: LocalDate = LocalDate.now()) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putLong("lastShown", today.toEpochDay()).apply()
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putLong("lastShown", today.toEpochDay()) }
     }
 }

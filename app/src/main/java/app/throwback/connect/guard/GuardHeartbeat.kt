@@ -5,20 +5,20 @@ import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.util.Log
 import androidx.core.content.edit
-import app.throwback.core.LockState
+import app.throwback.connect.Permissions
+import app.throwback.connect.RelayDebug
 import app.throwback.connect.guard.ForegroundTracker.Companion.ACTIVITY_DESTROYED
 import app.throwback.connect.guard.ForegroundTracker.Companion.ACTIVITY_PAUSED
 import app.throwback.connect.guard.ForegroundTracker.Companion.ACTIVITY_RESUMED
 import app.throwback.connect.guard.ForegroundTracker.Companion.ACTIVITY_STOPPED
-import app.throwback.connect.RelayDebug
+import app.throwback.core.LockState
 import app.throwback.timelimit.TimeLimitModule
-import app.throwback.connect.Permissions
 import app.throwback.web.rules.RulesRepository
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 import kotlin.math.max
 import kotlin.math.min
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 /** One activity event from UsageStatsManager ([time] in the phone's wall ms), copied out so the sum is plain Kotlin. */
 internal data class ActivityEvent(val time: Long, val type: Int, val packageName: String, val className: String?)

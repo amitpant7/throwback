@@ -1,19 +1,19 @@
 package app.throwback
 
+import android.app.Application
+import android.content.Context
+import app.throwback.connect.MessagesFeature
+import app.throwback.core.prefs.AppPrefs
+import app.throwback.timelimit.ServerTimeHint
+import app.throwback.timelimit.TimeLimitController
+import app.throwback.timelimit.TimeLimitModule
 import app.throwback.web.PageClock
 import app.throwback.web.rules.RulesRepository
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.CoroutineScope
-import android.content.Context
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import android.app.Application
-import app.throwback.core.prefs.AppPrefs
-import app.throwback.connect.MessagesFeature
-import app.throwback.timelimit.TimeLimitController
-import app.throwback.timelimit.ServerTimeHint
-import app.throwback.timelimit.TimeLimitModule
 
 /** Owned by integration. Holds the app-wide singletons; no DI framework needed at this size. */
 class ThrowbackApp : Application() {

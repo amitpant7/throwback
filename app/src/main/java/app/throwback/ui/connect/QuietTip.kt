@@ -1,9 +1,5 @@
 package app.throwback.ui.connect
 
-import app.throwback.ui.common.rememberCheckedOnResume
-import app.throwback.connect.relay.RelayStats
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.runtime.getValue
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -15,21 +11,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.throwback.R
+import app.throwback.connect.relay.RelayStats
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.CardDivider
-import app.throwback.ui.common.SystemScreens
 import app.throwback.core.ui.TbButton
 import app.throwback.core.ui.TbButtonStyle
 import app.throwback.core.ui.TbCard
 import app.throwback.core.ui.UiText
+import app.throwback.ui.common.SystemScreens
+import app.throwback.ui.common.rememberCheckedOnResume
 
 /*
  * Optional tip (owner, 2026-11-20: it was step 2 of the setup). Throwback's relay already removes

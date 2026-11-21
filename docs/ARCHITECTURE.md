@@ -1,6 +1,6 @@
 # Throwback architecture
 
-Throwback is one Android app (Kotlin, Jetpack Compose, minSdk 26, targetSdk 35, a single Gradle
+Throwback is one Android app (Kotlin, Jetpack Compose, minSdk 26, targetSdk 36, a single Gradle
 module). Instagram itself is instagram.com in one long-lived WebView, with Throwback's filters
 injected as JavaScript and CSS. Everything around it is native: onboarding, Settings, the daily
 time limit and its lock screens, the mindful pause, "Your day", Make It Yours, Support and About.
@@ -332,6 +332,7 @@ export JAVA_HOME=$(ls -d ~/.local/opt/jdk-17* | head -1)   # or Android Studio's
 export ANDROID_HOME=~/Android/Sdk
 ./gradlew assembleDebug testDebugUnitTest lintDebug
 tools/pagescript-lint.sh
+tools/sort-kotlin-imports.py      # import order (ktlint's), until ktlint is adopted
 ```
 
 Unit tests (`app/src/test`, same folders as the code) cover the pure parts: the time-limit engine and

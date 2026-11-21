@@ -1,6 +1,7 @@
 package app.throwback.connect.relay
 
 import android.content.Context
+import androidx.core.content.edit
 import java.time.LocalDate
 
 /**
@@ -31,12 +32,13 @@ internal object RelayStats {
     private fun record(context: Context, prefix: String, today: LocalDate) {
         val prefs = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
         val key = prefix + today.toEpochDay()
-        val edit = prefs.edit().putInt(key, prefs.getInt(key, 0) + 1)
-        prefs.all.keys.filter { it != key }.forEach { k ->
-            val day = k.drop(1).toLongOrNull()
-            if (day == null || day < today.toEpochDay() - KEEP_DAYS) edit.remove(k)
+        prefs.edit {
+            putInt(key, prefs.getInt(key, 0) + 1)
+            prefs.all.keys.filter { it != key }.forEach { k ->
+                val day = k.drop(1).toLongOrNull()
+                if (day == null || day < today.toEpochDay() - KEEP_DAYS) remove(k)
+            }
         }
-        edit.apply()
     }
 
     private fun lastDays(context: Context, prefix: String, days: Int, today: LocalDate): Int {

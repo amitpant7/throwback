@@ -1,18 +1,18 @@
 package app.throwback.connect.guard
 
+import app.throwback.connect.CallSnapshot
+import app.throwback.connect.CallTracker
+import app.throwback.connect.GuardPass
+import app.throwback.connect.InstagramPackages
 import app.throwback.connect.guard.ForegroundTracker.Companion.ACTIVITY_DESTROYED
 import app.throwback.connect.guard.ForegroundTracker.Companion.ACTIVITY_PAUSED
 import app.throwback.connect.guard.ForegroundTracker.Companion.ACTIVITY_RESUMED
 import app.throwback.connect.guard.ForegroundTracker.Companion.ACTIVITY_STOPPED
-import app.throwback.connect.CallSnapshot
-import app.throwback.connect.CallTracker
-import app.throwback.connect.InstagramPackages
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import app.throwback.connect.GuardPass
 
 class GuardPolicyTest {
 

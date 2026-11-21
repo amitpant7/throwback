@@ -46,6 +46,12 @@ Run it from the repository root after changing the logo.
 (undefined and unused names, redeclarations, unreachable code). Run it after changing the page
 script; it needs Node and, the first time, network access for `npx`.
 
+## Kotlin import order
+
+`tools/sort-kotlin-imports.py` checks that every Kotlin file's imports are in ktlint's default order
+(everything else, then `java`, `javax`, `kotlin`, then aliases) and exits 1 if not; `--fix` sorts them.
+It stands in for ktlint until that is adopted.
+
 ## Test-build switches
 
 The debug build reads a few switches from its files folder (fast clock, no page script) and accepts

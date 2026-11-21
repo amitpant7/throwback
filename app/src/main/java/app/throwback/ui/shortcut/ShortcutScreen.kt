@@ -1,6 +1,5 @@
 package app.throwback.ui.shortcut
 
-import app.throwback.core.OpenThrowback
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -72,6 +71,7 @@ import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.R
+import app.throwback.core.OpenThrowback
 import app.throwback.core.Supporter
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.SectionLabel

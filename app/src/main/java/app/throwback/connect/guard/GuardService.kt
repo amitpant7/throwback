@@ -1,6 +1,5 @@
 package app.throwback.connect.guard
 
-import app.throwback.core.OpenThrowback
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
@@ -31,18 +30,19 @@ import app.throwback.R
 import app.throwback.connect.CallInApp
 import app.throwback.connect.CallSnapshot
 import app.throwback.connect.CallState
+import app.throwback.connect.GuardPass
 import app.throwback.connect.MessagesFeature
+import app.throwback.connect.Permissions
 import app.throwback.connect.RelayDebug
 import app.throwback.connect.relay.RelayListenerService
 import app.throwback.connect.relay.RelayNotifier
-import app.throwback.timelimit.TimeLimitModule
+import app.throwback.core.OpenThrowback
 import app.throwback.core.prefs.AppPrefs
-import app.throwback.connect.Permissions
+import app.throwback.timelimit.TimeLimitModule
 import app.throwback.web.rules.AppStoryRules
 import app.throwback.web.rules.DEFAULT_CALL_GRACE_SECONDS
 import app.throwback.web.rules.FilterRules
 import app.throwback.web.rules.RulesRepository
-import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -54,7 +54,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import app.throwback.connect.GuardPass
+import kotlin.math.max
 
 /**
  * The guard (DECISIONS.md #27): while the screen is on, it checks about twice a second which apps

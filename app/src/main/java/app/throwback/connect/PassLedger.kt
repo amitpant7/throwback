@@ -3,12 +3,12 @@ package app.throwback.connect
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import app.throwback.connect.guard.PassRules
 import app.throwback.core.LockState
 import app.throwback.timelimit.TimeLimitModule
 import app.throwback.timelimit.engine.TrustedTime
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
-import app.throwback.connect.guard.PassRules
 
 /**
  * What the passes into the Instagram app remember, and the rules on it (DECISIONS.md #27a, #27f).

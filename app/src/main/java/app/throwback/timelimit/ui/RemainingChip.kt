@@ -1,6 +1,5 @@
 package app.throwback.timelimit.ui
 
-import app.throwback.timelimit.TimeLimitController
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -26,6 +25,7 @@ import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.Durations
 import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.remainingText
+import app.throwback.timelimit.TimeLimitController
 
 /**
  * "18 min left" on the home feed (mockup 2). In the last minute it switches to "0:42 left" in the

@@ -8,6 +8,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import app.throwback.connect.guard.GuardHeartbeat
 import app.throwback.connect.guard.GuardService
+import app.throwback.connect.relay.RelayNotifier
 import app.throwback.core.prefs.AppPrefs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +17,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import app.throwback.connect.relay.RelayNotifier
 
 /**
  * On/off switch for the Instagram app connection (Settings › Connect › Instagram: relay + guard;

@@ -47,6 +47,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.throwback.R
+import app.throwback.connect.Permissions
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.CardDivider
 import app.throwback.core.ui.DoneLabel
@@ -61,7 +62,6 @@ import app.throwback.core.ui.TbTopBar
 import app.throwback.core.ui.UiText
 import app.throwback.ui.common.SystemScreens
 import app.throwback.ui.common.rememberCheckedOnResume
-import app.throwback.connect.Permissions
 
 /**
  * The two steps of the Connect › Instagram setup (DECISIONS.md #28). The hide-icon step was dropped;

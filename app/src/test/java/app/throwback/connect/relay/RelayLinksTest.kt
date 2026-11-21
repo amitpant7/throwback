@@ -1,10 +1,10 @@
 package app.throwback.connect.relay
 
+import app.throwback.connect.InstagramPackages
 import app.throwback.web.rules.ThreadIdRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import app.throwback.connect.InstagramPackages
 
 class RelayLinksTest {
 

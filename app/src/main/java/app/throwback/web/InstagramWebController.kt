@@ -30,6 +30,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.graphics.createBitmap
+import androidx.core.net.toUri
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import app.throwback.core.StartTrace
@@ -422,7 +424,7 @@ internal class InstagramWebController(
     }
 
     private fun openExternally(url: String) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)
+        val intent = Intent(Intent.ACTION_VIEW, url.toUri()).addCategory(Intent.CATEGORY_BROWSABLE)
         if (!startOutside(intent)) showNotice(WebNotice.NO_APP)
     }
 
@@ -699,7 +701,7 @@ internal class InstagramWebController(
             return true
         }
 
-        private val blankPoster by lazy { Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888) }
+        private val blankPoster by lazy { createBitmap(1, 1) }
 
         /** Without this, videos show WebView's grey play-button placeholder before they load. */
         override fun getDefaultVideoPoster(): Bitmap = blankPoster

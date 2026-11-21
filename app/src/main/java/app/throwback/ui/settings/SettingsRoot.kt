@@ -1,6 +1,5 @@
 package app.throwback.ui.settings
 
-import app.throwback.core.OpenThrowback
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -38,10 +37,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.R
+import app.throwback.core.OpenThrowback
+import app.throwback.core.prefs.AppPrefs
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.UiText
 import app.throwback.core.ui.blockTouches
-import app.throwback.core.prefs.AppPrefs
 import app.throwback.ui.about.AboutScreen
 import app.throwback.ui.about.SupportScreen
 import app.throwback.ui.connect.InstagramApp

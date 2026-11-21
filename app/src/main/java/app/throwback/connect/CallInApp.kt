@@ -3,13 +3,13 @@ package app.throwback.connect
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.SystemClock
 import androidx.annotation.StringRes
+import androidx.core.net.toUri
 import app.throwback.R
 import app.throwback.web.PageFeatures
-import kotlinx.coroutines.flow.update
 import app.throwback.web.rules.RulesRepository
+import kotlinx.coroutines.flow.update
 
 /**
  * Throwback's ways into the real Instagram app, each with a guard pass (DECISIONS.md #27a, #27c,
@@ -39,9 +39,9 @@ internal object CallInApp {
         if (now != null && !PassLedger.read(context).callAllowed(now.wallMillis)) return Result.LIMITED
         // ig.me/m/<username> opens a chat with that person from whichever account the Instagram app
         // uses (a chat id only exists in one account); the chat id is for group chats.
-        val byUser = user?.let { Intent(Intent.ACTION_VIEW, Uri.parse("https://ig.me/m/$it")).setPackage(pkg) }
+        val byUser = user?.let { Intent(Intent.ACTION_VIEW, "https://ig.me/m/$it".toUri()).setPackage(pkg) }
         val byThread = thread?.let {
-            Intent(Intent.ACTION_VIEW, Uri.parse("https://www.instagram.com/direct/t/$it/")).setPackage(pkg)
+            Intent(Intent.ACTION_VIEW, "https://www.instagram.com/direct/t/$it/".toUri()).setPackage(pkg)
         }
         val launch = context.packageManager.getLaunchIntentForPackage(pkg)
         for (intent in listOfNotNull(byUser, byThread, launch)) {
@@ -107,7 +107,7 @@ internal object CallInApp {
         if (PassLedger.locked(context) == true) return AppPass.LOCKED
         if (!PassLedger.read(context).createAllowed(now.epochDay)) return AppPass.CREATE_USED_UP
         val link = RulesRepository.get(context).rules.value?.appCreate?.link ?: "instagram://share"
-        if (!start(context, Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(pkg))) return AppPass.NO_APP
+        if (!start(context, Intent(Intent.ACTION_VIEW, link.toUri()).setPackage(pkg))) return AppPass.NO_APP
         GuardPass.grant(SystemClock.elapsedRealtime(), CREATE_PASS_MS, GuardPass.Kind.CREATE)
         PassLedger.update(context) { it.createOpened(now.epochDay) }
         return AppPass.OPENED
@@ -205,7 +205,7 @@ internal object CallInApp {
             return if (wait != null && wait > 0) StoryResult.WAIT else StoryResult.USED_UP
         }
         val link = storyRules(context)?.link ?: "instagram://story-camera"
-        if (!start(context, Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(pkg))) return StoryResult.NO_APP
+        if (!start(context, Intent(Intent.ACTION_VIEW, link.toUri()).setPackage(pkg))) return StoryResult.NO_APP
         GuardPass.grant(SystemClock.elapsedRealtime(), STORY_PASS_MS, GuardPass.Kind.STORY)
         val wait = (storyRules(context)?.cooldownMinutes ?: 30) * 60_000L
         PassLedger.update(context) { it.storyStarted(now.epochDay, now.wallMillis, wait) }
@@ -253,7 +253,7 @@ internal object CallInApp {
         if (PassLedger.locked(context) == true) return AppPass.LOCKED
         if (!PassLedger.read(context).settingsAllowed(now.epochDay)) return AppPass.SETTINGS_USED_UP
         val link = RulesRepository.get(context).rules.value?.appSettings?.link ?: "instagram://settings"
-        if (!start(context, Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(pkg))) return AppPass.NO_APP
+        if (!start(context, Intent(Intent.ACTION_VIEW, link.toUri()).setPackage(pkg))) return AppPass.NO_APP
         GuardPass.grant(SystemClock.elapsedRealtime(), SETTINGS_PASS_MS, GuardPass.Kind.SETTINGS)
         PassLedger.update(context) { it.settingsOpened(now.epochDay) }
         return AppPass.OPENED

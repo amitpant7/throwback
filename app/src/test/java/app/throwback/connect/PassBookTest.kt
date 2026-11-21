@@ -1,11 +1,11 @@
 package app.throwback.connect
 
+import app.throwback.connect.guard.PassRules
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import app.throwback.connect.guard.PassRules
 
 /** The passes' counters, on the trusted clock: days are epoch days, times trusted wall ms. */
 class PassBookTest {

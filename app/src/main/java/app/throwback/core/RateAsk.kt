@@ -3,6 +3,7 @@ package app.throwback.core
 import android.app.Activity
 import android.content.Context
 import android.util.Log
+import androidx.core.content.edit
 import com.google.android.play.core.review.ReviewManagerFactory
 import java.time.LocalDate
 
@@ -29,19 +30,20 @@ object RateAsk {
     fun noteUse(context: Context, today: LocalDate = LocalDate.now()) {
         val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val day = today.toEpochDay()
-        val e = p.edit()
-        if (!p.contains("first")) e.putLong("first", day)
-        if (p.getLong("last", -1) != day) {
-            e.putLong("last", day).putInt("days", p.getInt("days", 0) + 1)
+        p.edit {
+            if (!p.contains("first")) putLong("first", day)
+            if (p.getLong("last", -1) != day) {
+                putLong("last", day)
+                putInt("days", p.getInt("days", 0) + 1)
+            }
         }
-        e.apply()
     }
 
     fun onGoodMoment(activity: Activity, today: LocalDate = LocalDate.now()) {
         val p = activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val first = p.getLong("first", today.toEpochDay())
         if (!due(first, today.toEpochDay(), p.getInt("days", 0), p.getBoolean("asked", false))) return
-        p.edit().putBoolean("asked", true).apply()
+        p.edit { putBoolean("asked", true) }
         val manager = ReviewManagerFactory.create(activity)
         manager.requestReviewFlow().addOnCompleteListener { request ->
             if (!request.isSuccessful || activity.isFinishing) return@addOnCompleteListener

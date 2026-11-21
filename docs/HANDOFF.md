@@ -52,9 +52,10 @@ understands.
 export JAVA_HOME=$(ls -d ~/.local/opt/jdk-17* | head -1) ANDROID_HOME=~/Android/Sdk
 ./gradlew assembleDebug testDebugUnitTest lintDebug     # APK: app/build/outputs/apk/debug/app-debug.apk
 tools/pagescript-lint.sh                                 # after page-script changes (Node)
+tools/sort-kotlin-imports.py                             # import order; --fix sorts them
 ```
 
-State at handoff: build passes; 361 unit tests pass; lint has 0 errors and only "newer version
+State at handoff: build passes; 362 unit tests pass; lint has 0 errors and only "newer version
 available" warnings (dependencies date from December 2024; see 5). The page script lints clean as ES5.
 
 Bump `versionCode`/`versionName` in `app/build.gradle.kts` for each build handed to the owner.
@@ -189,10 +190,18 @@ emulator: update → "guard is off" + setup shows the permission → allow again
 ## 5. Open items
 
 **Release prep (M6):**
-- Google Play now requires a recent target API (35 since Aug 2025; 36 is expected for 2026 updates).
-  Raise `targetSdk`/`compileSdk` and update the dependencies (AGP 8.7, Compose BOM 2024.12 and
-  androidx libraries are about two years old; lint lists them) in one focused change, then run the
-  full on-device checklist (7).
+- **Target API done (2026-11-21):** Google Play needs Android 16 (API 36) for new apps and updates
+  since 31 Aug 2026; `compileSdk`/`targetSdk` are 36, with AGP 8.13.2 and Gradle 8.13 (AGP 9 changes
+  how Kotlin is built: a migration of its own). Android 16's changes checked against the code: Back is
+  handled only through Compose's BackHandler (no `onBackPressed`/KEYCODE_BACK), so predictive back
+  works; edge-to-edge was already on; no fixed orientation. Not yet run on an Android 16 device or
+  emulator (the workstation disk is nearly full; an API 36 image needs several GB).
+- **The release build works (2026-11-21):** minified with R8 and resource shrinking (2.6 MB), signed
+  with the debug key, installed over the test build on the emulator: the filtered feed, the relay and
+  guard, Settings, the time limit, Your day, Make It Yours, Support, About and Connect › Instagram, no
+  crashes or missing classes in the log.
+- The androidx/Compose/Kotlin libraries are still the 2024 versions (lint lists newer ones). Updating
+  them is optional for Play; do it as its own change, then the on-device checklist (7).
 - **Play Billing for the tips, before the first release** (Make It Yours stays locked without it;
   the Support intro promises it): product ids per tip; "Whatever you want" maps to fixed step
   products; `Supporter.markTipped` once a tip is confirmed; owned tips restore the unlock (plan in
@@ -201,7 +210,8 @@ emulator: update → "guard is off" + setup shows the permission → allow again
 - Privacy policy, Play listing and data-safety form (nothing collected); release signing; the
   owner's story in the README "Why" section.
 - Optional: an enforced Kotlin formatter (ktlint via Gradle). Downloading and running it was not
-  permitted in the 2026-11-20 session, so `.editorconfig` and Android lint are the standard for now.
+  permitted in the 2026-11-20 session, so `.editorconfig`, Android lint and
+  `tools/sort-kotlin-imports.py` (ktlint's import order) are the standard for now.
 
 **Known issues:**
 - Accessibility under the lock (`clearAndSetSemantics {}` on the WebView): verify with TalkBack.

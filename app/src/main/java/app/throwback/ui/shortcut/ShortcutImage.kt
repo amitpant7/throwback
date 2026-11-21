@@ -10,6 +10,7 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
+import androidx.core.graphics.createBitmap
 import kotlin.math.max
 import kotlin.math.min
 
@@ -36,7 +37,7 @@ internal object ShortcutImage {
     private fun layer(src: Bitmap): Bitmap {
         val side = min(src.width, src.height)
         val crop = Rect((src.width - side) / 2, (src.height - side) / 2, (src.width + side) / 2, (src.height + side) / 2)
-        val out = Bitmap.createBitmap(SIZE, SIZE, Bitmap.Config.ARGB_8888)
+        val out = createBitmap(SIZE, SIZE)
         val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
         val m = (SIZE - SHOWN) / 2
         val shown = Rect(m, m, m + SHOWN, m + SHOWN)

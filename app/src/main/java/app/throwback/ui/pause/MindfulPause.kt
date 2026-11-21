@@ -30,15 +30,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.edit
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.TbProgressBar
 import app.throwback.core.ui.UiText
 import app.throwback.core.ui.blockTouches
-import kotlin.math.ceil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlin.math.ceil
 
 /** Timing of the pause, kept pure for tests. */
 internal object PauseTiming {
@@ -149,7 +150,10 @@ internal object PauseLines {
             order = (0 until count).shuffled().let { if (it.first() == last) it.drop(1) + it.first() else it }
             pos = 0
         }
-        prefs.edit().putString("order", order.joinToString(",")).putInt("pos", pos + 1).apply()
+        prefs.edit {
+            putString("order", order.joinToString(","))
+            putInt("pos", pos + 1)
+        }
         return order[pos]
     }
 }

@@ -2,7 +2,7 @@ package app.throwback.core
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 
 /**
  * The intents that open Throwback's main screen (MainActivity), and the actions it understands.
@@ -25,6 +25,6 @@ object OpenThrowback {
     fun intent(context: Context, action: String? = null, url: String? = null): Intent =
         Intent().setClassName(context, MAIN_ACTIVITY).also { intent ->
             action?.let { intent.action = it }
-            url?.let { intent.data = Uri.parse(it) }
+            url?.let { intent.data = it.toUri() }
         }
 }

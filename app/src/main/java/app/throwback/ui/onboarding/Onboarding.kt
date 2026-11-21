@@ -42,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.throwback.R
+import app.throwback.core.prefs.AppPrefs
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.CardDivider
 import app.throwback.core.ui.TbButton
@@ -50,7 +51,6 @@ import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.ThrowbackLogo
 import app.throwback.core.ui.UiText
 import app.throwback.core.ui.blockTouches
-import app.throwback.core.prefs.AppPrefs
 import app.throwback.ui.common.SystemScreens
 import app.throwback.ui.connect.InstagramApp
 import kotlinx.coroutines.flow.first

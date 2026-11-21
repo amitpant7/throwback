@@ -51,11 +51,12 @@ A standard single-module Android project: all source code is under `app/src/`.
 
 ## Building
 
-JDK 17 and Android SDK 35 (Android Studio bundles both), then:
+JDK 17 and Android SDK 36 (Android Studio bundles both), then:
 
 ```bash
 ./gradlew assembleDebug testDebugUnitTest lintDebug
 tools/pagescript-lint.sh        # after changing the page script (needs Node)
+tools/sort-kotlin-imports.py    # Kotlin import order (--fix sorts)
 ```
 
 The debug APK is `app/build/outputs/apk/debug/app-debug.apk`. More in

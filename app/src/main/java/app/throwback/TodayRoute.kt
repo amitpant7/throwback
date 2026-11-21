@@ -1,7 +1,5 @@
 package app.throwback
 
-import app.throwback.timelimit.TimeLimitController
-import app.throwback.core.LockState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -15,6 +13,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import app.throwback.connect.MessagesFeature
 import app.throwback.connect.relay.RelayStats
+import app.throwback.core.LockState
+import app.throwback.timelimit.TimeLimitController
 import app.throwback.ui.today.TodayScreen
 import app.throwback.ui.today.TodayStats
 import app.throwback.web.InstagramWebController

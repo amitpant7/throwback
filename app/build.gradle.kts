@@ -7,13 +7,13 @@ plugins {
 
 android {
     namespace = "app.throwback"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         // Working ID; it can still change freely until the first Play Store upload.
         applicationId = "app.throwback"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 4
         versionName = "0.2.0"
     }

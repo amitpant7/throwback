@@ -1,6 +1,5 @@
 package app.throwback.connect.relay
 
-import app.throwback.core.OpenThrowback
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -11,6 +10,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import app.throwback.R
 import app.throwback.connect.Permissions
+import app.throwback.core.OpenThrowback
 
 /** Throwback's own notifications: relayed messages and activity, and the guard's ongoing one. */
 internal object RelayNotifier {

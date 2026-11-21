@@ -7,8 +7,13 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
 import app.throwback.BuildConfig
+import app.throwback.connect.CallInApp
+import app.throwback.connect.CallState
 import app.throwback.connect.GuardPass
+import app.throwback.connect.InstagramPackages
+import app.throwback.connect.MessagesFeature
 import app.throwback.connect.PassLedger
+import app.throwback.connect.RelayDebug
 import app.throwback.core.prefs.AppPrefs
 import app.throwback.web.rules.DEFAULT_ACTIVITY_URL
 import app.throwback.web.rules.NotificationRules
@@ -21,11 +26,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import app.throwback.connect.CallInApp
-import app.throwback.connect.CallState
-import app.throwback.connect.InstagramPackages
-import app.throwback.connect.MessagesFeature
-import app.throwback.connect.RelayDebug
 
 /**
  * The Instagram app's notification relay (DECISIONS.md #26). Android binds it while the user has granted

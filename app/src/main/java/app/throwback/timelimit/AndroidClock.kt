@@ -31,8 +31,6 @@ internal open class AndroidClock(context: Context) : Clock {
         zone = ZoneId.systemDefault(),
         bootCount = bootCount,
         networkMillis = networkTime() ?: ServerTimeHint.now(),
-        // Network time comes once the phone syncs (13+) or once Instagram's page loads (any version).
-        networkTimeSupported = true,
     )
 
     /** Null below Android 13, or before the phone has synced its time since boot. */

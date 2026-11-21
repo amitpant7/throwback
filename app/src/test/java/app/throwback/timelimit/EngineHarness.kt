@@ -27,8 +27,9 @@ val PIN_B = PinHash(salt = "c2FsdEI=", hash = "aGFzaEI=", iterations = 1)
 /**
  * Drives [TimeLimitEngine] the way the controller does, with a fake phone clock:
  * [advance] is real time passing, [moveClock] is the user changing the clock, [reboot] restarts
- * the monotonic clock. With [networkTimeSupported] (Android 13+) the reading carries network time
- * (the real time) while [networkUp]; a reboot loses it until the test sets [networkUp] again.
+ * the monotonic clock. While [networkUp] the reading carries network time (the real time), as once
+ * the phone has synced or Instagram's page has loaded; a reboot loses it until the test sets
+ * [networkUp] again. Off by default: the engine's own clock rules are what most tests check.
  */
 class EngineHarness(
     start: LocalDateTime = LocalDateTime.of(2026, 11, 20, 9, 0),
@@ -40,16 +41,11 @@ class EngineHarness(
 
     /** The true time; [moveClock] only changes the phone's clock ([wall]). */
     var real = wall
-    var networkTimeSupported = false
     var networkUp = false
     var boot = 41
     var s = TimeLimitState()
 
-    fun reading() = ClockReading(
-        elapsed, wall, zone, boot,
-        networkMillis = real.takeIf { networkTimeSupported && networkUp },
-        networkTimeSupported = networkTimeSupported,
-    )
+    fun reading() = ClockReading(elapsed, wall, zone, boot, networkMillis = real.takeIf { networkUp })
 
     fun advance(ms: Long) {
         elapsed += ms

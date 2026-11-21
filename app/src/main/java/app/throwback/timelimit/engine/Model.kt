@@ -21,12 +21,11 @@ data class ClockReading(
     /** Identifies the current boot (Settings.Global.BOOT_COUNT); -1 when unknown. */
     val bootCount: Int,
     /**
-     * Android's network time (SystemClock.currentNetworkTimeClock, Android 13+): the last time sync
-     * plus the stopwatch since, so the user can't set it. Null when the phone has none (yet).
+     * Network time, which the user can't set: Android's last time sync plus the stopwatch since
+     * (Android 13+), else Instagram's server time as the page last saw it (any version). Null until
+     * there is one in this boot or process.
      */
     val networkMillis: Long? = null,
-    /** Network time will come (Android's own on 13+, Instagram's server time on any version), so after a reboot it is worth waiting for. */
-    val networkTimeSupported: Boolean = false,
 )
 
 /** Source of [ClockReading]s; Android implementation in AndroidClock, a fake one in tests. */

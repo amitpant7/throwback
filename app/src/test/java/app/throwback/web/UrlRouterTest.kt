@@ -129,6 +129,18 @@ class UrlRouterTest {
     }
 
     @Test
+    fun `Instagram's short links stay inside`() { // DECISIONS.md #11: else the Instagram app opens them
+        listOf("https://ig.me/m/some.user", "https://instagr.am/p/X/", "https://www.instagr.am/some.user/").forEach {
+            assertEquals(it, Decision.Load, decide(it))
+            assertEquals(it, Decision.Load, decide(it, MESSAGES_ONLY)) // where it leads is routed as usual
+        }
+        assertEquals(Decision.Redirect("https://instagr.am/p/X/", null), decide("http://instagr.am/p/X/"))
+        assertEquals(Decision.Redirect("https://ig.me/m/x", null), decide("https://ig.me./m/x"))
+        assertEquals(Decision.Redirect("https://ig.me/m/x", null), decide("https://l.instagram.com/?u=https%3A%2F%2Fig.me%2Fm%2Fx"))
+        assertEquals(Decision.External("https://evilig.me/m/x"), decide("https://evilig.me/m/x"))
+    }
+
+    @Test
     fun `facebook stays inside only during login`() {
         val fb = "https://www.facebook.com/login.php?next=x"
         assertEquals(Decision.Load, decide(fb, current = "$ig/accounts/login/"))

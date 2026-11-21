@@ -120,12 +120,16 @@ class UrlRouter(private val rules: FilterRules) {
             val targetParts = target?.let(UrlParts::parse)
             return when {
                 target == null || targetParts == null || !targetParts.isWeb() -> Decision.External(url)
-                instagram.matches(targetParts.host) -> Decision.Redirect(targetParts.toHttps(), null)
+                instagram.matches(targetParts.host) || targetParts.host in SHORT_LINK_HOSTS ->
+                    Decision.Redirect(targetParts.toHttps(), null)
                 else -> Decision.External(target)
             }
         }
         return when {
             instagram.matches(parts.host) -> decideInstagram(parts, mode)
+            // Instagram's own links stay in Throwback (another app would be the Instagram app).
+            parts.host in SHORT_LINK_HOSTS ->
+                if (parts.scheme == "https" && parts.plainHost) Decision.Load else Decision.Redirect(parts.toHttps(), null)
             // Accounts Center: messages-only mode shows it only on the way through a login.
             internal.matches(parts.host) -> if (mode != WebMode.MESSAGES_ONLY || inLoginFlow(currentUrl, mode)) {
                 Decision.Load
@@ -200,6 +204,12 @@ class UrlRouter(private val rules: FilterRules) {
          * and the phone's own files (another app can't open a file: link, and Android throws on it).
          */
         private val BLOCKED_SCHEMES = setOf("intent", "instagram", "market", "file", "content")
+
+        /**
+         * Instagram's short-link sites (ig.me/m/<user> opens a chat, instagr.am/p/<code> a post). Loaded
+         * here: their server sends the link on to instagram.com, which is routed as usual.
+         */
+        private val SHORT_LINK_HOSTS = setOf("ig.me", "instagr.am", "www.instagr.am")
 
         /** Fills $1..$9 from [match]; always returns a single-slash path (never "//host"). */
         internal fun expandTemplate(template: String, match: MatchResult): String {

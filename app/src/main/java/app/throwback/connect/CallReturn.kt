@@ -13,8 +13,9 @@ import app.throwback.connect.relay.RelayListenerService
  * screens are allowed, so a call minimised to its chat gets covered and the user lands in Throwback,
  * away from the call. The "Back to your Instagram call" bar opens it again: through Instagram's own
  * call notification, whose tap goes to the call screen; or, where that notification doesn't show
- * (its channel turned off), by opening the Instagram app with the call button's pass, which lasts
- * until the call screen is back (the chat's own return-to-call banner).
+ * (its channel turned off), by reopening the chat the call started from (CallInApp.lastChat), which
+ * the guard allows during a call, where Instagram's own banner returns to the call. A pass during a
+ * call only bridges the seconds the chat takes to open (GuardPolicy.CALL_PASS_BRIDGE_MS).
  */
 internal object CallReturn {
 
@@ -30,12 +31,12 @@ internal object CallReturn {
     }
 
     /**
-     * Opens the call screen through Instagram's notification, else the Instagram app with the call
-     * button's pass (counted like a tap on it). OPENED, or what to tell the user.
+     * Opens the call screen through Instagram's notification, else the call's chat (counted like a
+     * tap on the call button). OPENED, or what to tell the user.
      */
     fun open(context: Context): CallInApp.Result {
         val action = RelayListenerService.callTapAction(CallState.tracker.state.value)
-            ?: return CallInApp.open(context, thread = null)
+            ?: return openChat(context)
         // Android 14+: the tap is Instagram's PendingIntent, sent from Throwback in front, which must
         // lend its permission to start an activity.
         val options = when {
@@ -49,7 +50,13 @@ internal object CallReturn {
             action.send(context, 0, null, null, null, null, options?.toBundle())
             CallInApp.Result.OPENED
         } catch (e: PendingIntent.CanceledException) {
-            CallInApp.open(context, thread = null)
+            openChat(context)
         }
+    }
+
+    /** The chat the call started from, else Instagram as it was (a call answered there). */
+    private fun openChat(context: Context): CallInApp.Result {
+        val (thread, user) = CallInApp.lastChat ?: (null to null)
+        return CallInApp.open(context, thread, user)
     }
 }

@@ -16,6 +16,9 @@ import app.throwback.web.UrlRouter
  * ([RulePatterns]), selectors cannot break out of the generated CSS, and sizes stay small.
  */
 object RulesValidator {
+    /** The Instagram app's main screen: feed, Reels, Explore, profiles and the inbox. */
+    private const val FEED_SCREEN = "com.instagram.mainactivity.InstagramMainActivity"
+
 
     private val ID = Regex("^[a-z0-9][a-z0-9-]{0,40}$")
     private val PAGE_NAME = Regex("^[a-z][a-z0-9-]{0,30}$")
@@ -150,7 +153,15 @@ object RulesValidator {
             check(a.otherScreenMinutes in 0..30) { "appSettings.otherScreenMinutes out of range" }
             checkPackages(a.flowPackages, "appSettings.flowPackages", errors)
         }
-        rules.appCall?.let { a -> checkScreens(a.screens, "appCall.screens", errors) }
+        rules.appCall?.let { a ->
+            checkScreens(a.screens, "appCall.screens", errors)
+            a.chatScreens?.let { chat ->
+                checkScreens(chat, "appCall.chatScreens", errors)
+                // The chat next to a call, never the feed: a bad file must not open Instagram during calls.
+                val regex = runCatching { Regex(chat) }.getOrNull()
+                if (regex != null && regex.containsMatchIn(FEED_SCREEN)) errors += "appCall.chatScreens: matches the feed's screen"
+            }
+        }
         rules.appCreate?.let { a ->
             check(a.link.startsWith("instagram://")) { "appCreate.link must be an instagram:// link" }
             checkScreens(a.screens, "appCreate.screens", errors)

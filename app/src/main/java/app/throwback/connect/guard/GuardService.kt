@@ -282,13 +282,16 @@ class GuardService : Service() {
             val grace = rules().callGraceMillis // read each time: a rules update applies at once
             val callSigns = CallAudioLink.isCallAudio(audioMode) || callScreenShown || appCall
             val inCall = GuardPolicy.inCall(now, calls, grace, callAudioAt, callSigns)
-            val callScreensOk = callScreens.allow(inCall, activeScreens, rules().callScreens)
+            val callScreensOk = callScreens.allow(inCall, activeScreens, rules().callScreens, rules().chatScreens)
+            // During a call a pass (the call button, "Back to your call") only bridges the seconds
+            // Instagram takes to open the chat: it must not open the feed next to the call.
+            val passUntil = if (callScreens.restricting && now - GuardPass.grantedAt >= GuardPolicy.CALL_PASS_BRIDGE_MS) 0L else GuardPass.allowUntil
             val action = GuardPolicy.decide(
                 instagramOnScreen = instagramOnScreen,
                 now = now,
                 calls = calls,
                 graceMillis = grace,
-                allowUntil = GuardPass.allowUntil,
+                allowUntil = passUntil,
                 coverShownAt = coverShownAt.takeIf { overlay.showing },
                 noCoverUntil = noCoverUntil,
                 callAudioAt = callAudioAt,
@@ -551,6 +554,9 @@ class GuardService : Service() {
 
         /** Instagram's call screens (`appCall.screens`): during a call only these may show. */
         val callScreens = PassRules.screensPattern(source?.appCall?.screens)
+
+        /** The chat a minimised call shows (`appCall.chatScreens`), also allowed during a call. */
+        val chatScreens = PassRules.screensPattern(source?.appCall?.chatScreens)
 
         /** Android screens Instagram opens on the way (`appCreate.flowPackages`; for settings also `appSettings.flowPackages`). */
         val createFlow: Set<String> = source?.appCreate?.flowPackages.orEmpty().toSet()

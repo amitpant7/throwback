@@ -37,6 +37,22 @@ class GuardPolicyTest {
     // ---- Covering ---------------------------------------------------------------------------
 
     @Test
+    fun `during a call its chat is allowed too, never the feed, and a pass only bridges`() {
+        val callScreen = "com.instagram.rtc.activity.RtcCallActivity"
+        val chatScreen = "com.instagram.modal.ModalActivity"
+        val pattern = PassRules.screensPattern("^com\\.instagram\\.rtc\\.")
+        val chat = PassRules.screensPattern("^com\\.instagram\\.modal\\.ModalActivity$")
+        val rule = CallScreens()
+        assertTrue(rule.allow(true, listOf(callScreen), pattern, chat))
+        assertTrue("restricting once the call screen was seen", rule.restricting)
+        assertTrue("minimised to its chat", rule.allow(true, listOf(chatScreen), pattern, chat))
+        assertFalse("Back from the chat to the feed", rule.allow(true, listOf(feed), pattern, chat))
+        assertFalse("the chat next to the feed", rule.allow(true, listOf(chatScreen, feed), pattern, chat))
+        rule.allow(false, listOf(feed), pattern, chat)
+        assertFalse("no call: not restricting", rule.restricting)
+    }
+
+    @Test
     fun `during a call only its screens once seen, before that or after a rename all of Instagram`() {
         val callScreen = "com.instagram.rtc.activity.RtcCallActivity"
         val pattern = PassRules.screensPattern("^com\\.instagram\\.rtc\\.")

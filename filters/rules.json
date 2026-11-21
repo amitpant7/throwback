@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026112042,
+  "version": 2026112101,
   "updated": "2026-11-20",
   "about": [
     "Throwback filter rules. Single source of truth: bundled into the APK at build time, and installed apps fetch the latest copy at most once a day.",
@@ -133,7 +133,8 @@
 
   "appCall": {
     "screens": "^com\\.instagram\\.rtc\\.",
-    "note": "During an Instagram call only its call screens may show (owner, 2026-11-21): the rest of the Instagram app is covered, also in split screen next to the call. That starts once a call screen has been seen in the call; if Instagram renames it, all of Instagram stays allowed during calls, as before, so a call is never cut off. Read from the Instagram app's manifest on the emulator 2026-11-21: com.instagram.rtc.activity.RtcCallActivity (the call) and RtcCallIntentHandlerActivity (opens it)."
+    "chatScreens": "^com\\.instagram\\.modal\\.ModalActivity$|^com\\.instagram\\.urlhandlers\\.igmemessage\\.",
+    "note": "During an Instagram call only its call screens may show (owner, 2026-11-21): the rest of the Instagram app is covered, also in split screen next to the call. That starts once a call screen has been seen in the call; if Instagram renames it, all of Instagram stays allowed during calls, as before, so a call is never cut off. Read from the Instagram app's manifest on the emulator 2026-11-21: com.instagram.rtc.activity.RtcCallActivity (the call) and RtcCallIntentHandlerActivity (opens it). chatScreens (owner's phone 2026-11-21): a minimised call shows its chat, com.instagram.modal.ModalActivity, with Instagram's return-to-call banner; it is allowed during a call too (ig.me opens it through urlhandlers.igmemessage). The feed's screen (mainactivity.InstagramMainActivity) never is."
   },
 
   "appSettings": {

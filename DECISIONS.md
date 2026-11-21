@@ -358,3 +358,9 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
        button's pass lasts until the call screen is back (tapping call again during a call is the way
        back), and "Back to your Instagram call" uses that pass when there is no notification.
        15 call-button taps an hour.
+    z. **During a call, its chat is allowed; a pass no longer opens the feed** (owner, 2026-11-21: "Back
+       to your call" opened the chat, and Back from there let him scroll the feed). A minimised call
+       shows its chat (ModalActivity) with Instagram's return-to-call banner: rules `appCall.chatScreens`
+       allow it during a call next to the call screens, and the validator refuses any pattern that
+       matches the feed's screen. During a call a pass counts only for its first 4 seconds (the way into
+       the chat). "Back to your Instagram call" reopens the chat the call started from.

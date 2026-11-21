@@ -36,6 +36,15 @@ class RulesParserTest {
     }
 
     @Test
+    fun `a call's chat screens can never include the feed`() {
+        assertTrue(TestRules.bundled.appCall?.chatScreens != null)
+        assertRejected(
+            TestRules.bundledWith { it.replace("\"chatScreens\": \"", "\"chatScreens\": \"mainactivity|") },
+            "appCall.chatScreens: matches the feed's screen",
+        )
+    }
+
+    @Test
     fun `broken settings section rules are rejected`() {
         assertRejected(TestRules.bundledWith { it.replace("\"^/accounts/settings/?$\"", "\"^/accounts/(settings\"") }, "invalid pattern")
         assertRejected(

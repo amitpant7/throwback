@@ -118,6 +118,12 @@ internal object GuardPolicy {
     /** The longest one cover stays while Instagram stays on screen. */
     const val COVER_HOLD_MAX_MS = 8_000L
 
+    /**
+     * During a call that keeps to its screens (CallScreens.restricting), a pass counts only this long
+     * after it was granted: enough for Instagram to open the chat, never the rest of the app.
+     */
+    const val CALL_PASS_BRIDGE_MS = 4_000L
+
     /** How long the cover steps aside after [COVER_HOLD_MAX_MS]. */
     const val STEP_ASIDE_MS = 2_500L
 
@@ -185,28 +191,36 @@ internal object GuardPolicy {
 }
 
 /**
- * During an Instagram call only its call screens may be on screen (DECISIONS.md #34b): browsing the
- * rest of Instagram next to a call, or in front of it, is covered. That starts once a call screen
- * has been seen in this call; until then (Instagram renamed it, or it hasn't shown yet) all of
- * Instagram is allowed, as before, so a call is never cut off. Pure, for tests.
+ * During an Instagram call only its call screens, and the chat a minimised call shows (with its
+ * return-to-call banner), may be on screen (DECISIONS.md #34b, #34z): browsing the rest of
+ * Instagram next to a call, or in front of it, is covered. That starts once a call screen has been
+ * seen in this call; until then (Instagram renamed it, or it hasn't shown yet) all of Instagram is
+ * allowed, as before, so a call is never cut off. Pure, for tests.
  */
 internal class CallScreens {
     private var seen = false
+
+    /** A call runs and keeps to its screens now: a pass then only bridges the way into its chat. */
+    var restricting = false
+        private set
 
     /**
      * Called once per check. @param inCall an Instagram call runs. @param active Instagram's active
      * screens (ForegroundTracker.activeScreens; "" when unknown, which counts as a call screen): a
      * call shrunk to picture-in-picture is only paused, so the feed in front of it is what counts,
      * and the screen being left while the call screen opens doesn't. @param pattern `appCall.screens`.
-     * @return whether the call allows what is on screen.
+     * @param chat `appCall.chatScreens`, also allowed during the call. @return whether the call
+     * allows what is on screen.
      */
-    fun allow(inCall: Boolean, active: List<String>, pattern: Regex?): Boolean {
+    fun allow(inCall: Boolean, active: List<String>, pattern: Regex?, chat: Regex? = null): Boolean {
         if (!inCall || pattern == null) {
             seen = false
+            restricting = false
             return true
         }
-        fun isCall(screen: String) = screen.isEmpty() || pattern.containsMatchIn(screen)
+        fun isCall(screen: String) = screen.isEmpty() || pattern.containsMatchIn(screen) || chat?.containsMatchIn(screen) == true
         if (shown(active, pattern)) seen = true
+        restricting = seen
         return !seen || active.all(::isCall)
     }
 

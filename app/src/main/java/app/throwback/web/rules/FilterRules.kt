@@ -372,11 +372,16 @@ data class AppCreateTrigger(
     val fileInput: Boolean = false,
 )
 
-/** During an Instagram call only its call screens may show (DECISIONS.md #34b). */
+/** During an Instagram call only its call screens, and the chat it was minimised to, may show (DECISIONS.md #34b, #34z). */
 @Serializable
 data class AppCallRules(
     /** Regex on the activity class: Instagram's call screens. */
     val screens: String,
+    /**
+     * Regex on the activity class: the chat a minimised call shows (with Instagram's own
+     * return-to-call banner), also allowed during a call. Never the feed's screen (validated).
+     */
+    val chatScreens: String? = null,
 )
 
 @Serializable

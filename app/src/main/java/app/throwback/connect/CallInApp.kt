@@ -31,6 +31,14 @@ internal object CallInApp {
         NOT_READY(R.string.call_not_ready),
     }
 
+    /**
+     * The chat the call button last opened (thread id, username): "Back to your Instagram call"
+     * reopens it, where Instagram shows its return-to-call banner (CallReturn).
+     */
+    @Volatile
+    var lastChat: Pair<String?, String?>? = null
+        private set
+
     fun open(context: Context, thread: String?, user: String? = null): Result {
         val pkg = InstagramPackages.installed(context) ?: return Result.NO_APP
         // Instagram not connected: no guard, so no pass and nothing to count (still loading: count).
@@ -46,6 +54,7 @@ internal object CallInApp {
         val launch = context.packageManager.getLaunchIntentForPackage(pkg)
         for (intent in listOfNotNull(byUser, byThread, launch)) {
             if (start(context, intent)) {
+                if (intent !== launch) lastChat = thread to user
                 // Only once Instagram really opens.
                 if (now != null) {
                     GuardPass.grant(SystemClock.elapsedRealtime(), PASS_MS, GuardPass.Kind.CALL)

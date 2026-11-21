@@ -58,13 +58,12 @@ import kotlinx.coroutines.withContext
 import kotlin.math.max
 
 /**
- * The guard (DECISIONS.md #27): while the screen is on, it checks about twice a second which apps
- * are on screen (usage access). If an Instagram app is (in front, or in split screen, a pop-up
- * window or picture-in-picture) and no call or pass allows it, it covers the screen with "Use
- * Throwback instead" (display over other apps) and brings Throwback to the front. The cover stays
- * while Instagram stays on screen, stepping aside for a moment now and then so a window left open
- * can be closed. During an Instagram call only its call screens may show (#34b); when the call ends
- * and the app is still open, it covers it then.
+ * The guard (DECISIONS.md #27): while the screen is on, it checks about twice a second which app is
+ * in front (usage access). If it is an Instagram app and no call or pass allows it, it covers the
+ * screen with "Use Throwback instead" (display over other apps) and brings Throwback to the front.
+ * Only the app in front counts: split screen and floating windows aren't followed (#34aa). During an
+ * Instagram call only its call screens and the call's chat may show (#34b, #34z); when the call
+ * ends and the app is still in front, it covers it then.
  *
  * Why a foreground service: Android has no callback for "another app came to the front" without an
  * accessibility service (which Play reserves for accessibility tools), so the guard has to ask, and
@@ -78,7 +77,7 @@ class GuardService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var loop: Job? = null
     private val screenOn = MutableStateFlow(true)
-    private val tracker = ForegroundTracker(stopEvents = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+    private val tracker = ForegroundTracker()
 
     /** Where the next usage-events query starts (phone wall ms); null: look back [LOOK_BACK_MS]. */
     private var queryFrom: Long? = null
@@ -106,8 +105,6 @@ class GuardService : Service() {
     private var coverShownAt = 0L
     private var noCoverUntil = 0L
 
-    /** Instagram stayed on screen under the last cover: the next one says to close its window. */
-    private var windowLeftOpen = false
     private lateinit var overlay: GuardOverlay
 
     /** The story pass just ran out without a post: the next cover says so. */
@@ -261,7 +258,7 @@ class GuardService : Service() {
                 GuardHeartbeat.beat(this)
             }
             val watched = RelayDebug.watchedPackages()
-            val instagramOnScreen = tracker.onScreen(watched)
+            val instagramOnScreen = tracker.inFront(watched)
             val calls = CallState.tracker.state.value
             followListener(calls, now)
             val audioMode = getSystemService(AudioManager::class.java)?.mode
@@ -298,16 +295,9 @@ class GuardService : Service() {
                 callScreensOk = callScreensOk,
                 callSigns = callSigns,
             )
-            if (!instagramOnScreen) windowLeftOpen = false
             when (action) {
                 GuardAction.COVER -> cover(now)
                 GuardAction.UNCOVER -> overlay.hide()
-                GuardAction.STEP_ASIDE -> {
-                    Log.i(TAG, "Instagram stays on screen (split screen, pop-up or picture-in-picture): cover steps aside")
-                    overlay.hide()
-                    noCoverUntil = now + GuardPolicy.STEP_ASIDE_MS
-                    windowLeftOpen = true
-                }
                 GuardAction.NONE -> Unit
             }
             delay(POLL_MS)
@@ -419,7 +409,6 @@ class GuardService : Service() {
         )
         // Only if this ended it: the relay may just have ended it as posted (and forgiven it).
         if (!GuardPass.endIfActive(now)) return
-        noCoverUntil = max(noCoverUntil, now + GuardPolicy.LEAVING_MS)
         if (leftEarly) CallInApp.storyLeftEarly(this)
     }
 
@@ -479,10 +468,10 @@ class GuardService : Service() {
     /** Covers Instagram and brings Throwback to the front; the cover stays while Instagram is on screen. */
     private fun cover(now: Long) {
         Log.i(TAG, "Instagram app on a screen no call or pass allows: back to Throwback")
-        if (overlay.show(storyTimeUp, windowHint = windowLeftOpen)) {
+        if (overlay.show(storyTimeUp)) {
             coverShownAt = now
         } else {
-            noCoverUntil = now + GuardPolicy.STEP_ASIDE_MS // no overlay permission: don't retry every poll
+            noCoverUntil = now + GuardPolicy.NO_OVERLAY_RETRY_MS // no overlay permission: don't retry every poll
         }
         storyTimeUp = false
         // Allowed from the background: the user granted "display over other apps".
@@ -508,8 +497,8 @@ class GuardService : Service() {
          */
         private const val IG_CALL_LINK_MS = 30_000L
         /**
-         * The first query after the guard starts looks back this far, to learn what is on screen: an
-         * app in split screen or picture-in-picture can have been resumed long ago (an hour lost it).
+         * The first query after the guard starts looks back this far, to learn which app is in front:
+         * it may have been opened long ago (looking back only an hour once missed it).
          */
         private const val LOOK_BACK_MS = 24 * 60 * 60 * 1000L
 

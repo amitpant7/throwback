@@ -364,3 +364,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
        allow it during a call next to the call screens, and the validator refuses any pattern that
        matches the feed's screen. During a call a pass counts only for its first 4 seconds (the way into
        the chat). "Back to your Instagram call" reopens the chat the call started from.
+    aa. **The guard follows only the app in front** (owner, 2026-11-21: the cover kept coming back over
+        the gallery after a call, though Instagram wasn't open). Split screen and floating windows
+        aren't followed any more: the list of "visible" Instagram screens they needed went stale when a
+        stop report was missed, and the cover then stepped aside and came back every few seconds over
+        other apps. Now Instagram counts only while it is the app in front (the last one opened, until
+        it pauses), the cover simply stays while it is, and there is no stepping aside or "close that
+        window" text.

@@ -38,8 +38,6 @@
         <item quantity="one">Instagram\'s story editor opens again tomorrow (%d story pass without a post today). Using the website for now.</item>
         <item quantity="other">Instagram\'s story editor opens again tomorrow (%d story passes without a post today). Using the website for now.</item>
     </plurals>
-    <string name="guard_cover_window_title">Close Instagram\'s window</string>
-    <string name="guard_cover_window_body">The Instagram app is still on screen, in split screen or a small window. This cover steps aside for a moment so you can close it.</string>
     <string name="guard_cover_story_title">Story time\'s up</string>
     <string name="guard_cover_story_body">Thought you could sneak a scroll…? Nahhh.</string>
     <plurals name="story_in_app_used_up">

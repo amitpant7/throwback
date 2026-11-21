@@ -281,10 +281,9 @@ setup and the permissions. Notification access is checked for Throwback's listen
   screen. Notifications are handled strictly in order (calls first, on their own queue); only this
   profile's (a work-profile or cloned Instagram is left alone).
 - **Guard** (`GuardService`, special-use foreground service): watches usage events while the screen
-  is on and covers Instagram (`GuardOverlay`) unless a call or a pass allows it. Split screen,
-  pop-up windows and picture-in-picture count as on screen (resumed or paused until stopped); while
-  Instagram stays on screen the cover stays, stepping aside briefly every 8 s so its window can be
-  closed. The guard writes a heartbeat; when it was stopped, the Instagram app's time since then is
+  is on and covers Instagram (`GuardOverlay`) unless a call or a pass allows it. Only the app in
+  front counts (the last activity resumed, until it pauses); split screen and floating windows aren't
+  followed (#34aa). The cover stays while Instagram is in front. The guard writes a heartbeat; when it was stopped, the Instagram app's time since then is
   added to the day's usage when Throwback next runs (call screens excepted). Call audio counts as
   Instagram's after an Instagram call notification, while one of its call screens shows, or when an
   internet call starts while Instagram is in front (never a phone call on its own, `CallAudioLink`).

@@ -50,16 +50,14 @@ internal class GuardOverlay(private val context: Context) {
 
     /**
      * @param storyTimeUp the story pass ran out without a post: the cover says so, with a wink.
-     * @param windowHint Instagram stayed on screen under the last cover (split screen, a pop-up
-     *        window, picture-in-picture): the cover says to close that window.
      */
-    fun show(storyTimeUp: Boolean = false, windowHint: Boolean = false): Boolean {
+    fun show(storyTimeUp: Boolean = false): Boolean {
         if (view != null) return true
         val owner = OverlayOwner().also { it.start() }
         val v = ComposeView(context).apply {
             setViewTreeLifecycleOwner(owner)
             setViewTreeSavedStateRegistryOwner(owner)
-            setContent { ThrowbackTheme { Cover(storyTimeUp, windowHint) } }
+            setContent { ThrowbackTheme { Cover(storyTimeUp) } }
         }
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -119,12 +117,12 @@ internal class GuardOverlay(private val context: Context) {
 }
 
 @Composable
-private fun Cover(storyTimeUp: Boolean, windowHint: Boolean) {
+private fun Cover(storyTimeUp: Boolean) {
     val colors = ThrowbackTheme.colors
-    val (title, body) = when {
-        windowHint -> R.string.guard_cover_window_title to R.string.guard_cover_window_body
-        storyTimeUp -> R.string.guard_cover_story_title to R.string.guard_cover_story_body
-        else -> R.string.guard_cover_title to R.string.guard_cover_body
+    val (title, body) = if (storyTimeUp) {
+        R.string.guard_cover_story_title to R.string.guard_cover_story_body
+    } else {
+        R.string.guard_cover_title to R.string.guard_cover_body
     }
     Column(
         Modifier.fillMaxSize().background(colors.bg).padding(32.dp),

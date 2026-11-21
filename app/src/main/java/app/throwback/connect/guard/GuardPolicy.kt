@@ -3,18 +3,13 @@ package app.throwback.connect.guard
 import app.throwback.connect.CallSnapshot
 
 /**
- * Follows the apps on screen from usage events (UsageStatsManager), in order. Pure Kotlin: the
- * service feeds it (type, package, class).
- *
- * [current] is the app last brought to the front (for the passes' bookkeeping). Being on screen is
- * followed per app, the way Android's own usage tracking does it (Android 10+): an activity is
- * visible from its RESUMED, or a PAUSED (one can come back paused, e.g. a picture-in-picture window
- * after the screen was off), until its STOPPED or DESTROYED. So an app in split screen, a pop-up
- * window or picture-in-picture still counts: there it stays resumed, or only pauses, and switching
- * between windows logs nothing. Without STOPPED events (below Android 10, [stopEvents] false)
- * PAUSED ends it.
+ * Which app (and screen) is in front, from usage events: the last activity resumed, until it pauses
+ * (every activity pauses before it leaves the front; a stop comes later, sometimes after a new
+ * instance of the same screen was resumed, so stops are ignored). Only the app in front counts: split screen and floating windows aren't followed
+ * (owner, 2026-11-21, DECISIONS.md #34aa), and opening any other app (the home screen too) ends it at
+ * once, so a missed event can't leave Instagram "on screen". Pure, for tests.
  */
-internal class ForegroundTracker(private val stopEvents: Boolean = true) {
+internal class ForegroundTracker {
     var current: String? = null
         private set
 
@@ -22,48 +17,26 @@ internal class ForegroundTracker(private val stopEvents: Boolean = true) {
     var currentClass: String? = null
         private set
 
-    /**
-     * The visible activities (classes) of each app; true while that screen was resumed after its
-     * last pause. Events don't say which instance of a screen they are about, and a screen opened
-     * from the same screen (A1 paused, A2 resumed, then A1 stopped) must stay visible.
-     */
-    private val visible = HashMap<String, HashMap<String, Boolean>>()
-
     fun onEvent(type: Int, packageName: String?, className: String? = null) {
         packageName ?: return
-        val screen = className.orEmpty()
         when (type) {
             ACTIVITY_RESUMED -> {
                 current = packageName
                 currentClass = className
-                visible.getOrPut(packageName) { HashMap() }[screen] = true
             }
-            ACTIVITY_PAUSED -> {
-                leftFront(packageName, className)
-                if (stopEvents) visible.getOrPut(packageName) { HashMap() }[screen] = false else hidden(packageName, screen)
-            }
-            ACTIVITY_STOPPED, ACTIVITY_DESTROYED -> {
-                if (visible[packageName]?.get(screen) == true) return // an older instance of a screen resumed since
-                leftFront(packageName, className)
-                hidden(packageName, screen)
-            }
+            ACTIVITY_PAUSED -> leftFront(packageName, className)
         }
     }
 
-    /** Whether any of [packages] is on screen, in front or not. */
-    fun onScreen(packages: Set<String>): Boolean = packages.any { !visible[it].isNullOrEmpty() }
+    /** Whether one of [packages] is the app in front. */
+    fun inFront(packages: Set<String>): Boolean = current in packages
 
-    /**
-     * The screens (activity classes; "" when unknown) of [packages] that are active: resumed, so in
-     * front or in split screen. Not one only paused on screen (picture-in-picture, or the one being
-     * left while Android switches screens).
-     */
+    /** The screen in front (activity class; "" when unknown) when it belongs to one of [packages]. */
     fun activeScreens(packages: Set<String>): List<String> =
-        packages.flatMap { pkg -> visible[pkg]?.filterValues { it }?.keys.orEmpty() }
+        if (current in packages) listOf(currentClass.orEmpty()) else emptyList()
 
     /** Start over (the screen went off, or a check from scratch): the events replayed next rebuild it. */
     fun clear() {
-        visible.clear()
         current = null
         currentClass = null
     }
@@ -73,12 +46,6 @@ internal class ForegroundTracker(private val stopEvents: Boolean = true) {
             current = null
             currentClass = null
         }
-    }
-
-    private fun hidden(packageName: String, screen: String) {
-        val screens = visible[packageName] ?: return
-        screens.remove(screen)
-        if (screens.isEmpty()) visible.remove(packageName)
     }
 
     companion object {
@@ -96,15 +63,8 @@ internal enum class GuardAction {
     /** Cover the Instagram app ("Use Throwback instead") and bring Throwback to the front. */
     COVER,
 
-    /** Take the cover away: Instagram left the screen, or a call or a pass allows it now. */
+    /** Take the cover away: Instagram left the front, or a call or a pass allows it now. */
     UNCOVER,
-
-    /**
-     * Instagram stays on screen under the cover (split screen, a pop-up window, picture-in-picture):
-     * take the cover away for [GuardPolicy.STEP_ASIDE_MS], so its window can be closed. A cover that
-     * never went away would leave the phone unusable.
-     */
-    STEP_ASIDE,
 }
 
 /**
@@ -115,32 +75,22 @@ internal object GuardPolicy {
     /** The cover stays at least this long, so it doesn't flash while Throwback comes to the front. */
     const val COVER_MIN_MS = 900L
 
-    /** The longest one cover stays while Instagram stays on screen. */
-    const val COVER_HOLD_MAX_MS = 8_000L
-
     /**
      * During a call that keeps to its screens (CallScreens.restricting), a pass counts only this long
      * after it was granted: enough for Instagram to open the chat, never the rest of the app.
      */
     const val CALL_PASS_BRIDGE_MS = 4_000L
 
-    /** How long the cover steps aside after [COVER_HOLD_MAX_MS]. */
-    const val STEP_ASIDE_MS = 2_500L
+    /** The cover couldn't be shown (no "display over other apps"): the next try waits this long. */
+    const val NO_OVERLAY_RETRY_MS = 2_500L
 
     /**
-     * No cover this long after leaving Instagram ended a pass: its screen is paused, still "on
-     * screen", until Android reports it stopped. Covering it then would take the user to Throwback
-     * instead of where they went (Home). A window left open (picture-in-picture) is covered after.
-     */
-    const val LEAVING_MS = 1_500L
-
-    /**
-     * @param instagramOnScreen an Instagram app is on screen, in front or not (see ForegroundTracker).
+     * @param instagramOnScreen the Instagram app is the app in front (see ForegroundTracker).
      * @param calls the relay's call state. If the relay isn't connected, calls can't be seen, so the
      *        guard allows everything: a call must never be blocked (DECISIONS.md #20).
      * @param allowUntil a pass (Throwback itself opened the Instagram app) runs until then.
      * @param coverShownAt when the cover went up, or null while it is down.
-     * @param noCoverUntil the cover stepped aside (or couldn't be shown) until then.
+     * @param noCoverUntil the cover couldn't be shown; no new try until then.
      * @param callAudioAt the last time the phone's audio was in call mode for an Instagram call, or
      *        null. Instagram shows no notification once a call is answered (seen on the owner's
      *        phone), so the call notification alone ended the call too early.
@@ -164,7 +114,7 @@ internal object GuardPolicy {
         if (coverShownAt == null) return if (blocked && now >= noCoverUntil) GuardAction.COVER else GuardAction.NONE
         val shownFor = now - coverShownAt
         return when {
-            blocked -> if (shownFor >= COVER_HOLD_MAX_MS) GuardAction.STEP_ASIDE else GuardAction.NONE
+            blocked -> GuardAction.NONE // it stays while Instagram is in front and not allowed
             instagramOnScreen -> GuardAction.UNCOVER // a call or a pass allows it now: at once
             shownFor >= COVER_MIN_MS -> GuardAction.UNCOVER
             else -> GuardAction.NONE
@@ -205,10 +155,9 @@ internal class CallScreens {
         private set
 
     /**
-     * Called once per check. @param inCall an Instagram call runs. @param active Instagram's active
-     * screens (ForegroundTracker.activeScreens; "" when unknown, which counts as a call screen): a
-     * call shrunk to picture-in-picture is only paused, so the feed in front of it is what counts,
-     * and the screen being left while the call screen opens doesn't. @param pattern `appCall.screens`.
+     * Called once per check. @param inCall an Instagram call runs. @param active Instagram's screen in
+     * front (ForegroundTracker.activeScreens; "" when unknown, which counts as a call screen), or none.
+     * @param pattern `appCall.screens`.
      * @param chat `appCall.chatScreens`, also allowed during the call. @return whether the call
      * allows what is on screen.
      */

@@ -463,13 +463,14 @@ internal class InstagramWebController(
         if (!startOutside(intent)) showNotice(WebNotice.NO_APP)
     }
 
-    /** Starts another app's activity from the screen's activity. False when no app may take it. */
+    /**
+     * Starts another app's activity from the screen's activity. False when no app may take it: none
+     * found, not allowed, or a link Android refuses to hand over (it throws on file: links).
+     */
     private fun startOutside(intent: Intent): Boolean = try {
         context.startActivity(intent)
         true
-    } catch (e: ActivityNotFoundException) {
-        false
-    } catch (e: SecurityException) {
+    } catch (e: RuntimeException) {
         false
     }
 

@@ -167,6 +167,13 @@ class UrlRouterTest {
     }
 
     @Test
+    fun `links to the phone's files do nothing`() {
+        // Handed to another app, a file: link makes Android throw (FileUriExposedException).
+        listOf("file:///sdcard/Download/x.pdf", "FILE:///data/data/app.throwback/", "content://media/external/images/1")
+            .forEach { assertEquals(it, Decision.Ignore, decide(it)) }
+    }
+
+    @Test
     fun `a page can't open another app without a tap`() {
         assertEquals(Decision.Ignore, router.decide("https://example.com/a", FULL, "$ig/", userGesture = false))
         assertEquals(Decision.Ignore, router.decide("mailto:a@b.c", FULL, "$ig/", userGesture = false))

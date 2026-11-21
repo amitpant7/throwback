@@ -69,7 +69,7 @@ class UrlRouter(private val rules: FilterRules) {
     private fun decideUrl(url: String, mode: WebMode, currentUrl: String?): Decision {
         if (UrlParts.hasAmbiguousChars(url)) return Decision.Ignore
         val parts = UrlParts.parse(url) ?: return Decision.Ignore
-        // Links into the Instagram app or an app store do nothing, whatever the rules say.
+        // Links into the Instagram app, an app store or the phone's files do nothing, whatever the rules say.
         if (parts.scheme in BLOCKED_SCHEMES) return Decision.Ignore
         if (blockedUrls.any { it.containsMatchIn(url.capped()) }) return Decision.Ignore
         return when (parts.scheme) {
@@ -177,8 +177,11 @@ class UrlRouter(private val rules: FilterRules) {
         private const val MAX_REDIRECT_HOPS = 4
         private const val MAX_MATCH_CHARS = 2048
 
-        /** Schemes that open the Instagram app or an app store: never followed, whatever the rules say. */
-        private val BLOCKED_SCHEMES = setOf("intent", "instagram", "market")
+        /**
+         * Never followed, whatever the rules say: schemes that open the Instagram app or an app store,
+         * and the phone's own files (another app can't open a file: link, and Android throws on it).
+         */
+        private val BLOCKED_SCHEMES = setOf("intent", "instagram", "market", "file", "content")
 
         /** Fills $1..$9 from [match]; always returns a single-slash path (never "//host"). */
         internal fun expandTemplate(template: String, match: MatchResult): String {

@@ -221,7 +221,11 @@ internal class TimeLimitController(
 
     fun cancelPendingPin() = update(Save.Now) { s, r -> engine.cancelPendingPin(s, r) }
 
-    suspend fun extend(pin: String): ActionResult = withPinCheck(pin) { s, r, ok -> engine.extend(s, r, ok) }
+    /** +5 minutes after the wait (no PIN). */
+    suspend fun extend(): ActionResult {
+        if (!loaded) return NOT_READY
+        return act { s, r -> engine.extend(s, r) }
+    }
 
     fun acknowledgeExtension() = update(Save.Now) { s, r -> engine.acknowledgeGrant(s, r) }
 

@@ -195,7 +195,8 @@ internal const val DAY = 24 * HOUR
 
 /** The product rules (DECISIONS.md #16-22). */
 object Rules {
-    val LIMIT_CHOICES = listOf(15, 30, 45, 60)
+    /** No more than 45 minutes (owner, 2026-11-21). A larger limit saved before stays until changed. */
+    val LIMIT_CHOICES = listOf(15, 30, 45)
     const val EXTENSION_MINUTES = 5
 
     /** Shortest real day (a daylight-saving day); a time-zone switch can't start days faster. */
@@ -203,7 +204,8 @@ object Rules {
     const val EXTENSION_MILLIS = EXTENSION_MINUTES * MINUTE
     const val WAIT_MILLIS = 5 * MINUTE
     const val MAX_EXTENSIONS_PER_DAY = 2
-    const val PIN_RESET_MILLIS = 3 * DAY
+    /** "Forgot PIN": the PIN may be one the user never knew (a friend's, or random), so the reset is the only way out (owner, 2026-11-21). */
+    const val PIN_RESET_MILLIS = 7 * DAY
     /** "Disconnect Instagram" takes effect this long after it was asked for. */
     const val GUARD_OFF_DELAY_MILLIS = DAY
     const val PIN_LENGTH = 4

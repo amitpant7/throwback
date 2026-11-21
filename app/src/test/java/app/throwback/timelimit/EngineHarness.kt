@@ -105,7 +105,10 @@ class EngineHarness(
 
     fun setup(minutes: Int = 30, pin: PinHash = PIN_A): ActionResult = act { st, r -> engine.setup(st, r, minutes, pin) }
 
-    fun extend(pinOk: Boolean): ActionResult = act { st, r -> engine.extend(st, r, pinOk) }
+    fun extend(): ActionResult = act { st, r -> engine.extend(st, r) }
+
+    /** A PIN check on its own (extensions no longer need one). */
+    fun verify(pinOk: Boolean): ActionResult = act { st, r -> engine.verifyPin(st, r, pinOk) }
 
     fun acknowledge() {
         s = engine.acknowledgeGrant(s, reading())

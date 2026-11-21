@@ -146,7 +146,7 @@ internal fun ManageScreen(controller: TimeLimitController, view: TimeLimitView, 
                 onCreated = { newPin ->
                     saving.run {
                         val result = controller.changePin(p.currentPin, newPin)
-                        if (result is ActionResult.Scheduled) home(Notice.PinChanged) else failed = result
+                        if (result == ActionResult.Done) home(Notice.PinChanged) else failed = result
                     }
                 },
             )

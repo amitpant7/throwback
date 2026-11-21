@@ -182,17 +182,21 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 
 ## Daily time limit (optional, off by default)
 
-16. The user picks a daily limit (15/30/45/60 min) and sets a 4-digit PIN.
+16. The user picks a daily limit (15, 30 or 45 min; no more than 45, owner 2026-11-21) and sets a
+    4-digit PIN. The setup suggests not knowing it: a friend types it, or random digits the user
+    won't remember (#34hh).
 17. When time is up, Throwback locks.
-18. **Extensions:** wait 5 minutes, then enter the PIN for +5 minutes. This works twice a day, with
-    the wait before each one. After that it stays locked until local midnight. There is no full-day unlock.
+18. **Extensions:** wait 5 minutes, then a tap gives +5 minutes, no PIN (owner, 2026-11-21: the PIN
+    may be one the user doesn't know). This works twice a day, with the wait before each one. After
+    that it stays locked until local midnight. There is no full-day unlock.
 19. **Messages-only mode while locked:** the inbox and chats only. Time there does not count.
 20. **Calls** never count and are never blocked: also not in the time counted after the guard was off
     (#27b): Instagram's call screens are left out of it.
-21. **Anti-cheat:** turning the limit off, raising it, or changing the PIN needs the PIN and takes
-    effect the next day. Lowering the limit is immediate. Changing the phone's clock does not reset usage.
-22. **Forgot PIN:** a 3-day countdown, then a new PIN can be set. The countdown can be cancelled.
-    During the wait the limit stays on and extensions aren't possible.
+21. **Anti-cheat:** turning the limit off or raising it needs the PIN and takes effect the next day.
+    Changing the PIN needs the current PIN and works at once (owner, 2026-11-21: a delay protected
+    nothing). Lowering the limit is immediate. Changing the phone's clock does not reset usage.
+22. **Forgot PIN:** a 7-day countdown (owner, 2026-11-21; was 3), then a new PIN can be set. The
+    countdown can be cancelled. During the wait the limit stays on, as it is.
 23. **Reinstall / clear data:** onboarding says honestly that Throwback is "a speed bump, not a cage".
     The time-limit settings (limit, PIN hash, extension state, pending PIN reset) and whether the user
     has tipped (#4d) are included in Android Auto Backup, so a reinstall restores them. Instagram login and WebView data are never
@@ -274,9 +278,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     page load), can be turned off in Settings. **4 seconds**, then "Almost there…" until the feed
     underneath is ready (at most 5 s more); no buttons (Back still leaves). Throwback's own short
     lines and sourced quotes in a shuffled order that goes through all of them before repeating;
-    every line asks the reader something or nudges them to do something, never says what life is
-    (owner, 2026-11-21; quotes checked against their sources, old texts in public-domain
-    translations; #34ee for the tips).
+    every line asks the reader something or nudges them to do something, never says what life is,
+    and fits in three lines (owner, 2026-11-21; quotes checked against their sources, old texts in
+    public-domain translations; a longer quote is cut only to one of its own complete sentences;
+    #34ee for the tips).
 31. **Make It Yours** (owner, 2026-11-21; was "Add to home screen", then "Customize icon"): a home-screen shortcut with the
     user's own name and icon: the logo on the app colour, dark or light, a photo frame, or the user's
     own picture (cropped square, any picture; Throwback ships no Instagram name or logo, but the
@@ -427,3 +432,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
         charged its time so far). A posting notification made before the pass began (an older
         upload still posting) belongs to the pass that ended moments before, if any, never to the
         new one. "Back to your Instagram call" doesn't use the call button's taps.
+    hh. **A PIN the user doesn't know** (owner, 2026-11-21): the limit is strongest when the user
+        can't loosen it on a whim, so setting up the PIN suggests asking a friend to type it without
+        showing them, or typing random digits they won't remember. Then only the 7-day reset (#22)
+        gets them out. To match: extensions need no PIN (#18), changing the PIN works at once (#21),
+        and limits are 15, 30 or 45 minutes (#16).

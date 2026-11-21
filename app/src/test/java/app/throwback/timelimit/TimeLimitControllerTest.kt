@@ -180,12 +180,10 @@ class TimeLimitControllerTest {
         assertEquals(LockState.Locked, c.state.value)
         assertTrue(c.view.value.lock is LockPhase.Waiting)
 
-        assertTrue(c.extend("4821") is ActionResult.NotAllowed) // Still waiting.
+        assertTrue(c.extend() is ActionResult.NotAllowed) // Still waiting.
         advanceTimeBy(5 * MIN)
         assertEquals(LockPhase.CanExtend(1), c.view.value.lock)
-        assertEquals(ActionResult.WrongPin(4), c.extend("0000"))
-        assertEquals(LockState.Locked, c.state.value)
-        assertEquals(ActionResult.Done, c.extend("4821"))
+        assertEquals(ActionResult.Done, c.extend()) // no PIN for an extension
         assertEquals(LockPhase.Granted, c.view.value.lock)
         c.acknowledgeExtension()
         assertEquals(LockState.Running(5 * MIN), c.state.value)
@@ -202,12 +200,12 @@ class TimeLimitControllerTest {
         advanceTimeBy(10 * MIN)
         runCurrent()
         first.onBackground()
-        assertEquals(ActionResult.Scheduled(LocalDateTime.of(2026, 11, 21, 0, 0).toLocalDate()), first.setLimit(60, "1234"))
+        assertEquals(ActionResult.Scheduled(LocalDateTime.of(2026, 11, 21, 0, 0).toLocalDate()), first.setLimit(45, "1234"))
         runCurrent()
 
         val second = controller(store, clock)
         assertEquals(LockState.Running(20 * MIN), second.state.value)
-        assertEquals(60, second.view.value.pendingLimit!!.minutes)
+        assertEquals(45, second.view.value.pendingLimit!!.minutes)
         assertEquals(ActionResult.WrongPin(4), second.turnOff("9999"))
         assertNotNull(store.stored()!!.pin)
     }
@@ -327,13 +325,13 @@ class TimeLimitControllerTest {
     }
 
     @Test
-    fun `forgot PIN, then set a new one after three days`() = runTest {
+    fun `forgot PIN, then set a new one after seven days`() = runTest {
         val c = controller(MemoryStore())
         c.setup(30, "1234")
         assertEquals(ActionResult.Done, c.requestPinReset())
         assertEquals(ActionResult.PinResetPending, c.verifyPin("1234"))
         assertTrue(c.completePinReset("5678") is ActionResult.NotAllowed)
-        advanceTimeBy(3 * DAY)
+        advanceTimeBy(7 * DAY)
         c.refresh()
         assertTrue(c.view.value.pinReset!!.ready)
         assertEquals(ActionResult.Done, c.completePinReset("5678"))

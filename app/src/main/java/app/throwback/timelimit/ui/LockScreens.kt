@@ -62,11 +62,9 @@ import app.throwback.timelimit.engine.LockPhase
 import app.throwback.timelimit.engine.Rules
 import app.throwback.timelimit.engine.TimeLimitView
 
-private enum class LockPage { Main, Pin, Reset }
-
 /**
- * Full-screen lock over Instagram: the 5-minute wait (mockup 8), PIN for +5 minutes (9),
- * locked until midnight (10) and the forgot-PIN countdown (12). Draws nothing unless locked, and
+ * Full-screen lock over Instagram: the 5-minute wait, then 5 more minutes on a tap (no PIN: the PIN
+ * may be one the user doesn't know, #34hh), and locked until midnight. Draws nothing unless locked, and
  * swallows every touch so the WebView underneath can't be used. [backEnabled] false leaves system
  * Back to the screen on top (Settings).
  */
@@ -82,8 +80,8 @@ internal fun LockOverlay(
     val phase = view.lock
     if (view.lockState != LockState.Locked || phase == null) return
 
-    var page by remember { mutableStateOf(LockPage.Main) }
     val hostView = LocalView.current
+    val asking = rememberBusyAction()
 
     // If the user was typing (say, a message) when time ran out, close the keyboard and take focus
     // away from the WebView so nothing can be typed into it blind.
@@ -93,14 +91,10 @@ internal fun LockOverlay(
         hostView.rootView.findFocus()?.clearFocus()
     }
 
-    // Back leaves a sub-page; on the main lock screen it closes Throwback rather than reaching the WebView.
-    // Off under Settings: the lock can engage while Settings is open, and the handler added last wins.
+    // Back closes Throwback rather than reaching the WebView. Off under Settings: the lock can engage
+    // while Settings is open, and the handler added last wins.
     BackHandler(enabled = backEnabled) {
-        when {
-            phase is LockPhase.Granted -> controller.acknowledgeExtension()
-            page == LockPage.Main -> onCloseApp()
-            else -> page = LockPage.Main
-        }
+        if (phase is LockPhase.Granted) controller.acknowledgeExtension() else onCloseApp()
     }
 
     Box(
@@ -110,29 +104,13 @@ internal fun LockOverlay(
             .blockTouches()
             .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
-        when {
-            phase is LockPhase.Granted -> GrantedScreen(view, onContinue = {
-                page = LockPage.Main
-                controller.acknowledgeExtension()
-            })
-            phase is LockPhase.DoneForToday -> DoneForTodayScreen(phase, onOpenMessagesOnly, onCloseApp)
-            page == LockPage.Reset -> ForgotPinScreen(controller, view, onBack = { page = LockPage.Main })
-            page == LockPage.Pin && phase is LockPhase.CanExtend && view.pinReset == null -> PinPrompt(
-                // Mockup 9: PIN for +5 minutes.
-                title = stringResource(R.string.tl_enter_pin_title),
-                view = view,
-                onBack = { page = LockPage.Main },
-                onForgot = { page = LockPage.Reset },
-                check = { pin -> controller.extend(pin) },
-                eyebrow = stringResource(R.string.tl_extension_n_of, phase.extensionNumber, Rules.MAX_EXTENSIONS_PER_DAY),
-                subtitle = stringResource(R.string.tl_enter_pin_sub),
-                showHeader = false,
-            )
+        when (phase) {
+            is LockPhase.Granted -> GrantedScreen(view, onContinue = { controller.acknowledgeExtension() })
+            is LockPhase.DoneForToday -> DoneForTodayScreen(phase, onOpenMessagesOnly, onCloseApp)
             else -> TimesUpScreen(
                 view = view,
                 phase = phase,
-                onAsk = { page = LockPage.Pin },
-                onOpenReset = { page = LockPage.Reset },
+                onAsk = { if (!asking.running) asking.run { controller.extend() } },
                 onOpenMessagesOnly = onOpenMessagesOnly,
                 onCloseApp = onCloseApp,
             )
@@ -147,14 +125,12 @@ private fun TimesUpScreen(
     view: TimeLimitView,
     phase: LockPhase,
     onAsk: () -> Unit,
-    onOpenReset: () -> Unit,
     onOpenMessagesOnly: () -> Unit,
     onCloseApp: () -> Unit,
 ) {
     val c = ThrowbackTheme.colors
     val waitLeft = (phase as? LockPhase.Waiting)?.remainingMillis ?: 0L
     val waitText = minSecText(waitLeft)
-    val reset = view.pinReset
 
     ScreenColumn(PaddingValues(start = 24.dp, end = 24.dp, top = 72.dp, bottom = 28.dp)) {
         TbIcon(R.drawable.ic_lock, size = 36.dp, tint = c.accentText)
@@ -188,7 +164,7 @@ private fun TimesUpScreen(
         }
         Spacer(Modifier.height(12.dp))
         Text(
-            stringResource(if (reset != null) R.string.tl_reset_paused_note else R.string.tl_then_pin),
+            stringResource(R.string.tl_then_pin),
             style = MaterialTheme.typography.bodyMedium,
             color = c.muted,
             textAlign = TextAlign.Center,
@@ -199,14 +175,10 @@ private fun TimesUpScreen(
         Spacer(Modifier.weight(1f))
         Spacer(Modifier.height(24.dp))
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            when {
-                reset != null -> TbButton(
-                    stringResource(if (reset.ready) R.string.tl_reset_set_new else R.string.tl_reset_in_progress),
-                    onClick = onOpenReset,
-                    style = if (reset.ready) TbButtonStyle.Primary else TbButtonStyle.Secondary,
-                )
-                phase is LockPhase.Waiting -> TbButton(stringResource(R.string.tl_ask_in, waitText), onClick = {}, enabled = false)
-                else -> TbButton(stringResource(R.string.tl_ask), onClick = onAsk)
+            if (phase is LockPhase.Waiting) {
+                TbButton(stringResource(R.string.tl_ask_in, waitText), onClick = {}, enabled = false)
+            } else {
+                TbButton(stringResource(R.string.tl_ask), onClick = onAsk)
             }
             TbButton(
                 stringResource(R.string.tl_open_messages),

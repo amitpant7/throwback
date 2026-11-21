@@ -6,6 +6,7 @@ import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.ClockReading
 import app.throwback.timelimit.engine.LockPhase
 import app.throwback.timelimit.engine.Moment
+import app.throwback.timelimit.engine.PendingPin
 import app.throwback.timelimit.engine.Rules
 import app.throwback.timelimit.engine.TimeLimitEngine
 import org.junit.Assert.assertEquals
@@ -118,7 +119,7 @@ class TimeLimitEngineTest {
         assertEquals(30 * MIN, h.s.usedMillis)
         assertEquals(LockPhase.Waiting(Rules.WAIT_MILLIS, Rules.WAIT_MILLIS), h.view().lock)
         h.tick(5 * MIN)
-        assertEquals(ActionResult.Done, h.extend(pinOk = true)) // and an extension still gives 5 minutes
+        assertEquals(ActionResult.Done, h.extend()) // and an extension still gives 5 minutes
         h.acknowledge()
         assertEquals(LockState.Running(5 * MIN), h.view().lockState)
     }
@@ -158,7 +159,7 @@ class TimeLimitEngineTest {
         h.useUntilLocked()
         h.tick(4 * MIN + 59 * SEC)
         assertEquals(LockPhase.Waiting(SEC, Rules.WAIT_MILLIS), h.view().lock)
-        assertTrue(h.extend(pinOk = true) is ActionResult.NotAllowed)
+        assertTrue(h.extend() is ActionResult.NotAllowed)
         assertEquals(0, h.s.extensionsUsed)
         assertEquals(0, h.s.wrongPinAttempts)
 
@@ -178,16 +179,12 @@ class TimeLimitEngineTest {
     // ---- PIN and extensions -----------------------------------------------------------------
 
     @Test
-    fun `wrong PIN keeps the lock, right PIN gives exactly 5 more minutes`() {
+    fun `after the wait a tap, no PIN, gives exactly 5 more minutes`() {
         h.setup(15)
         h.useUntilLocked()
         h.tick(5 * MIN)
 
-        assertEquals(ActionResult.WrongPin(Rules.WRONG_PINS_BEFORE_BLOCK - 1), h.extend(pinOk = false))
-        assertEquals(LockState.Locked, h.view().lockState)
-        assertEquals(0, h.s.extensionsUsed)
-
-        assertEquals(ActionResult.Done, h.extend(pinOk = true))
+        assertEquals(ActionResult.Done, h.extend())
         assertEquals(1, h.s.extensionsUsed)
         // The "+5 minutes" confirmation keeps the lock up until it's dismissed...
         assertEquals(LockState.Locked, h.view().lockState)
@@ -206,16 +203,16 @@ class TimeLimitEngineTest {
         h.setup(15) // 09:00
         h.useUntilLocked() // 09:15
         h.tick(5 * MIN)
-        assertEquals(ActionResult.Done, h.extend(pinOk = true))
+        assertEquals(ActionResult.Done, h.extend())
         h.acknowledge()
         h.useUntilLocked() // 09:25
 
         // The second extension needs its own fresh 5-minute wait.
         assertEquals(LockPhase.Waiting(Rules.WAIT_MILLIS, Rules.WAIT_MILLIS), h.view().lock)
-        assertTrue(h.extend(pinOk = true) is ActionResult.NotAllowed)
+        assertTrue(h.extend() is ActionResult.NotAllowed)
         h.tick(5 * MIN)
         assertEquals(LockPhase.CanExtend(2), h.view().lock)
-        assertEquals(ActionResult.Done, h.extend(pinOk = true))
+        assertEquals(ActionResult.Done, h.extend())
         assertEquals(0, h.view().extensionsLeft)
         h.acknowledge()
         h.useUntilLocked() // 09:35
@@ -225,7 +222,7 @@ class TimeLimitEngineTest {
         // No third extension, no matter how long they wait.
         h.tick(2 * HOUR)
         assertTrue(h.view().lock is LockPhase.DoneForToday)
-        assertTrue(h.extend(pinOk = true) is ActionResult.NotAllowed)
+        assertTrue(h.extend() is ActionResult.NotAllowed)
         assertEquals(2, h.s.extensionsUsed)
     }
 
@@ -234,15 +231,17 @@ class TimeLimitEngineTest {
         h.setup(15)
         h.useUntilLocked()
         h.tick(5 * MIN)
-        repeat(Rules.WRONG_PINS_BEFORE_BLOCK - 1) { h.extend(pinOk = false) }
-        assertEquals(ActionResult.PinBlocked(Rules.PIN_BLOCK_MILLIS), h.extend(pinOk = false))
-        assertTrue(h.extend(pinOk = true) is ActionResult.PinBlocked)
+        assertEquals(ActionResult.WrongPin(Rules.WRONG_PINS_BEFORE_BLOCK - 1), h.verify(pinOk = false))
+        repeat(Rules.WRONG_PINS_BEFORE_BLOCK - 2) { h.verify(pinOk = false) }
+        assertEquals(ActionResult.PinBlocked(Rules.PIN_BLOCK_MILLIS), h.verify(pinOk = false))
+        assertTrue(h.verify(pinOk = true) is ActionResult.PinBlocked)
         assertTrue(h.engine.pinGate(h.s, h.reading()) is ActionResult.PinBlocked)
         assertEquals(Rules.PIN_BLOCK_MILLIS, h.view().pinBlockedMillis)
 
         h.tick(Rules.PIN_BLOCK_MILLIS)
         assertNull(h.engine.pinGate(h.s, h.reading()))
-        assertEquals(ActionResult.Done, h.extend(pinOk = true))
+        assertEquals(ActionResult.Done, h.verify(pinOk = true))
+        assertEquals(0, h.s.wrongPinAttempts)
     }
 
     // ---- New day ----------------------------------------------------------------------------
@@ -252,7 +251,7 @@ class TimeLimitEngineTest {
         h.setup(15)
         h.useUntilLocked()
         h.tick(5 * MIN)
-        h.extend(pinOk = true)
+        h.extend()
         h.acknowledge()
         h.useUntilLocked()
 
@@ -324,7 +323,7 @@ class TimeLimitEngineTest {
         h.moveClock(10 * MIN)
         h.refresh()
         assertTrue(h.view().lock is LockPhase.Waiting)
-        assertTrue(h.extend(pinOk = true) is ActionResult.NotAllowed)
+        assertTrue(h.extend() is ActionResult.NotAllowed)
     }
 
     @Test
@@ -399,7 +398,7 @@ class TimeLimitEngineTest {
         repeat(Rules.MAX_EXTENSIONS_PER_DAY) {
             e.useUntilLocked()
             e.tick(5 * MIN)
-            e.extend(pinOk = true)
+            e.extend()
             e.acknowledge()
         }
         e.useUntilLocked()
@@ -453,12 +452,12 @@ class TimeLimitEngineTest {
         assertEquals(t0, after(elapsed = 2 * MIN, phone = t0 - DAY))
     }
 
-    /** The review's steps: Forgot PIN, date +3 days, reboot, set a new PIN. */
+    /** The review's steps: Forgot PIN, date +7 days, reboot, set a new PIN. */
     private fun pinResetAfterClockForwardReboot(networkAfterBoot: Boolean): EngineHarness {
         val e = EngineHarness().apply { networkUp = true }
         e.setup(15)
         e.act { s, r -> e.engine.requestPinReset(s, r) }
-        e.moveClock(3 * DAY)
+        e.moveClock(7 * DAY)
         e.refresh()
         e.reboot()
         e.networkUp = networkAfterBoot
@@ -472,7 +471,7 @@ class TimeLimitEngineTest {
     @Test
     fun `clock forward plus a reboot doesn't shorten the forgot-PIN wait, with network time`() {
         val e = pinResetAfterClockForwardReboot(networkAfterBoot = true)
-        e.advance(3 * DAY) // The real three days still work.
+        e.advance(7 * DAY) // The real seven days still work.
         e.refresh()
         assertTrue(e.view().pinReset!!.ready)
     }
@@ -480,7 +479,7 @@ class TimeLimitEngineTest {
     @Test
     fun `clock forward plus a reboot doesn't shorten the forgot-PIN wait, before network time is back`() {
         val e = pinResetAfterClockForwardReboot(networkAfterBoot = false)
-        e.advance(3 * DAY - MIN) // Over 3 real days since the request, but the reboot's downtime isn't counted yet...
+        e.advance(7 * DAY - MIN) // Over 7 real days since the request, but the reboot's downtime isn't counted yet...
         e.refresh()
         assertFalse(e.view().pinReset!!.ready)
         e.networkUp = true // ...until network time is back.
@@ -596,21 +595,22 @@ class TimeLimitEngineTest {
     @Test
     fun `raising the limit needs the PIN and takes effect the next day`() {
         h.setup(30)
-        assertEquals(ActionResult.PinRequired, h.act { s, r -> h.engine.setLimit(s, r, 60) })
+        assertEquals(ActionResult.PinRequired, h.act { s, r -> h.engine.setLimit(s, r, 45) })
         assertEquals(0, h.s.wrongPinAttempts)
-        assertEquals(ActionResult.WrongPin(4), h.act { s, r -> h.engine.setLimit(s, r, 60, pinOk = false) })
+        assertEquals(ActionResult.WrongPin(4), h.act { s, r -> h.engine.setLimit(s, r, 45, pinOk = false) })
 
         val tomorrow = h.today.plusDays(1)
-        assertEquals(ActionResult.Scheduled(tomorrow), h.act { s, r -> h.engine.setLimit(s, r, 60, pinOk = true) })
+        assertEquals(ActionResult.Scheduled(tomorrow), h.act { s, r -> h.engine.setLimit(s, r, 45, pinOk = true) })
         assertEquals(30, h.s.limitMinutes)
         assertEquals(LockState.Running(30 * MIN), h.view().lockState)
-        assertEquals(60, h.view().pendingLimit!!.minutes)
+        assertEquals(45, h.view().pendingLimit!!.minutes)
+        assertTrue(h.act { s, r -> h.engine.setLimit(s, r, 60, pinOk = true) } is ActionResult.NotAllowed) // no more than 45
 
         h.advanceToMidnight()
         h.refresh()
-        assertEquals(60, h.s.limitMinutes)
+        assertEquals(45, h.s.limitMinutes)
         assertNull(h.s.pendingLimit)
-        assertEquals(LockState.Running(60 * MIN), h.view().lockState)
+        assertEquals(LockState.Running(45 * MIN), h.view().lockState)
     }
 
     @Test
@@ -686,24 +686,19 @@ class TimeLimitEngineTest {
     }
 
     @Test
-    fun `changing the PIN needs the current one and takes effect the next day`() {
+    fun `changing the PIN needs the current one and works at once`() {
         h.setup(30)
         assertEquals(ActionResult.WrongPin(4), h.act { s, r -> h.engine.changePin(s, r, pinOk = false, newPin = PIN_B) })
-        assertEquals(ActionResult.Scheduled(h.today.plusDays(1)), h.act { s, r -> h.engine.changePin(s, r, pinOk = true, newPin = PIN_B) })
-        assertEquals(PIN_A, h.s.pin)
-        assertEquals(h.today.plusDays(1), h.view().pendingPinEffective)
-
-        h.advanceToMidnight()
-        h.refresh()
+        assertEquals(ActionResult.Done, h.act { s, r -> h.engine.changePin(s, r, pinOk = true, newPin = PIN_B) })
         assertEquals(PIN_B, h.s.pin)
-        assertNull(h.s.pendingPin)
+        assertNull(h.view().pendingPinEffective)
     }
 
     @Test
     fun `pending changes can be cancelled without the PIN`() {
         h.setup(30)
         h.act { s, r -> h.engine.setLimit(s, r, 45, pinOk = true) }
-        h.act { s, r -> h.engine.changePin(s, r, pinOk = true, newPin = PIN_B) }
+        h.s = h.s.copy(pendingPin = PendingPin(PIN_B, h.today.plusDays(1))) // saved by an older version
         h.s = h.engine.cancelPendingLimit(h.s, h.reading())
         h.s = h.engine.cancelPendingPin(h.s, h.reading())
         h.advanceToMidnight()
@@ -722,8 +717,8 @@ class TimeLimitEngineTest {
 
     @Test
     fun `lowering the limit is immediate and needs no PIN`() {
-        h.setup(60)
-        h.act { s, r -> h.engine.setLimit(s, r, 60, pinOk = true) } // no-op
+        h.setup(45)
+        h.act { s, r -> h.engine.setLimit(s, r, 45, pinOk = true) } // no-op
         h.use(10 * MIN)
         assertEquals(ActionResult.Done, h.act { s, r -> h.engine.setLimit(s, r, 30) })
         assertEquals(LockState.Running(20 * MIN), h.view().lockState)
@@ -731,14 +726,14 @@ class TimeLimitEngineTest {
 
     @Test
     fun `lowering below today's usage locks at once, and an extension still gives 5 minutes`() {
-        h.setup(60)
+        h.setup(45)
         h.use(40 * MIN)
         h.act { s, r -> h.engine.setLimit(s, r, 15) }
         assertEquals(LockState.Locked, h.view().lockState)
         assertEquals(LockPhase.Waiting(Rules.WAIT_MILLIS, Rules.WAIT_MILLIS), h.view().lock)
 
         h.tick(5 * MIN)
-        assertEquals(ActionResult.Done, h.extend(pinOk = true))
+        assertEquals(ActionResult.Done, h.extend())
         h.acknowledge()
         assertEquals(LockState.Running(5 * MIN), h.view().lockState)
     }
@@ -746,7 +741,7 @@ class TimeLimitEngineTest {
     @Test
     fun `lowering replaces a pending raise`() {
         h.setup(30)
-        h.act { s, r -> h.engine.setLimit(s, r, 60, pinOk = true) }
+        h.act { s, r -> h.engine.setLimit(s, r, 45, pinOk = true) }
         h.act { s, r -> h.engine.setLimit(s, r, 15) }
         assertNull(h.s.pendingLimit)
         h.advanceToMidnight()
@@ -757,21 +752,20 @@ class TimeLimitEngineTest {
     // ---- Forgot PIN -------------------------------------------------------------------------
 
     @Test
-    fun `forgot PIN takes 3 days, keeps the limit on and blocks extensions meanwhile`() {
+    fun `forgot PIN takes 7 days and keeps the limit on, extensions still work`() {
         h.setup(15)
         h.useUntilLocked()
         h.tick(5 * MIN)
         assertEquals(ActionResult.Done, h.act { s, r -> h.engine.requestPinReset(s, r) })
         assertEquals(Rules.PIN_RESET_MILLIS, h.view().pinReset!!.remainingMillis)
 
-        assertEquals(ActionResult.PinResetPending, h.extend(pinOk = true))
+        assertEquals(ActionResult.Done, h.extend()) // no PIN, so the reset doesn't stop it
         assertEquals(ActionResult.PinResetPending, h.act { s, r -> h.engine.turnOff(s, r, pinOk = true) })
         assertEquals(ActionResult.PinResetPending, h.engine.pinGate(h.s, h.reading()))
-        assertEquals(0, h.s.extensionsUsed)
-        assertEquals(LockState.Locked, h.view().lockState)
+        assertEquals(LockState.Locked, h.view().lockState) // the "+5 minutes" confirmation
 
         assertTrue(h.act { s, r -> h.engine.completePinReset(s, r, PIN_B) } is ActionResult.NotAllowed)
-        h.advance(3 * DAY - MIN)
+        h.advance(7 * DAY - MIN)
         h.refresh()
         assertFalse(h.view().pinReset!!.ready)
         assertTrue(h.act { s, r -> h.engine.completePinReset(s, r, PIN_B) } is ActionResult.NotAllowed)
@@ -793,7 +787,7 @@ class TimeLimitEngineTest {
         h.tick(5 * MIN)
         h.s = h.engine.cancelPinReset(h.s, h.reading())
         assertNull(h.view().pinReset)
-        assertEquals(ActionResult.Done, h.extend(pinOk = true))
+        assertEquals(ActionResult.Done, h.verify(pinOk = true))
     }
 
     @Test
@@ -811,7 +805,7 @@ class TimeLimitEngineTest {
         h.setup(15)
         h.act { s, r -> h.engine.requestPinReset(s, r) }
         h.advance(DAY)
-        h.reboot(downtime = 2 * DAY)
+        h.reboot(downtime = 6 * DAY)
         h.networkUp = true // The downtime counts once network time is back.
         h.refresh()
         assertTrue(h.view().pinReset!!.ready)
@@ -820,9 +814,9 @@ class TimeLimitEngineTest {
     @Test
     fun `a pending PIN change is dropped when a reset sets a new PIN`() {
         h.setup(15)
-        h.act { s, r -> h.engine.changePin(s, r, pinOk = true, newPin = PIN_B) }
+        h.s = h.s.copy(pendingPin = PendingPin(PIN_B, h.today.plusDays(1))) // saved by an older version
         h.act { s, r -> h.engine.requestPinReset(s, r) }
-        h.advance(3 * DAY)
+        h.advance(7 * DAY)
         h.refresh()
         val pinC = PIN_A.copy(salt = "c2FsdEM=")
         h.act { s, r -> h.engine.completePinReset(s, r, pinC) }
@@ -839,11 +833,11 @@ class TimeLimitEngineTest {
         dst.setup(15)
         dst.useUntilLocked()
         dst.tick(5 * MIN)
-        dst.extend(pinOk = true)
+        dst.extend()
         dst.acknowledge()
         dst.useUntilLocked()
         dst.tick(5 * MIN)
-        dst.extend(pinOk = true)
+        dst.extend()
         dst.acknowledge()
         dst.useUntilLocked() // 01:05, before the jump
         val phase = dst.view().lock as LockPhase.DoneForToday

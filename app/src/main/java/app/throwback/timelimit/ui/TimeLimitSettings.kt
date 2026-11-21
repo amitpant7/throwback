@@ -60,7 +60,7 @@ internal fun TimeLimitSettings(controller: TimeLimitController, onClose: () -> U
 internal val CardPadding = PaddingValues(horizontal = 18.dp, vertical = 16.dp)
 
 /**
- * The 15/30/45/60 minute choice (mockup `.chip`; at least 48dp tall for touch). With a very large font
+ * The 15/30/45 minute choice (mockup `.chip`; at least 48dp tall for touch). With a very large font
  * size a label wraps onto two lines and the chip grows, rather than being cut off. Choices that
  * aren't [enabled] are greyed out.
  */

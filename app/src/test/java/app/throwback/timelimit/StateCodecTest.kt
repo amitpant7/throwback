@@ -100,7 +100,7 @@ class StateCodecTest {
         h.setup(15)
         h.useUntilLocked()
         h.tick(5 * MIN)
-        h.extend(pinOk = true)
+        h.extend()
         h.acknowledge()
         h.useUntilLocked()
         val text = StateCodec.encode(h.s)

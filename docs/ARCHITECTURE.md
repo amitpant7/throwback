@@ -148,8 +148,8 @@ script applies the same path rules to Instagram's in-page navigation. Details un
    and neither Settings nor the mindful pause covers the page. Messages-only mode doesn't count.
 2. The controller ticks while in use and feeds `TimeLimitEngine`, which keeps the day's usage on a
    trusted clock (changing the phone's time doesn't help) and saves it.
-3. At the limit the state becomes `Locked` and the lock screen shows: wait 5 minutes, then the PIN
-   gives 5 more minutes, twice a day; after that, locked until the next day. "Open messages only"
+3. At the limit the state becomes `Locked` and the lock screen shows: wait 5 minutes, then a tap
+   gives 5 more minutes (no PIN), twice a day; after that, locked until the next day. "Open messages only"
    switches the WebView to inbox and chats.
 4. With the Instagram app connected, time spent in that app while the guard was stopped is added
    when Throwback next runs (`GuardHeartbeat`).
@@ -255,8 +255,8 @@ within 60 s restarts at home; a third shows the error screen.
 
 ## Time limit
 
-`timelimit/engine` is pure Kotlin and fully unit-tested: the limit, the 5-minute wait, PIN extensions
-(twice a day), locked until the day ends, changes that take effect the next day, the 3-day forgot-PIN
+`timelimit/engine` is pure Kotlin and fully unit-tested: the limit, the 5-minute wait, extensions
+(twice a day, no PIN), locked until the day ends, changes that take effect the next day, the 7-day forgot-PIN
 reset, and the trusted clock. Trusted time comes from the phone's since-boot clock plus the last
 trusted time, preferring network time: Android's own (API 33+), else Instagram's server time from the
 Date of its responses (the page sends it, `serverTime`; `ServerTimeHint`). After a reboot it is the

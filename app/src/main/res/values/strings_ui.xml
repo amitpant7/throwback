@@ -191,32 +191,25 @@
     <string name="ui_pause_tip">Tip</string>
     <!--
       Sourced quotes for the pause, "text|attribution" (owner, 2026-11-21): each one asks the reader
-      something or nudges them to do something, never says what life is. Each was checked against its
+      something or nudges them to do something, never says what life is, and fits in three lines
+      (76 characters at most, measured on a 1080-pixel-wide phone). Each was checked against its
       source (original text, Wikiquote's sourced section or Quote Investigator); old texts in
       public-domain translations.
     -->
     <string-array name="ui_pause_quotes" translatable="false">
-        <item>What is this life if, full of care,\nWe have no time to stand and stare.|W. H. Davies, “Leisure” (1911)</item>
-        <item>Dost thou love Life? then do not squander Time; for that’s the Stuff Life is made of.|Benjamin Franklin, Poor Richard (1746)</item>
-        <item>Let us spend one day as deliberately as Nature, and not be thrown off the track by every nutshell and mosquito’s wing that falls on the rails.|Henry David Thoreau, Walden (1854)</item>
+        <item>What is this life if, full of care, / We have no time to stand and stare.|W. H. Davies, “Leisure” (1911)</item>
         <item>Why should we live with such hurry and waste of life?|Henry David Thoreau, Walden (1854)</item>
         <item>As if you could kill time without injuring eternity.|Henry David Thoreau, Walden (1854)</item>
         <item>The question is not what you look at, but what you see.|Henry David Thoreau, Journal (1851)</item>
-        <item>Live in each season as it passes; breathe the air, drink the drink, taste the fruit, and resign yourself to the influences of each.|Henry David Thoreau, Journal (1853)</item>
         <item>Try to be one of the people on whom nothing is lost!|Henry James, “The Art of Fiction” (1884)</item>
-        <item>Stop this day and night with me and you shall possess the origin of all poems|Walt Whitman, “Song of Myself” (1855)</item>
         <item>Why should not we also enjoy an original relation to the universe?|Ralph Waldo Emerson, Nature (1836)</item>
         <item>Write it on your heart that every day is the best day in the year.|Ralph Waldo Emerson, “Works and Days” (1870)</item>
-        <item>Leave this military hurry and adopt the pace of Nature. Her secret is patience.|Ralph Waldo Emerson, “Education” (1883)</item>
-        <item>What man can you show me who places any value on his time, who reckons the worth of each day, who understands that he is dying daily?|Seneca, Letters to Lucilius, tr. Richard M. Gummere (1917)</item>
-        <item>Therefore, my dear Lucilius, begin at once to live, and count each separate day as a separate life.|Seneca, Letters to Lucilius, tr. Richard M. Gummere (1925)</item>
+        <item>Leave this military hurry and adopt the pace of Nature.|Ralph Waldo Emerson, “Education” (1883)</item>
         <item>You need a change of soul rather than a change of climate.|Seneca, Letters to Lucilius, tr. Richard M. Gummere (1917)</item>
         <item>Do not act as if thou wert going to live ten thousand years.|Marcus Aurelius, Meditations, tr. George Long (1862)</item>
-        <item>No longer talk at all about the kind of man that a good man ought to be, but be such.|Marcus Aurelius, Meditations, tr. George Long (1862)</item>
         <item>First, say to yourself what you would be; and then do what you have to do.|Epictetus, Discourses, tr. Thomas W. Higginson (1890)</item>
-        <item>Practise yourself, for Heaven’s sake, in little things, and thence proceed to greater.|Epictetus, Discourses, tr. Thomas W. Higginson (1865)</item>
-        <item>If I am not for myself who is for me? and being for my own self what am I? If not now when?|Hillel, Pirkei Avot, tr. Charles Taylor (1897)</item>
-        <item>In the moment of our talking, envious time has ebb’d away. Seize the present; trust to-morrow e’en as little as you may.|Horace, Odes, tr. John Conington (1863)</item>
+        <item>If not now when?|Hillel, Pirkei Avot, tr. Charles Taylor (1897)</item>
+        <item>Seize the present; trust to-morrow e’en as little as you may.|Horace, Odes, tr. John Conington (1863)</item>
         <item>Remember then: there is only one time that is important—Now!|Leo Tolstoy, “Three Questions”, tr. Louise and Aylmer Maude (1906)</item>
         <item>Go into yourself.|Rainer Maria Rilke, Letters to a Young Poet, tr. M. D. Herter Norton (1934)</item>
         <item>Live the questions now.|Rainer Maria Rilke, Letters to a Young Poet, tr. M. D. Herter Norton (1934)</item>
@@ -227,21 +220,16 @@
         <item>Practice resurrection.|Wendell Berry, “Manifesto: The Mad Farmer Liberation Front” (1973)</item>
         <item>Ask the questions that have no answers.|Wendell Berry, “Manifesto: The Mad Farmer Liberation Front” (1973)</item>
         <item>So, friends, every day do something that won’t compute.|Wendell Berry, “Manifesto: The Mad Farmer Liberation Front” (1973)</item>
-        <item>If something is boring after two minutes, try it for four. If still boring, try it for eight, sixteen, thirty-two, and so on.|John Cage, Silence (1961)</item>
-        <item>I urge you to please notice when you are happy, and exclaim or murmur or think at some point, “If this isn’t nice, I don’t know what is.”|Kurt Vonnegut, “Knowing What’s Nice” (2003)</item>
+        <item>If something is boring after two minutes, try it for four.|John Cage, Silence (1961)</item>
         <item>Get busy living or get busy dying.|Stephen King, “Rita Hayworth and Shawshank Redemption” (1982)</item>
-        <item>Life moves pretty fast. If you don’t stop and look around once in a while, you could miss it.|Ferris Bueller’s Day Off (1986)</item>
+        <item>If you don’t stop and look around once in a while, you could miss it.|Ferris Bueller’s Day Off (1986)</item>
         <item>Carpe diem. Seize the day, boys. Make your lives extraordinary.|Dead Poets Society (1989)</item>
         <item>Look for the helpers. You will always find people who are helping.|Fred Rogers, on his mother’s advice</item>
         <item>Be Here Now|Ram Dass, book title (1971)</item>
         <item>Don’t Just Do Something, Sit There|Sylvia Boorstein, book title (1996)</item>
         <item>What Would You Do If You Weren’t Afraid?|Spencer Johnson, Who Moved My Cheese? (1998)</item>
-        <item>If today were the last day of my life, would I want to do what I am about to do today?|Steve Jobs, Stanford commencement address (2005)</item>
-        <item>Almost everything will work again if you unplug it for a few minutes, including you.|Anne Lamott, TED (2017)</item>
         <item>If you’re not saying “HELL YEAH!” about something, say no.|Derek Sivers, sive.rs (2009)</item>
         <item>Be a mystery, not a demographic.|Matt Haig, Notes on a Nervous Planet (2018)</item>
-        <item>How would you spend your days differently if you didn’t care so much about seeing your actions reach fruition?|Oliver Burkeman, Four Thousand Weeks (2021)</item>
-        <item>In which areas of life are you still holding back until you feel like you know what you’re doing?|Oliver Burkeman, Four Thousand Weeks (2021)</item>
         <item>What would this look like if it were easy?|Tim Ferriss, The Tim Ferriss Show (2016)</item>
     </string-array>
     <!-- Under a quote: its author and source. -->

@@ -292,14 +292,14 @@ class TimeLimitEngine {
         return withPin(st, at, pinOk) { Outcome(it, ActionResult.Done) }
     }
 
-    /** Schedules [newPin] for tomorrow. Needs the current PIN. */
+    /**
+     * [newPin] replaces the PIN at once. Needs the current PIN, so a delay would protect nothing
+     * (owner, 2026-11-21; it used to wait until the next day).
+     */
     fun changePin(s: TimeLimitState, r: ClockReading, pinOk: Boolean, newPin: PinHash): Outcome {
         val (st, at) = sync(s, r)
         if (!st.enabled) return Outcome(st, ActionResult.NotAllowed("No limit set"))
-        return withPin(st, at, pinOk) { ok ->
-            val effective = ok.day!!.plusDays(1)
-            Outcome(ok.copy(pendingPin = PendingPin(newPin, effective)), ActionResult.Scheduled(effective))
-        }
+        return withPin(st, at, pinOk) { ok -> Outcome(ok.copy(pin = newPin, pendingPin = null), ActionResult.Done) }
     }
 
     fun cancelPendingPin(s: TimeLimitState, r: ClockReading): TimeLimitState =
@@ -307,18 +307,18 @@ class TimeLimitEngine {
 
     // ---- Extensions ------------------------------------------------------------------------
 
-    /** +5 minutes for the right PIN, after the 5-minute wait, at most twice a day. */
-    fun extend(s: TimeLimitState, r: ClockReading, pinOk: Boolean): Outcome {
+    /**
+     * +5 minutes after the 5-minute wait, at most twice a day. No PIN (owner, 2026-11-21): the PIN
+     * may be one the user doesn't know (a friend's, or random), and the wait is the speed bump here.
+     */
+    fun extend(s: TimeLimitState, r: ClockReading): Outcome {
         val (st, at) = sync(s, r)
         val lockedAt = st.lockedAt
         return when {
             !st.overBudget || lockedAt == null -> Outcome(st, ActionResult.NotAllowed("Not locked"))
             st.extensionsUsed >= Rules.MAX_EXTENSIONS_PER_DAY -> Outcome(st, ActionResult.NotAllowed("No extensions left today"))
             millisSince(lockedAt, at) < Rules.WAIT_MILLIS -> Outcome(st, ActionResult.NotAllowed("Still waiting"))
-            else -> withPin(st, at, pinOk) { ok ->
-                val extended = ok.copy(extensionsUsed = ok.extensionsUsed + 1, lockedAt = null, grantShowing = true)
-                Outcome(extended, ActionResult.Done)
-            }
+            else -> Outcome(st.copy(extensionsUsed = st.extensionsUsed + 1, lockedAt = null, grantShowing = true), ActionResult.Done)
         }
     }
 

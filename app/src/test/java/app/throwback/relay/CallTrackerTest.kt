@@ -36,6 +36,24 @@ class CallTrackerTest {
     }
 
     @Test
+    fun `a notification only ongoing is a call only with call signs`() {
+        val t = CallTracker()
+        t.onConnected(emptySet(), maybe = setOf("upload"))
+        assertTrue(t.state.value.inCall)
+        assertFalse(t.state.value.sureCall)
+        assertFalse(t.state.value.inCallOrGrace(now = 1_000, graceMillis = 5_000, callSigns = false))
+        assertTrue(t.state.value.inCallOrGrace(now = 1_000, graceMillis = 5_000, callSigns = true))
+        // A real call notification counts without them; an update can make a key sure, or only ongoing.
+        t.onCallShowing("ring")
+        assertTrue(t.state.value.inCallOrGrace(now = 1_000, graceMillis = 5_000, callSigns = false))
+        t.onCallShowing("ring", sure = false)
+        assertFalse(t.state.value.sureCall)
+        t.onRemoved("upload", now = 2_000)
+        t.onRemoved("ring", now = 2_000)
+        assertEquals(emptySet<String>(), t.state.value.maybeCalls)
+    }
+
+    @Test
     fun `calls no longer showing are dropped, others kept`() {
         val t = CallTracker()
         t.onConnected(setOf("a", "b"))

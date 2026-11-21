@@ -39,7 +39,7 @@ internal data class RelayContext(
  *
  * | kind                     | result                                                        |
  * |--------------------------|---------------------------------------------------------------|
- * | call                     | keep, always (never touched)                                  |
+ * | call, ongoing            | keep, always (never touched)                                  |
  * | message, missed call     | relay to the inbox (the tap picks messages-only when locked)  |
  * | likes … live             | relay to activity if switched on and not locked, else cancel  |
  * | other                    | cancel                                                        |
@@ -52,7 +52,7 @@ internal data class RelayContext(
 internal object RelayRouting {
 
     fun decide(kind: NotificationKind, ctx: RelayContext, groupSummary: Boolean = false, groupHasCall: Boolean = false): RelayAction {
-        if (kind == NotificationKind.CALL || kind == NotificationKind.KEEP) return RelayAction.Keep
+        if (kind.isCall || kind == NotificationKind.KEEP) return RelayAction.Keep
         if (groupSummary && groupHasCall) return RelayAction.Keep
         val action = decideSingle(kind, ctx)
         if (action is RelayAction.Relay) {
@@ -63,7 +63,7 @@ internal object RelayRouting {
     }
 
     private fun decideSingle(kind: NotificationKind, ctx: RelayContext): RelayAction = when (kind) {
-        NotificationKind.CALL, NotificationKind.KEEP -> RelayAction.Keep
+        NotificationKind.CALL, NotificationKind.ONGOING, NotificationKind.KEEP -> RelayAction.Keep
         NotificationKind.MESSAGE, NotificationKind.MISSED_CALL -> RelayAction.Relay(RelayTarget.MESSAGES, kind)
         NotificationKind.LIKES, NotificationKind.COMMENTS, NotificationKind.FOLLOWS,
         NotificationKind.MENTIONS, NotificationKind.LIVE -> {

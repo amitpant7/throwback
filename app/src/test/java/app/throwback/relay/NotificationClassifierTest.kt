@@ -58,8 +58,11 @@ class NotificationClassifierTest {
     }
 
     @Test
-    fun `ongoing without other signals is treated as a call`() {
-        assertEquals(NotificationKind.CALL, defaults.classify(facts(ongoing = true)))
+    fun `ongoing without other signals is kept as maybe a call`() {
+        assertEquals(NotificationKind.ONGOING, defaults.classify(facts(ongoing = true)))
+        assertTrue(NotificationKind.ONGOING.isCall)
+        // Not a rules kind: the rules can't name it.
+        assertEquals(null, NotificationKind.fromRule("ongoing"))
     }
 
     @Test
@@ -158,8 +161,8 @@ class NotificationClassifierTest {
     fun `calls in progress are calls, even on a channel Instagram creates only during a call`() {
         val bundled = NotificationClassifier(app.throwback.web.TestRules.bundled.notifications)
         // An ongoing notification on an unlisted Instagram channel: never "other" (that let the guard
-        // send the owner out of a running video call).
-        assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_some_new_channel", ongoing = true)))
+        // send the owner out of a running video call). Kept; a call for the guard with call audio.
+        assertEquals(NotificationKind.ONGOING, bundled.classify(facts(channel = "ig_some_new_channel", ongoing = true)))
         assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_rtc_ongoing", ongoing = true)))
         assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_ongoing_call", ongoing = true)))
         assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_direct_video_chat", ongoing = true)))

@@ -132,6 +132,8 @@ internal object GuardPolicy {
      *        null. Instagram shows no notification once a call is answered (seen on the owner's
      *        phone), so the call notification alone ended the call too early.
      * @param callScreensOk what is on screen is allowed during a call (see [CallScreens]).
+     * @param callSigns call audio or an Instagram call screen: needed for a notification that is only
+     *        ongoing to count as a call (see NotificationKind.ONGOING).
      */
     fun decide(
         instagramOnScreen: Boolean,
@@ -143,8 +145,9 @@ internal object GuardPolicy {
         noCoverUntil: Long = 0L,
         callAudioAt: Long? = null,
         callScreensOk: Boolean = true,
+        callSigns: Boolean = true,
     ): GuardAction {
-        val blocked = instagramOnScreen && !allowed(now, calls, graceMillis, allowUntil, callAudioAt, callScreensOk)
+        val blocked = instagramOnScreen && !allowed(now, calls, graceMillis, allowUntil, callAudioAt, callScreensOk, callSigns)
         if (coverShownAt == null) return if (blocked && now >= noCoverUntil) GuardAction.COVER else GuardAction.NONE
         val shownFor = now - coverShownAt
         return when {
@@ -156,8 +159,8 @@ internal object GuardPolicy {
     }
 
     /** An Instagram call runs (or just ended): its notification, or Instagram call audio. */
-    fun inCall(now: Long, calls: CallSnapshot, graceMillis: Long, callAudioAt: Long?): Boolean =
-        calls.inCallOrGrace(now, graceMillis) || (callAudioAt != null && now - callAudioAt in 0..graceMillis)
+    fun inCall(now: Long, calls: CallSnapshot, graceMillis: Long, callAudioAt: Long?, callSigns: Boolean = true): Boolean =
+        calls.inCallOrGrace(now, graceMillis, callSigns) || (callAudioAt != null && now - callAudioAt in 0..graceMillis)
 
     /** Instagram may be on screen now: a call (its screens), or a pass. */
     private fun allowed(
@@ -167,9 +170,10 @@ internal object GuardPolicy {
         allowUntil: Long,
         callAudioAt: Long?,
         callScreensOk: Boolean,
+        callSigns: Boolean,
     ): Boolean =
         !calls.listenerConnected ||
-            (inCall(now, calls, graceMillis, callAudioAt) && callScreensOk) ||
+            (inCall(now, calls, graceMillis, callAudioAt, callSigns) && callScreensOk) ||
             now < allowUntil
 }
 

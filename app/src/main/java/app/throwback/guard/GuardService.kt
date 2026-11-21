@@ -274,7 +274,8 @@ class GuardService : Service() {
             instagramInFront = tracker.current in watched // for the camera callbacks (main thread too)
             if (GuardPass.active(now)) followPass(now, tracker.current, calls, igCallAudio)
             val grace = rules().callGraceMillis // read each time: a rules update applies at once
-            val inCall = GuardPolicy.inCall(now, calls, grace, callAudioAt)
+            val callSigns = CallAudioLink.isCallAudio(audioMode) || callScreenShown
+            val inCall = GuardPolicy.inCall(now, calls, grace, callAudioAt, callSigns)
             val callScreensOk = callScreens.allow(inCall, activeScreens, rules().callScreens)
             val action = GuardPolicy.decide(
                 instagramOnScreen = instagramOnScreen,
@@ -286,6 +287,7 @@ class GuardService : Service() {
                 noCoverUntil = noCoverUntil,
                 callAudioAt = callAudioAt,
                 callScreensOk = callScreensOk,
+                callSigns = callSigns,
             )
             if (!instagramOnScreen) windowLeftOpen = false
             when (action) {
@@ -401,7 +403,7 @@ class GuardService : Service() {
      * it (a WhatsApp call already running, or call audio left on, used to end it at once).
      */
     private fun callPass(calls: CallSnapshot, igCallAudio: Boolean) {
-        if (igCallAudio || calls.inCall) GuardPass.end()
+        if (igCallAudio || calls.sureCall) GuardPass.end()
     }
 
     /** Posting: only Instagram's creation screens. */

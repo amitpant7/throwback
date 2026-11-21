@@ -8,6 +8,7 @@ import app.throwback.relay.NotificationKind.LIVE
 import app.throwback.relay.NotificationKind.MENTIONS
 import app.throwback.relay.NotificationKind.MESSAGE
 import app.throwback.relay.NotificationKind.MISSED_CALL
+import app.throwback.relay.NotificationKind.ONGOING
 import app.throwback.relay.NotificationKind.OTHER
 import app.throwback.relay.NotificationKind.UNKNOWN
 import app.throwback.ui.ExtraNotification
@@ -32,8 +33,10 @@ class RelayRoutingTest {
     @Test
     fun `calls are always kept, whatever else is true`() {
         allContexts.forEach { c ->
-            assertEquals(RelayAction.Keep, RelayRouting.decide(CALL, c))
-            assertEquals(RelayAction.Keep, RelayRouting.decide(CALL, c, groupSummary = true))
+            listOf(CALL, ONGOING).forEach { kind ->
+                assertEquals(RelayAction.Keep, RelayRouting.decide(kind, c))
+                assertEquals(RelayAction.Keep, RelayRouting.decide(kind, c, groupSummary = true))
+            }
         }
     }
 

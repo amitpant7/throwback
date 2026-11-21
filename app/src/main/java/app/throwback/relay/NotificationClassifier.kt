@@ -47,12 +47,21 @@ internal enum class NotificationKind(val ruleName: String) {
     /** Left exactly as Instagram posted it (security and login alerts): never removed or relayed. */
     KEEP("keep"),
 
+    /**
+     * Ongoing, and nothing else recognised it: most likely a call in progress on a channel the rules
+     * don't know. Kept like a call; the guard counts it as one only with call audio or a call screen.
+     */
+    ONGOING("ongoing"),
+
     /** Nothing recognised it; the rules' "unknown" setting decides. */
     UNKNOWN("unknown"),
     ;
 
+    /** A call, or ([ONGOING]) maybe one: kept, and followed for the guard. */
+    val isCall: Boolean get() = this == CALL || this == ONGOING
+
     companion object {
-        fun fromRule(name: String): NotificationKind? = entries.firstOrNull { it.ruleName == name && it != UNKNOWN }
+        fun fromRule(name: String): NotificationKind? = entries.firstOrNull { it.ruleName == name && it != UNKNOWN && it != ONGOING }
     }
 }
 
@@ -65,7 +74,8 @@ internal enum class NotificationKind(val ruleName: String) {
  * 2. The rules' `classify` table (filters/rules.json, "notifications"), first match wins. A rule
  *    can't make a message (category "msg" or MessagingStyle) anything that is removed: a renamed
  *    chat channel would otherwise fall to the rules' catch-all "other" and every message be lost.
- * 3. Built-in defaults: category "missed_call", category "msg" or MessagingStyle, ongoing = call.
+ * 3. Built-in defaults: category "missed_call", category "msg" or MessagingStyle, ongoing
+ *    ([NotificationKind.ONGOING]).
  * 4. Otherwise [NotificationKind.UNKNOWN].
  */
 internal class NotificationClassifier(rules: NotificationRules?) {
@@ -90,9 +100,10 @@ internal class NotificationClassifier(rules: NotificationRules?) {
         return when {
             f.category == CATEGORY_MISSED_CALL -> NotificationKind.MISSED_CALL
             isMessage(f) -> NotificationKind.MESSAGE
-            // Instagram shows nothing else as ongoing that the hidden app would post; when in doubt,
-            // treat it as a call (kept, and the guard lets the app open).
-            f.ongoing -> NotificationKind.CALL
+            // Most likely a call on a channel the rules don't know: kept. The guard counts it as a
+            // call only with call audio or a call screen, so an unknown ongoing notification (an
+            // upload, a live broadcast) doesn't open all of Instagram while it shows.
+            f.ongoing -> NotificationKind.ONGOING
             else -> NotificationKind.UNKNOWN
         }
     }

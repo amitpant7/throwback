@@ -102,6 +102,15 @@ class GuardPolicyTest {
     }
 
     @Test
+    fun `a notification only ongoing allows Instagram only with call audio or a call screen`() {
+        val ongoing = CallSnapshot(listenerConnected = true, activeCalls = setOf("x"), maybeCalls = setOf("x"))
+        assertEquals(GuardAction.COVER, GuardPolicy.decide(true, now, ongoing, grace, callSigns = false))
+        assertEquals(GuardAction.NONE, GuardPolicy.decide(true, now, ongoing, grace, callSigns = true))
+        val ringing = CallSnapshot(listenerConnected = true, activeCalls = setOf("x", "ring"), maybeCalls = setOf("x"))
+        assertEquals(GuardAction.NONE, GuardPolicy.decide(true, now, ringing, grace, callSigns = false))
+    }
+
+    @Test
     fun `does nothing while the relay can't see calls`() {
         assertEquals(GuardAction.NONE, decide(true, CallSnapshot(listenerConnected = false)))
     }

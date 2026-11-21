@@ -22,7 +22,8 @@ import app.throwback.R
  * adb shell am broadcast -n app.throwback/.relay.DebugRelayReceiver --es cmd remove --ei id 2
  * adb shell am broadcast -n app.throwback/.relay.DebugRelayReceiver --es cmd guard_pkg --es pkg com.android.settings
  * ```
- * kinds: message, missed, call, likes, comments, follows, mentions, live, other, unknown
+ * kinds: message, missed, call, ongoing (an unrecognised ongoing one: maybe a call), likes, comments,
+ * follows, mentions, live, other, unknown
  */
 class DebugRelayReceiver : BroadcastReceiver() {
 
@@ -47,6 +48,7 @@ class DebugRelayReceiver : BroadcastReceiver() {
                     )
                     "missed" -> b.setCategory("missed_call")
                     "call" -> b.setCategory(NotificationCompat.CATEGORY_CALL).setOngoing(true)
+                    "ongoing" -> b.setOngoing(true)
                     "unknown" -> b.setCategory(NotificationCompat.CATEGORY_SOCIAL)
                 }
                 nm.notify(tag, id, b.build())

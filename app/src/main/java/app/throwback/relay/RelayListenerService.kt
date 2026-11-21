@@ -93,7 +93,8 @@ class RelayListenerService : NotificationListenerService() {
             is Event.Connected -> {
                 val c = classifier()
                 val sorted = e.active.map { it to c.classify(it) }
-                CallState.tracker.onConnected(sorted.filter { it.second == NotificationKind.CALL }.map { it.first.key }.toSet())
+                fun keysOf(kind: NotificationKind) = sorted.filter { it.second == kind }.map { it.first.key }.toSet()
+                CallState.tracker.onConnected(keysOf(NotificationKind.CALL), maybe = keysOf(NotificationKind.ONGOING))
                 // Notifications that arrived while the relay wasn't running are sorted now.
                 sorted.forEach { toRelay.send(it) }
                 MessagesFeature.sync(applicationContext)
@@ -102,8 +103,8 @@ class RelayListenerService : NotificationListenerService() {
                 val kind = classifier().classify(e.facts)
                 // Instagram started posting (a story or post made through a pass): the pass has done its job.
                 endPassWhenPosting(e.facts)
-                if (kind == NotificationKind.CALL) {
-                    CallState.tracker.onCallShowing(e.facts.key)
+                if (kind.isCall) {
+                    CallState.tracker.onCallShowing(e.facts.key, sure = kind == NotificationKind.CALL)
                 } else {
                     // An updated notification that stopped being a call (e.g. "Missed call") ends it.
                     CallState.tracker.onRemoved(e.facts.key, SystemClock.elapsedRealtime())
@@ -131,7 +132,7 @@ class RelayListenerService : NotificationListenerService() {
                     "grouped=${facts.group != null} -> ${kind.ruleName}",
             )
         }
-        if (kind == NotificationKind.CALL) return
+        if (kind.isCall) return
         if (!MessagesFeature.isSetUp(this)) return
 
         val target = if (kind == NotificationKind.MESSAGE || kind == NotificationKind.MISSED_CALL) RelayTarget.MESSAGES else RelayTarget.ACTIVITY
@@ -143,9 +144,7 @@ class RelayListenerService : NotificationListenerService() {
         )
         val groupHasCall = facts.groupSummary && facts.group != null && groupHasCall(facts)
         val action = RelayRouting.decide(kind, ctx, facts.groupSummary, groupHasCall)
-        if (!facts.groupSummary && kind != NotificationKind.MESSAGE && kind != NotificationKind.MISSED_CALL &&
-            kind != NotificationKind.CALL && kind != NotificationKind.KEEP
-        ) {
+        if (!facts.groupSummary && kind != NotificationKind.MESSAGE && kind != NotificationKind.MISSED_CALL && kind != NotificationKind.KEEP) {
             RelayStats.recordOtherGroup(this) // for the "quieter phone" suggestion; a count only
         }
         if (BuildConfig.DEBUG) Log.d(TAG, "${kind.ruleName}${if (facts.groupSummary) " (summary)" else ""} -> $action")
@@ -178,7 +177,7 @@ class RelayListenerService : NotificationListenerService() {
         val c = classifier ?: return true // be safe: keep the summary
         return snapshotActive().any {
             it.key != summary.key && it.packageName == summary.packageName && it.group == summary.group &&
-                c.second.classify(it) == NotificationKind.CALL
+                c.second.classify(it).isCall
         }
     }
 

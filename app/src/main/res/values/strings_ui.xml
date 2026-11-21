@@ -32,7 +32,7 @@
     <string name="ui_found_icon_description">Instagram app installed</string>
     <string name="ui_found_title">You still have the Instagram app</string>
     <string name="ui_found_body">It\'s the quickest way back to Reels. What do you want to do with it?</string>
-    <string name="ui_found_keep_title">Connect it to Throwback</string>
+    <string name="ui_found_keep_title">Connect Instagram to Throwback</string>
     <string name="ui_found_keep_body">For calls, message alerts and posting. Throwback keeps you out of everything else.</string>
     <string name="ui_found_remove_title">Remove it</string>
     <string name="ui_found_remove_body">Opens the app\'s page in Android Settings. Tap Uninstall there.</string>
@@ -78,7 +78,7 @@
     <string name="ui_install_button">Install</string>
     <string name="ui_install_button_description">Install the Instagram app from the Play Store</string>
     <string name="ui_limit_connect_title">Cover the Instagram app too</string>
-    <string name="ui_limit_connect_body">The Instagram app is on this phone, so opening it would skip your daily limit. Connect it, and Throwback covers it.</string>
+    <string name="ui_limit_connect_body">The Instagram app is on this phone, so opening it would skip your daily limit. Connect Instagram to Throwback, and Throwback covers it.</string>
     <string name="ui_limit_connect_button">Connect the Instagram app</string>
     <string name="ui_install_clones">Only the Instagram app in your main profile is covered. A second copy (in a work profile, a phone\'s dual apps or Private Space) isn\'t.</string>
 

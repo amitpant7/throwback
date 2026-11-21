@@ -2,10 +2,8 @@ package app.throwback.web
 
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -32,14 +30,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.core.content.ContextCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import app.throwback.core.StartTrace
 import app.throwback.core.WebMode
 import app.throwback.web.rules.FilterRules
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import java.lang.ref.WeakReference
 import kotlin.concurrent.thread
@@ -52,17 +48,21 @@ internal data class WebToast(val notice: WebNotice, val id: Long)
 /** A main-frame load failed. [retrying] while a retry is in flight. */
 internal data class LoadError(val offline: Boolean, val url: String?, val retrying: Boolean = false)
 
-/** The WebView's renderer process went away: it [crashed], or the system killed it (memory); [inFront]: while the app was started. */
+/**
+ * The WebView's renderer process went away: it [crashed], or the system killed it (memory).
+ * [inFront]: the app was started at the time.
+ */
 internal data class RendererGone(val crashed: Boolean, val inFront: Boolean)
 
 /**
  * Owns the single long-lived Instagram WebView and everything wired to it: settings, the page
- * script, the message bridge, navigation rules, errors, pull-to-refresh and file uploads.
+ * script (its configuration kept current by [PageConfigSync]), the message bridge, navigation rules,
+ * errors, pull-to-refresh and file uploads.
  * Compose reads its state; InstagramScreen drives it. Main thread only.
  */
 internal class InstagramWebController(
     private val context: Context,
-    private val assets: PageAssets,
+    assets: PageAssets,
     initialMode: WebMode,
     initialHandledStartUrl: String?,
     initialFeatures: PageFeatures,
@@ -121,14 +121,11 @@ internal class InstagramWebController(
     var rendererGone by mutableStateOf<RendererGone?>(null)
         private set
 
-    private var mode: WebMode = initialMode
+    /** The page's configuration: rules, mode, features and the trusted clock. */
+    private val config: PageConfigSync
+    private val mode: WebMode get() = config.mode
     private var started = false
 
-    /** Between [onStart] and [onStop]. */
-    private var inFront = false
-    private var features: PageFeatures = initialFeatures
-
-    private var rules: FilterRules? = null
     private var router: UrlRouter? = null
     private var handledStartUrl = initialHandledStartUrl
     private var lastLocation: String? = null
@@ -147,11 +144,6 @@ internal class InstagramWebController(
     private val revealRunnable = Runnable { reveal() }
     private val stopRefreshing = Runnable { refreshing = false }
 
-    /** The phone's clock, date or time zone changed: the page's day must follow the trusted clock. */
-    private val timeChanges = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) = refreshClock()
-    }
-
     init {
         WebViewConfig.apply(webView, context.resources.configuration.fontScale)
         val density = context.resources.displayMetrics.density
@@ -163,12 +155,7 @@ internal class InstagramWebController(
         webView.webChromeClient = Chrome()
         installBridge()
         installTouchListener()
-        val timeActions = IntentFilter().apply {
-            addAction(Intent.ACTION_TIME_CHANGED)
-            addAction(Intent.ACTION_TIMEZONE_CHANGED)
-            addAction(Intent.ACTION_DATE_CHANGED)
-        }
-        ContextCompat.registerReceiver(context.applicationContext, timeChanges, timeActions, ContextCompat.RECEIVER_NOT_EXPORTED)
+        config = PageConfigSync(context, assets, injector, initialMode, initialFeatures, pageOpen = { started })
         current = WeakReference(this)
     }
 
@@ -193,12 +180,9 @@ internal class InstagramWebController(
 
     /** New or updated rules: future pages get them at document start, the open page live. */
     fun applyRules(newRules: FilterRules) {
-        if (destroyed || newRules == rules) return
-        val hadRules = rules != null
-        rules = newRules
+        if (destroyed || newRules == config.rules) return
         router = UrlRouter(newRules)
-        installScript()
-        if (hadRules && started) injector.configureLive(PageScript.config(rules = newRules)) {}
+        config.setRules(newRules)
     }
 
     /**
@@ -241,41 +225,8 @@ internal class InstagramWebController(
 
     /** Switches FULL / MESSAGES_ONLY without reloading when the page script is present. */
     fun setMode(newMode: WebMode) {
-        if (destroyed || newMode == mode) return
-        mode = newMode
-        if (rules == null) return
-        installScript()
-        if (!started) return
-        injector.configureLive(PageScript.config(mode = newMode)) { handled ->
-            if (!handled && !destroyed) enforceModeNatively()
-        }
-    }
-
-    /**
-     * The script for documents loaded from now on: rules, mode and features as they are now, and the
-     * trusted clock read now, which it returns (null while the time limit is still loading). Rebuilt
-     * only when one of them changes, and for a fresh clock at [onStart] and when the phone's time
-     * changes: never per navigation (it is ~180 KB).
-     */
-    private fun installScript(): JsonObject? {
-        val rules = rules ?: return null
-        val clock = PageClock.json()
-        injector.install(PageScript.build(assets.template, assets.css, rules, mode, clock, features))
-        scriptHasClock = clock != null
-        return clock
-    }
-
-    /** Whether the installed script carries a trusted clock (none while the time limit was still loading). */
-    private var scriptHasClock = false
-
-    /**
-     * A fresh trusted clock for the open page and for documents loaded from now on. Not in the
-     * background: rebuilding the script is not free, and [onStart] brings a fresh clock anyway.
-     */
-    private fun refreshClock() {
-        if (destroyed || !inFront) return
-        val clock = installScript() ?: return
-        if (started) injector.configureLive(PageScript.config(clock = clock)) {}
+        if (destroyed) return
+        config.setMode(newMode) { if (!destroyed) enforceModeNatively() }
     }
 
     /** Back: through the WebView history (skipping pages this mode doesn't show). False = nothing left. */
@@ -330,45 +281,18 @@ internal class InstagramWebController(
         if (previous != null && previous != uiModeNight) WebViewConfig.refreshColorScheme(webView.settings)
     }
 
-    /**
-     * In front: the WebView runs again. Back from the background, the page also gets a fresh trusted
-     * clock (time passed meanwhile); the first start needs none, the script was just built with one.
-     */
+    /** In front: the WebView runs again, and the page's clock is kept fresh (PageConfigSync). */
     fun onStart() {
         if (destroyed) return
-        inFront = true
         webView.onResume()
         webView.resumeTimers()
-        if (wasStopped) refreshClock()
-        handler.removeCallbacks(clockTick)
-        handler.postDelayed(clockTick, if (scriptHasClock) CLOCK_REFRESH_MS else CLOCK_RETRY_MS)
-    }
-
-    private var wasStopped = false
-
-    /**
-     * While in front, the page gets a fresh clock now and then: the trusted time can move without any
-     * system broadcast (network time arriving after a reboot), and the time limit may finish loading
-     * after the page was ready (then every 2 s until it has, and the script is updated once).
-     */
-    private val clockTick = object : Runnable {
-        override fun run() {
-            if (destroyed) return
-            val clock = if (started) PageClock.json() else null
-            if (clock != null) {
-                if (!scriptHasClock) installScript() // new pages start with it too
-                injector.configureLive(PageScript.config(clock = clock)) {}
-            }
-            handler.postDelayed(this, if (scriptHasClock) CLOCK_REFRESH_MS else CLOCK_RETRY_MS)
-        }
+        config.onStart()
     }
 
     /** In the background: stop timers and animations (saves battery), keep the login. */
     fun onStop() {
         if (destroyed) return
-        inFront = false
-        wasStopped = true
-        handler.removeCallbacks(clockTick)
+        config.onStop()
         webView.onPause()
         webView.pauseTimers()
         flushCookies()
@@ -387,11 +311,8 @@ internal class InstagramWebController(
 
     /** The app's features changed (e.g. the Instagram app got connected): tell the page. */
     fun setFeatures(value: PageFeatures) {
-        if (destroyed || value == features) return
-        features = value
-        // Pages loaded from now on (the script was built before the app knew), and the page on screen.
-        installScript()
-        if (started) injector.configureLive(PageScript.config(features = value)) {}
+        if (destroyed) return
+        config.setFeatures(value)
     }
 
     private fun share(url: String) {
@@ -405,7 +326,7 @@ internal class InstagramWebController(
         destroyed = true
         if (current?.get() === this) current = null
         handler.removeCallbacksAndMessages(null)
-        context.applicationContext.unregisterReceiver(timeChanges)
+        config.release()
         deliverFiles(null)
         injector.release()
         flushCookies()
@@ -629,12 +550,7 @@ internal class InstagramWebController(
             BridgeMessage.Ready -> {
                 requestReveal()
                 if (covered) pushCovered() // a new page starts uncovered
-                // Fresh trusted time for the page's daily counters (the phone's clock may have moved),
-                // and, once it is known, for the documents after this one too.
-                PageClock.json()?.let { clock ->
-                    if (!scriptHasClock) installScript()
-                    injector.configureLive(PageScript.config(clock = clock)) {}
-                }
+                config.onPageReady()
             }
             is BridgeMessage.ServerTime -> PageClock.serverTimeSink?.invoke(m.millis)
             is BridgeMessage.Blocked -> showNotice(noticeFor(m.kind))
@@ -753,7 +669,7 @@ internal class InstagramWebController(
             // and destroyed now (as the Android docs ask), and InstagramScreen builds a new one.
             Log.w(TAG, "WebView renderer gone (crashed=${detail.didCrash()}); recreating")
             destroy()
-            rendererGone = RendererGone(crashed = detail.didCrash(), inFront = inFront)
+            rendererGone = RendererGone(crashed = detail.didCrash(), inFront = config.inFront)
             return true
         }
     }
@@ -790,10 +706,6 @@ internal class InstagramWebController(
     }
 
     companion object {
-        /** How often the page's clock is refreshed while in front, and retried until the first one. */
-        private const val CLOCK_REFRESH_MS = 5 * 60_000L
-        private const val CLOCK_RETRY_MS = 2_000L
-
         /** The live page (one at a time), for screens that read from it, such as "Your day". */
         @Volatile
         var current: WeakReference<InstagramWebController>? = null

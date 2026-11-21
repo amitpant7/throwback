@@ -114,7 +114,7 @@ internal fun MessagesSettingsScreen(
             }
         }
 
-        QuietTipCard(showMessage = showMessage, modifier = Modifier.padding(top = 18.dp))
+        InstagramNotificationsCard(showMessage = showMessage, modifier = Modifier.padding(top = 18.dp))
 
         // A deliberate, short way into the real app (switching accounts, its own settings).
         val notInstalled = stringResource(R.string.ui_instagram_not_installed_message)

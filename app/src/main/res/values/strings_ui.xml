@@ -86,21 +86,17 @@
     <string name="ui_install_perms_four">Step 2 asks for four Android permissions, each explained there. Throwback needs them to pass on Instagram\'s notifications and keep you out of its app.</string>
     <string name="ui_install_clones">Only the Instagram app in your main profile is covered. A second copy (in a work profile, a phone\'s dual apps or Private Space) isn\'t.</string>
 
-    <string name="ui_quiet_keep_on">Keep on</string>
-    <string name="ui_quiet_turn_off">Turn off</string>
-    <string name="ui_quiet_open_instagram">Open notification settings for Instagram</string>
-    <!-- Optional tip on the Connect › Instagram screen (was setup step 2). -->
-    <string name="ui_quiet_tip_title">For a quieter phone (optional)</string>
-    <string name="ui_quiet_tip_body">Throwback already removes everything except messages and calls. For an even quieter phone, open the Instagram app\'s notification settings: keep the group \'Instagram messages\' on, and turn off the group \'Instagram\' (on most phones one switch: All \'Instagram\' notifications).</string>
-    <plurals name="ui_quiet_seen_other">
-        <item quantity="one">In the last 7 days Instagram sent %d notification from its \'Instagram\' group. Turning that group off stops them at the source.</item>
-        <item quantity="other">In the last 7 days Instagram sent %d notifications from its \'Instagram\' group. Turning that group off stops them at the source.</item>
-    </plurals>
-    <string name="ui_quiet_seen_none">Looks quiet: no extra Instagram notifications in the last 7 days.</string>
-    <string name="ui_quiet_group_messages">Instagram messages</string>
-    <string name="ui_quiet_group_messages_sub">Messages, message requests, video calls</string>
-    <string name="ui_quiet_group_other">Instagram</string>
-    <string name="ui_quiet_group_other_sub">Everything else: likes, comments, followers, first posts…</string>
+    <!-- Connect › Instagram: Instagram's notifications must stay on (owner, 2026-11-21, DECISIONS.md #34bb). -->
+    <string name="ui_ig_notif_title">Keep Instagram\'s notifications on</string>
+    <string name="ui_ig_notif_body">Throwback reads them to pass on messages, ring your calls and see when a story is posted. In Instagram\'s notification settings, keep both groups on. Throwback hides the ones you don\'t need.</string>
+    <string name="ui_ig_notif_working">Working: Throwback has seen them this week.</string>
+    <string name="ui_ig_notif_check">None from the \'Instagram\' group in 7 days. Check that it\'s on.</string>
+    <string name="ui_ig_notif_on">Keep on</string>
+    <string name="ui_ig_notif_open">Open Instagram\'s notification settings</string>
+    <string name="ui_ig_notif_group_messages">Instagram messages</string>
+    <string name="ui_ig_notif_group_messages_sub">Messages, requests, calls</string>
+    <string name="ui_ig_notif_group_other">Instagram</string>
+    <string name="ui_ig_notif_group_other_sub">Posting a story, likes, follows and more</string>
 
     <string name="ui_perm_title">Three permissions</string>
     <string name="ui_perm_title_four">Four permissions</string>

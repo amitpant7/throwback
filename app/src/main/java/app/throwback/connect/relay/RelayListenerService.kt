@@ -153,7 +153,7 @@ class RelayListenerService : NotificationListenerService() {
         val groupHasCall = facts.groupSummary && facts.group != null && groupHasCall(facts)
         val action = RelayRouting.decide(kind, ctx, facts.groupSummary, groupHasCall)
         if (!facts.groupSummary && kind != NotificationKind.MESSAGE && kind != NotificationKind.MISSED_CALL && kind != NotificationKind.KEEP) {
-            RelayStats.recordOtherGroup(this) // for the "quieter phone" suggestion; a count only
+            RelayStats.recordOtherGroup(this) // for the "keep Instagram's notifications on" card; a count only
         }
         if (BuildConfig.DEBUG) Log.d(TAG, "${kind.ruleName}${if (facts.groupSummary) " (summary)" else ""} -> $action")
         when (action) {

@@ -371,3 +371,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
         other apps. Now Instagram counts only while it is the app in front (the last one opened, until
         it pauses), the cover simply stays while it is, and there is no stepping aside or "close that
         window" text.
+    bb. **Instagram's notifications stay on** (owner, 2026-11-21). The "quieter phone" tip told people
+        to switch Instagram's 'Instagram' notification group off; that group also holds its posting
+        notifications ("uploads", "Posting…"), so Throwback could no longer see a story being posted
+        (seen on the owner's phone). Connect › Instagram now asks to keep both groups on, with a button
+        to Instagram's notification settings; Throwback still hides what isn't wanted. Android doesn't
+        let Throwback read the switches, so the card says whether the relay has seen anything from the
+        'Instagram' group in the last 7 days.

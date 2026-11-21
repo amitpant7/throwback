@@ -241,9 +241,15 @@ internal class CallAudioLink {
      * Called once per check.
      */
     fun update(audioMode: Int?, instagramInFront: Boolean, instagramCallSeenRecently: Boolean, callScreenShown: Boolean): Boolean {
-        val inCall = isCallAudio(audioMode)
-        linked = inCall && (linked || instagramCallSeenRecently || callScreenShown || (!wasInCall && instagramInFront))
-        wasInCall = inCall
+        val anyCall = audioMode == MODE_IN_CALL || audioMode == MODE_IN_COMMUNICATION
+        // Starting while Instagram is in front links only an internet call: a phone call answered from
+        // a pop-up during a pass mustn't. Instagram's own signs (its call notification, its call
+        // screen) link either mode: its calls are self-managed internet calls, which Android plays as
+        // MODE_IN_COMMUNICATION, but a phone maker may report them as MODE_IN_CALL, and covering a
+        // real call is the one thing that must never happen (DECISIONS.md #20).
+        linked = anyCall &&
+            (linked || instagramCallSeenRecently || callScreenShown || (isCallAudio(audioMode) && !wasInCall && instagramInFront))
+        wasInCall = anyCall
         return linked
     }
 
@@ -252,7 +258,7 @@ internal class CallAudioLink {
         const val MODE_IN_CALL = 2
         const val MODE_IN_COMMUNICATION = 3
 
-        /** An internet call's audio, as Instagram's calls use; never a phone call. */
+        /** An internet call's audio, as Instagram's calls use; a phone call's is MODE_IN_CALL. */
         fun isCallAudio(audioMode: Int?): Boolean = audioMode == MODE_IN_COMMUNICATION
     }
 }

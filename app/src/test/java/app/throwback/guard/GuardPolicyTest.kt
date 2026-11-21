@@ -153,15 +153,26 @@ class GuardPolicyTest {
     }
 
     @Test
-    fun `a phone call never unlocks Instagram, even answered with Instagram in front`() {
+    fun `a phone call never unlocks Instagram on its own, even answered with Instagram in front`() {
         val link = CallAudioLink()
         assertFalse(link.at(quiet, front = true))
         // Answered from the phone's pop-up during a pass: Instagram stays in front (Samsung), or the
         // audio switches before the dialer's screen is reported.
         assertFalse(link.at(phone, front = true))
-        assertFalse(link.at(phone, front = true, igCall = true))
+        assertFalse(link.at(phone, front = true))
         assertFalse(CallAudioLink.isCallAudio(phone))
         assertTrue(CallAudioLink.isCallAudio(voip))
+    }
+
+    @Test
+    fun `an Instagram call reported with phone-call audio is still linked by Instagram's own signs`() {
+        // Some phones may play self-managed internet calls as MODE_IN_CALL: the call must not be covered.
+        val byNotification = CallAudioLink()
+        assertTrue(byNotification.at(phone, front = false, igCall = true))
+        assertTrue(byNotification.at(phone, front = false)) // answered: the notification went, still linked
+        val byScreen = CallAudioLink()
+        assertFalse(byScreen.at(phone, front = false))
+        assertTrue(byScreen.at(phone, front = true, callScreen = true))
     }
 
     @Test

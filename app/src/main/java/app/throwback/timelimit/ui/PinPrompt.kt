@@ -27,7 +27,7 @@ import app.throwback.timelimit.DefaultTimeLimitController
 import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.TimeLimitView
 
-/** "Turn off Messages & calls" while a limit is on: PIN, then it turns off tomorrow. */
+/** "Disconnect Instagram" while a limit is on: PIN, then it disconnects tomorrow. */
 @Composable
 internal fun GuardOffPin(controller: DefaultTimeLimitController, onScheduled: () -> Unit, onBack: () -> Unit) {
     // Live, so the 30-second pause after wrong PINs counts down and ends here too.

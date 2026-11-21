@@ -65,7 +65,10 @@ data class TimeLimitState(
     val pin: PinHash? = null,
     /** The day [usedMillis] and [extensionsUsed] belong to. Also the latest day seen: it never goes back. */
     val day: LocalDate? = null,
-    /** Time counted today (foreground, FULL mode only). */
+    /**
+     * Time counted today: Throwback in front in FULL mode, plus the Instagram app's time while the
+     * guard was off (DECISIONS.md #27b).
+     */
     val usedMillis: Long = 0,
     val extensionsUsed: Int = 0,
     /** When the current lock began; the 5-minute wait counts from here. Null when not locked. */
@@ -81,11 +84,11 @@ data class TimeLimitState(
     /** Last clock reading, used to tell real time passing from the wall clock being changed. */
     val anchor: Moment? = null,
     /**
-     * Turning Messages & calls (the guard on the Instagram app) off while a limit is on: needs the PIN
-     * and takes effect the next day, like turning the limit off (owner, 2026-11-20).
+     * Disconnecting the Instagram app (turning its guard off) while a limit is on: needs the PIN and
+     * takes effect the next day, like turning the limit off (owner, 2026-11-20).
      */
     val pendingGuardOff: LocalDate? = null,
-    /** The scheduled guard turn-off is due; the app turns Messages & calls off and clears this. */
+    /** The scheduled guard turn-off is due; the app disconnects the Instagram app and clears this. */
     val guardOffDue: Boolean = false,
     /**
      * The time zone days are counted in (ZoneId). A new phone time zone is taken over only at the next
@@ -171,9 +174,9 @@ data class TimeLimitView(
     val pendingPinEffective: LocalDate? = null,
     val pinReset: PinResetStatus? = null,
     val pinBlockedMillis: Long = 0,
-    /** Messages & calls turns off on this day (scheduled with the PIN). */
+    /** The Instagram app is disconnected on this day (scheduled with the PIN). */
     val pendingGuardOff: LocalDate? = null,
-    /** That day has come: the app should turn Messages & calls off now. */
+    /** That day has come: the app should disconnect the Instagram app now. */
     val guardOffDue: Boolean = false,
 ) {
     /** Minutes of today's allowance (limit plus extensions). */

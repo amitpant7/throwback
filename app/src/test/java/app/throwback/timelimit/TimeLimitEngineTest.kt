@@ -613,7 +613,7 @@ class TimeLimitEngineTest {
     }
 
     @Test
-    fun `turning Messages and calls off needs the PIN and takes effect the next day`() {
+    fun `disconnecting the Instagram app needs the PIN and takes effect the next day`() {
         h.setup(30)
         assertEquals(ActionResult.WrongPin(4), h.act { s, r -> h.engine.scheduleGuardOff(s, r, pinOk = false) })
         assertEquals(ActionResult.Scheduled(h.today.plusDays(1)), h.act { s, r -> h.engine.scheduleGuardOff(s, r, pinOk = true) })

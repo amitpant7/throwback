@@ -75,9 +75,9 @@ fun TimeLimitSettingsScreen(controller: TimeLimitController, onClose: () -> Unit
 }
 
 /**
- * Messages & calls turn-off while a daily limit is on (needs the PIN, takes effect tomorrow).
- * [limitOn] and [pendingGuardOff] describe the current state; [guardOffDue] means the app should turn
- * Messages & calls off now and call [guardOffHandled].
+ * Disconnecting the Instagram app while a daily limit is on (needs the PIN, takes effect tomorrow).
+ * The [view]'s limitMinutes and pendingGuardOff describe the current state; its guardOffDue means the
+ * app should disconnect it now and call [handled].
  */
 object GuardOffApi {
     fun view(controller: TimeLimitController) = (controller as? DefaultTimeLimitController)?.view

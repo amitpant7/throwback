@@ -23,7 +23,8 @@ import kotlin.math.min
  *   is added once network time is back), so "clock forward + reboot" gains nothing.
  * - The current day is the local date of the trusted time, but never earlier than the latest day
  *   seen, so moving the clock back can't reset usage.
- * - Usage only counts while a FULL-mode session is open, and any single counted interval is capped.
+ * - Usage counts while a FULL-mode session is open, and any single counted interval is capped; the
+ *   Instagram app's time while the guard was off is added ([addOutsideUsage]).
  *
  * PIN checks: functions that need the PIN take `pinOk`, the result of [PinHasher.verify], because
  * hashing is slow and the caller runs it off the main thread. The engine still owns the rules
@@ -260,7 +261,7 @@ class TimeLimitEngine {
         }
     }
 
-    /** Messages & calls off while a limit is on: needs the PIN, takes effect tomorrow. */
+    /** Disconnecting the Instagram app while a limit is on: needs the PIN, takes effect tomorrow. */
     fun scheduleGuardOff(s: TimeLimitState, r: ClockReading, pinOk: Boolean): Outcome {
         val (st, at) = sync(s, r)
         if (!st.enabled) return Outcome(st, ActionResult.NotAllowed("No limit set"))
@@ -272,7 +273,7 @@ class TimeLimitEngine {
 
     fun cancelGuardOff(s: TimeLimitState, r: ClockReading): TimeLimitState = sync(s, r).first.copy(pendingGuardOff = null)
 
-    /** The app has turned Messages & calls off. */
+    /** The app has disconnected the Instagram app. */
     fun guardOffHandled(s: TimeLimitState, r: ClockReading): TimeLimitState = sync(s, r).first.copy(guardOffDue = false)
 
     /** Cancels a pending raise or turn-off. Tightening never needs the PIN. */

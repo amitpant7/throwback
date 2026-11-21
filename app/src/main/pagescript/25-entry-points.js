@@ -62,6 +62,13 @@
    * looks native; re-added on the next pass if Instagram re-renders the page.
    */
   var SETTINGS_SECTION_ID = '__tb_settings_section';
+  // Looking for the heading reads the whole page's text. While the page is drawn (the first
+  // SETTINGS_SETTLE_MS on it) that happens on every pass; after that a heading still missing (a
+  // language the rules don't list) is looked for at most every SETTINGS_LOOK_MS, with a pass then,
+  // so one drawn late is still found.
+  var SETTINGS_SETTLE_MS = 3000;
+  var SETTINGS_LOOK_MS = 1000;
+  var settingsLook = { path: null, since: 0, at: 0, timer: 0 };
 
   function updateSettingsSection() {
     var ss = state.c && state.c.settingsSection;
@@ -71,11 +78,12 @@
       // Its row at the end of the page too: Instagram may keep <main> across the route change.
       var appRow = document.getElementById(APP_SETTINGS_ROW_ID);
       if (appRow && appRow.parentNode) appRow.parentNode.removeChild(appRow);
+      settingsLook.path = null;
       return;
     }
     // The heading is looked for only while something is missing (a whole-page text search).
     var missingRow = state.createInApp && !document.getElementById(APP_SETTINGS_ROW_ID);
-    var heading = (!existing || !existing.isConnected || missingRow) ? findExactText(ss.after) : null;
+    var heading = (!existing || !existing.isConnected || missingRow) ? settingsHeading(ss) : null;
     if (!existing || !existing.isConnected) {
       if (!heading) return;
       var place = sectionPlacement(heading);
@@ -83,6 +91,26 @@
       place.parent.insertBefore(buildSettingsSection(heading, place.sample), place.before);
     }
     updateAppSettingsRow(heading);
+  }
+
+  function settingsHeading(ss) {
+    var now = Date.now();
+    if (settingsLook.path !== location.pathname) {
+      settingsLook.path = location.pathname;
+      settingsLook.since = now;
+    }
+    var wait = now - settingsLook.since > SETTINGS_SETTLE_MS ? SETTINGS_LOOK_MS - (now - settingsLook.at) : 0;
+    if (wait > 0) {
+      if (!settingsLook.timer) {
+        settingsLook.timer = setTimeout(function () {
+          settingsLook.timer = 0;
+          schedulePass(false);
+        }, wait);
+      }
+      return null;
+    }
+    settingsLook.at = now;
+    return findExactText(ss.after);
   }
 
   /** The element whose whole text is one of the given texts (deepest match, in reading order). */

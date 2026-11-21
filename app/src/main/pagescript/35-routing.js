@@ -117,6 +117,7 @@
     if (!pageActive('stories')) resetAhead(stories);
     else noteStoryLocation();
     if (!pageActive('home')) resetAhead(feedAhead);
+    else if (state.readySent) scheduleWarmups(); // the page may have started elsewhere (a chat, a link)
     state.bgDirty = true;
     if (state.textScanSkipped && textScanActive()) {
       // Back from DMs or stories: catch up on what changed while text scanning was off, right after

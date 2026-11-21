@@ -14,6 +14,7 @@
   var WARM_MAX_AGE_MS = 7 * 24 * 3600 * 1000;
   var CODE_ENTRIES_MAX = 200;
   var warmDone = false;
+  var warmTimer = 0;
   // Sections learned in this document. Only a section's first open loads all its code; a later
   // open in the same document loads little or nothing and must not replace the full list.
   var warmLearned = {};
@@ -65,7 +66,10 @@
     saveJson(WARM_KEY, saved);
   }
 
-  /** On the feed, when idle: prefetch the remembered code files of recent sections (once per page). */
+  /**
+   * On the feed, when idle: prefetch the remembered code files of recent sections (once per page).
+   * Not on the feed then: it is tried again when the user gets there (onLocation).
+   */
   function warmCodeAssets() {
     if (warmDone || !pageActive('home') || state.mode === MODE_MESSAGES) return;
     warmDone = true;
@@ -104,11 +108,15 @@
   }
 
   function scheduleWarmups() {
+    if (warmDone || warmTimer) return;
     var idle = window.requestIdleCallback || function (fn) {
       return setTimeout(fn, 1);
     };
     // Late enough not to compete with the feed's own loading.
-    setTimeout(function () {
-      idle(warmCodeAssets, { timeout: 5000 });
+    warmTimer = setTimeout(function () {
+      idle(function () {
+        warmTimer = 0;
+        warmCodeAssets();
+      }, { timeout: 5000 });
     }, 5000);
   }

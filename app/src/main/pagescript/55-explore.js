@@ -133,7 +133,7 @@
     card.style.cssText = 'display:flex;flex-direction:column;padding:8px 16px 48px;color:inherit;font-family:inherit';
     var scene = document.createElement('div');
     scene.setAttribute('role', 'img');
-    scene.style.cssText = 'position:relative;overflow:hidden;height:min(330px,42vh);border-radius:26px';
+    scene.style.cssText = 'position:relative;overflow:hidden;height:42vh;max-height:330px;border-radius:26px';
     if (n < scenes.length) {
       scene.setAttribute('aria-label', scenes[n].label);
       scene.style.background = scenes[n].bg;

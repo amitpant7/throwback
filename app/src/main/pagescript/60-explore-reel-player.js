@@ -125,10 +125,10 @@
   }
 
   var CLIP_CSS =
-    '#' + CLIP_ID + '{position:fixed;inset:0;z-index:2147483600;background:#000;color:#fff;' +
+    '#' + CLIP_ID + '{position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483600;background:#000;color:#fff;' +
       'font:14px/1.35 -apple-system,system-ui,Roboto,sans-serif;overscroll-behavior:contain}' +
-    '#' + CLIP_ID + ' .tbc-strip{position:absolute;inset:0;overflow-y:scroll;scroll-snap-type:y mandatory;' +
-      'scrollbar-width:none;overscroll-behavior:contain}' +
+    '#' + CLIP_ID + ' .tbc-strip{position:absolute;top:0;right:0;bottom:0;left:0;overflow-y:scroll;' +
+      'scroll-snap-type:y mandatory;scrollbar-width:none;overscroll-behavior:contain}' +
     '#' + CLIP_ID + ' .tbc-strip::-webkit-scrollbar{display:none}' +
     '#' + CLIP_ID + ' .tbc-slide{position:relative;height:100%;scroll-snap-align:start;scroll-snap-stop:always;' +
       'display:flex;align-items:center;justify-content:center;overflow:hidden}' +

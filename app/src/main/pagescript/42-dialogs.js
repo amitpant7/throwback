@@ -5,6 +5,10 @@
   // large value can't keep a dialog being read for minutes.
   var DIALOG_MAX_CHECKS = 120; // a minute
   var DIALOG_TEXT_MAX = 4000;
+  // Dialogs holding people's own words (a post, a video, a comment or message box, a search field)
+  // are never Instagram's nags: a caption saying "open app" must not get its dialog closed.
+  var DIALOG_CONTENT = 'article, video, textarea, [contenteditable="true"], [role="textbox"], ' +
+    'input[type="text"], input[type="search"]';
 
   function dismissDialogs() {
     var c = state.c;
@@ -30,6 +34,7 @@
         continue;
       }
       dialogChecked.set(d, { at: now, n: seen.n + 1 });
+      if (d.querySelector(DIALOG_CONTENT)) continue;
       var text = norm(textStart(d, DIALOG_TEXT_MAX));
       for (var j = 0; j < c.dialogs.length; j++) {
         var rule = c.dialogs[j];

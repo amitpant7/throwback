@@ -1,6 +1,7 @@
 package app.throwback.relay
 
 import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -139,7 +140,9 @@ internal object RelayNotifier {
             .setPublicVersion(public)
             .setContentIntent(open)
             .setAutoCancel(true)
-            .setOnlyAlertOnce(true) // updates of the same chat don't ring again
+            // Instagram keeps one notification per chat: a new message there rings again, the same
+            // text posted again (an update of the same message) doesn't.
+            .setOnlyAlertOnce(shownText(context, id) == title to text)
             .build()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -151,6 +154,16 @@ internal object RelayNotifier {
         } catch (e: SecurityException) {
             // Revoked between the check and now; nothing else to do.
         }
+    }
+
+    /** Title and text of relayed notification [id] if it still shows, else null. */
+    private fun shownText(context: Context, id: Int): Pair<String?, String?>? = try {
+        context.getSystemService(NotificationManager::class.java)?.activeNotifications
+            ?.firstOrNull { it.tag == TAG_RELAYED && it.id == id }
+            ?.notification?.extras
+            ?.let { it.getCharSequence(Notification.EXTRA_TITLE)?.toString() to it.getCharSequence(Notification.EXTRA_TEXT)?.toString() }
+    } catch (e: RuntimeException) {
+        null
     }
 
     private fun channelFor(target: RelayTarget) = if (target == RelayTarget.MESSAGES) CHANNEL_MESSAGES else CHANNEL_ACTIVITY

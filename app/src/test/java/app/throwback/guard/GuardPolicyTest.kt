@@ -125,36 +125,76 @@ class GuardPolicyTest {
 
     // ---- Which call audio is an Instagram call ---------------------------------------------------
 
+    private val voip = CallAudioLink.MODE_IN_COMMUNICATION
+    private val phone = CallAudioLink.MODE_IN_CALL
+    private val quiet = 0 // AudioManager.MODE_NORMAL
+
+    private fun CallAudioLink.at(mode: Int, front: Boolean, igCall: Boolean = false, callScreen: Boolean = false) =
+        update(mode, instagramInFront = front, instagramCallSeenRecently = igCall, callScreenShown = callScreen)
+
     @Test
-    fun `a phone or WhatsApp call, even during the call button's pass, doesn't unlock Instagram`() {
+    fun `a WhatsApp call, even during the call button's pass, doesn't unlock Instagram`() {
         val link = CallAudioLink()
-        assertFalse(link.update(inCallAudio = false, instagramInFront = true, instagramCallSeenRecently = false))
-        // The call button's pass is running, Instagram's chat is open; a phone call is answered and
+        assertFalse(link.at(quiet, front = true))
+        // The call button's pass is running, Instagram's chat is open; a WhatsApp call is answered and
         // its call screen comes up: the audio switches with Instagram no longer in front.
-        assertFalse(link.update(inCallAudio = true, instagramInFront = false, instagramCallSeenRecently = false))
+        assertFalse(link.at(voip, front = false))
         // Back to Instagram during that call: still not an Instagram call.
-        assertFalse(link.update(inCallAudio = true, instagramInFront = true, instagramCallSeenRecently = false))
+        assertFalse(link.at(voip, front = true))
+    }
+
+    @Test
+    fun `a phone call never unlocks Instagram, even answered with Instagram in front`() {
+        val link = CallAudioLink()
+        assertFalse(link.at(quiet, front = true))
+        // Answered from the phone's pop-up during a pass: Instagram stays in front (Samsung), or the
+        // audio switches before the dialer's screen is reported.
+        assertFalse(link.at(phone, front = true))
+        assertFalse(link.at(phone, front = true, igCall = true))
+        assertFalse(CallAudioLink.isCallAudio(phone))
+        assertTrue(CallAudioLink.isCallAudio(voip))
     }
 
     @Test
     fun `a call started in Instagram stays an Instagram call until it ends`() {
         val link = CallAudioLink()
-        link.update(inCallAudio = false, instagramInFront = true, instagramCallSeenRecently = false)
+        link.at(quiet, front = true)
         // Call tapped in Instagram (call button pass, or during a visit or story pass).
-        assertTrue(link.update(inCallAudio = true, instagramInFront = true, instagramCallSeenRecently = false))
+        assertTrue(link.at(voip, front = true))
         // The user goes elsewhere while it runs (a video call shrinks into a small window): still allowed.
-        assertTrue(link.update(inCallAudio = true, instagramInFront = false, instagramCallSeenRecently = false))
+        assertTrue(link.at(voip, front = false))
         // Hung up.
-        assertFalse(link.update(inCallAudio = false, instagramInFront = false, instagramCallSeenRecently = false))
-        assertFalse(link.update(inCallAudio = true, instagramInFront = false, instagramCallSeenRecently = false))
+        assertFalse(link.at(quiet, front = false))
+        assertFalse(link.at(voip, front = false))
     }
 
     @Test
     fun `an Instagram call notification links the call audio`() {
         val link = CallAudioLink()
-        link.update(inCallAudio = true, instagramInFront = false, instagramCallSeenRecently = false) // another call
-        assertTrue(link.update(inCallAudio = true, instagramInFront = false, instagramCallSeenRecently = true))
-        assertTrue(link.update(inCallAudio = true, instagramInFront = false, instagramCallSeenRecently = false))
+        link.at(voip, front = false) // another call
+        assertTrue(link.at(voip, front = false, igCall = true))
+        assertTrue(link.at(voip, front = false))
+    }
+
+    @Test
+    fun `a call answered with the screen off is linked once its call screen shows`() {
+        val link = CallAudioLink()
+        // Answered on a headset: the notification went, the audio is on, Instagram isn't in front.
+        assertFalse(link.at(voip, front = false))
+        // Much later the user opens the call: its screen links it, also after leaving it again.
+        assertTrue(link.at(voip, front = true, callScreen = true))
+        assertTrue(link.at(voip, front = false))
+        // A call screen without call audio links nothing.
+        assertFalse(CallAudioLink().at(quiet, front = true, callScreen = true))
+    }
+
+    @Test
+    fun `a call screen is shown only when one of Instagram's active screens matches`() {
+        val pattern = PassRules.screensPattern("^com\\.instagram\\.rtc\\.")
+        val call = "com.instagram.rtc.activity.RtcCallActivity"
+        assertTrue(CallScreens.shown(listOf(feed, call), pattern))
+        assertFalse(CallScreens.shown(listOf(feed, ""), pattern))
+        assertFalse(CallScreens.shown(listOf(call), null))
     }
 
     // ---- The cover while it is up -------------------------------------------------------------

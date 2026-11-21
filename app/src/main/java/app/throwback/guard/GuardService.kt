@@ -87,7 +87,7 @@ class GuardService : Service() {
     /** What the rules say about passes and calls, worked out once per rules object. */
     private var rulesCache: GuardRules? = null
 
-    /** Last time the phone's audio was in call mode for an Instagram call. */
+    /** Last time the phone's call audio was an Instagram call. */
     private var callAudioAt: Long? = null
 
     /** Whether the call audio is an Instagram call. */
@@ -263,17 +263,19 @@ class GuardService : Service() {
             val calls = CallState.tracker.state.value
             followListener(calls, now)
             val audioMode = getSystemService(AudioManager::class.java)?.mode
-            val inCallAudio = audioMode == AudioManager.MODE_IN_CALL || audioMode == AudioManager.MODE_IN_COMMUNICATION
+            val activeScreens = tracker.activeScreens(watched)
             // Call audio keeps Instagram allowed only if it is an Instagram call (see CallAudioLink):
             // its call notification was seen within IG_CALL_LINK_MS (the relay notes when it went, also
-            // with the screen off), or the call started in Instagram.
+            // with the screen off), its call screen shows, or the call started in Instagram.
             val igCallRecently = calls.inCall || calls.lastCallEndedAt?.let { now - it in 0 until IG_CALL_LINK_MS } == true
-            if (callAudio.update(inCallAudio, tracker.current in watched, igCallRecently)) callAudioAt = now
+            val callScreenShown = CallScreens.shown(activeScreens, rules().callScreens)
+            val igCallAudio = callAudio.update(audioMode, tracker.current in watched, igCallRecently, callScreenShown)
+            if (igCallAudio) callAudioAt = now
             instagramInFront = tracker.current in watched // for the camera callbacks (main thread too)
-            if (GuardPass.active(now)) followPass(now, tracker.current, calls, inCallAudio)
+            if (GuardPass.active(now)) followPass(now, tracker.current, calls, igCallAudio)
             val grace = rules().callGraceMillis // read each time: a rules update applies at once
             val inCall = GuardPolicy.inCall(now, calls, grace, callAudioAt)
-            val callScreensOk = callScreens.allow(inCall, tracker.activeScreens(watched), rules().callScreens)
+            val callScreensOk = callScreens.allow(inCall, activeScreens, rules().callScreens)
             val action = GuardPolicy.decide(
                 instagramOnScreen = instagramOnScreen,
                 now = now,
@@ -351,7 +353,7 @@ class GuardService : Service() {
     }
 
     /** A pass is running: "Your day" time, leaving Instagram ends it, and each kind's own rules. */
-    private fun followPass(now: Long, fg: String?, calls: CallSnapshot, inCallAudio: Boolean) {
+    private fun followPass(now: Long, fg: String?, calls: CallSnapshot, igCallAudio: Boolean) {
         val inInstagram = fg != null && fg in RelayDebug.watchedPackages()
         val flow = if (GuardPass.kind == GuardPass.Kind.SETTINGS) rules().settingsFlow else rules().createFlow
         if (inInstagram) {
@@ -361,7 +363,7 @@ class GuardService : Service() {
             leftInstagram(now)
         }
         when (GuardPass.kind) {
-            GuardPass.Kind.CALL -> callPass(calls, inCallAudio)
+            GuardPass.Kind.CALL -> callPass(calls, igCallAudio)
             GuardPass.Kind.VISIT -> Unit
             GuardPass.Kind.CREATE -> if (inInstagram) createPass(now)
             GuardPass.Kind.SETTINGS -> if (inInstagram) settingsPass(now)
@@ -394,11 +396,12 @@ class GuardService : Service() {
     }
 
     /**
-     * The call button's pass ends once a call runs. An Instagram call then keeps Instagram allowed by
-     * itself; any other call (phone, WhatsApp) doesn't (see CallAudioLink).
+     * The call button's pass ends once an Instagram call runs (its notification, or call audio linked
+     * to Instagram): the call then keeps its screen allowed by itself. Another app's call doesn't end
+     * it (a WhatsApp call already running, or call audio left on, used to end it at once).
      */
-    private fun callPass(calls: CallSnapshot, inCallAudio: Boolean) {
-        if (inCallAudio || calls.inCall) GuardPass.end()
+    private fun callPass(calls: CallSnapshot, igCallAudio: Boolean) {
+        if (igCallAudio || calls.inCall) GuardPass.end()
     }
 
     /** Posting: only Instagram's creation screens. */

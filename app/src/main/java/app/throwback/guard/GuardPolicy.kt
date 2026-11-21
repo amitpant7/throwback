@@ -195,29 +195,54 @@ internal class CallScreens {
             return true
         }
         fun isCall(screen: String) = screen.isEmpty() || pattern.containsMatchIn(screen)
-        if (active.any { it.isNotEmpty() && pattern.containsMatchIn(it) }) seen = true
+        if (shown(active, pattern)) seen = true
         return !seen || active.all(::isCall)
+    }
+
+    companion object {
+        /** One of Instagram's call screens ([pattern]) is among its [active] screens. */
+        fun shown(active: List<String>, pattern: Regex?): Boolean =
+            pattern != null && active.any { it.isNotEmpty() && pattern.containsMatchIn(it) }
     }
 }
 
 /**
- * Whether the phone's call audio (MODE_IN_CALL / MODE_IN_COMMUNICATION) is an Instagram call. An
- * answered Instagram call removes its notification but keeps the audio in call mode, and calls are
- * never blocked (DECISIONS.md #20), so that audio keeps Instagram allowed. Only audio linked to
- * Instagram does, though: a call notification from Instagram shortly before (ringing, then
- * answered), or the audio switching into call mode while Instagram is in front (a call started
- * there: the chat's call button, or during a visit or story pass). A phone or WhatsApp call, even
- * during the call button's pass, doesn't unlock Instagram.
+ * Whether the phone's call audio is an Instagram call. An answered Instagram call removes its
+ * notification but keeps the audio in call mode, and calls are never blocked (DECISIONS.md #20), so
+ * that audio keeps Instagram allowed. Only audio linked to Instagram does:
+ * - an Instagram call notification shortly before (ringing, then answered);
+ * - one of Instagram's call screens showing during it (a call answered with the screen off, on a
+ *   headset or watch, and opened later: the notification was long gone);
+ * - the audio switching into call mode while Instagram is in front (a call started there: the chat's
+ *   call button, or during a visit or story pass).
+ * Instagram's calls are internet calls (MODE_IN_COMMUNICATION). A phone call's MODE_IN_CALL is never
+ * Instagram's: only the phone itself may set it (2026-11-21 review: a phone call answered from a
+ * pop-up with Instagram in front unlocked all of Instagram until hang-up). Another app's internet
+ * call (WhatsApp), even during the call button's pass, doesn't unlock Instagram either.
  */
 internal class CallAudioLink {
     private var wasInCall = false
     private var linked = false
 
-    /** @return whether the call audio, if any, is an Instagram call. Called once per check. */
-    fun update(inCallAudio: Boolean, instagramInFront: Boolean, instagramCallSeenRecently: Boolean): Boolean {
-        linked = inCallAudio && (linked || instagramCallSeenRecently || (!wasInCall && instagramInFront))
-        wasInCall = inCallAudio
+    /**
+     * @param audioMode AudioManager's mode. @param callScreenShown one of Instagram's call screens is
+     * active ([CallScreens.shown]). @return whether the call audio, if any, is an Instagram call.
+     * Called once per check.
+     */
+    fun update(audioMode: Int?, instagramInFront: Boolean, instagramCallSeenRecently: Boolean, callScreenShown: Boolean): Boolean {
+        val inCall = isCallAudio(audioMode)
+        linked = inCall && (linked || instagramCallSeenRecently || callScreenShown || (!wasInCall && instagramInFront))
+        wasInCall = inCall
         return linked
+    }
+
+    companion object {
+        // AudioManager's modes (plain ints, so tests run on the JVM).
+        const val MODE_IN_CALL = 2
+        const val MODE_IN_COMMUNICATION = 3
+
+        /** An internet call's audio, as Instagram's calls use; never a phone call. */
+        fun isCallAudio(audioMode: Int?): Boolean = audioMode == MODE_IN_COMMUNICATION
     }
 }
 
@@ -228,7 +253,7 @@ internal class CallAudioLink {
  */
 internal object GuardPass {
     enum class Kind {
-        /** The chat's call button: ends once the call runs (the call itself keeps Instagram allowed). */
+        /** The chat's call button: ends once an Instagram call runs (the call itself keeps its screen allowed). */
         CALL,
 
         /** "Open Instagram for 5 minutes". */

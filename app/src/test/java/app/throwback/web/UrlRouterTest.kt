@@ -232,6 +232,19 @@ class UrlRouterTest {
     }
 
     @Test
+    fun `a server redirect is a tap only when its chain started with one`() {
+        val g = ChainGesture()
+        assertTrue(g.of(isRedirect = false, hasGesture = true))
+        assertTrue(g.of(isRedirect = true, hasGesture = false)) // the tapped link's redirect
+        assertFalse(g.of(isRedirect = false, hasGesture = false)) // the page navigates by itself
+        assertFalse(g.of(isRedirect = true, hasGesture = false)) // ...and its redirect isn't a tap either
+        g.of(isRedirect = false, hasGesture = true)
+        g.reset() // a page committed: a redirect of a form post (never seen) isn't the old tap's
+        assertFalse(g.of(isRedirect = true, hasGesture = false))
+        assertTrue(g.of(isRedirect = true, hasGesture = true))
+    }
+
+    @Test
     fun `patterns only see the first 2 KB of a long URL`() {
         val long = "$ig/p/X/" + "a".repeat(200_000)
         assertEquals(Decision.Load, decide(long))

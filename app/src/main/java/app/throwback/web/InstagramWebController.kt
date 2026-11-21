@@ -132,6 +132,9 @@ internal class InstagramWebController(
 
     /** The main-frame URL being loaded, to tell main-frame SSL errors from subresource ones. */
     private var navigatingTo: String? = null
+
+    /** Whether the main-frame navigation under way began with a tap, for its server redirects. */
+    private val chainGesture = ChainGesture()
     private var revealRequested = false
     private var pendingFiles: ValueCallback<Array<Uri>>? = null
     private var nightMode: Int? = null
@@ -402,6 +405,7 @@ internal class InstagramWebController(
 
     private fun load(url: String) {
         StartTrace.mark("load")
+        chainGesture.reset()
         navigatingTo = url
         webView.loadUrl(url)
     }
@@ -412,7 +416,7 @@ internal class InstagramWebController(
     }
 
     /**
-     * @param userGesture a tap started it (or a server redirected one): only then may it open another app.
+     * @param userGesture a tap started it (or its redirect chain): only then may it open another app.
      * @return true when the WebView must not load [url] itself.
      */
     private fun handleNavigation(url: String, currentUrl: String?, userGesture: Boolean): Boolean {
@@ -679,10 +683,12 @@ internal class InstagramWebController(
 
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
             if (!request.isForMainFrame) return false
-            return handleNavigation(request.url.toString(), view.url, userGesture = request.hasGesture() || request.isRedirect)
+            val tapped = chainGesture.of(request.isRedirect, request.hasGesture())
+            return handleNavigation(request.url.toString(), view.url, userGesture = tapped)
         }
 
         override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
+            chainGesture.reset()
             if (url != failedUrl) failedUrl = null
             scriptSeen = false
             locSeen = false

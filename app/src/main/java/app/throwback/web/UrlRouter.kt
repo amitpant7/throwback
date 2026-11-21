@@ -243,3 +243,23 @@ internal class RedirectLoopGuard(
         return true
     }
 }
+
+/**
+ * Whether a main-frame navigation counts as a tap, for [UrlRouter.decide]. A server redirect counts
+ * as one only if its chain's first request was; a chain that started where shouldOverrideUrlLoading
+ * can't see it (a form post, back/forward, the app's own load: [reset]) counts as none.
+ */
+internal class ChainGesture {
+    private var tapped = false
+
+    /** For one main-frame shouldOverrideUrlLoading call. */
+    fun of(isRedirect: Boolean, hasGesture: Boolean): Boolean {
+        if (!isRedirect) tapped = hasGesture
+        return hasGesture || tapped
+    }
+
+    /** A page committed, or the app loads one itself: a later redirect doesn't inherit the last tap. */
+    fun reset() {
+        tapped = false
+    }
+}

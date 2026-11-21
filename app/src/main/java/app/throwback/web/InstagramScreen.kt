@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.RememberObserver
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -214,9 +215,10 @@ private fun InstagramWebHost(
     val colors = ThrowbackTheme.colors
     // The app's features for the page; followed only while the activity is started.
     val features by PageFeatures.current.collectAsStateWithLifecycle()
+    // ControllerLifetime destroys it when it leaves the composition, or if this one is abandoned.
     val controller = remember {
         WebReadiness.reset()
-        try {
+        val created = try {
             StartTrace.mark("webview-create")
             InstagramWebController(context, assets, mode, handledStartUrl, features).also {
                 StartTrace.mark("webview-ready")
@@ -234,14 +236,12 @@ private fun InstagramWebHost(
             Log.e("ThrowbackWeb", "Could not create the WebView", e)
             null
         }
-    }
+        ControllerLifetime(created)
+    }.controller
     if (controller == null) {
         LaunchedEffect(Unit) { WebReadiness.markShown() }
         WebErrorScreen(LoadError(offline = false, url = null), onRetry = onRecreate, modifier = modifier)
         return
-    }
-    DisposableEffect(controller) {
-        onDispose { controller.destroy() }
     }
     SideEffect { controller.host = host } // the latest callbacks, after every composition
 
@@ -348,6 +348,23 @@ private fun InstagramWebHost(
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(bottom = NOTICE_BOTTOM_OFFSET_DP.dp), // above Instagram's bottom bar
         )
+    }
+}
+
+/**
+ * Destroys the controller when it leaves the composition, and also when the composition that created
+ * it is abandoned before it applied: no effect runs then, and its WebView, time receiver and
+ * [InstagramWebController.current] would be left behind.
+ */
+private class ControllerLifetime(val controller: InstagramWebController?) : RememberObserver {
+    override fun onRemembered() = Unit
+
+    override fun onForgotten() {
+        controller?.destroy()
+    }
+
+    override fun onAbandoned() {
+        controller?.destroy()
     }
 }
 

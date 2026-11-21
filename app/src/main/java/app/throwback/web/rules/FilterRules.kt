@@ -351,7 +351,10 @@ data class AppStoryRules(
     val cooldownMinutes: Int = 30,
     /** Story passes a day; after that, the website's story upload. */
     val perDay: Int = 3,
-    /** Leaving Instagram within this many minutes = changed one's mind: no wait, doesn't count. */
+    /**
+     * A pass left within this many minutes, at most 30 s of it outside the camera, was a change of
+     * mind: it doesn't count, but a 10-minute wait still follows (DECISIONS.md #27f).
+     */
     val freeLeaveMinutes: Int = 3,
     /** Notification channels Instagram shows while posting (regex); posting ends the pass. */
     val postingChannels: String = "^(uploads|ig_posting_status)$",
@@ -380,7 +383,10 @@ data class AppCallRules(
 data class AppSettingsRules(
     /** Opens the Instagram app's "Settings and activity". */
     val link: String,
-    /** Regex on the activity class: Instagram's settings screens (no time limit there). */
+    /**
+     * Regex on the activity class: Instagram's settings screens, which the settings pass allows
+     * (10 minutes, 5 a day, DECISIONS.md #27e).
+     */
     val screens: String,
     /** Minutes in total the app's other screens (e.g. Accounts Center, which shares the feed's screen) may show. */
     val otherScreenMinutes: Int = 0,

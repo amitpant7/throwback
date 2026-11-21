@@ -141,7 +141,7 @@
     "screens": "^com\\.instagram\\.urlhandlers\\.settings\\.",
     "otherScreenMinutes": 0,
     "flowPackages": ["com.android.chrome", "com.chrome.beta", "com.sec.android.app.sbrowser"],
-    "note": "With the Instagram app connected, a row at the end of Instagram's settings page opens the app's 'Settings and activity' (instagram://settings -> SettingsUrlHandlerActivity, checked on the emulator 2026-11-20). Its sub-pages mostly stay in that screen (no time limit); some (Meta Accounts Center) open in the app's main screen, which also holds the feed. Back out of settings also lands on that main screen (feed) and Android reports no 'closed' event to tell them apart, so otherScreenMinutes is 0 (owner, 2026-11-20): the main screen is never allowed; Accounts Center is on Instagram's website, in Throwback."
+    "note": "With the Instagram app connected, a row at the end of Instagram's settings page opens the app's 'Settings and activity' (instagram://settings -> SettingsUrlHandlerActivity, checked on the emulator 2026-11-20). Its sub-pages mostly stay in that screen (the pass allows it for 10 minutes, 5 a day, DECISIONS.md #27e); some (Meta Accounts Center) open in the app's main screen, which also holds the feed. Back out of settings also lands on that main screen (feed) and Android reports no 'closed' event to tell them apart, so otherScreenMinutes is 0 (owner, 2026-11-20): the main screen is never allowed; Accounts Center is on Instagram's website, in Throwback."
   },
 
   "appCreate": {

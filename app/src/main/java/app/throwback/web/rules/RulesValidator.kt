@@ -161,6 +161,7 @@ object RulesValidator {
                 check(st.editMinutes in 1..15) { "appCreate.story.editMinutes out of range" }
                 check(st.cooldownMinutes in 0..240) { "appCreate.story.cooldownMinutes out of range" }
                 check(st.perDay in 0..20) { "appCreate.story.perDay out of range" }
+                check(st.freeLeaveMinutes in 0..15) { "appCreate.story.freeLeaveMinutes out of range" }
                 // Any notification on a matching channel counts as "posted" (the pass is forgiven).
                 checkNarrow(st.postingChannels, "appCreate.story.postingChannels", "notification channel", errors)
             }

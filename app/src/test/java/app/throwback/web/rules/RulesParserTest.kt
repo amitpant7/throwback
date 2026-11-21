@@ -94,6 +94,12 @@ class RulesParserTest {
     }
 
     @Test
+    fun `story pass numbers are range-checked`() {
+        assertRejected(TestRules.bundledWith { it.replace("\"freeLeaveMinutes\": 3", "\"freeLeaveMinutes\": 600") }, "freeLeaveMinutes")
+        assertRejected(TestRules.bundledWith { it.replace("\"freeLeaveMinutes\": 3", "\"freeLeaveMinutes\": -1") }, "freeLeaveMinutes")
+    }
+
+    @Test
     fun `explore shows 5 minutes a day`() {
         assertEquals(300, TestRules.bundled.explore!!.dailySeconds)
         assertRejected(TestRules.bundledWith { it.replace("\"dailySeconds\": 300", "\"dailySeconds\": 99999") }, "dailySeconds")

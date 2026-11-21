@@ -15,6 +15,11 @@ internal data class UrlParts(
     val path: String,
     /** Raw query without '?', or "". */
     val query: String,
+    /**
+     * The authority is just the host: no user info, no port, no trailing dot. Chromium keeps those,
+     * and then the page's origin isn't the host's (www.instagram.com. gets no page script).
+     */
+    val plainHost: Boolean = true,
 ) {
     /** This URL as https from its parts alone: no user info, port or fragment. What a checked link loads as. */
     fun toHttps(): String = "https://$host$path" + if (query.isEmpty()) "" else "?$query"
@@ -50,7 +55,7 @@ internal data class UrlParts(
                 .trimEnd('.')
             val rawPath = m.groupValues[4]
             val path = if (hasAuthority && rawPath.isEmpty()) "/" else rawPath
-            return UrlParts(scheme, host, path, m.groupValues[6])
+            return UrlParts(scheme, host, path, m.groupValues[6], plainHost = authority.equals(host, ignoreCase = true))
         }
 
         /**

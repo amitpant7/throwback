@@ -233,6 +233,18 @@ class UrlRouterTest {
     }
 
     @Test
+    fun `an Instagram host with a trailing dot, a port or user info goes to the plain address`() {
+        // Chromium keeps these, so the page's origin would not be Instagram's: no page script, no filters.
+        assertEquals(Decision.Redirect("$ig/p/X/", null), decide("https://www.instagram.com./p/X/"))
+        assertEquals(Decision.Redirect(home, null), decide("https://www.instagram.com:8443/"))
+        assertEquals(Decision.Redirect("$ig/reels/?a=1", null), decide("https://user@www.instagram.com/reels/?a=1"))
+        assertEquals(Decision.Redirect(inbox, null), decide("https://www.instagram.com./direct/inbox/", MESSAGES_ONLY))
+        assertFalse(router.isInstagram("https://www.instagram.com./"))
+        assertTrue(router.isInstagram("https://WWW.Instagram.com/"))
+        assertEquals("$ig/p/X/", router.startUrl("https://www.instagram.com./p/X/", FULL))
+    }
+
+    @Test
     fun `start urls and shim targets are rebuilt from their parts`() {
         assertEquals("$ig/p/X/?a=1", router.startUrl("https://user:pw@www.instagram.com:443/p/X/?a=1#frag", FULL))
         assertEquals("$ig/direct/inbox/", router.startUrl("$ig/direct/inbox/#", FULL))
@@ -321,6 +333,10 @@ class UrlRouterTest {
         assertEquals("two words", p.queryParam("b"))
         assertEquals("", p.queryParam("c"))
         assertNull(p.queryParam("d"))
+        assertFalse(p.plainHost)
+        assertTrue(UrlParts.parse("https://WWW.Instagram.com/")!!.plainHost)
+        assertFalse(UrlParts.parse("https://www.instagram.com./")!!.plainHost)
+        assertEquals("www.instagram.com", UrlParts.parse("https://www.instagram.com./")!!.host)
         assertEquals("/", UrlParts.parse("https://instagram.com")!!.path)
         assertEquals("", UrlParts.parse("mailto:a@b.c")!!.host)
         // Characters java.net.URI rejects.

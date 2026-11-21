@@ -47,9 +47,10 @@ class UrlRouter(private val rules: FilterRules) {
 
     fun isInstagramHost(host: String): Boolean = instagram.matches(host)
 
+    /** An Instagram page that gets the page script (its origin is one of Instagram's). */
     fun isInstagram(url: String?): Boolean {
         val parts = url?.let(UrlParts::parse) ?: return false
-        return parts.isWeb() && instagram.matches(parts.host)
+        return parts.isWeb() && parts.plainHost && instagram.matches(parts.host)
     }
 
     /** Where a mode starts: the home feed, or the inbox in messages-only mode. */
@@ -131,10 +132,8 @@ class UrlRouter(private val rules: FilterRules) {
 
     private fun decideInstagram(parts: UrlParts, mode: WebMode): Decision {
         val path = parts.path
-        if (parts.scheme == "http") {
-            val query = if (parts.query.isEmpty()) "" else "?${parts.query}"
-            return Decision.Redirect("https://${parts.host}$path$query", null)
-        }
+        // http, or a host written with a port, user info or a trailing dot: the plain https address.
+        if (parts.scheme == "http" || !parts.plainHost) return Decision.Redirect(parts.toHttps(), null)
         val matched = path.capped()
         if (alwaysAllowed.any { it.containsMatchIn(matched) }) return Decision.Load
 

@@ -152,7 +152,7 @@ editor screens (they can't render on the emulator).
 - `ui_prefs` is not in Auto Backup, so a reinstall forgets the Instagram connection (the owner
   accepted reinstalling as the emergency exit).
 
-**Owner's answers of 2026-11-21, to build** (DECISIONS.md #34; ticked when done):
+**Owner's answers of 2026-11-21, built** (DECISIONS.md #34):
 - [x] a. Suggested people in the home feed and on Discover people
 - [x] b. Calls unlock only the call screen (allowed as before when it can't be recognised)
 - [x] c. Offer to connect the Instagram app after turning a limit on

@@ -33,9 +33,9 @@ class PassBookTest {
     }
 
     @Test
-    fun `call button allows 10 tries an hour`() {
+    fun `call button allows 15 tries an hour`() {
         val max = PassBook.CALL_TAPS_PER_HOUR
-        assertEquals(10, max)
+        assertEquals(15, max)
         var b = PassBook()
         repeat(max) { i ->
             assertTrue(b.callAllowed(noon + i * m))

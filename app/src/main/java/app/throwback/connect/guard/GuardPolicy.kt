@@ -218,6 +218,35 @@ internal class CallScreens {
 }
 
 /**
+ * An Instagram call recognised by what Android shows of it, for phones where neither its call
+ * notification (its channel turned off) nor the call audio mode gives it away (DECISIONS.md #34y,
+ * seen on the owner's phone 2026-11-21): it starts when Instagram's call screen is on screen while
+ * voice-call sound plays (Android's sound label, never the sound itself), and lasts while that sound
+ * plays, with [GAP_MS] of silence allowed. Pure, for tests.
+ */
+internal class AppCallSession(private val gapMs: Long = GAP_MS) {
+    private var lastVoiceAt: Long? = null
+
+    var active = false
+        private set
+
+    /**
+     * Called once per check. @param callScreenShown one of Instagram's call screens is among its
+     * active screens. @param voiceAudio some app plays sound labelled as a voice call.
+     */
+    fun update(now: Long, callScreenShown: Boolean, voiceAudio: Boolean): Boolean {
+        if (voiceAudio) lastVoiceAt = now
+        if (!active && callScreenShown && voiceAudio) active = true
+        if (active && lastVoiceAt.let { it == null || now - it > gapMs }) active = false
+        return active
+    }
+
+    companion object {
+        const val GAP_MS = 4_000L
+    }
+}
+
+/**
  * Whether the phone's call audio is an Instagram call. An answered Instagram call removes its
  * notification but keeps the audio in call mode, and calls are never blocked (DECISIONS.md #20), so
  * that audio keeps Instagram allowed. Only audio linked to Instagram does:

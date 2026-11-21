@@ -289,5 +289,4 @@
     <string name="ui_today_note">Counted on this phone only, reset at midnight.</string>
     <!-- While an Instagram call runs (DECISIONS.md #34x). -->
     <string name="ui_call_return">Back to your Instagram call</string>
-    <string name="ui_call_return_failed">Open the call from Instagram\'s notification.</string>
 </resources>

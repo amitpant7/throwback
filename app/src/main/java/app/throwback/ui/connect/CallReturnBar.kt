@@ -21,6 +21,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.R
 import app.throwback.connect.CallReturn
 import app.throwback.connect.CallState
+import app.throwback.connect.PassBook
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.UiText
@@ -35,8 +36,9 @@ import kotlinx.coroutines.delay
 internal fun CallReturnBar(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val calls by CallState.tracker.state.collectAsStateWithLifecycle()
+    val appCall by CallState.appCall.collectAsStateWithLifecycle()
     // Call audio isn't observable: re-checked every second while a call notification shows.
-    val show by produceState(false, calls) {
+    val show by produceState(false, calls, appCall) {
         while (true) {
             value = CallReturn.available(context, calls)
             if (!calls.inCall) break
@@ -45,9 +47,13 @@ internal fun CallReturnBar(modifier: Modifier = Modifier) {
     }
     if (!show) return
     val colors = ThrowbackTheme.colors
-    val failed = stringResource(R.string.ui_call_return_failed)
     Surface(
-        onClick = { if (!CallReturn.open(context)) Toast.makeText(context, failed, Toast.LENGTH_LONG).show() },
+        onClick = {
+            // Same messages as the call button (its hourly limit, no Instagram app).
+            CallReturn.open(context).message?.let {
+                Toast.makeText(context, context.getString(it, PassBook.CALL_TAPS_PER_HOUR), Toast.LENGTH_LONG).show()
+            }
+        },
         shape = RoundedCornerShape(999.dp),
         color = colors.accent,
         contentColor = colors.onAccent,

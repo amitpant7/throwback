@@ -12,6 +12,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.hardware.camera2.CameraManager
+import android.media.AudioAttributes
 import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
@@ -95,6 +96,7 @@ class GuardService : Service() {
     /** Whether the call audio is an Instagram call. */
     private val callAudio = CallAudioLink()
     private val callScreens = CallScreens()
+    private val appCallSession = AppCallSession()
 
     /** Since when the notification listener is disconnected, and the last rebind request. */
     private var listenerDownSince: Long? = null
@@ -153,6 +155,7 @@ class GuardService : Service() {
     override fun onDestroy() {
         watchCameras(false)
         running = false
+        CallState.appCall.value = false
         scope.cancel()
         overlay.hide()
         try {
@@ -269,11 +272,15 @@ class GuardService : Service() {
             val igCallRecently = calls.inCall || calls.lastCallEndedAt?.let { now - it in 0 until IG_CALL_LINK_MS } == true
             val callScreenShown = CallScreens.shown(activeScreens, rules().callScreens)
             val igCallAudio = callAudio.update(audioMode, tracker.current in watched, igCallRecently, callScreenShown)
-            if (igCallAudio) callAudioAt = now
+            // Instagram's call screen with voice-call sound is a call even without its notification or
+            // the call audio mode (both missing on some phones: AppCallSession).
+            val appCall = appCallSession.update(now, callScreenShown, voiceCallSound())
+            if (CallState.appCall.value != appCall) CallState.appCall.value = appCall
+            if (igCallAudio || appCall) callAudioAt = now
             instagramInFront = tracker.current in watched // for the camera callbacks (main thread too)
-            if (GuardPass.active(now)) followPass(now, tracker.current, calls, igCallAudio)
+            if (GuardPass.active(now)) followPass(now, tracker.current, calls, igCallAudio || appCall, callScreenShown)
             val grace = rules().callGraceMillis // read each time: a rules update applies at once
-            val callSigns = CallAudioLink.isCallAudio(audioMode) || callScreenShown
+            val callSigns = CallAudioLink.isCallAudio(audioMode) || callScreenShown || appCall
             val inCall = GuardPolicy.inCall(now, calls, grace, callAudioAt, callSigns)
             val callScreensOk = callScreens.allow(inCall, activeScreens, rules().callScreens)
             val action = GuardPolicy.decide(
@@ -369,7 +376,7 @@ class GuardService : Service() {
     }
 
     /** A pass is running: "Your day" time, leaving Instagram ends it, and each kind's own rules. */
-    private fun followPass(now: Long, fg: String?, calls: CallSnapshot, igCallAudio: Boolean) {
+    private fun followPass(now: Long, fg: String?, calls: CallSnapshot, callRunning: Boolean, callScreenShown: Boolean) {
         val inInstagram = fg != null && fg in RelayDebug.watchedPackages()
         val flow = if (GuardPass.kind == GuardPass.Kind.SETTINGS) rules().settingsFlow else rules().createFlow
         if (inInstagram) {
@@ -379,7 +386,7 @@ class GuardService : Service() {
             leftInstagram(now)
         }
         when (GuardPass.kind) {
-            GuardPass.Kind.CALL -> callPass(calls, igCallAudio)
+            GuardPass.Kind.CALL -> callPass(calls, callRunning, callScreenShown)
             GuardPass.Kind.VISIT -> Unit
             GuardPass.Kind.CREATE -> if (inInstagram) createPass(now)
             GuardPass.Kind.SETTINGS -> if (inInstagram) settingsPass(now)
@@ -418,8 +425,21 @@ class GuardService : Service() {
      * to Instagram): the call then keeps its screen allowed by itself. Another app's call doesn't end
      * it (a WhatsApp call already running, or call audio left on, used to end it at once).
      */
-    private fun callPass(calls: CallSnapshot, igCallAudio: Boolean) {
-        if (igCallAudio || calls.sureCall) GuardPass.end()
+    /**
+     * The call button's pass ends once a call runs and its call screen is up; the call then keeps
+     * its screens allowed. Not before the screen: tapping call while a call already runs is the way
+     * back to it (the chat's own return-to-call banner), and must not be cut off at once.
+     */
+    private fun callPass(calls: CallSnapshot, callRunning: Boolean, callScreenShown: Boolean) {
+        if ((callRunning || calls.sureCall) && callScreenShown) GuardPass.end()
+    }
+
+    /** Some app plays sound labelled as a voice call (Android gives the label, never the sound). */
+    private fun voiceCallSound(): Boolean = try {
+        getSystemService(AudioManager::class.java)?.activePlaybackConfigurations.orEmpty()
+            .any { it.audioAttributes.usage == AudioAttributes.USAGE_VOICE_COMMUNICATION }
+    } catch (e: RuntimeException) {
+        false
     }
 
     /** Posting: only Instagram's creation screens. */

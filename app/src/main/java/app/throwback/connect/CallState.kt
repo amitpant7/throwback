@@ -71,4 +71,10 @@ internal class CallTracker {
 /** The process-wide call state (relay and guard run in the same process). */
 internal object CallState {
     val tracker = CallTracker()
+
+    /**
+     * An Instagram call the guard recognised by its call screen and voice-call sound (AppCallSession),
+     * when no call notification shows it. Set by the guard, read by the "Back to your call" bar.
+     */
+    val appCall = MutableStateFlow(false)
 }

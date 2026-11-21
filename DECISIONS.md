@@ -208,7 +208,7 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 27a. **Passes into the real app are limited** (owner + red-team review, 2026-11-20).
     "Open Instagram for 5 minutes": once a day, not while the daily limit is reached, and the pass ends
     as soon as the user leaves Instagram (no saving it for later). The chat's 📞 button: a 15-second (owner, 2026-11-21: 30 s was too long)
-    pass, at most 10 taps an hour (owner, 2026-11-21: 3 was too few); it ends once the call is running (the call then keeps its call
+    pass, at most 15 taps an hour (owner, 2026-11-21: 3 was too few, then 10); it ends once the call is running (the call then keeps its call
     screen allowed). "Open Instagram for 5 minutes" stays (owner, 2026-11-21, #34k). Call audio counts as an Instagram call only after an Instagram call
     notification, or when it starts while Instagram is in front (2026-11-20 review: any phone call
     used to count). All passes are counted on the time limit's trusted clock, so changing the
@@ -350,3 +350,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
        way back to the call. While an Instagram call runs, a bar at the top of Throwback (over
        Settings and the lock screen too) opens the call screen again through Instagram's own call
        notification; it shows only when that notification is there to open.
+    y. **Instagram calls recognised by their screen and sound** (owner's phone, 2026-11-21): there the
+       call notification sits in the switched-off "Instagram" group and the audio mode stays normal,
+       so a minimised call looked like plain Instagram. Instagram's call screen with voice-call sound
+       (Android's sound label, never the sound) now counts as a call while that sound plays. The call
+       button's pass lasts until the call screen is back (tapping call again during a call is the way
+       back), and "Back to your Instagram call" uses that pass when there is no notification.
+       15 call-button taps an hour.

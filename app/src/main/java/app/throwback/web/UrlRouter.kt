@@ -128,8 +128,7 @@ class UrlRouter(private val rules: FilterRules) {
         return when {
             instagram.matches(parts.host) -> decideInstagram(parts, mode)
             // Instagram's own links stay in Throwback (another app would be the Instagram app).
-            parts.host in SHORT_LINK_HOSTS ->
-                if (parts.scheme == "https" && parts.plainHost) Decision.Load else Decision.Redirect(parts.toHttps(), null)
+            parts.host in SHORT_LINK_HOSTS -> shortLink(parts)
             // Accounts Center: messages-only mode shows it only on the way through a login.
             internal.matches(parts.host) -> if (mode != WebMode.MESSAGES_ONLY || inLoginFlow(currentUrl, mode)) {
                 Decision.Load
@@ -186,6 +185,20 @@ class UrlRouter(private val rules: FilterRules) {
         }
     }
 
+    /**
+     * An Instagram short link: loaded, so its server sends it on to instagram.com. Except a chat link
+     * (ig.me/m/<user>), which the website has no page for ("Sorry, this page isn't available", seen on
+     * the emulator 2026-11-21): the person's profile instead, which has Message.
+     */
+    private fun shortLink(parts: UrlParts): Decision {
+        val chatWith = IG_ME_CHAT.matchEntire(parts.path)?.groupValues?.get(1)?.takeIf { parts.host == "ig.me" }
+        return when {
+            chatWith != null -> Decision.Redirect("https://www.instagram.com/$chatWith/", null)
+            parts.scheme == "https" && parts.plainHost -> Decision.Load
+            else -> Decision.Redirect(parts.toHttps(), null)
+        }
+    }
+
     /** A page of a login on a Facebook/Meta host (hosts.loginPaths): not its feed, Reels or profiles. */
     private fun isLoginPage(parts: UrlParts) = loginPaths.any { it.containsMatchIn(parts.path.capped()) }
 
@@ -211,6 +224,9 @@ class UrlRouter(private val rules: FilterRules) {
          * here: their server sends the link on to instagram.com, which is routed as usual.
          */
         private val SHORT_LINK_HOSTS = setOf("ig.me", "instagr.am", "www.instagr.am")
+
+        /** ig.me/m/<username>: a chat in Instagram's app. */
+        private val IG_ME_CHAT = Regex("^/m/([A-Za-z0-9._]{1,30})/?$")
 
         /** Fills $1..$9 from [match]; always returns a single-slash path (never "//host"). */
         internal fun expandTemplate(template: String, match: MatchResult): String {

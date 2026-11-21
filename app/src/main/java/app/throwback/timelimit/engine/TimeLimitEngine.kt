@@ -354,13 +354,12 @@ class TimeLimitEngine {
      * Whether the PIN can be checked right now. Returns the refusal, or null when the caller may
      * go ahead and hash the entered PIN.
      */
-    fun pinGate(s: TimeLimitState, r: ClockReading): ActionResult? {
-        val at = at(s, r)
-        return when {
-            s.pin == null -> ActionResult.NotAllowed("No PIN set")
-            s.pinResetRequestedAt != null -> ActionResult.PinResetPending
-            else -> blockedFor(s, at).takeIf { it > 0 }?.let { ActionResult.PinBlocked(it) }
-        }
+    fun pinGate(s: TimeLimitState, r: ClockReading): ActionResult? = pinGate(s, at(s, r))
+
+    private fun pinGate(s: TimeLimitState, at: At): ActionResult? = when {
+        s.pin == null -> ActionResult.NotAllowed("No PIN set")
+        s.pinResetRequestedAt != null -> ActionResult.PinResetPending
+        else -> blockedFor(s, at).takeIf { it > 0 }?.let { ActionResult.PinBlocked(it) }
     }
 
     private fun blockedFor(s: TimeLimitState, at: At): Long =
@@ -368,10 +367,7 @@ class TimeLimitEngine {
 
     /** [pinOk] null means no PIN was entered: nothing is counted, the caller is told one is needed. */
     private inline fun withPin(s: TimeLimitState, at: At, pinOk: Boolean?, onOk: (TimeLimitState) -> Outcome): Outcome {
-        if (s.pin == null) return Outcome(s, ActionResult.NotAllowed("No PIN set"))
-        if (s.pinResetRequestedAt != null) return Outcome(s, ActionResult.PinResetPending)
-        val blocked = blockedFor(s, at)
-        if (blocked > 0) return Outcome(s, ActionResult.PinBlocked(blocked))
+        pinGate(s, at)?.let { return Outcome(s, it) }
         if (pinOk == null) return Outcome(s, ActionResult.PinRequired)
         if (pinOk) return onOk(s.copy(wrongPinAttempts = 0, pinBlockedAt = null))
         val attempts = s.wrongPinAttempts + 1

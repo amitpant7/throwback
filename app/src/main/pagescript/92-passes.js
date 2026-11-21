@@ -8,6 +8,38 @@
     schedulePass(true);
   }
 
+  /**
+   * The steps of a pass, in order. Each runs on its own: one that throws (after an Instagram change)
+   * is noted and the others still run, checkReady above all (the app waits for it).
+   */
+  var PASS_STEPS = [
+    function missedLocation() {
+      if (location.href !== state.href) onLocation('replace'); // a change the history hooks missed
+    },
+    ensureStyle,
+    fixViewport,
+    updateProfileEntry,
+    updateCallEntry,
+    updateSettingsSection,
+    function approveMain() {
+      approvePosts(document.querySelector('main'));
+    },
+    updateEndCard,
+    dismissDialogs,
+    applyExplore,
+    function navBars() {
+      detectNav(false);
+    },
+    hideAfterMarkers,
+    checkReady,
+    function background() {
+      if (state.readySent && state.bgDirty) {
+        state.bgDirty = false;
+        reportBackground();
+      }
+    }
+  ];
+
   /** Page-wide work, at most once per frame (before that frame paints). */
   function schedulePass(forceNav) {
     if (forceNav) state.lastNavScan = 0;
@@ -16,22 +48,12 @@
     raf(function () {
       state.passQueued = false;
       if (!state.c) return;
-      if (location.href !== state.href) onLocation('replace'); // a change the history hooks missed
-      ensureStyle();
-      fixViewport();
-      updateProfileEntry();
-      updateCallEntry();
-      updateSettingsSection();
-      approvePosts(document.querySelector('main'));
-      updateEndCard();
-      dismissDialogs();
-      applyExplore();
-      detectNav(false);
-      hideAfterMarkers();
-      checkReady();
-      if (state.readySent && state.bgDirty) {
-        state.bgDirty = false;
-        reportBackground();
+      for (var i = 0; i < PASS_STEPS.length; i++) {
+        try {
+          PASS_STEPS[i]();
+        } catch (e) {
+          noteError(PASS_STEPS[i].name || 'pass', e);
+        }
       }
     });
   }

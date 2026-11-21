@@ -159,22 +159,27 @@
     } else send({ t: 'blocked', kind: r.kind });
   }
 
+  /** onLocation for the history hooks and events: an error is noted, never thrown into Instagram's navigation. */
+  function locationChanged(source) {
+    try {
+      onLocation(source);
+    } catch (e) {
+      noteError('onLocation', e);
+    }
+  }
+
   function hookHistory() {
     [['pushState', 'push'], ['replaceState', 'replace']].forEach(function (pair) {
       var original = history[pair[0]];
       if (typeof original !== 'function') return;
       history[pair[0]] = function () {
         var result = original.apply(this, arguments);
-        try {
-          onLocation(pair[1]);
-        } catch (e) {
-          // Never break Instagram's navigation.
-        }
+        locationChanged(pair[1]);
         return result;
       };
     });
     var onPop = function () {
-      onLocation('pop');
+      locationChanged('pop');
     };
     window.addEventListener('popstate', onPop, true);
     window.addEventListener('hashchange', onPop, true);
@@ -183,7 +188,7 @@
     if (window.navigation && typeof window.navigation.addEventListener === 'function') {
       window.navigation.addEventListener('currententrychange', function (e) {
         var type = e && e.navigationType;
-        onLocation(type === 'replace' ? 'replace' : type === 'push' ? 'push' : 'pop');
+        locationChanged(type === 'replace' ? 'replace' : type === 'push' ? 'push' : 'pop');
       });
     }
   }

@@ -57,7 +57,7 @@
   function startTick() {
     setInterval(function () {
       if (!state.c) return;
-      if (location.href !== state.href) onLocation('replace');
+      if (location.href !== state.href) locationChanged('replace');
       var seen = document.visibilityState === 'visible' && !state.covered;
       tickDay(seen);
       tickFeed(seen);
@@ -132,6 +132,10 @@
     configure: configure,
     perf: function () {
       return perf.log.slice();
+    },
+    /** Errors caught in passes and navigation (the last 20). */
+    errors: function () {
+      return errorLog.slice();
     },
     /** The app tells the page when one of its own screens (Settings, lock, pause) covers it. */
     setCovered: function (covered) {

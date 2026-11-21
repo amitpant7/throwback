@@ -88,6 +88,7 @@
   /** The element whose whole text is one of the given texts (deepest match, in reading order). */
   function findExactText(set) {
     var root = document.querySelector('main') || document.body;
+    if (!root) return null; // the page has no body yet
     var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     for (var t = walker.nextNode(); t; t = walker.nextNode()) {
       var el = t.parentElement;

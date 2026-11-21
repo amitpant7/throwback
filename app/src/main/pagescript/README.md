@@ -32,7 +32,7 @@ fallback way and must still run there.
 |---|---|
 | `00-core.js` | Header, the function's opening, shared constants and `state` |
 | `05-bridge.js` | `send()`: messages to the app (`{t: …}`, see `web/BridgeMessage.kt`) |
-| `10-helpers.js` | Text, regex, URL and DOM helpers |
+| `10-helpers.js` | Text, regex, URL and DOM helpers; the log of caught errors |
 | `12-clock.js` | Trusted clock: today's date and time as the app's tamper-resistant clock sees them |
 | `15-rules.js` | Compiles `rules.json` for the page; builds the CSS |
 | `20-page-state.js` | Which rules apply on this page; the style element; the viewport |
@@ -68,5 +68,5 @@ node --check app/build/generated/assets/joinDebugPageScript/inject/throwback.js
 ```
 
 Then run it: a debug build on the emulator or a phone, with `chrome://inspect` (the page's
-`__throwback.perf()`, `feedStats()`, `storyStats()` and `dayStats()` are there). `PageScriptTest`
+`__throwback.perf()`, `feedStats()`, `storyStats()`, `dayStats()` and `errors()` are there). `PageScriptTest`
 checks the joined script's config token.

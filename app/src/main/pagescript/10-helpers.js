@@ -1,5 +1,18 @@
   // ---------------------------------------------------------------- helpers
 
+  /*
+   * Errors caught where one failing part must not stop the others (the steps of a pass, navigation
+   * events): the last ERRORS_MAX, for DevTools (__throwback.errors()). They are not rethrown, so they
+   * never reach Instagram's own error reporting.
+   */
+  var ERRORS_MAX = 20;
+  var errorLog = [];
+
+  function noteError(where, e) {
+    errorLog.push({ where: where, error: String((e && e.message) || e).slice(0, 200), at: Math.round(performance.now()) });
+    if (errorLog.length > ERRORS_MAX) errorLog.shift();
+  }
+
   function norm(s) {
     return String(s || '')
       .replace(/[​-‍⁠﻿]/g, '')

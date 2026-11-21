@@ -53,16 +53,19 @@ flowchart TD
   connect["connect<br/>Instagram app connection: relay, guard, passes"]
   web["web<br/>WebView, page script, routing, rules"]
   timelimit["timelimit<br/>daily limit, PIN, lock screens"]
+  billing["billing<br/>tips through Google Play"]
   core["core<br/>shared types, theme, UI kit, saved flags"]
   entry --> ui
   entry --> connect
   entry --> timelimit
   ui --> connect
   ui --> web
+  ui --> billing
   connect --> web
   connect --> timelimit
   web --> core
   timelimit --> core
+  billing --> core
 ```
 
 Every layer also uses `core`; the entry point uses all of them.
@@ -70,7 +73,7 @@ Every layer also uses `core`; the entry point uses all of them.
 | Folder | What it holds |
 |---|---|
 | (root) | `ThrowbackApp` (process start, warm-up, the app-wide time limit), `MainActivity` (entry point; links, notification taps and shortcuts arrive here), `AppRoot` (what is on screen, and how the areas connect), `TodayRoute` ("Your day" data) |
-| `core` | Types shared by the areas (`Contracts`: `WebMode`, `LockState`), `OpenThrowback` (every intent that opens the main screen), `Supporter`, `RateAsk`, `SupportAsk`, `StartTrace` |
+| `core` | Types shared by the areas (`Contracts`: `WebMode`, `LockState`), `OpenThrowback` (every intent that opens the main screen), `findActivity`, `Supporter` (whether the user has tipped), `RateAsk`, `SupportAsk`, `StartTrace` |
 | `core/prefs` | `AppPrefs`: small saved flags (DataStore `ui_prefs`) |
 | `core/theme`, `core/ui` | The Sage theme; the shared UI kit (top bar, scaffold, buttons, rows, cards, duration texts, touch blocker) |
 | `web` | The WebView (`InstagramScreen`, `InstagramWebController`, `PageConfigSync`), injection (`PageScript`, `ScriptInjector`), routing (`UrlRouter`, `UrlParts`), the page bridge (`BridgeMessage`), page features and clock, renderer crashes |
@@ -81,6 +84,7 @@ Every layer also uses `core`; the entry point uses all of them.
 | `connect` | What the relay, the guard and the screens share: `MessagesFeature` (starts or stops the guard), `Permissions`, `CallInApp` (opens the Instagram app for a call, a post, a story or its settings), `PassLedger` and `GuardPass` (passes), `CallState` |
 | `connect/relay` | `RelayListenerService` and the notification logic (`NotificationClassifier`, `RelayRouting`, `RelayNotifier`, `RelayStats`) |
 | `connect/guard` | `GuardService`, its pure policy (`GuardPolicy`, `CallScreens`, `PassRules`), the cover (`GuardOverlay`), `GuardHeartbeat`, restart after boot |
+| `billing` | Tips through Google Play Billing: `Tips` (the client: restore owned tips at start, prices, the purchase sheet) and its pure rules (`TipRules`, `TipProduct`: `tip_small`, `tip_medium`, `tip_large`) |
 | `ui/*` | `settings` (navigation), `connect` (Connect › Instagram setup and settings), `today`, `about` (About, Support), `shortcut` (Make It Yours), `onboarding`, `pause`, `reels` (the reel poster) |
 
 The page script is in `app/src/main/pagescript/`, one file per area; its
@@ -300,7 +304,7 @@ setup and the permissions. Notification access is checked for Throwback's listen
 | Where | What |
 |---|---|
 | DataStore `timelimit` | Time-limit state: limit, PIN hash and salt, usage, extensions, pending changes (**Auto Backup**) |
-| SharedPreferences `supporter` | Whether the user has tipped; unlocks Make It Yours (**Auto Backup**) |
+| SharedPreferences `supporter` | Whether the user has tipped; unlocks Make It Yours (**Auto Backup**; Google Play also remembers the tips, and the app asks it at start) |
 | DataStore `ui_prefs` | Onboarding, pause, setup done, notification switches, hints (`AppPrefs`) |
 | DataStore `web` | Rules ETag and last check (the downloaded rules themselves: `files/filters/rules.json`) |
 | SharedPreferences `guard_passes`, `guard_heartbeat`, `relay_stats`, `rate_ask`, `support_ask`, `pause_lines` | Pass ledger, the guard's last beat, relay day counts, rating ask, support ask, the pause's line rotation |

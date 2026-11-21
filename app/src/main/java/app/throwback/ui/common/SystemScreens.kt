@@ -1,10 +1,8 @@
 package app.throwback.ui.common
 
-import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
@@ -21,6 +19,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.throwback.connect.relay.RelayListenerService
+import app.throwback.core.findActivity
 
 /**
  * Opens Android and Play Store screens. Every function returns false instead of crashing when
@@ -83,12 +82,6 @@ internal object SystemScreens {
         } catch (_: SecurityException) {
             false
         }
-    }
-
-    private tailrec fun Context.findActivity(): Activity? = when (this) {
-        is Activity -> this
-        is ContextWrapper -> baseContext.findActivity()
-        else -> null
     }
 }
 

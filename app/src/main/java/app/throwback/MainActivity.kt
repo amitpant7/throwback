@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
+import app.throwback.billing.Tips
 import app.throwback.connect.relay.RelayLinks
 import app.throwback.core.OpenThrowback
 import app.throwback.core.RateAsk
@@ -61,6 +62,8 @@ class MainActivity : ComponentActivity() {
         val debugOpen = if (BuildConfig.DEBUG) intent.getStringExtra("debug_open") else null
         // Test builds only: `--ez debug_supporter true` acts as if a tip went through (unlocks Make It Yours).
         if (BuildConfig.DEBUG && intent.getBooleanExtra("debug_supporter", false)) Supporter.markTipped(this)
+        // Tips Google Play remembers unlock Make It Yours again after a reinstall; paid ones get acknowledged.
+        if (savedInstanceState == null) Tips.refresh(this)
         val app = application as ThrowbackApp
         StartTrace.mark("setContent")
         setContent {

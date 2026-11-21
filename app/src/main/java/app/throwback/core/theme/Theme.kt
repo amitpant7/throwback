@@ -1,7 +1,5 @@
 package app.throwback.core.theme
 
-import android.content.Context
-import android.content.ContextWrapper
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -24,6 +22,7 @@ import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import app.throwback.R
+import app.throwback.core.findActivity
 
 /**
  * Throwback's "Sage" theme (decided 2026-11-20, see DECISIONS.md).
@@ -133,12 +132,7 @@ fun ThrowbackTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composa
 private fun SystemBarsFollowDarkMode(darkTheme: Boolean) {
     val view = LocalView.current
     if (view.isInEditMode) return
-    val activity = view.context.findActivity() ?: return
+    val activity = view.context.findActivity() as? ComponentActivity ?: return
     LaunchedEffect(activity, darkTheme) { activity.enableEdgeToEdge() }
 }
 
-private tailrec fun Context.findActivity(): ComponentActivity? = when (this) {
-    is ComponentActivity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
-}

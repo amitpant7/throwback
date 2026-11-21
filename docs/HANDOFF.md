@@ -202,11 +202,13 @@ emulator: update → "guard is off" + setup shows the permission → allow again
   crashes or missing classes in the log.
 - The androidx/Compose/Kotlin libraries are still the 2024 versions (lint lists newer ones). Updating
   them is optional for Play; do it as its own change, then the on-device checklist (7).
-- **Play Billing for the tips, before the first release** (Make It Yours stays locked without it;
-  the Support intro promises it): product ids per tip; "Whatever you want" maps to fixed step
-  products; `Supporter.markTipped` once a tip is confirmed; owned tips restore the unlock (plan in
-  DECISIONS.md #4d). Releases are on Google Play only (#7). Recheck third-party names ("GTA 6") as tip product
-  names, and replace or license the gig ticket's prism image (`ui_tip_rock`).
+- **Play Billing is built (2026-11-21, `billing/`, Play Billing 9.1):** three one-time products,
+  `tip_small` ($3), `tip_medium` ($10), `tip_large` ($25); owned tips restore Make It Yours at start,
+  paid ones are acknowledged, a tip is used up only just before it is bought again (DECISIONS.md #4d).
+  Checked on the emulator only as far as a build not from Play goes ("Tips work in the Google Play
+  version"). **Owner, in Play Console:** a payments profile; the three products with those ids and
+  prices (India by hand, #4b); then a test purchase from a testing track with a license tester.
+  Still to settle: the gig ticket's prism image (`ui_tip_rock`), source and licence.
 - Privacy policy, Play listing and data-safety form (nothing collected); release signing; the
   owner's story in the README "Why" section.
 - Optional: an enforced Kotlin formatter (ktlint via Gradle). Downloading and running it was not

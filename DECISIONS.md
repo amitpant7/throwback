@@ -28,13 +28,15 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     question first (Play policy). Builds not from Play do nothing.
 4b. **Support screen: design A "list rows"** (owner, 2026-11-20; mockups row 5): one row per tip with
     the existing icons, a one-liner and the price: A beer **$3** ("A cold one, on you"), A gig ticket
-    **$10** ("Toward the next show"), GTA 6 **$25** ("Toward the next big game"), and **"Whatever you want"**:
-    a field where the user types any amount (no starting value; owner). Play needs fixed prices, so
-    billing will charge the closest tip product, set up in steps (each dollar to $100, then wider). India priced by hand (₹99 / ₹299 / ₹799 suggested).
-    Prices shown from Google Play in the user's currency (until billing is set up: fixed dollar amounts). Fine print "Paid through Google Play", then
+    **$10** ("Toward the next show"), GTA 6 **$25** ("Toward the next big game"). **No "Whatever you
+    want"** (owner, 2026-11-21): Google Play can only charge prices set up in advance, so a typed
+    amount would have needed one product per price. Play products `tip_small`, `tip_medium`,
+    `tip_large` (named by size, so a renamed tip keeps its product); India priced by hand (₹99 / ₹299 /
+    ₹799 suggested). Prices shown from Google Play in the user's currency (the dollar amounts until it
+    answers). **"GTA 6" stays** (owner, 2026-11-21: change it if Google flags it). Fine print "Paid through Google Play", then
     "How tips work", "Report something Throwback missed" and "Say Hi on Instagram · @97m.it" (the
     developer's profile, opened in Throwback; owner, 2026-11-21). The intro says what a tip gets:
-    Make It Yours (#4d). Renaming "GTA 6" and the prism image stay on the release list.
+    Make It Yours (#4d). The prism image's source and licence stay on the release list.
 4c. **Support ask** (owner, 2026-11-20, design C with boxes): in "You're all caught up", after 1 month
     of use, then every 2 months, never once the user has tipped: "Your first month" (later "Your last 2
     months"), two minimal boxes with the ads and suggested posts removed since the last ask, and
@@ -48,7 +50,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     same Google account unlocks again without the backup. A tip isn't consumed right away: the latest
     purchase of each tip product stays owned (acknowledged), and is consumed only just before the
     same product is bought again, so one stays on record. At start the app asks Play for owned tips
-    (queryPurchasesAsync) and sets the flag. A refunded tip leaves the flag as it is.
+    (queryPurchasesAsync) and sets the flag. A refunded tip leaves the flag as it is. **Built
+    2026-11-21** (`billing/`, Play Billing 9.1); a pending payment unlocks once Google Play has it.
 5. **Privacy:** no analytics, no accounts, no server. Nothing leaves the phone except traffic to
    Instagram itself and a daily fetch of the public filter rules.
 6. **Disclaimer:** "Not affiliated with Instagram or Meta" on the store listing and the About screen.

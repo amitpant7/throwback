@@ -126,6 +126,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     // Google Play's in-app review card (asked once, after a month of use; see core/RateAsk.kt).
     implementation(libs.play.review.ktx)
+    implementation(libs.play.billing)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

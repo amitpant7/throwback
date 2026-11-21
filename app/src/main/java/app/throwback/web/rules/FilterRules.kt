@@ -347,8 +347,6 @@ data class AppStoryRules(
     val link: String,
     /** Once the camera is off (editing), minutes left before the pass ends. */
     val editMinutes: Int = 5,
-    /** Seconds to open the camera after the tap before "camera off" counts. */
-    val openSeconds: Int = 10,
     /** Minutes between story passes; meanwhile "Your story" uses the website's own story upload. */
     val cooldownMinutes: Int = 30,
     /** Story passes a day; after that, the website's story upload. */

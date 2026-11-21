@@ -125,6 +125,9 @@ support line, the profile icon and settings-page rows, deep-link refusal, the Ta
 crash recovery, recreation after a deep link, the daily rules check, the time-zone pass reset, the
 guard covering the real app (also in a pop-up window and in picture-in-picture, with the cover
 stepping aside so the window can be closed), and an empty feed showing "You're all caught up".
+An integration review after merging the three fix batches found and fixed: "Your day" blank during
+a chat-reel cooldown, wrong "Your story" messages, the page's clock not refreshed after a late time-limit
+load or network time, Back reaching the page under the lock, and a stale guard heartbeat.
 Not verifiable here (needs the phone or a fresh login): the login/logout flows, and Instagram's own
 editor screens (they can't render on the emulator).
 

@@ -14,6 +14,9 @@
   var WARM_MAX_AGE_MS = 7 * 24 * 3600 * 1000;
   var CODE_ENTRIES_MAX = 200;
   var warmDone = false;
+  // Sections learned in this document. Only a section's first open loads all its code; a later
+  // open in the same document loads little or nothing and must not replace the full list.
+  var warmLearned = {};
   // Recent code-file loads, from the page's resource observer (watchStoryImages). The browser's own
   // resource-timing buffer is not used: feed images fill it within a minute and it then records nothing.
   var codeEntries = [];
@@ -32,10 +35,10 @@
   }
 
   /**
-   * After a section opened (rec.page: a full load, or Instagram's in-page switch): remember the code
-   * files loaded between `since` and `until` (performance time) for that section, replacing what was
-   * remembered before (Instagram's files change with each of its releases), and record in `rec` how
-   * many came from the network.
+   * After a section opened (rec.page: a full load, or Instagram's in-page switch): record in `rec`
+   * how many code files loaded between `since` and `until` (performance time) and how many came from
+   * the network. On the section's first open in this document, remember those files for it,
+   * replacing what was remembered before (Instagram's files change with each of its releases).
    */
   function learnCodeAssets(since, until, rec) {
     var res = codeEntries.filter(function (r) {
@@ -52,6 +55,8 @@
     });
     rec.codeFromNetwork = fromNetwork;
     rec.codeNetworkKB = Math.round(bytes / 1024);
+    if (warmLearned[rec.page]) return;
+    warmLearned[rec.page] = true;
     var saved = loadJson(WARM_KEY);
     if (!saved || !saved.sections || typeof saved.sections !== 'object') saved = { sections: {} };
     saved.sections[rec.page] = { t: Date.now(), urls: res.map(function (r) {

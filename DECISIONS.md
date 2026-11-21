@@ -343,3 +343,5 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
        setup had opened Settings).
     v. **The setup's first step says that step 2 asks for permissions** (four on Android 13+, else
        three), and why.
+    w. **No mindful pause on the very first launch** (owner, 2026-11-21): right after onboarding it
+       stood between a new user and their first login; it starts with the next launch (#30).

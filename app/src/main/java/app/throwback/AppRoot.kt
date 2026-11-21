@@ -142,16 +142,26 @@ fun AppRoot(
     // A tapped notification or a link from another app shows its page: Settings closes, not covers it.
     LaunchedEffect(pageRequests) { if (pageRequests > 0) settingsOpen = null }
 
+    // The mindful pause starts with the next launch: right after onboarding it would stand between a
+    // new user and their first login.
+    var onboardedNow by rememberSaveable { mutableStateOf(false) }
+
     Box(Modifier.fillMaxSize().background(ThrowbackTheme.colors.bg)) {
         when (onboardingDone) {
             null -> SideEffect { onSplashHold(true) } // DataStore still loading.
             false -> {
                 SideEffect { onSplashHold(false) }
-                OnboardingFlow(onFinished = { scope.launch { prefs.setOnboardingDone() } })
+                OnboardingFlow(
+                    onFinished = {
+                        onboardedNow = true
+                        scope.launch { prefs.setOnboardingDone() }
+                    },
+                )
             }
             true -> MainScreen(
                 app = app,
                 deepLink = deepLink,
+                skipPause = onboardedNow,
                 settingsOpen = settingsOpen != null,
                 settingsFound = settingsOpen == SettingsStart.Home,
                 onSplashHold = onSplashHold,
@@ -193,6 +203,7 @@ fun AppRoot(
 private fun MainScreen(
     app: ThrowbackApp,
     deepLink: String?,
+    skipPause: Boolean,
     settingsOpen: Boolean,
     settingsFound: Boolean,
     onSplashHold: (Boolean) -> Unit,
@@ -210,9 +221,9 @@ private fun MainScreen(
     // null while loading, so the feed never flashes for a frame before the pause screen.
     val mindfulPause by app.prefs.mindfulPause.collectAsStateWithLifecycle(initialValue = null)
     var pauseDone by rememberSaveable { mutableStateOf(false) }
-    // Opening Settings ends the pause for this launch. It's a pause before Instagram: opened straight
+    // Opening Settings ends the pause for this launch (so does onboarding, [skipPause]). It's a pause before Instagram: opened straight
     // into Settings (the "Throwback settings" shortcut, a notification), it would only run unseen.
-    var pauseSkipped by rememberSaveable { mutableStateOf(false) }
+    var pauseSkipped by rememberSaveable { mutableStateOf(skipPause) }
     var mode by rememberSaveable { mutableStateOf(WebMode.FULL) }
     var path by remember { mutableStateOf("/") }
     val loggedIn by InstagramSession.loggedIn.collectAsStateWithLifecycle()

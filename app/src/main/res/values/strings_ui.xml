@@ -180,6 +180,11 @@
     <!-- 3 · Mindful pause -->
     <string name="ui_pause_opening_in">Opening in %1$d</string>
     <string name="ui_pause_almost">Almost there…</string>
+    <!-- Now and then the pause shows a tip instead of a line (owner, 2026-11-21; PauseLines.TIP_EVERY). -->
+    <string name="ui_pause_tip">Tip</string>
+    <string-array name="ui_pause_tips">
+        <item>Long-press Home to open Throwback\'s settings.</item>
+    </string-array>
     <!-- Short original lines (not quotes from anyone), shown in a shuffled order that goes through all of them before repeating. -->
     <string-array name="ui_pause_lines">
         <item>Take a breath. The people you follow will still be here in a moment.</item>
@@ -252,9 +257,9 @@
     <string name="ui_today_discover_value" tools:ignore="PluralsCandidate">%1$d of %2$d left</string>
     <string name="ui_today_section_removed">Removed today</string>
     <string name="ui_today_section_app">Instagram app</string>
-    <!-- Story budget (DECISIONS.md #34cc): %1$s used, %2$s the budget, as m:ss. -->
+    <!-- Story budget (DECISIONS.md #34cc): %1$s left, %2$s the budget, as m:ss. -->
     <string name="ui_today_story_time">Story time</string>
-    <string name="ui_today_story_used">%1$s of %2$s used</string>
+    <string name="ui_today_story_left">%1$s of %2$s left</string>
     <string name="ui_today_story_locked" tools:ignore="PluralsCandidate">Used up · back in %1$d min</string>
     <string name="ui_today_visit">Open Instagram for 5 minutes</string>
     <string name="ui_today_visit_used">Used today</string>

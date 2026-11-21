@@ -68,18 +68,29 @@ internal fun MindfulPauseScreen(onContinue: () -> Unit, onBack: () -> Unit, back
     val context = LocalContext.current
     val continueNow by rememberUpdatedState(onContinue)
 
-    // The next line of the shuffled order kept on the device. Read and saved off the main thread (the
-    // feed is loading underneath), so it shows a frame or two after the pause, together with its mark.
-    var lineIndex by rememberSaveable { mutableStateOf<Int?>(null) }
+    // The next line of the shuffled order kept on the device, or now and then a tip. Read and saved
+    // off the main thread (the feed is loading underneath), so it shows a frame or two after the
+    // pause, together with its mark.
+    var pick by rememberSaveable { mutableStateOf<Int?>(null) } // a line's index, or -1 - a tip's
     LaunchedEffect(Unit) {
-        if (lineIndex == null) {
+        if (pick == null) {
             val app = context.applicationContext
-            lineIndex = withContext(Dispatchers.IO) { PauseLines.next(app, app.resources.getStringArray(R.array.ui_pause_lines).size) }
+            val res = app.resources
+            pick = withContext(Dispatchers.IO) {
+                PauseLines.next(app, res.getStringArray(R.array.ui_pause_lines).size, res.getStringArray(R.array.ui_pause_tips).size)
+            }
         }
     }
     val resources = context.resources
-    val line = remember(lineIndex) {
-        lineIndex?.let { i -> resources.getStringArray(R.array.ui_pause_lines).let { it[i.coerceIn(it.indices)] } }
+    val isTip = (pick ?: 0) < 0
+    val line = remember(pick) {
+        pick?.let { p ->
+            if (p < 0) {
+                resources.getStringArray(R.array.ui_pause_tips).let { it[(-1 - p).coerceIn(it.indices)] }
+            } else {
+                resources.getStringArray(R.array.ui_pause_lines).let { it[p.coerceIn(it.indices)] }
+            }
+        }
     }
 
     // Only the progress bar reads the time every frame (while drawing); the countdown text changes once
@@ -110,7 +121,13 @@ internal fun MindfulPauseScreen(onContinue: () -> Unit, onBack: () -> Unit, back
             Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
         ) {
-            if (line != null) {
+            if (line != null && isTip) {
+                TbIcon(R.drawable.ic_info, size = 40.dp, tint = colors.accent)
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(stringResource(R.string.ui_pause_tip), style = UiText.sub, color = colors.accentText)
+                    Text(line, style = UiText.pauseLine, color = colors.text)
+                }
+            } else if (line != null) {
                 TbIcon(R.drawable.ic_quote, size = 40.dp, tint = colors.accent)
                 Text(line, style = UiText.pauseLine, color = colors.text)
             }
@@ -135,12 +152,31 @@ internal fun MindfulPauseScreen(onContinue: () -> Unit, onBack: () -> Unit, back
 
 /**
  * The pause lines in a shuffled order that goes through all of them before any repeats (owner:
- * "people will get bored"). The order and position are kept on the device.
+ * "people will get bored"). Every [TIP_EVERY]th pause shows a tip instead (owner, 2026-11-21: e.g.
+ * long-press Home for Throwback's settings), the tips in turn. Order and positions are kept on the
+ * device.
  */
 internal object PauseLines {
     private const val PREFS = "pause_lines"
+    const val TIP_EVERY = 5
 
-    fun next(context: Context, count: Int): Int {
+    /** Whether pause number [shown] (0 for the first) is a tip's turn: the 5th, 10th, … Pure, for tests. */
+    fun tipTurn(shown: Int): Boolean = shown % TIP_EVERY == TIP_EVERY - 1
+
+    /** What the next pause shows: a line's index, or -1 - i for tip i. */
+    fun next(context: Context, lineCount: Int, tipCount: Int): Int {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val shown = prefs.getInt("shown", 0)
+        prefs.edit { putInt("shown", (shown + 1) % TIP_EVERY) }
+        if (tipCount > 0 && tipTurn(shown)) {
+            val tip = prefs.getInt("tip", 0) % tipCount
+            prefs.edit { putInt("tip", tip + 1) }
+            return -1 - tip
+        }
+        return nextLine(context, lineCount)
+    }
+
+    private fun nextLine(context: Context, count: Int): Int {
         if (count <= 1) return 0
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         var order = prefs.getString("order", null)?.split(',')?.mapNotNull { it.toIntOrNull() }?.takeIf { it.size == count && it.toSet().size == count }

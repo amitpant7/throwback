@@ -107,20 +107,30 @@ internal fun TodayScreen(stats: TodayStats, onBack: () -> Unit) {
                 value = if (shown == null) null else stringResource(R.string.ui_today_discover_value, (stats.discoverMax - shown).coerceAtLeast(0), stats.discoverMax),
                 fraction = if (shown != null && stats.discoverMax > 0) 1f - shown.toFloat() / stats.discoverMax else null,
             )
-        }
-
-        stats.instagramApp?.let { ig ->
-            SectionLabel(stringResource(R.string.ui_today_section_app))
-            TbCard {
+            // The story budget (DECISIONS.md #34cc), as time left: minutes and seconds, never a count
+            // (owner: "1 of 10" would read as stories). With the Instagram app connected only.
+            stats.instagramApp?.let { ig ->
+                CardDivider()
+                val left = (ig.storyBudgetMillis - ig.storyUsedMillis).coerceAtLeast(0L)
                 AllowanceRow(
                     title = stringResource(R.string.ui_today_story_time),
                     value = if (ig.storyLockMinutes > 0) {
                         stringResource(R.string.ui_today_story_locked, ig.storyLockMinutes)
                     } else {
-                        stringResource(R.string.ui_today_story_used, minSecText(ig.storyUsedMillis), minSecText(ig.storyBudgetMillis))
+                        stringResource(R.string.ui_today_story_left, minSecText(left), minSecText(ig.storyBudgetMillis))
+                    },
+                    fraction = when {
+                        ig.storyLockMinutes > 0 -> 0f
+                        ig.storyBudgetMillis > 0 -> left.toFloat() / ig.storyBudgetMillis
+                        else -> null
                     },
                 )
-                CardDivider()
+            }
+        }
+
+        stats.instagramApp?.let { ig ->
+            SectionLabel(stringResource(R.string.ui_today_section_app))
+            TbCard {
                 AllowanceRow(
                     title = stringResource(R.string.ui_today_visit),
                     value = stringResource(if (ig.visitUsed) R.string.ui_today_visit_used else R.string.ui_today_visit_free),

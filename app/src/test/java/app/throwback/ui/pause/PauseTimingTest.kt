@@ -30,4 +30,10 @@ class PauseTimingTest {
         assertEquals(1, PauseTiming.secondsLeft(4_000))
         assertEquals(1, PauseTiming.secondsLeft(9_000))
     }
+
+    @Test
+    fun `every fifth pause is a tip`() {
+        val turns = (0 until 10).filter { PauseLines.tipTurn(it) }
+        assertEquals(listOf(4, 9), turns)
+    }
 }

@@ -402,3 +402,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
         website's upload, which Throwback opens by choosing "Story" in that menu (the hidden upload
         input alone doesn't work). Without the app connected it is the website's upload too.
         Rules: `stories.addStory`; page script `27-add-story.js`.
+    ee. **Your day and the pause** (owner, 2026-11-21): the story budget shows under "Left today" as
+        time left, "8:40 of 10:00 left" with a bar (time, never a count: "1 of 10" would read as
+        stories), or "Used up · back in N min"; with the Instagram app connected only. Every 5th
+        mindful pause shows a tip instead of a line ("Long-press Home to open Throwback's
+        settings"; `ui_pause_tips`, `PauseLines.TIP_EVERY`).

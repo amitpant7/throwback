@@ -148,7 +148,12 @@ class RelayListenerService : NotificationListenerService() {
         if (BuildConfig.DEBUG) Log.d(TAG, "${kind.ruleName}${if (facts.groupSummary) " (summary)" else ""} -> $action")
         when (action) {
             RelayAction.Keep -> Unit
-            RelayAction.Cancel -> cancel(facts.key)
+            RelayAction.Cancel -> {
+                cancel(facts.key)
+                if (!facts.groupSummary && kind != NotificationKind.MESSAGE && kind != NotificationKind.MISSED_CALL) {
+                    RelayStats.recordRemoved(this) // "Your day": alerts kept away
+                }
+            }
             is RelayAction.Relay -> {
                 val url = when (action.target) {
                     RelayTarget.MESSAGES -> RelayLinks.threadUrl(facts, rules?.threadId) ?: messagesUrl()

@@ -10,6 +10,11 @@
     '<svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" ' +
     'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h3l1.6 4-2 1.3a11 11 0 0 0 ' +
     '5.1 5.1l1.3-2 4 1.6v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>';
+  // A one-to-one chat's profile link can show a moment after its top bar, so no username ('') is
+  // looked up again for CALL_USER_RETRY_MS after opening the chat. Then it is the answer: a group
+  // chat has none, and is not searched again on every keystroke.
+  var CALL_USER_RETRY_MS = 3000;
+  var callLookup = { thread: null, at: 0 };
 
   function updateCallEntry() {
     var existing = document.getElementById(CALL_ENTRY_ID);
@@ -18,11 +23,15 @@
     var infoBtn = info && (info.closest('[role="button"], button, a') || info.parentElement);
     if (!infoBtn || !infoBtn.parentNode || infoBtn.getBoundingClientRect().top > 120) {
       if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+      callLookup.thread = null; // out of the chat: opening it again looks afresh
       return;
     }
     var placed = existing && existing.isConnected && existing.nextSibling === infoBtn;
-    // Already in place for this chat with its username: nothing to look up again on every keystroke.
-    if (placed && existing.getAttribute('data-thread') === m[1] && existing.getAttribute('data-user')) return;
+    if (callLookup.thread !== m[1]) callLookup = { thread: m[1], at: Date.now() };
+    // Already in place for this chat with its username, or known to have none: nothing to look up
+    // again on every keystroke.
+    if (placed && existing.getAttribute('data-thread') === m[1] &&
+        (existing.getAttribute('data-user') || Date.now() - callLookup.at > CALL_USER_RETRY_MS)) return;
     var user = chatUser(infoBtn);
     if (placed) {
       existing.setAttribute('data-thread', m[1]);

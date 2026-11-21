@@ -478,7 +478,7 @@ class GuardService : Service() {
 
     /** Covers Instagram and brings Throwback to the front; the cover stays while Instagram is on screen. */
     private fun cover(now: Long) {
-        Log.i(TAG, "Instagram app opened outside a call: back to Throwback")
+        Log.i(TAG, "Instagram app on a screen no call or pass allows: back to Throwback")
         if (overlay.show(storyTimeUp, windowHint = windowLeftOpen)) {
             coverShownAt = now
         } else {

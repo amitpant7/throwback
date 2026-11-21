@@ -62,7 +62,9 @@ internal enum class NotificationKind(val ruleName: String) {
  * Order, most certain first:
  * 1. Android's own call signals: category "call", CallStyle, a full-screen intent. Always a call;
  *    no rule can override this, so a rules edit can never get a call removed.
- * 2. The rules' `classify` table (filters/rules.json, "notifications"), first match wins.
+ * 2. The rules' `classify` table (filters/rules.json, "notifications"), first match wins. A rule
+ *    can't make a message (category "msg" or MessagingStyle) anything that is removed: a renamed
+ *    chat channel would otherwise fall to the rules' catch-all "other" and every message be lost.
  * 3. Built-in defaults: category "missed_call", category "msg" or MessagingStyle, ongoing = call.
  * 4. Otherwise [NotificationKind.UNKNOWN].
  */
@@ -83,11 +85,11 @@ internal class NotificationClassifier(rules: NotificationRules?) {
 
     fun classify(f: NotificationFacts): NotificationKind {
         if (isCertainCall(f)) return NotificationKind.CALL
-        table.firstOrNull { it.matches(f) }?.let { return it.kind }
+        val ruled = table.firstOrNull { it.matches(f) }?.kind
+        if (ruled != null && (ruled in KEEP_MESSAGES || !isMessage(f))) return ruled
         return when {
             f.category == CATEGORY_MISSED_CALL -> NotificationKind.MISSED_CALL
-            f.category == CATEGORY_MESSAGE -> NotificationKind.MESSAGE
-            f.template?.endsWith(MESSAGING_STYLE) == true -> NotificationKind.MESSAGE
+            isMessage(f) -> NotificationKind.MESSAGE
             // Instagram shows nothing else as ongoing that the hidden app would post; when in doubt,
             // treat it as a call (kept, and the guard lets the app open).
             f.ongoing -> NotificationKind.CALL
@@ -126,8 +128,15 @@ internal class NotificationClassifier(rules: NotificationRules?) {
         private const val CALL_STYLE = "\$CallStyle"
         private const val MESSAGING_STYLE = "\$MessagingStyle"
 
-        /** Android's own signals for a call. Used by the guard's call tracking as well. */
-        fun isCertainCall(f: NotificationFacts): Boolean =
+        /** Kinds a rule may give a message: all of them keep it (kept, or relayed to the inbox). */
+        private val KEEP_MESSAGES = setOf(NotificationKind.CALL, NotificationKind.MESSAGE, NotificationKind.MISSED_CALL, NotificationKind.KEEP)
+
+        /** Android's own signals for a call. */
+        private fun isCertainCall(f: NotificationFacts): Boolean =
             f.category == CATEGORY_CALL || f.template?.endsWith(CALL_STYLE) == true || f.fullScreenIntent
+
+        /** Android's own signals for a message. */
+        private fun isMessage(f: NotificationFacts): Boolean =
+            f.category == CATEGORY_MESSAGE || f.template?.endsWith(MESSAGING_STYLE) == true
     }
 }

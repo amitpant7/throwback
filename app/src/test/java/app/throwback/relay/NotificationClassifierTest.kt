@@ -86,14 +86,28 @@ class NotificationClassifierTest {
         // Every set field must match.
         assertEquals(NotificationKind.COMMENTS, c.classify(facts(channel = "ig_comments", category = "social")))
         assertEquals(NotificationKind.UNKNOWN, c.classify(facts(channel = "ig_comments", category = "msg2")))
-        // A rule can mark a message-looking promo as other.
-        assertEquals(NotificationKind.OTHER, c.classify(facts(category = "msg", group = "promo_1")))
+        // No rule can make a message something that is removed (see the test below).
+        assertEquals(NotificationKind.MESSAGE, c.classify(facts(category = "msg", group = "promo_1")))
         assertEquals(NotificationKind.MESSAGE, c.classify(facts(category = "msg", group = "thread_1")))
         assertEquals(NotificationKind.FOLLOWS, c.classify(facts(tag = "new_follower")))
         assertEquals(NotificationKind.MESSAGE, c.classify(facts(channel = "ig_direct_v2")))
         assertEquals(NotificationKind.LIVE, c.classify(facts(channel = "live_videos")))
         // A null field never matches a pattern.
         assertEquals(NotificationKind.UNKNOWN, c.classify(facts(category = "social")))
+    }
+
+    @Test
+    fun `a message on a renamed chat channel stays a message, never other`() {
+        val bundled = NotificationClassifier(app.throwback.web.TestRules.bundled.notifications)
+        val style = "android.app.Notification\$MessagingStyle"
+        // The rules' catch-all "other" (^ig_) would take it: every message would be removed.
+        assertEquals(NotificationKind.OTHER, bundled.classify(facts(channel = "ig_direct_v2")))
+        assertEquals(NotificationKind.MESSAGE, bundled.classify(facts(channel = "ig_direct_v2", template = style)))
+        assertEquals(NotificationKind.MESSAGE, bundled.classify(facts(channel = "ig_direct_v2", category = "msg")))
+        // Kinds that keep it still apply.
+        assertEquals(NotificationKind.MISSED_CALL, bundled.classify(facts(channel = "ig_direct_v2", category = "missed_call", template = style)))
+        assertEquals(NotificationKind.KEEP, bundled.classify(facts(channel = "ig_alerts", template = style)))
+        assertEquals(NotificationKind.CALL, bundled.classify(facts(channel = "ig_rtc", ongoing = true, template = style)))
     }
 
     @Test

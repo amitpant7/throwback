@@ -160,10 +160,13 @@ Checked on the emulator after merging: feed and stories, Settings (touches block
 Center, an outside link (browser), ig.me, the message relay and the removed-alerts count, the
 permissions step, messages-only mode with a locked limit (fast clock; data restored afterwards).
 
-**Known issue:** with the page script, Instagram logs React error #418 (hydration mismatch) twice
-while loading; without it, none (`files/debug_noscript`). Nothing visibly breaks (React redraws that
-part); moving our `<style>` into `<head>` alone didn't settle it. Worth finding which early DOM
-change causes it.
+**React error #418 in the log, explained (expected):** with the page script Instagram logs React's
+hydration error #418 twice while the feed loads. It comes from the feed data filter (DECISIONS.md
+#13d): Instagram's server-rendered HTML still holds the first ads and suggestions, the filtered data
+React hydrates with doesn't, so React redraws that part from the filtered data, which is what should
+show. Measured on the emulator: 2 errors on each of 3 cold starts with the filter, 0 on 3 without it
+(nothing else changed). Hidden by the loading cover; avoiding it would mean letting ads into the first
+render.
 
 **Owner checks on the phone** (can't be done here): "Continue with Facebook" on Instagram's login,
 with its two-factor/checkpoint steps (a step that opens in the browser needs its path in

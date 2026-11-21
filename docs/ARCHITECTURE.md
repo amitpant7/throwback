@@ -291,7 +291,7 @@ setup and the permissions. Notification access is checked for Throwback's listen
   A scheduled "Disconnect Instagram" takes effect by itself on the new day. During a call only
   Instagram's call screens (`appCall.screens`) may be active, once one has been seen in that call
   (`CallScreens`); until then all of Instagram is allowed, so a renamed call screen never cuts a call.
-- **Passes** (`PassLedger` on the trusted clock; `CallInApp` opens the app): call button (30 s, 10 taps
+- **Passes** (`PassLedger` on the trusted clock; `CallInApp` opens the app): call button (15 s, 10 taps
   an hour), "Open Instagram for 5 minutes" (once a day, not while locked), posting (Instagram's create
   screens, 20 minutes, 10 a day, not while locked), Instagram's settings (its settings screens,
   10 minutes, 5 a day, not while locked), story (5 minutes of Instagram time without the camera, a

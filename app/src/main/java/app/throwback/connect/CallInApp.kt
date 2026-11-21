@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.update
  */
 internal object CallInApp {
     /** Long enough to tap call; the running call itself is then allowed by its audio. */
-    const val PASS_MS = 30_000L
+    const val PASS_MS = 15_000L
 
     /** The call button's outcome and what to tell the user (NOT_READY: the time limit's clock, which counts the taps, is still loading). */
     enum class Result(@StringRes val message: Int?) {

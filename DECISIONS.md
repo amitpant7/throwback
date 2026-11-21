@@ -207,7 +207,7 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     5 minutes" on the Instagram app screen (switching accounts, Instagram's own settings).
 27a. **Passes into the real app are limited** (owner + red-team review, 2026-11-20).
     "Open Instagram for 5 minutes": once a day, not while the daily limit is reached, and the pass ends
-    as soon as the user leaves Instagram (no saving it for later). The chat's 📞 button: a 30-second
+    as soon as the user leaves Instagram (no saving it for later). The chat's 📞 button: a 15-second (owner, 2026-11-21: 30 s was too long)
     pass, at most 10 taps an hour (owner, 2026-11-21: 3 was too few); it ends once the call is running (the call then keeps its call
     screen allowed). "Open Instagram for 5 minutes" stays (owner, 2026-11-21, #34k). Call audio counts as an Instagram call only after an Instagram call
     notification, or when it starts while Instagram is in front (2026-11-20 review: any phone call

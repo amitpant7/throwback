@@ -152,7 +152,9 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     forward + reboot: network time is preferred (Android's own on 13+; on any version also
     Instagram's server time, from the Date of Instagram's own responses the page already receives:
     no extra request), and after a reboot without it the trusted time continues from the last one
-    until it arrives. Closed on all versions (2026-11-21).
+    until it arrives (never ahead of the phone's clock: a backup restored onto another phone). Closed
+    on all versions (2026-11-21). A delayed day's start carries over, so the next day too is at
+    least 23 h later (2026-11-21 review).
 13k. **Suggested people stay** (owner, 2026-11-21): "Suggested for you" lists of accounts (on the
     notifications page, on profiles, in the home feed and on the Discover people page), and profiles
     of people you don't follow, are shown as Instagram shows them (#34a), Tagged tab included (#34n).
@@ -194,7 +196,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
 27. **Guard:** opening the real Instagram app outside a call shows "Use Throwback instead" and returns
     the user to Throwback. During a call its call screen is allowed (#34b). While Android has
     Throwback's notification access disconnected (briefly, e.g. after an update) calls can't be seen,
-    so the guard lets the Instagram app open, uncounted (owner, 2026-11-21: rare and brief, #34m). Throwback itself opens the app with a short
+    so the guard lets the Instagram app open, uncounted (owner, 2026-11-21: rare and brief, #34m).
+    A phone call never unlocks Instagram on its own: call audio counts as Instagram's after its call
+    notification, while its call screen shows, or when an internet call starts in Instagram
+    (2026-11-21 review: a phone call answered from a pop-up during a pass unlocked all of Instagram). Throwback itself opens the app with a short
     pass in two cases: a chat's call button (the mobile website has no calls) and "Open Instagram for
     5 minutes" on the Instagram app screen (switching accounts, Instagram's own settings).
 27a. **Passes into the real app are limited** (owner + red-team review, 2026-11-20).

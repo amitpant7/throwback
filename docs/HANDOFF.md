@@ -54,7 +54,7 @@ export JAVA_HOME=$(ls -d ~/.local/opt/jdk-17* | head -1) ANDROID_HOME=~/Android/
 tools/pagescript-lint.sh                                 # after page-script changes (Node)
 ```
 
-State at handoff: build passes; 320 unit tests pass; lint has 0 errors and only "newer version
+State at handoff: build passes; 361 unit tests pass; lint has 0 errors and only "newer version
 available" warnings (dependencies date from December 2024; see 5). The page script lints clean as ES5.
 
 Bump `versionCode`/`versionName` in `app/build.gradle.kts` for each build handed to the owner.
@@ -135,6 +135,40 @@ a chat-reel cooldown, wrong "Your story" messages, the page's clock not refreshe
 load or network time, Back reaching the page under the lock, and a stale guard heartbeat.
 Not verifiable here (needs the phone or a fresh login): the login/logout flows, and Instagram's own
 editor screens (they can't render on the emulator).
+
+## 4b. Review of 2026-11-21 (decisions vs code, then a full code review)
+
+Three audits compared every decision with the code (fixed where they disagreed; the owner settled the
+open questions, DECISIONS.md #34), then five reviews covered the page script, the web layer, the time
+limit, the guard and relay, and the UI; their fixes were made in separate clones, merged and checked
+together on the emulator. The main ones:
+- **Cheats closed:** Facebook staying open after a login, also in messages-only mode, uncounted
+  (now only Facebook's login pages, during a login); `instagram.com.` (trailing dot) loading with no
+  filters; a redirect counted as a tap; a phone call unlocking the Instagram app during a pass; a
+  time-zone switch giving an extra day; unknown ongoing notifications unlocking the app.
+- **Calls never blocked:** an Instagram call answered with the screen off is recognised by its call
+  screen; phone-call audio still links when Instagram's own signs say it's an Instagram call.
+- **Bugs:** taps passing through Settings to the page; the messages-only bar covering the message
+  box; a blocked redirect leaving the page blank; dialogs holding people's own text being closed;
+  stories look-ahead dying after a jump; an unreadable saved limit being overwritten with "no
+  limit"; notifications handled out of order; messages dropped by a renamed channel; ig.me links
+  ending on "page isn't available"; a missing Notifications row in the setup (Android 13+).
+- **Structure:** one top layer in AppRoot; PageConfigSync out of the WebView controller; the
+  concrete time-limit controller (no casts); press labels in one place; dead code removed.
+
+Checked on the emulator after merging: feed and stories, Settings (touches blocked, Back), Accounts
+Center, an outside link (browser), ig.me, the message relay and the removed-alerts count, the
+permissions step, messages-only mode with a locked limit (fast clock; data restored afterwards).
+
+**Known issue:** with the page script, Instagram logs React error #418 (hydration mismatch) twice
+while loading; without it, none (`files/debug_noscript`). Nothing visibly breaks (React redraws that
+part); moving our `<style>` into `<head>` alone didn't settle it. Worth finding which early DOM
+change causes it.
+
+**Owner checks on the phone** (can't be done here): "Continue with Facebook" on Instagram's login,
+with its two-factor/checkpoint steps (a step that opens in the browser needs its path in
+`hosts.loginPaths`: a rules change); a real Instagram call (its screen stays open; leaving it to browse
+gets covered); logout twice.
 
 ## 5. Open items
 

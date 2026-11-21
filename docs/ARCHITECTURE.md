@@ -18,7 +18,7 @@ reasons are in [DECISIONS.md](../DECISIONS.md).
 | `core` | `AppRoot` (what is on screen and how the areas connect), `Contracts`, `RateAsk`, `SupportAsk`, `TodayRoute` ("Your day" data) |
 | `core/theme` | The Sage theme: `ThrowbackTheme.colors`, typography, system bar icons |
 | `core/ui` | The shared UI kit used by `ui` and `timelimit/ui`: top bar, scaffold, buttons, icons, cards, rows, progress bar, duration texts, touch blocker |
-| `web` | The WebView (`InstagramScreen`, `InstagramWebController`), injection (`PageScript`, `ScriptInjector`), routing (`UrlRouter`, `UrlParts`), the bridge (`BridgeMessage`), page features and clock (`PageFeatures`, `PageClock`), renderer crashes |
+| `web` | The WebView (`InstagramScreen`, `InstagramWebController`, `PageConfigSync`), injection (`PageScript`, `ScriptInjector`), routing (`UrlRouter`, `UrlParts`), the bridge (`BridgeMessage`), page features and clock (`PageFeatures`, `PageClock`), renderer crashes |
 | `web/rules` | Filter rules: model and parsing (`FilterRules`), validation (`RulesValidator`, `RulePatterns`, `NotificationRules`), the daily fetch (`RulesFetcher`, `RulesRepository`) |
 | `timelimit/engine` | The time-limit engine, pure Kotlin: state machine, trusted clock, PIN hashing |
 | `timelimit/data`, `timelimit` | Storage (DataStore `timelimit`), the Android clock, `DefaultTimeLimitController` |
@@ -39,10 +39,13 @@ The page script is in `app/src/main/pagescript/`, one file per area; its
    `SettingsHint` (once), `ReelPoster`, `TimeLimitOverlay` (locked, full mode), `MindfulPauseScreen`
    (once per launch if on; not for links or when the app opens straight into Settings).
 4. Settings (`SettingsRoot`) is a full-screen layer over everything; the WebView stays alive below.
-   Every layer under Settings takes `backEnabled = !settingsOpen`: Android gives Back to the handler
-   added last, and a layer can appear while Settings is open (the lock engaging).
+   `MainScreen` works out the one layer on top (`Layer`: Settings, pause, lock, reel poster, Instagram
+   app prompt). It alone takes Back (Android gives Back to the handler added last, and a layer can
+   appear under another: the lock engaging while Settings is open); while there is one, the page
+   gets no screen reader and counts as covered. Full-screen layers block touches (`blockTouches`).
 5. Messages-only mode: "Open messages only" on the lock screen, or a relayed message tapped while
-   locked, switches the WebView to `MESSAGES_ONLY`; leaving `Locked` switches back.
+   locked, switches the WebView to `MESSAGES_ONLY`, with a bar below the page (hidden while the
+   keyboard is open); leaving `Locked` switches back.
 6. Only time on Instagram counts: the time limit is told foreground/background from the activity's
    resumed state, and not while Settings or the pause covers the page.
 
@@ -56,16 +59,23 @@ document-start script for Instagram's origins (or injects it on page start on ol
 with only some keys updates the live page through `window.__throwback.configure(...)`.
 
 **Routing.** `UrlRouter` (pure, tested) decides for every navigation: load, redirect (blocked pages:
-Reels, a profile's Tagged tab…), open outside (only on a user's tap), or ignore. URLs
-with a backslash or control characters are refused: Chromium reads their host differently from any
-parser. Deep links are loaded as URLs rebuilt from their checked parts. The page script mirrors the
-path rules for in-page navigation.
+Reels…), open outside (only on a user's tap; a server redirect counts as one only when its chain
+began with one, `ChainGesture`), or ignore. URLs with a backslash or control characters are refused:
+Chromium reads their host differently from any parser; Instagram hosts written with a trailing dot,
+port or user info go to the plain address. Facebook/Meta pages load only as login pages
+(`hosts.loginPaths`) during a login; Accounts Center in messages-only mode only on the way through a
+login. `file:`, `content:`, `data:`, `blob:` and `javascript:` never load. A backstop in
+`doUpdateVisitedHistory` routes pages the router never saw (form posts, back/forward). Instagram's
+short links (ig.me, instagr.am) stay in Throwback (ig.me/m/<user> goes to the profile). Deep links are
+loaded as URLs rebuilt from their checked parts. The page script mirrors the path rules for in-page
+navigation.
 
 **Rules.** `filters/rules.json` is bundled and fetched once a day from this repository
 (`RULES_URL`, HTTPS, 512 KB cap, ETag). A fetched file is used only if it validates and is newer.
 Validation pins the hosts to Instagram's, accepts only regex patterns that behave the same in
-Java and JavaScript and can't backtrack catastrophically (`RulePatterns`), and lets dialog rules
-press only dismiss buttons (`DismissLabels`).
+Java and JavaScript and can't backtrack catastrophically (`RulePatterns`, also by syntax), checks that
+messages-only still refuses the feed and full mode still blocks Reels, and lets the page press only
+dismiss buttons in dialogs and Like/Save in the Explore player (`PressLabels`).
 
 **Page → app** (`BridgeMessage`, JSON `{"t": …}` through `addWebMessageListener`, Instagram origins
 and the main frame only; old WebViews use a JavaScript interface that refuses the pass-granting types):
@@ -88,7 +98,11 @@ and the main frame only; old WebViews use a JavaScript interface that refuses th
 
 **App → page** (`window.__throwback`): `configure(cfg)`, `setCovered(bool)` (pauses media, stops the
 page's clocks), and for "Your day" and DevTools `dayStats()`, `perf()`, `feedStats()`, `storyStats()`,
-`clockInfo()`.
+`clockInfo()`, `errors()` (the last page-script steps that threw; each step of a pass runs on its own).
+
+**Page config upkeep** (`PageConfigSync`): installing the script with the current rules (encoded once
+per rules object), mode, features and clock, and keeping the live page up to date; nothing is rebuilt
+while the app is in the background.
 
 **Features and clock.** `PageFeatures` is one `StateFlow` (Instagram app connected, story route
 ready, support ask due); the web host pushes changes while the activity is started. `PageClock` gives
@@ -118,14 +132,20 @@ the setup and the permissions.
 - **Relay** (`RelayListenerService`): only Instagram's packages. Calls are never touched; messages and
   missed calls are replaced by Throwback's own notification (opens the chat, messages-only when
   locked); likes, comments, follows, mentions and live follow the user's switches; the rest is
-  removed. `NotificationClassifier` uses Android's call signals first, then the rules' channel table.
+  removed (counted for "Your day", `RelayStats`). `NotificationClassifier` uses Android's call signals
+  first, then the rules' channel table; no rule can turn a message into something removed, and an
+  unrecognised ongoing notification is kept but counts as a call only with call audio or a call
+  screen. Notifications are handled strictly in order (calls first, on their own queue); only this
+  profile's (a work-profile or cloned Instagram is left alone).
 - **Guard** (`GuardService`, special-use foreground service): watches usage events while the screen
   is on and covers Instagram (`GuardOverlay`) unless a call or a pass allows it. Split screen,
   pop-up windows and picture-in-picture count as on screen (resumed or paused until stopped); while
   Instagram stays on screen the cover stays, stepping aside briefly every 8 s so its window can be
   closed. The guard writes a heartbeat; when it was stopped, the Instagram app's time since then is
-  added to the day's usage when Throwback next runs. Call audio counts as Instagram's only after an
-  Instagram call notification or when it starts while Instagram is in front. During a call only
+  added to the day's usage when Throwback next runs (call screens excepted). Call audio counts as
+  Instagram's after an Instagram call notification, while one of its call screens shows, or when an
+  internet call starts while Instagram is in front (never a phone call on its own, `CallAudioLink`).
+  A scheduled "Disconnect Instagram" takes effect by itself on the new day. During a call only
   Instagram's call screens (`appCall.screens`) may be active, once one has been seen in that call
   (`CallScreens`); until then all of Instagram is allowed, so a renamed call screen never cuts a call.
 - **Passes** (one ledger on the trusted clock, `guard/PassLedger`; `relay/CallInApp` opens the app): call button (30 s, 3 taps an hour),

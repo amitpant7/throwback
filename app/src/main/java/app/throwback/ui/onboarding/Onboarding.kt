@@ -48,6 +48,7 @@ import app.throwback.core.ui.TbButtonStyle
 import app.throwback.core.ui.TbIcon
 import app.throwback.core.ui.ThrowbackLogo
 import app.throwback.core.ui.UiText
+import app.throwback.core.ui.blockTouches
 import app.throwback.ui.UiPrefs
 import app.throwback.ui.common.SystemScreens
 import app.throwback.ui.messages.InstagramApp
@@ -180,6 +181,7 @@ private fun InstagramFoundScreen(onKeep: () -> Unit, onRemove: () -> Unit, onLat
         Modifier
             .fillMaxSize()
             .background(colors.bg)
+            .blockTouches() // over the page: nothing reaches it
             .systemBarsPadding()
             .padding(start = 20.dp, end = 20.dp, bottom = 28.dp),
     ) {

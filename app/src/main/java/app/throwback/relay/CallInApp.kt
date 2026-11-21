@@ -28,8 +28,13 @@ internal object CallInApp {
     /** Long enough to tap call; the running call itself is then allowed by its audio. */
     const val PASS_MS = 30_000L
 
-    /** NOT_READY: the time limit's clock (which counts the taps) hasn't loaded yet, a moment after start. */
-    enum class Result { OPENED, NO_APP, LIMITED, NOT_READY }
+    /** The call button's outcome and what to tell the user (NOT_READY: the time limit's clock, which counts the taps, is still loading). */
+    enum class Result(@StringRes val message: Int?) {
+        OPENED(null),
+        NO_APP(R.string.call_needs_instagram_app),
+        LIMITED(R.string.call_too_many),
+        NOT_READY(R.string.call_not_ready),
+    }
 
     fun open(context: Context, thread: String?, user: String? = null): Result {
         val pkg = installedInstagram(context) ?: return Result.NO_APP
@@ -110,6 +115,33 @@ internal object CallInApp {
 
     /** OPENED; NO_APP; USED_UP (no more today); WAIT (the wait after a pass); NOT_READY (the time limit is still loading); LOCKED. */
     enum class StoryResult { OPENED, NO_APP, USED_UP, WAIT, NOT_READY, LOCKED }
+
+    /** What to tell the user after "Your story" ([story]'s result). */
+    fun storyMessage(context: Context, result: StoryResult): String {
+        val res = context.resources
+        return when (result) {
+            StoryResult.OPENED -> storyMinutes(context).let { m -> res.getQuantityString(R.plurals.story_in_app_hint, m, m) }
+            StoryResult.USED_UP -> storiesPerDay(context).let { n -> res.getQuantityString(R.plurals.story_in_app_used_up, n, n) }
+            StoryResult.WAIT -> (storyWaitMinutes(context) ?: 1).coerceAtLeast(1).let { m -> res.getQuantityString(R.plurals.story_in_app_wait, m, m) }
+            StoryResult.NOT_READY -> res.getString(R.string.story_in_app_not_ready)
+            StoryResult.LOCKED -> res.getString(R.string.app_pass_locked)
+            StoryResult.NO_APP -> res.getString(R.string.create_in_app_failed)
+        }
+    }
+
+    /**
+     * What to tell the user when the page sent "Your story" to the website because it believed the
+     * app route was closed. It may be a step behind (a wait just ended): then it says so.
+     */
+    fun storyWebMessage(context: Context): String {
+        val res = context.resources
+        val minutes = storyWaitMinutes(context)
+        return when {
+            minutes == null -> storiesPerDay(context).let { n -> res.getQuantityString(R.plurals.story_web_tomorrow, n, n) }
+            minutes > 0 -> res.getQuantityString(R.plurals.story_web_wait, minutes, minutes)
+            else -> res.getString(R.string.story_web_ready)
+        }
+    }
 
     private fun storyRules(context: Context) = RulesRepository.get(context).rules.value?.appCreate?.story
 

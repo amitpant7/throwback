@@ -41,6 +41,7 @@ import app.throwback.MainActivity
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.core.ui.UiText
+import app.throwback.core.ui.blockTouches
 import app.throwback.ui.SettingsStart
 import app.throwback.ui.UiPrefs
 import app.throwback.ui.about.AboutScreen
@@ -104,7 +105,9 @@ internal fun SettingsRootContent(
     // Registered after AppRoot's own handler, so it wins; screens deeper down (wizard steps) win over this.
     BackHandler(onBack = back)
 
-    Box(Modifier.fillMaxSize().background(colors.bg)) {
+    // blockTouches: a tap on an empty spot must not reach the page underneath (it did: the top bar's
+    // empty right side opened Instagram's notifications, seen on the emulator 2026-11-21).
+    Box(Modifier.fillMaxSize().background(colors.bg).blockTouches()) {
         AnimatedContent(
             targetState = stack,
             transitionSpec = {

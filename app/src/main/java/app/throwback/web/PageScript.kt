@@ -39,8 +39,17 @@ internal object PageScript {
         features?.let { fields.putAll(it.configFields()) }
         mode?.let { fields["mode"] = JsonPrimitive(it.name) }
         css?.let { fields["css"] = JsonPrimitive(it) }
-        rules?.let { fields["rules"] = RulesJson.encodeToJsonElement(FilterRules.serializer(), it) }
+        rules?.let { fields["rules"] = encoded(it) }
         return jsSafe(JsonObject(fields).toString())
+    }
+
+    /** The last rules encoded, by instance: the script is rebuilt for every new clock, the rules rarely change. */
+    @Volatile
+    private var lastEncoded: Pair<FilterRules, JsonElement>? = null
+
+    private fun encoded(rules: FilterRules): JsonElement {
+        lastEncoded?.let { (r, json) -> if (r === rules) return json }
+        return RulesJson.encodeToJsonElement(FilterRules.serializer(), rules).also { lastEncoded = rules to it }
     }
 
     /**

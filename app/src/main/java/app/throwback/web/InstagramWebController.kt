@@ -265,9 +265,12 @@ internal class InstagramWebController(
     /** Whether the installed script carries a trusted clock (none while the time limit was still loading). */
     private var scriptHasClock = false
 
-    /** A fresh trusted clock for the open page and for documents loaded from now on. */
+    /**
+     * A fresh trusted clock for the open page and for documents loaded from now on. Not in the
+     * background: rebuilding the script is not free, and [onStart] brings a fresh clock anyway.
+     */
     private fun refreshClock() {
-        if (destroyed) return
+        if (destroyed || !inFront) return
         val clock = PageClock.json() ?: return
         installScript(clock)
         if (started) injector.configureLive(PageScript.config(clock = clock)) {}

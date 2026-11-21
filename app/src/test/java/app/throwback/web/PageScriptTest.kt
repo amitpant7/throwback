@@ -50,6 +50,15 @@ class PageScriptTest {
     }
 
     @Test
+    fun `rules are encoded once per rules instance, never served stale`() {
+        val first = PageScript.config(rules = rules)
+        assertEquals(first, PageScript.config(rules = rules))
+        val newer = rules.copy(version = rules.version + 1)
+        assertTrue("\"version\":${rules.version + 1}" in PageScript.config(rules = newer))
+        assertEquals(first, PageScript.config(rules = rules))
+    }
+
+    @Test
     fun `partial config for live updates`() {
         // Only what changed: the page keeps the rest.
         assertEquals("""{"mode":"FULL"}""", PageScript.config(mode = WebMode.FULL))

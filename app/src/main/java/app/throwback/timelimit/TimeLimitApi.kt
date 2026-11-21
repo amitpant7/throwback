@@ -64,11 +64,14 @@ fun TimeRemainingChip(controller: TimeLimitController, modifier: Modifier = Modi
     RemainingChip(controller, modifier)
 }
 
-/** Settings entry for the limit: first-time setup (limit + PIN) or manage an existing limit (PIN-protected). */
+/**
+ * Settings entry for the limit: first-time setup (limit + PIN) or manage an existing limit
+ * (PIN-protected). [onLimitSet] instead of [onClose] once a new limit is on.
+ */
 @Composable
-fun TimeLimitSettingsScreen(controller: TimeLimitController, onClose: () -> Unit) {
+fun TimeLimitSettingsScreen(controller: TimeLimitController, onClose: () -> Unit, onLimitSet: () -> Unit = onClose) {
     val impl = controller as? DefaultTimeLimitController ?: return
-    TimeLimitSettings(impl, onClose)
+    TimeLimitSettings(impl, onClose, onLimitSet)
 }
 
 /**

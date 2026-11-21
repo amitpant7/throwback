@@ -36,7 +36,7 @@ import app.throwback.timelimit.engine.Rules
 
 /** Settings → Daily time limit: first-time setup, or managing an existing limit. */
 @Composable
-internal fun TimeLimitSettings(controller: DefaultTimeLimitController, onClose: () -> Unit) {
+internal fun TimeLimitSettings(controller: DefaultTimeLimitController, onClose: () -> Unit, onLimitSet: () -> Unit = onClose) {
     val view by rememberLiveView(controller)
     val ready by controller.ready.collectAsStateWithLifecycle()
 
@@ -48,7 +48,7 @@ internal fun TimeLimitSettings(controller: DefaultTimeLimitController, onClose: 
     ) {
         when {
             !ready -> Unit // The saved state is still loading (a few milliseconds).
-            view.limitMinutes == null -> SetupScreen(controller, onClose)
+            view.limitMinutes == null -> SetupScreen(controller, onClose, onLimitSet)
             else -> ManageScreen(controller, view, onClose)
         }
     }

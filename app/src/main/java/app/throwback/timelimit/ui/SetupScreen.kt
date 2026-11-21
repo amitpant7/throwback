@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
 // ---- Mockup 7: set up -----------------------------------------------------------------------
 
 @Composable
-internal fun SetupScreen(controller: DefaultTimeLimitController, onClose: () -> Unit) {
+internal fun SetupScreen(controller: DefaultTimeLimitController, onClose: () -> Unit, onLimitSet: () -> Unit = onClose) {
     val c = ThrowbackTheme.colors
     val scope = rememberCoroutineScope()
     var minutes by rememberSaveable { mutableIntStateOf(30) }
@@ -51,7 +51,7 @@ internal fun SetupScreen(controller: DefaultTimeLimitController, onClose: () -> 
             busy = true
             val result = controller.setup(minutes, p)
             busy = false
-            if (result == ActionResult.Done) onClose() else failed = true
+            if (result == ActionResult.Done) onLimitSet() else failed = true
         }
     }
 

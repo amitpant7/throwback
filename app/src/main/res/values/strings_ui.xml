@@ -76,6 +76,9 @@
     <string name="ui_install_installed">Installed</string>
     <string name="ui_install_button">Install</string>
     <string name="ui_install_button_description">Install the Instagram app from the Play Store</string>
+    <string name="ui_limit_connect_title">Cover the Instagram app too</string>
+    <string name="ui_limit_connect_body">The Instagram app is on this phone, so opening it would skip your daily limit. Connect it, and Throwback covers it.</string>
+    <string name="ui_limit_connect_button">Connect the Instagram app</string>
     <string name="ui_install_clones">Only the Instagram app in your main profile is covered. A second copy (in a work profile, a phone\'s dual apps or Private Space) isn\'t.</string>
 
     <string name="ui_quiet_keep_on">Keep on</string>

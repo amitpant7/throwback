@@ -46,4 +46,12 @@ class SettingsNavTest {
             SettingsNav.key(listOf(SettingsRoute.Home, SettingsRoute.Messages)),
         )
     }
+
+    @Test
+    fun `replacing the top screen keeps Back going to the screen before it`() {
+        val afterLimit = SettingsNav.replaceTop(listOf(SettingsRoute.Home, SettingsRoute.TimeLimit), SettingsRoute.LimitConnectOffer)
+        assertEquals(listOf(SettingsRoute.Home, SettingsRoute.LimitConnectOffer), afterLimit)
+        val connect = SettingsNav.replaceTop(afterLimit, SettingsRoute.Messages)
+        assertEquals(listOf(SettingsRoute.Home), SettingsNav.pop(connect))
+    }
 }

@@ -158,7 +158,7 @@ fun AppRoot(
             SettingsRoot(
                 onClose = { settingsOpen = null },
                 startAt = start,
-                timeLimitScreen = { onClose -> TimeLimitSettingsScreen(app.timeLimit, onClose) },
+                timeLimitScreen = { onClose, onLimitSet -> TimeLimitSettingsScreen(app.timeLimit, onClose, onLimitSet) },
                 todayScreen = { onClose -> TodayRoute(app.timeLimit, onClose) },
                 messagesOff = remember {
                     MessagesOffHooks(

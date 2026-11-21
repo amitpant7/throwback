@@ -52,7 +52,7 @@ enum class SettingsStart { Home, MessagesAndCalls, Support }
 @Composable
 fun SettingsRoot(
     onClose: () -> Unit,
-    timeLimitScreen: @Composable (onClose: () -> Unit) -> Unit,
+    timeLimitScreen: @Composable (onClose: () -> Unit, onLimitSet: () -> Unit) -> Unit,
     startAt: SettingsStart = SettingsStart.Home,
     todayScreen: @Composable (onClose: () -> Unit) -> Unit = {},
     messagesOff: app.throwback.ui.messages.MessagesOffHooks = app.throwback.ui.messages.MessagesOffHooks(),

@@ -16,6 +16,9 @@ internal enum class SettingsRoute {
 
     /** PIN before Messages & calls turns off (only while a daily limit is on). */
     MessagesOffPin,
+
+    /** Right after a daily limit is turned on, when the Instagram app is installed but not connected. */
+    LimitConnectOffer,
     Shortcut,
     Support,
     About,
@@ -34,6 +37,9 @@ internal object SettingsNav {
 
     fun push(stack: List<SettingsRoute>, route: SettingsRoute): List<SettingsRoute> =
         if (stack.lastOrNull() == route) stack else stack + route
+
+    /** The stack with its top entry swapped for [route] (one screen leads to the next; Back skips it). */
+    fun replaceTop(stack: List<SettingsRoute>, route: SettingsRoute): List<SettingsRoute> = stack.dropLast(1) + route
 
     /** The stack after going back, or null when already at the root (close Settings). */
     fun pop(stack: List<SettingsRoute>): List<SettingsRoute>? =

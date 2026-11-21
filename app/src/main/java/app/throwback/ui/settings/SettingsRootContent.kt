@@ -1,7 +1,11 @@
 package app.throwback.ui.settings
 
 import app.throwback.R
+import app.throwback.ui.messages.InstagramApp
+import app.throwback.ui.messages.LimitConnectOffer
 import app.throwback.ui.messages.MessagesOffHooks
+import app.throwback.ui.messages.MessagesSettingsScreen
+import app.throwback.ui.messages.MessagesWizard
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
@@ -43,8 +47,6 @@ import app.throwback.ui.UiPrefs
 import app.throwback.ui.about.AboutScreen
 import app.throwback.ui.about.SupportScreen
 import app.throwback.core.ui.UiText
-import app.throwback.ui.messages.MessagesSettingsScreen
-import app.throwback.ui.messages.MessagesWizard
 import app.throwback.ui.shortcut.ShortcutScreen
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -58,7 +60,7 @@ private val StackSaver = Saver<List<SettingsRoute>, ArrayList<String>>(
 @Composable
 internal fun SettingsRootContent(
     onClose: () -> Unit,
-    timeLimitScreen: @Composable (onClose: () -> Unit) -> Unit,
+    timeLimitScreen: @Composable (onClose: () -> Unit, onLimitSet: () -> Unit) -> Unit,
     startAt: SettingsStart,
     todayScreen: @Composable (onClose: () -> Unit) -> Unit = {},
     messagesOff: MessagesOffHooks = MessagesOffHooks(),
@@ -91,6 +93,10 @@ internal fun SettingsRootContent(
         }
     }
     val push: (SettingsRoute) -> Unit = { stack = SettingsNav.push(stack, it) }
+    val replace: (SettingsRoute) -> Unit = {
+        holder.removeState(SettingsNav.key(stack))
+        stack = SettingsNav.replaceTop(stack, it)
+    }
 
     // Registered after AppRoot's own handler, so it wins; screens deeper down (wizard steps) win over this.
     BackHandler(onBack = back)
@@ -113,6 +119,7 @@ internal fun SettingsRootContent(
                         homeValues = homeValues,
                         back = back,
                         push = push,
+                        replace = replace,
                         showMessage = showMessage,
                         timeLimitScreen = timeLimitScreen,
                         todayScreen = todayScreen,
@@ -141,8 +148,9 @@ private fun RouteContent(
     homeValues: HomeValues?,
     back: () -> Unit,
     push: (SettingsRoute) -> Unit,
+    replace: (SettingsRoute) -> Unit,
     showMessage: (String) -> Unit,
-    timeLimitScreen: @Composable (onClose: () -> Unit) -> Unit,
+    timeLimitScreen: @Composable (onClose: () -> Unit, onLimitSet: () -> Unit) -> Unit,
     todayScreen: @Composable (onClose: () -> Unit) -> Unit,
     messagesOff: MessagesOffHooks,
 ) {
@@ -160,7 +168,23 @@ private fun RouteContent(
         }
 
         // The timelimit area draws this screen (and handles its own insets).
-        SettingsRoute.TimeLimit -> timeLimitScreen(back)
+        SettingsRoute.TimeLimit -> {
+            val context = LocalContext.current
+            val messagesDone by prefs.messagesSetupDone.collectAsStateWithLifecycle(initialValue = null)
+            timeLimitScreen(back) {
+                // A new limit with the Instagram app installed but not connected: offer to connect it,
+                // or opening that app skips the limit (DECISIONS.md #34c).
+                if (messagesDone == false && InstagramApp.installedPackage(context) != null) {
+                    replace(SettingsRoute.LimitConnectOffer)
+                } else {
+                    back()
+                }
+            }
+        }
+
+        SettingsRoute.LimitConnectOffer -> Box(padded) {
+            LimitConnectOffer(onConnect = { replace(SettingsRoute.Messages) }, onNotNow = back)
+        }
         SettingsRoute.Today -> Box(padded) { todayScreen(back) }
 
         SettingsRoute.Messages -> Box(padded) {

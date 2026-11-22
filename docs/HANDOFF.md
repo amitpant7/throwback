@@ -4,7 +4,7 @@ For the next Claude Code session (or developer) picking this project up. Read th
 [`DECISIONS.md`](../DECISIONS.md) (what we're building and why) and
 [`ARCHITECTURE.md`](ARCHITECTURE.md) (how the code is organised).
 
-_Last updated 2026-11-21, at version 0.2.0 (versionCode 4)._
+_Last updated 2026-11-22, at version 0.3.0 (versionCode 5)._
 
 ---
 

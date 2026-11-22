@@ -3,9 +3,25 @@
 Instagram, the way it used to be: just the people you follow, with their stories. No Reels, no Explore
 grid, no suggested posts, no ads. When you've seen it all, you're done.
 
-Free. Source available for personal use (see Licence). No accounts, no tracking. Not affiliated with Instagram or Meta.
+## Why I made it
 
-> Work in progress. The first test build is coming soon.
+I don't remember how long I have been struggling with doomscrolling, maybe more than two or three years.
+Some days I ended up scrolling Instagram for hours, often watching Reels, videos and even AI slop. It got
+to the point that I would pick up my phone for something else and end up scrolling. In the end only regret
+followed: no joy, no satisfaction, and a lot of unfinished work. I struggled more when I started working
+from home. I tried to fight this. I thought a break would fix things, so I deactivated my Instagram account
+for months. But a few days after coming back, I was doomscrolling again. The cycle continued.
+
+Then I tried a few mobile apps that put up a barrier, but they were always missing something, and almost
+all were paid. So I decided to build my own: "Throwback: 2019 Mode". I have tried to make it as complete as
+I could, but there may still be bugs or missing features. Feel free to make suggestions, open an
+[issue](https://github.com/amitpant7/throwback/issues), or [contact me](https://amitpant.com.np/throwback/#contact).
+I hope it helps you as well.
+
+![Throwback's pause before Instagram opens, its settings, the daily time limit and the lock screen](docs/assets/overview.png)
+
+More screens: [Your day](docs/assets/your-day.png) ·
+[Connect Instagram](docs/assets/connect-instagram.png) · [Support](docs/assets/support.png)
 
 ## Features
 
@@ -13,12 +29,22 @@ Free. Source available for personal use (see Licence). No accounts, no tracking.
 - A little discovery: now and then a suggested post, tagged "Discover", strictly rationed
 - The Explore grid for 5 minutes a day, then "Enough for today"
 - Reels sent to you in chats play, but swiping on to more reels is stopped after a few swipes
-- Optional daily time limit with a PIN, two 5-minute extensions a day, and a messages-only mode when locked
+- Optional daily limit of 15, 30 or 45 minutes with a PIN (best set by a friend, or a random one you'll forget), two 5-minute extensions a day, and a messages-only mode when locked
 - Optional connected Instagram app: calls, message alerts, and posting with Instagram's own editor; the app stays installed
   but out of reach. Calls ring and are answered there (a chat's call button starts one there);
   messages open in Throwback; other Instagram notifications are removed unless you switch them on
   (security and login alerts always come through)
 - A mindful pause before opening (on by default; can be turned off)
+
+## Download
+
+Free, and not yet on Google Play. Get the APK from the
+[latest release](https://github.com/amitpant7/throwback/releases/latest) and open it on your phone
+(Android 8 or newer). Not affiliated with Instagram or Meta.
+
+If you connect the Instagram app (calls, message alerts), Android 13 and newer holds back some permissions
+from apps installed outside Google Play. Open Settings → Apps → Throwback, tap the **⋮** menu at the
+top right, choose **Allow restricted settings**, then grant notification access.
 
 ## Opening Throwback's settings
 
@@ -45,7 +71,7 @@ A standard single-module Android project: all source code is under `app/src/`.
 | `app/src/debug/` | Test-build helpers (fake notifications for the emulator) |
 | `filters/rules.json` | The filter rules: bundled into the app and fetched daily from this repository |
 | `tools/` | Development tools: DevTools scripts, emulator helpers, the page-script lint, the shortcut-icon generator ([README](tools/README.md)) |
-| `docs/` | [Architecture](docs/ARCHITECTURE.md) and [handoff notes](docs/HANDOFF.md); [DECISIONS.md](DECISIONS.md) records the product decisions, [PRIVACY.md](PRIVACY.md) the privacy policy |
+| `docs/` | [Architecture](docs/ARCHITECTURE.md) and [handoff notes](docs/HANDOFF.md); [DECISIONS.md](DECISIONS.md) records the product decisions, [PRIVACY.md](PRIVACY.md) the privacy policy; `docs/assets/` has the screenshots |
 | `design/` | Logo masters |
 
 ## Building
@@ -61,10 +87,6 @@ tools/sort-kotlin-imports.py    # Kotlin import order (--fix sorts)
 The debug APK is `app/build/outputs/apk/debug/app-debug.apk`. More in
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## Why
-
-<!-- Personal story to be written with the author before release. -->
-
 ## Support
 
 Throwback is free, with nothing locked. Settings → Support Throwback → "Support me" opens the
@@ -75,5 +97,5 @@ DECISIONS.md #4e.)
 
 ## Licence
 
-[PolyForm Strict 1.0.0](LICENSE): you may read the code and use it for personal, non-commercial purposes; you may not redistribute it or publish changed versions. The Nunito font is under the SIL Open Font License
+[PolyForm Strict 1.0.0](LICENSE): you may read the code and use it for personal, non-commercial purposes; you may not redistribute it or publish changed versions. The APK on the releases page is for your own phone. The Nunito font is under the SIL Open Font License
 ([docs/fonts-OFL.txt](docs/fonts-OFL.txt)).

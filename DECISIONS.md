@@ -68,9 +68,11 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
    Instagram itself and a daily fetch of the public filter rules.
 6. **Disclaimer:** "Not affiliated with Instagram or Meta" on the store listing and the About screen.
    No Instagram name or logo in the app's branding.
-7. **Releases: Google Play only** (owner, 2026-11-21): tips and Make It Yours needed Google Play
-   billing (tips are parked since, #4e), and Android 13+ makes downloaded APKs ask for "restricted settings" (#28). No APKs on GitHub
-   Releases; the code stays public there.
+7. **Releases: Google Play, and GitHub Releases** (owner, 2026-11-21; GitHub added 2026-11-22). The
+   release-signed APK is also attached to a GitHub release, for people who can't use Google Play
+   (it can't pay out to Nepal, #4e). Android 13+ makes APKs installed outside Google Play ask for
+   "restricted settings" for notification access (#28); the README says how. The code stays public
+   there, and the licence still applies (#3).
 
 ## How it works
 

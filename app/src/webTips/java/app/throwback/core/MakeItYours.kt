@@ -6,9 +6,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Whether Make It Yours is unlocked. Without Google Play tips nothing in the app could unlock it, so
- * it is free (DECISIONS.md #4e). src/playTips has the same function: unlocked by a tip there.
+ * Make It Yours is left out of builds without Google Play tips (owner, 2026-11-22, DECISIONS.md #4e):
+ * it comes back with the tips that unlock it. src/playTips has the same two declarations.
  */
+internal const val MAKE_IT_YOURS_IN_BUILD = false
+
+/** Not reachable in this build (see above); free if it ever were. */
 @Suppress("UNUSED_PARAMETER")
 internal fun makeItYours(context: Context): StateFlow<Boolean> = FREE
 

@@ -19,12 +19,11 @@ Free. Source available for personal use (see Licence). No accounts, no tracking.
   messages open in Throwback; other Instagram notifications are removed unless you switch them on
   (security and login alerts always come through)
 - A mindful pause before opening (on by default; can be turned off)
-- Make It Yours: your own home-screen name and icon for Throwback
 
 ## Opening Throwback's settings
 
 There's no Throwback button on the feed, so it looks exactly like Instagram. Open Throwback's settings
-(Connect → Instagram, Your day, time limit, mindful pause, Make It Yours, Support, About) any of these ways:
+(Connect → Instagram, Your day, time limit, mindful pause, Support, About) any of these ways:
 
 1. **Your profile:** the Throwback icon at the top right (where the Threads icon was).
 2. **Instagram's settings:** profile → gear → the **Throwback** section, right after "Your account".

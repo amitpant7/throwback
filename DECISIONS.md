@@ -62,8 +62,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     "Buy me a coffee": Google Play's payments policy may object to donation links (some apps were
     flagged, even for a homepage that asks for donations); the wording doesn't settle that, but it
     keeps payment words out of the app. If review flags it, the row goes and Support keeps reporting
-    and Say Hi. Nothing is locked: Make It Yours is free while tips are parked
-    (`Supporter.makeItYours`).
+    and Say Hi. Make It Yours is left out of the default build too (owner, 2026-11-22): it
+    returns with the tips that unlock it (`MAKE_IT_YOURS_IN_BUILD` in the source sets).
 5. **Privacy:** no analytics, no accounts, no server. Nothing leaves the phone except traffic to
    Instagram itself and a daily fetch of the public filter rules.
 6. **Disclaimer:** "Not affiliated with Instagram or Meta" on the store listing and the About screen.

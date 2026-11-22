@@ -20,6 +20,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.throwback.R
+import app.throwback.core.MAKE_IT_YOURS_IN_BUILD
 import app.throwback.core.makeItYours
 import app.throwback.core.prefs.AppPrefs
 import app.throwback.core.theme.ThrowbackTheme
@@ -83,14 +84,17 @@ internal fun SettingsHomeScreen(values: HomeValues, prefs: AppPrefs, onBack: () 
 
         SectionLabel(stringResource(R.string.ui_section_app))
         TbCard {
-            val iconUnlocked by makeItYours(LocalContext.current).collectAsStateWithLifecycle()
-            NavRow(
-                icon = R.drawable.ic_add_home,
-                title = stringResource(R.string.ui_shortcut_title),
-                subtitle = stringResource(if (iconUnlocked) R.string.ui_shortcut_row_sub else R.string.ui_shortcut_locked_title),
-                onClick = { onOpen(SettingsRoute.Shortcut) },
-            )
-            CardDivider()
+            // Only in builds with Google Play tips, which unlock it (#4e: back once Play pays out in Nepal).
+            if (MAKE_IT_YOURS_IN_BUILD) {
+                val iconUnlocked by makeItYours(LocalContext.current).collectAsStateWithLifecycle()
+                NavRow(
+                    icon = R.drawable.ic_add_home,
+                    title = stringResource(R.string.ui_shortcut_title),
+                    subtitle = stringResource(if (iconUnlocked) R.string.ui_shortcut_row_sub else R.string.ui_shortcut_locked_title),
+                    onClick = { onOpen(SettingsRoute.Shortcut) },
+                )
+                CardDivider()
+            }
             NavRow(
                 icon = R.drawable.ic_heart,
                 title = stringResource(R.string.ui_support_title),

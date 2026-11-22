@@ -4,18 +4,19 @@ Instagram, the way it used to be: just the people you follow, with their stories
 grid, no suggested posts, no ads. When you've seen it all, you're done.
 
 ## Why I made it
+I don't exactly remember how long I've been struggling with doomscrolling. It's probably been years. Some days, I'd find myself scrolling through Instagram for hours, watching pointless reels, videos, and even AI slop. It got to the point where I'd pick up my phone to get some work done, only to end up scrolling again. At the end, there was no joy or satisfaction, only regrets and a pile of unfinished work.
 
-I don't remember how long I have been struggling with doomscrolling, maybe more than two or three years.
-Some days I ended up scrolling Instagram for hours, often watching Reels, videos and even AI slop. It got
-to the point that I would pick up my phone for something else and end up scrolling. In the end only regret
-followed: no joy, no satisfaction, and a lot of unfinished work. I struggled more when I started working
-from home. I tried to fight this. I thought a break would fix things, so I deactivated my Instagram account
-for months. But a few days after coming back, I was doomscrolling again. The cycle continued.
+Things got even worse when I started working from home.
 
-Then I tried a few mobile apps that put up a barrier, but they were always missing something, and almost
-all were paid. So I decided to build my own: "Throwback: 2019 Mode". I have tried to make it as complete as
-I could, but there may still be bugs or missing features. Feel free to make suggestions, open an
-[issue](https://github.com/amitpant7/throwback/issues), or [contact me](https://amitpant.com.np/throwback/#contact).
+I thought taking a break would help, so I'd deactivate my Instagram account for months at a time. But every time I came back, I'd be doomscrolling again within days. The cycle continued. I even considered leaving Instagram for good, but as wanted to keep up with my friends it was no solution.
+
+Then I tried a few mobile apps (supposed to solve the problem), but they were missing quite a lot of features and were all paid. I felt something like this should be free.I believe everyone should have access to tools that help them take control of their screen time, without having to pay.
+
+So, I decided to build my own: **Throwback: 2019 Mode**.&#x20;
+
+I've tried to make it as complete as possible, but there might be a few bugs or things I've missed. If you try it out, I'd love to hear your feedback. Feel free to suggest features, report bugs, open an
+[issue](https://github.com/amitpant7/throwback/issues), or even open a pull request.
+
 I hope it helps you as well.
 
 ![Throwback's pause before Instagram opens, its settings, the daily time limit and the lock screen](docs/assets/overview.png)

@@ -780,6 +780,20 @@ class TimeLimitEngineTest {
     }
 
     @Test
+    fun `a ready reset lapses after a day without a new PIN`() {
+        h.setup(15)
+        h.act { s, r -> h.engine.requestPinReset(s, r) }
+        h.advance(7 * DAY + DAY - MIN)
+        h.refresh()
+        assertTrue(h.view().pinReset!!.ready)
+        h.advance(MIN)
+        h.refresh()
+        assertNull(h.view().pinReset)
+        assertTrue(h.act { s, r -> h.engine.completePinReset(s, r, PIN_B) } is ActionResult.NotAllowed)
+        assertEquals(ActionResult.Done, h.verify(pinOk = true)) // the old PIN works again
+    }
+
+    @Test
     fun `cancelling the reset makes the old PIN work again`() {
         h.setup(15)
         h.act { s, r -> h.engine.requestPinReset(s, r) }

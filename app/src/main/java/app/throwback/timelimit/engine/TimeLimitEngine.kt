@@ -117,7 +117,14 @@ class TimeLimitEngine {
         st = applyPending(st, at)
         st = settleLock(st, at)
         st = expirePinBlock(st, at)
+        st = expirePinReset(st, at)
         return st to at
+    }
+
+    /** A ready reset left unused for [Rules.PIN_RESET_READY_MILLIS] lapses: the old PIN stays (owner, 2026-11-22). */
+    private fun expirePinReset(s: TimeLimitState, at: At): TimeLimitState {
+        val requested = s.pinResetRequestedAt ?: return s
+        return if (millisSince(requested, at) >= Rules.PIN_RESET_MILLIS + Rules.PIN_RESET_READY_MILLIS) s.copy(pinResetRequestedAt = null) else s
     }
 
     private fun account(s: TimeLimitState, at: At): TimeLimitState {

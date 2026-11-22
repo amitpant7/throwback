@@ -197,6 +197,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     nothing). Lowering the limit is immediate. Changing the phone's clock does not reset usage.
 22. **Forgot PIN:** a 7-day countdown (owner, 2026-11-21; was 3), then a new PIN can be set. The
     countdown can be cancelled. During the wait the limit stays on, as it is.
+    Once ready, the new PIN must be set within 24 hours or the reset lapses (owner, 2026-11-22),
+    so a finished reset can't be kept as a standing way out.
 23. **Reinstall / clear data:** onboarding says honestly that Throwback is "a speed bump, not a cage".
     The time-limit settings (limit, PIN hash, extension state, pending PIN reset) and whether the user
     has tipped (#4d) are included in Android Auto Backup, so a reinstall restores them. Instagram login and WebView data are never

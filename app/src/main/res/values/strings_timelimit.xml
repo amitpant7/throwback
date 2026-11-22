@@ -82,7 +82,7 @@
     <string name="tl_reset_until">until you can set a new PIN</string>
     <string name="tl_reset_label_ready">RESET READY</string>
     <string name="tl_reset_ready_big">Ready</string>
-    <string name="tl_reset_ready_sub">You can set a new PIN now.</string>
+    <string name="tl_reset_ready_sub">Set a new PIN within 24 hours, or the reset lapses.</string>
     <string name="tl_reset_step_wait">The 7-day wait stops impulse resets. If it were quick, the PIN wouldn\'t protect anything.</string>
     <string name="tl_reset_step_limit">Your daily limit stays on meanwhile, as it is now.</string>
     <string name="tl_reset_step_cancel">Remembered it? Cancel the reset below.</string>

@@ -206,6 +206,8 @@ object Rules {
     const val MAX_EXTENSIONS_PER_DAY = 2
     /** "Forgot PIN": the PIN may be one the user never knew (a friend's, or random), so the reset is the only way out (owner, 2026-11-21). */
     const val PIN_RESET_MILLIS = 7 * DAY
+    /** A ready reset lapses if no new PIN is set within this time, so it can't be kept ready as a standing way out. */
+    const val PIN_RESET_READY_MILLIS = DAY
     /** "Disconnect Instagram" takes effect this long after it was asked for. */
     const val GUARD_OFF_DELAY_MILLIS = DAY
     const val PIN_LENGTH = 4

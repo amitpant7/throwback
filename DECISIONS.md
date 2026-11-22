@@ -283,7 +283,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
     every line asks the reader something or nudges them to do something, never says what life is,
     and fits in three lines (owner, 2026-11-21; quotes checked against their sources, old texts in
     public-domain translations; a longer quote is cut only to one of its own complete sentences;
-    #34ee for the tips).
+    #34ee for the tips). Once per start of Throwback (owner, 2026-11-22): returning while it is
+    still in memory, even after Back closed its screen, skips it.
 31. **Make It Yours** (owner, 2026-11-21; was "Add to home screen", then "Customize icon"): a home-screen shortcut with the
     user's own name and icon: the logo on the app colour, dark or light, a photo frame, or the user's
     own picture (cropped square, any picture; Throwback ships no Instagram name or logo, but the

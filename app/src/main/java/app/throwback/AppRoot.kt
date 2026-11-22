@@ -230,7 +230,10 @@ private fun MainScreen(
     var pauseDone by rememberSaveable { mutableStateOf(false) }
     // Opening Settings ends the pause for this launch (so does onboarding, [skipPause]). It's a pause before Instagram: opened straight
     // into Settings (the "Throwback settings" shortcut, a notification), it would only run unseen.
-    var pauseSkipped by rememberSaveable { mutableStateOf(skipPause) }
+    // Once per start of Throwback (owner, 2026-11-22): coming back while it is still in memory, even
+    // after Back closed its screen, goes straight to Instagram.
+    var pauseSkipped by rememberSaveable { mutableStateOf(skipPause || PauseOnce.done) }
+    LaunchedEffect(pauseDone, pauseSkipped) { if (pauseDone || pauseSkipped) PauseOnce.done = true }
     var mode by rememberSaveable { mutableStateOf(WebMode.FULL) }
     var path by remember { mutableStateOf("/") }
     val loggedIn by InstagramSession.loggedIn.collectAsStateWithLifecycle()
@@ -452,3 +455,9 @@ private const val SETTINGS_HINT_DELAY_MS = 1500L
 /** After its seconds, the mindful pause waits at most this long more for the feed underneath. */
 private const val PAUSE_READY_WAIT_MS = 5_000L
 private const val LOCK_STATE_WAIT_MS = 3000L
+
+/** Whether the mindful pause already ran (or was skipped) in this process: it shows once per start. */
+private object PauseOnce {
+    @Volatile
+    var done = false
+}

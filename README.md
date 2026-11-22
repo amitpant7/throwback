@@ -1,4 +1,4 @@
-# Throwback
+# Throwback: 2019 Mode
 
 Instagram, the way it used to be: just the people you follow, with their stories. No Reels, no Explore
 grid, no suggested posts, no ads. When you've seen it all, you're done.

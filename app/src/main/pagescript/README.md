@@ -48,6 +48,7 @@ fallback way and must still run there.
 | `44-nav-bar.js` | Navigation bars: hidden slots collapse |
 | `45-navigation-timing.js` | `__throwback.perf()`: how long screens take to open |
 | `50-chat-reel-limit.js` | Reels sent in chats: the swipe limit and its poster |
+| `51-reel-gestures.js` | Reels: double tap to like; a volume key turns the sound on |
 | `55-explore.js` | The Explore grid: a few minutes a day, then "Enough for today" |
 | `60-explore-reel-player.js` | Throwback's own reel player for reels from Explore and search |
 | `65-your-day.js` | "Your day" counters (time per area, what was removed) |

@@ -454,3 +454,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
         press Instagram's own toolbar buttons ("Reply to message…", "React to message…"); Throwback
         never sends anything itself. A hold no longer leaves just the small toolbar: the emoji bar
         opens, and the toolbar (with ⋮) stays under it.
+    kk. **Reel habits from the Instagram app** (owner, 2026-11-23, `51-reel-gestures.js`): a double tap
+        on a reel likes it, with the big heart. It presses the reel's own Like button, and only
+        if it still says "Like" a moment later, so where Instagram already likes on a double tap (feed
+        videos) nothing happens twice, and a double tap never takes a like back. In chats it works
+        only inside the reel viewer, so a double tap on a message stays Instagram's heart reaction.
+        A volume key turns the sound on for the video on screen (Instagram's own sound button, so
+        the next videos keep it); the key still changes the volume.

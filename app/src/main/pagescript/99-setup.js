@@ -79,6 +79,7 @@
     hookHistory();
     installHomeLongPress();
     installChatGestures();
+    installReelGestures();
     watchResources();
     startTick();
     // Scrolling into Instagram's empty placeholder space changes nothing in the page, so check the
@@ -145,6 +146,10 @@
       else onClipVisibility(); // the Explore reel player picks up where it was
       // Backup: when the poster goes away, a stopped viewer that is somehow still open gets closed.
       if (!covered) closeReelViewer();
+    },
+    /** A volume key was pressed: sound on for the video on screen (51-reel-gestures.js). */
+    volumeKey: function () {
+      onVolumeKey();
     },
     /** Today's counts for the app's "Your day" screen (JSON string). */
     dayStats: dayStats,

@@ -209,6 +209,12 @@ internal class InstagramWebController(
         }
     }
 
+    /** A volume key was pressed: the page turns the sound on for the video on screen (#34kk). */
+    fun onVolumeKey() {
+        if (destroyed) return
+        webView.evaluateJavascript("window.__throwback && window.__throwback.volumeKey && window.__throwback.volumeKey()", null)
+    }
+
     private var covered = false
 
     /** Tells the page whether a Throwback screen covers it (its feed-time clock pauses). */

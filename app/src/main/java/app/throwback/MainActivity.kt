@@ -2,6 +2,7 @@ package app.throwback
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -17,6 +18,7 @@ import app.throwback.core.StartTrace
 import app.throwback.core.Supporter
 import app.throwback.core.theme.ThrowbackTheme
 import app.throwback.ui.about.refreshTips
+import app.throwback.web.InstagramWebController
 import app.throwback.web.PageAssets
 import app.throwback.web.UrlParts
 import kotlinx.coroutines.Dispatchers
@@ -104,6 +106,19 @@ class MainActivity : ComponentActivity() {
         // live on for days (singleTask), so its creation alone missed days. Off the main thread.
         val context = applicationContext
         lifecycleScope.launch(Dispatchers.IO) { runCatching { RateAsk.noteUse(context) } }
+    }
+
+    /**
+     * Volume keys turn the sound on for the reel or video on screen, as in the Instagram app (#34kk).
+     * The key still changes the volume: the event goes on as usual.
+     */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0 &&
+            (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
+        ) {
+            InstagramWebController.current?.get()?.onVolumeKey()
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onNewIntent(intent: Intent) {

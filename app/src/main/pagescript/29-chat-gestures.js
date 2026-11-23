@@ -19,12 +19,14 @@
   var SWIPE_REPLY_PX = 64; // let go past this: reply
   var SWIPE_MAX_PX = 96; // how far the message follows the finger
   var SWIPE_EDGE_PX = 24; // touches from the screen's edge are Android's back gesture
-  var HOLD_MS = 450;
+  var HOLD_MS = 400;
+  var HOLD_SWALLOW_MS = 1000; // after the emoji bar opens, the tap the browser makes of the hold
   var REPLY_ICON =
     '<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" ' +
     'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/>' +
     '<path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
-  var cg = null; // the touch in progress on a message: {row, bubble, x, y, dx, swiping, held, timer, hint}
+  var cg = null; // the touch in progress on a message: {row, bubble, x, y, dx, swiping, held, timer, hint, frame}
+  var chatHeldRow = null, chatHeldAt = 0; // the row whose emoji bar a hold opened, and when
 
   /** The message under a touch: its row (avatar and bubble) and the bubble, or null. */
   function chatMessageAt(target) {
@@ -73,6 +75,7 @@
     cg = null;
     if (!g) return;
     if (g.timer) clearTimeout(g.timer);
+    if (g.frame) cancelAnimationFrame(g.frame);
     if (g.hint && g.hint.parentNode) g.hint.parentNode.removeChild(g.hint);
     if (g.swiping) {
       var row = g.row;
@@ -80,6 +83,7 @@
       row.style.transform = '';
       setTimeout(function () {
         row.style.transition = '';
+        row.style.willChange = '';
       }, 200);
     }
   }
@@ -92,12 +96,15 @@
       if (t.clientX < SWIPE_EDGE_PX || t.clientX > window.innerWidth - SWIPE_EDGE_PX) return;
       var m = chatMessageAt(e.target);
       if (!m) return;
-      var g = { row: m.row, bubble: m.bubble, x: t.clientX, y: t.clientY, dx: 0, swiping: false, held: false, timer: 0, hint: null };
-      // Holding the bubble itself: Instagram draws its toolbar; on letting go, its emoji bar opens.
+      var g = { row: m.row, bubble: m.bubble, x: t.clientX, y: t.clientY, dx: 0, swiping: false, held: false, timer: 0, hint: null, frame: 0 };
+      // Holding the bubble itself opens the emoji bar while the finger is still down, as in the app.
       if (m.bubble) {
         g.timer = setTimeout(function () {
           g.timer = 0;
           g.held = true;
+          chatHeldRow = g.row;
+          chatHeldAt = Date.now();
+          pressChatButton(g.row, CHAT_REACT);
         }, HOLD_MS);
       }
       cg = g;
@@ -119,22 +126,39 @@
         if (!g.swiping) return;
       }
       g.dx = Math.max(0, Math.min(SWIPE_MAX_PX, dx - SWIPE_START_PX));
-      g.row.style.transition = '';
-      g.row.style.transform = 'translateX(' + g.dx + 'px)';
-      chatSwipeHint(g).style.opacity = String(Math.min(1, g.dx / SWIPE_REPLY_PX));
+      // One style change a frame, however many touch events arrive.
+      if (!g.frame) {
+        g.frame = requestAnimationFrame(function () {
+          g.frame = 0;
+          if (cg !== g) return;
+          g.row.style.transition = '';
+          g.row.style.willChange = 'transform';
+          g.row.style.transform = 'translate3d(' + g.dx + 'px,0,0)';
+          chatSwipeHint(g).style.opacity = String(Math.min(1, g.dx / SWIPE_REPLY_PX));
+        });
+      }
     }, { capture: true, passive: true });
 
     document.addEventListener('touchend', function () {
       var g = cg;
       if (!g) return;
       var reply = g.swiping && g.dx >= SWIPE_REPLY_PX;
-      var react = !g.swiping && g.held;
       endChatGesture();
       // Right away, while the touch still counts as the user's: the reply box can bring up the keyboard.
       if (reply) pressChatButton(g.row, CHAT_REPLY);
-      // A moment later: after any tap the browser makes of the hold, which would close the emoji bar.
-      else if (react) setTimeout(function () { pressChatButton(g.row, CHAT_REACT); }, 60);
     }, { capture: true, passive: true });
     document.addEventListener('touchcancel', endChatGesture, { capture: true, passive: true });
+    // After a hold opened the emoji bar, the tap or long-press menu the browser makes of that same
+    // touch would land on the message and close the bar again: swallowed. Registered on window, so
+    // it runs before Instagram's handlers.
+    ['click', 'contextmenu'].forEach(function (type) {
+      window.addEventListener(type, function (e) {
+        if (!chatHeldRow || Date.now() - chatHeldAt > HOLD_SWALLOW_MS) return;
+        if (!e.target || !e.target.closest || !chatHeldRow.contains(e.target) || e.target.closest(CHAT_ACTIONS)) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (type === 'click') chatHeldRow = null;
+      }, true);
+    });
   }
 

@@ -50,3 +50,9 @@ html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
+
+/* Chats: a message row pans only up and down, so a swipe to reply (29-chat-gestures.js) reaches the
+   page every frame instead of being taken as a sideways pan and slowed down. */
+html.tb-on-direct div[role="group"]:not([aria-label]):has([aria-label="Message actions"]) {
+  touch-action: pan-y;
+}

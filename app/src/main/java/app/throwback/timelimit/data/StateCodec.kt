@@ -2,7 +2,6 @@ package app.throwback.timelimit.data
 
 import app.throwback.timelimit.engine.Moment
 import app.throwback.timelimit.engine.PendingLimit
-import app.throwback.timelimit.engine.PendingPin
 import app.throwback.timelimit.engine.PinHash
 import app.throwback.timelimit.engine.TimeLimitState
 import kotlinx.serialization.Serializable
@@ -41,7 +40,6 @@ internal object StateCodec {
         val extensionsUsed: Int = 0,
         val lockedAt: StoredMoment? = null,
         val pendingLimit: StoredPendingLimit? = null,
-        val pendingPin: StoredPendingPin? = null,
         val pinResetRequestedAt: StoredMoment? = null,
         val wrongPinAttempts: Int = 0,
         val pinBlockedAt: StoredMoment? = null,
@@ -63,9 +61,6 @@ internal object StateCodec {
     @Serializable
     private data class StoredPendingLimit(val minutes: Int? = null, val effective: String)
 
-    @Serializable
-    private data class StoredPendingPin(val pin: StoredPin, val effective: String)
-
     private fun TimeLimitState.toStored() = Stored(
         limitMinutes = limitMinutes,
         pin = pin?.toStored(),
@@ -74,7 +69,6 @@ internal object StateCodec {
         extensionsUsed = extensionsUsed,
         lockedAt = lockedAt?.toStored(),
         pendingLimit = pendingLimit?.let { StoredPendingLimit(it.minutes, it.effective.toString()) },
-        pendingPin = pendingPin?.let { StoredPendingPin(it.pin.toStored(), it.effective.toString()) },
         pinResetRequestedAt = pinResetRequestedAt?.toStored(),
         wrongPinAttempts = wrongPinAttempts,
         pinBlockedAt = pinBlockedAt?.toStored(),
@@ -93,7 +87,6 @@ internal object StateCodec {
         extensionsUsed = extensionsUsed,
         lockedAt = lockedAt?.toMoment(),
         pendingLimit = pendingLimit?.let { PendingLimit(it.minutes, LocalDate.parse(it.effective)) },
-        pendingPin = pendingPin?.let { PendingPin(it.pin.toPin(), LocalDate.parse(it.effective)) },
         pinResetRequestedAt = pinResetRequestedAt?.toMoment(),
         wrongPinAttempts = wrongPinAttempts,
         pinBlockedAt = pinBlockedAt?.toMoment(),

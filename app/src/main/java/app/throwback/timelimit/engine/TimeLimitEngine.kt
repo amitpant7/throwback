@@ -159,7 +159,6 @@ class TimeLimitEngine {
     private fun applyPending(s: TimeLimitState, at: At): TimeLimitState {
         val today = s.day ?: return s
         var st = s
-        st.pendingPin?.let { if (!it.effective.isAfter(today)) st = st.copy(pin = it.pin, pendingPin = null) }
         st.pendingLimit?.let { p ->
             if (!p.effective.isAfter(today)) {
                 st = if (p.minutes == null) turnedOff(st) else st.copy(limitMinutes = p.minutes, pendingLimit = null)
@@ -184,7 +183,6 @@ class TimeLimitEngine {
         extensionsUsed = 0,
         lockedAt = null,
         pendingLimit = null,
-        pendingPin = null,
         pinResetRequestedAt = null,
         wrongPinAttempts = 0,
         pinBlockedAt = null,
@@ -306,11 +304,9 @@ class TimeLimitEngine {
     fun changePin(s: TimeLimitState, r: ClockReading, pinOk: Boolean, newPin: PinHash): Outcome {
         val (st, at) = sync(s, r)
         if (!st.enabled) return Outcome(st, ActionResult.NotAllowed("No limit set"))
-        return withPin(st, at, pinOk) { ok -> Outcome(ok.copy(pin = newPin, pendingPin = null), ActionResult.Done) }
+        return withPin(st, at, pinOk) { ok -> Outcome(ok.copy(pin = newPin), ActionResult.Done) }
     }
 
-    fun cancelPendingPin(s: TimeLimitState, r: ClockReading): TimeLimitState =
-        sync(s, r).first.copy(pendingPin = null)
 
     // ---- Extensions ------------------------------------------------------------------------
 
@@ -354,7 +350,6 @@ class TimeLimitEngine {
         if (millisSince(requested, at) < Rules.PIN_RESET_MILLIS) return Outcome(st, ActionResult.NotAllowed("Reset still running"))
         val done = st.copy(
             pin = newPin,
-            pendingPin = null,
             pinResetRequestedAt = null,
             wrongPinAttempts = 0,
             pinBlockedAt = null,
@@ -426,7 +421,6 @@ class TimeLimitEngine {
             guardOffDue = s.guardOffDue,
             lock = phase,
             pendingLimit = s.pendingLimit,
-            pendingPinEffective = s.pendingPin?.effective,
             pinReset = reset,
             pinBlockedMillis = blockedFor(s, at),
         )

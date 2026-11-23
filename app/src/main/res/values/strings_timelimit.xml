@@ -111,7 +111,6 @@
         <item quantity="one">The limit goes up to %1$d minute</item>
         <item quantity="other">The limit goes up to %1$d minutes</item>
     </plurals>
-    <string name="tl_pending_pin">Your new PIN starts working</string>
     <string name="tl_cancel_pending_cd">Cancel: %1$s</string>
     <string name="tl_section_limit">Daily limit</string>
     <string name="tl_limit_help">Lowering works right away. Raising needs your PIN and starts tomorrow.</string>

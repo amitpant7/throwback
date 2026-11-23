@@ -7,7 +7,6 @@ import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.LockPhase
 import app.throwback.timelimit.engine.Moment
 import app.throwback.timelimit.engine.PendingLimit
-import app.throwback.timelimit.engine.PendingPin
 import app.throwback.timelimit.engine.Session
 import app.throwback.timelimit.engine.TimeLimitState
 import org.junit.Assert.assertEquals
@@ -26,7 +25,6 @@ class StateCodecTest {
         extensionsUsed = 1,
         lockedAt = Moment(41, 10_000, 1_800_000_000_000),
         pendingLimit = PendingLimit(60, LocalDate.of(2026, 11, 21)),
-        pendingPin = PendingPin(PIN_B, LocalDate.of(2026, 11, 21)),
         pinResetRequestedAt = Moment(41, 9_000, 1_799_000_000_000),
         wrongPinAttempts = 3,
         pinBlockedAt = Moment(40, 1, 2),

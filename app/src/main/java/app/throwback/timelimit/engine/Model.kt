@@ -52,8 +52,6 @@ data class PinHash(val salt: String, val hash: String, val iterations: Int)
 /** A raise of the limit, or turning it off ([minutes] == null), that waits until [effective]. */
 data class PendingLimit(val minutes: Int?, val effective: LocalDate)
 
-/** A PIN change that waits until [effective]. */
-data class PendingPin(val pin: PinHash, val effective: LocalDate)
 
 /** Throwback is in the foreground in [mode]; usage was last accounted at [lastElapsedMillis]. */
 data class Session(val mode: WebMode, val lastElapsedMillis: Long, val bootCount: Int)
@@ -74,7 +72,6 @@ data class TimeLimitState(
     /** When the current lock began; the 5-minute wait counts from here. Null when not locked. */
     val lockedAt: Moment? = null,
     val pendingLimit: PendingLimit? = null,
-    val pendingPin: PendingPin? = null,
     /** When "Forgot PIN" was requested; null when no reset is running. */
     val pinResetRequestedAt: Moment? = null,
     /** Consecutive wrong PIN entries since the last block or correct entry. */
@@ -172,7 +169,6 @@ data class TimeLimitView(
     /** Set when [lockState] is Locked. */
     val lock: LockPhase? = null,
     val pendingLimit: PendingLimit? = null,
-    val pendingPinEffective: LocalDate? = null,
     val pinReset: PinResetStatus? = null,
     val pinBlockedMillis: Long = 0,
     /** When "Disconnect Instagram" takes effect (trusted wall millis), if asked for. */

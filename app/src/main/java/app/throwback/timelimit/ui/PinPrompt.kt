@@ -1,11 +1,9 @@
 package app.throwback.timelimit.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -15,13 +13,11 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.throwback.R
 import app.throwback.core.theme.ThrowbackTheme
-import app.throwback.core.ui.TbBackButton
 import app.throwback.core.ui.TbTopBar
 import app.throwback.timelimit.TimeLimitController
 import app.throwback.timelimit.engine.ActionResult
@@ -52,8 +48,8 @@ internal fun GuardOffPin(controller: TimeLimitController, onScheduled: () -> Uni
 /**
  * PIN keypad for a protected action, with "Forgot PIN?" below. [check] runs the action with the PIN;
  * when it's done (or scheduled) [onSuccess] runs, or [onSuccessWithPin] with the PIN; otherwise the
- * digits clear and the reason shows. The settings screens show the time-limit top bar ([showHeader]);
- * the lock screen has a floating back arrow instead.
+ * digits clear and the reason shows. Under the time limit's top bar (only Settings asks for the PIN:
+ * the lock screen no longer does, #34hh).
  */
 @Composable
 internal fun PinPrompt(
@@ -64,9 +60,7 @@ internal fun PinPrompt(
     check: suspend (String) -> ActionResult,
     onSuccess: () -> Unit = {},
     onSuccessWithPin: ((String) -> Unit)? = null,
-    eyebrow: String? = null,
     subtitle: String? = null,
-    showHeader: Boolean = true,
 ) {
     val checking = rememberBusyAction()
     var attempt by remember { mutableIntStateOf(0) }
@@ -75,37 +69,33 @@ internal fun PinPrompt(
     // No PIN can be used while a PIN reset runs ("Forgot PIN?" below leads to it), so don't ask for one.
     val resetRunning = view.pinReset != null
 
-    Box(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize()) {
-            if (showHeader) TbTopBar(stringResource(R.string.tl_title), onBack)
-            PinEntry(
-                title = title,
-                eyebrow = eyebrow,
-                subtitle = subtitle,
-                message = when {
-                    checking.running -> stringResource(R.string.tl_checking)
-                    resetRunning -> stringResource(R.string.tl_pin_reset_pending)
-                    else -> pinProblemText(lastResult, view.pinBlockedMillis)
-                },
-                enabled = !checking.running && !resetRunning && view.pinBlockedMillis == 0L,
-                clearKey = attempt,
-                topPadding = if (showHeader) 16.dp else 64.dp,
-                onPin = { pin ->
-                    checking.run {
-                        val result = check(pin)
-                        lastResult = result
-                        val ok = result == ActionResult.Done || result is ActionResult.Scheduled
-                        when {
-                            ok && onSuccessWithPin != null -> onSuccessWithPin(pin)
-                            ok -> onSuccess()
-                            else -> attempt++
-                        }
+    Column(Modifier.fillMaxSize()) {
+        TbTopBar(stringResource(R.string.tl_title), onBack)
+        PinEntry(
+            title = title,
+            subtitle = subtitle,
+            message = when {
+                checking.running -> stringResource(R.string.tl_checking)
+                resetRunning -> stringResource(R.string.tl_pin_reset_pending)
+                else -> pinProblemText(lastResult, view.pinBlockedMillis)
+            },
+            enabled = !checking.running && !resetRunning && view.pinBlockedMillis == 0L,
+            clearKey = attempt,
+            topPadding = 16.dp,
+            onPin = { pin ->
+                checking.run {
+                    val result = check(pin)
+                    lastResult = result
+                    val ok = result == ActionResult.Done || result is ActionResult.Scheduled
+                    when {
+                        ok && onSuccessWithPin != null -> onSuccessWithPin(pin)
+                        ok -> onSuccess()
+                        else -> attempt++
                     }
-                },
-                footer = { ForgotPinLink(onForgot) },
-            )
-        }
-        if (!showHeader) TbBackButton(onBack, Modifier.padding(6.dp).align(Alignment.TopStart))
+                }
+            },
+            footer = { ForgotPinLink(onForgot) },
+        )
     }
 }
 

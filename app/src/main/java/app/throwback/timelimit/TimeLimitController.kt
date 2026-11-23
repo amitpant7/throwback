@@ -219,7 +219,6 @@ internal class TimeLimitController(
         return withPinCheck(currentPin) { s, r, ok -> engine.changePin(s, r, ok, newHash) }
     }
 
-    fun cancelPendingPin() = update(Save.Now) { s, r -> engine.cancelPendingPin(s, r) }
 
     /** +5 minutes after the wait (no PIN). */
     suspend fun extend(): ActionResult {

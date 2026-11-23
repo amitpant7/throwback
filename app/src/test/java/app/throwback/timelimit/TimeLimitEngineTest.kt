@@ -6,7 +6,6 @@ import app.throwback.timelimit.engine.ActionResult
 import app.throwback.timelimit.engine.ClockReading
 import app.throwback.timelimit.engine.LockPhase
 import app.throwback.timelimit.engine.Moment
-import app.throwback.timelimit.engine.PendingPin
 import app.throwback.timelimit.engine.Rules
 import app.throwback.timelimit.engine.TimeLimitEngine
 import org.junit.Assert.assertEquals
@@ -691,16 +690,13 @@ class TimeLimitEngineTest {
         assertEquals(ActionResult.WrongPin(4), h.act { s, r -> h.engine.changePin(s, r, pinOk = false, newPin = PIN_B) })
         assertEquals(ActionResult.Done, h.act { s, r -> h.engine.changePin(s, r, pinOk = true, newPin = PIN_B) })
         assertEquals(PIN_B, h.s.pin)
-        assertNull(h.view().pendingPinEffective)
     }
 
     @Test
     fun `pending changes can be cancelled without the PIN`() {
         h.setup(30)
         h.act { s, r -> h.engine.setLimit(s, r, 45, pinOk = true) }
-        h.s = h.s.copy(pendingPin = PendingPin(PIN_B, h.today.plusDays(1))) // saved by an older version
         h.s = h.engine.cancelPendingLimit(h.s, h.reading())
-        h.s = h.engine.cancelPendingPin(h.s, h.reading())
         h.advanceToMidnight()
         h.refresh()
         assertEquals(30, h.s.limitMinutes)
@@ -823,19 +819,6 @@ class TimeLimitEngineTest {
         h.networkUp = true // The downtime counts once network time is back.
         h.refresh()
         assertTrue(h.view().pinReset!!.ready)
-    }
-
-    @Test
-    fun `a pending PIN change is dropped when a reset sets a new PIN`() {
-        h.setup(15)
-        h.s = h.s.copy(pendingPin = PendingPin(PIN_B, h.today.plusDays(1))) // saved by an older version
-        h.act { s, r -> h.engine.requestPinReset(s, r) }
-        h.advance(7 * DAY)
-        h.refresh()
-        val pinC = PIN_A.copy(salt = "c2FsdEM=")
-        h.act { s, r -> h.engine.completePinReset(s, r, pinC) }
-        assertEquals(pinC, h.s.pin)
-        assertNull(h.s.pendingPin)
     }
 
     // ---- Daylight saving --------------------------------------------------------------------

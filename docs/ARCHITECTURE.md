@@ -3,7 +3,8 @@
 Throwback is one Android app (Kotlin, Jetpack Compose, minSdk 26, targetSdk 36, a single Gradle
 module). Instagram itself is instagram.com in one long-lived WebView, with Throwback's filters
 injected as JavaScript and CSS. Everything around it is native: onboarding, Settings, the daily
-time limit and its lock screens, the mindful pause, "Your day", Make It Yours, Support and About.
+time limit and its lock screens, the mindful pause, "Your day", Support and About (and Make It Yours in
+builds with Google Play tips, #4e).
 The optional Instagram app connection (Settings › Connect › Instagram) adds a notification
 listener (the *relay*) and a foreground service (the *guard*).
 

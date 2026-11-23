@@ -144,7 +144,6 @@ internal fun PinEntry(
     title: String,
     onPin: (String) -> Unit,
     modifier: Modifier = Modifier,
-    eyebrow: String? = null,
     subtitle: String? = null,
     message: String? = null,
     enabled: Boolean = true,
@@ -155,10 +154,6 @@ internal fun PinEntry(
     val c = ThrowbackTheme.colors
     var digits by remember(clearKey) { mutableStateOf("") }
     ScreenColumn(PaddingValues(start = 28.dp, end = 28.dp, top = topPadding, bottom = 28.dp), modifier) {
-        if (eyebrow != null) {
-            Eyebrow(eyebrow)
-            Spacer(Modifier.height(10.dp))
-        }
         Text(
             title,
             style = MaterialTheme.typography.headlineMedium.copy(letterSpacing = (-0.02).em),

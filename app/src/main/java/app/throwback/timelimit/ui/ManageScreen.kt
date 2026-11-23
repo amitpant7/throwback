@@ -100,10 +100,6 @@ internal fun ManageScreen(controller: TimeLimitController, view: TimeLimitView, 
                 controller.cancelPendingLimit()
                 notice = Notice.Cancelled
             },
-            onCancelPendingPin = {
-                controller.cancelPendingPin()
-                notice = Notice.Cancelled
-            },
             onChangePin = { page = ManagePage.ChangePinCurrent },
             onForgotPin = { page = ManagePage.Reset },
             onTurnOff = { page = ManagePage.TurnOffPin },
@@ -180,7 +176,6 @@ private fun ManageHome(
     onClose: () -> Unit,
     onPickLimit: (Int) -> Unit,
     onCancelPendingLimit: () -> Unit,
-    onCancelPendingPin: () -> Unit,
     onChangePin: () -> Unit,
     onForgotPin: () -> Unit,
     onTurnOff: () -> Unit,
@@ -222,20 +217,16 @@ private fun ManageHome(
         }
 
         val pendingLimit = view.pendingLimit
-        val pendingPin = view.pendingPinEffective
-        if (pendingLimit != null || pendingPin != null) {
-            val effective = listOfNotNull(pendingLimit?.effective, pendingPin).min()
+        if (pendingLimit != null) {
+            val effective = pendingLimit.effective
             Spacer(Modifier.height(12.dp))
             TbCard(contentPadding = PaddingValues(start = 18.dp, end = 6.dp, top = 16.dp, bottom = 6.dp)) {
                 Eyebrow(stringResource(R.string.tl_pending_label, whenText(effective, view.today).uppercase()))
-                if (pendingLimit != null) {
-                    PendingRow(
-                        text = pendingLimit.minutes?.let { pluralStringResource(R.plurals.tl_pending_raise, it, it) }
-                            ?: stringResource(R.string.tl_pending_off),
-                        onCancel = onCancelPendingLimit,
-                    )
-                }
-                if (pendingPin != null) PendingRow(stringResource(R.string.tl_pending_pin), onCancelPendingPin)
+                PendingRow(
+                    text = pendingLimit.minutes?.let { pluralStringResource(R.plurals.tl_pending_raise, it, it) }
+                        ?: stringResource(R.string.tl_pending_off),
+                    onCancel = onCancelPendingLimit,
+                )
             }
         }
 

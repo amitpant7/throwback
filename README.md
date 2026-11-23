@@ -37,6 +37,41 @@ More screens: [Your day](docs/assets/your-day.png) ·
   (security and login alerts always come through)
 - A mindful pause before opening (on by default; can be turned off)
 
+## The optional Instagram connection
+
+Instagram sends message alerts and calls only to its own app. If you want them, connect the Instagram
+app (Settings → Connect → Instagram): it stays installed for calls and alerts, and Throwback keeps it
+out of reach the rest of the time. This needs three special permissions. They are the kind of
+permissions digital-wellbeing apps use, and Throwback uses each one only for the Instagram app:
+
+| Permission | What Throwback does with it | What it doesn't do |
+|---|---|---|
+| Notification access | Passes on Instagram's messages and calls, removes the Instagram alerts you didn't switch on, and notices when a story is posting | Android hands it every app's notifications; Throwback ignores all but Instagram's. It keeps only daily counts, never what a message said |
+| Usage access | Notices when the Instagram app comes to the front, so it can cover it outside calls and short passes | Stores or sends nothing about which apps you use |
+| Display over other apps | Shows the "Use Throwback instead" cover over the Instagram app | Nothing else |
+
+It never uses the camera, microphone, contacts or location. Disconnecting takes 24 hours, so it can't
+be a way round your own limits. The code that uses these permissions is in
+[`connect/relay`](app/src/main/java/app/throwback/connect/relay) and
+[`connect/guard`](app/src/main/java/app/throwback/connect/guard).
+
+![Connect › Instagram, the optional alerts, Your day, and the 24-hour disconnect](docs/assets/instagram-connection.png)
+
+## Your data
+
+**Throwback collects nothing.** No account, no analytics, no ads, no server of its own.
+
+- **What leaves your phone:** only Instagram's own traffic, exactly as in a browser, and once a day a
+  download of the public filter rules from this repository (GitHub sees an ordinary download, nothing
+  about you).
+- **Your Instagram login** happens on Instagram's own page. Throwback never sees or stores your password.
+- **What stays on your phone:** your settings, the daily limit with a salted hash of its PIN (never the
+  PIN itself), and Your day's counts. Android's own backup keeps only the time-limit settings.
+- **Nothing is shared or sold**, because there is nothing to share.
+
+Uninstall Throwback, or clear its storage, and everything it kept is gone. The full
+[privacy policy](PRIVACY.md) lists every service involved.
+
 ## Download
 
 Free, and not yet on Google Play. Get the APK from the

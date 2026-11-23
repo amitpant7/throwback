@@ -449,8 +449,8 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
         possible without device-owner mode, which needs a phone with no accounts). Never published:
         Google Play restricts apps that use device admin to prevent removal, so GitHub and Play get
         the plain release build. Turned on once over adb (`dpm set-active-admin`).
-    jj. **Chat gestures** (owner, 2026-11-23): in a chat, swiping a message to the right replies to
-        it and holding it opens the emoji bar, as in the Instagram app (`29-chat-gestures.js`). Both
+    jj. **Chat gestures** (owner, 2026-11-23): in a chat, swiping a message sideways (either way)
+        replies to it and holding it opens the emoji bar, as in the Instagram app (`29-chat-gestures.js`). Both
         press Instagram's own toolbar buttons ("Reply to message…", "React to message…"); Throwback
         never sends anything itself. A hold no longer leaves just the small toolbar: the emoji bar
         opens, and the toolbar (with ⋮) stays under it.

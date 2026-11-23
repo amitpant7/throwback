@@ -2,7 +2,7 @@
 
   /*
    * The Instagram app's two chat gestures, which the mobile website lacks (owner, 2026-11-23,
-   * DECISIONS.md #34jj): swipe a message to the right to reply to it, and hold it to open the
+   * DECISIONS.md #34jj): swipe a message sideways (either way) to reply to it, and hold it to open the
    * reaction bar straight away. Both press Instagram's own buttons from the message's action
    * toolbar, which the website keeps in the page for each message (drawn on hover on a computer, on
    * a hold on a phone). Throwback never sends anything: Reply opens the reply box and React opens
@@ -42,7 +42,7 @@
    * has none yet, a hover (what a computer's mouse does) makes Instagram add them.
    */
   function pressChatButton(row, selector) {
-    var tries = 0;
+    var until = Date.now() + 600;
     (function attempt() {
       if (!document.contains(row)) return;
       var b = row.querySelector(selector);
@@ -50,19 +50,27 @@
         b.click();
         return;
       }
-      if (tries === 0) row.dispatchEvent(new MouseEvent('mouseover', { bubbles: true, relatedTarget: document.body, view: window }));
-      if (++tries < 6) setTimeout(attempt, 100);
+      warmChatRow(row);
+      if (Date.now() < until) requestAnimationFrame(attempt); // checked every frame, not every 100 ms
     })();
+  }
+
+  /** Makes Instagram add the message's toolbar (a hover), if it isn't in the page already. */
+  function warmChatRow(row) {
+    if (row.querySelector(CHAT_ACTIONS) || row.getAttribute('data-tb-warm')) return;
+    row.setAttribute('data-tb-warm', '1');
+    row.dispatchEvent(new MouseEvent('mouseover', { bubbles: true, relatedTarget: document.body, view: window }));
   }
 
   function chatSwipeHint(g) {
     if (g.hint) return g.hint;
     var box = g.row.getBoundingClientRect();
+    var left = g.dir > 0 ? Math.max(4, box.left) : Math.min(window.innerWidth - 36, box.right - 32);
     var h = document.createElement('div');
     h.innerHTML = REPLY_ICON;
     h.style.cssText = 'position:fixed;z-index:2147483000;pointer-events:none;width:32px;height:32px;border-radius:50%;' +
       'display:flex;align-items:center;justify-content:center;background:rgba(128,128,128,.18);opacity:0;' +
-      'left:' + Math.max(4, box.left) + 'px;top:' + Math.round(box.top + box.height / 2 - 16) + 'px;' +
+      'left:' + left + 'px;top:' + Math.round(box.top + box.height / 2 - 16) + 'px;' +
       'color:' + getComputedStyle(g.row).color;
     document.documentElement.appendChild(h);
     g.hint = h;
@@ -96,7 +104,7 @@
       if (t.clientX < SWIPE_EDGE_PX || t.clientX > window.innerWidth - SWIPE_EDGE_PX) return;
       var m = chatMessageAt(e.target);
       if (!m) return;
-      var g = { row: m.row, bubble: m.bubble, x: t.clientX, y: t.clientY, dx: 0, swiping: false, held: false, timer: 0, hint: null, frame: 0 };
+      var g = { row: m.row, bubble: m.bubble, x: t.clientX, y: t.clientY, dx: 0, dir: 1, swiping: false, held: false, timer: 0, hint: null, frame: 0 };
       // Holding the bubble itself opens the emoji bar while the finger is still down, as in the app.
       if (m.bubble) {
         g.timer = setTimeout(function () {
@@ -117,15 +125,24 @@
       if (!g || !e.touches || e.touches.length !== 1) return;
       var dx = e.touches[0].clientX - g.x, dy = e.touches[0].clientY - g.y;
       if (!g.swiping) {
-        if (dx * dx + dy * dy > 100) {
-          if (g.timer) clearTimeout(g.timer);
+        // Moved more than a wobble: no longer a hold.
+        if (g.timer && dx * dx + dy * dy > 100) {
+          clearTimeout(g.timer);
           g.timer = 0;
-          if (!g.held && dx > SWIPE_START_PX && dx > Math.abs(dy) * 1.5) g.swiping = true;
-          else if (!g.held || Math.abs(dy) > SWIPE_START_PX) { endChatGesture(); return; } // scrolling
         }
+        var ax = Math.abs(dx), ay = Math.abs(dy);
+        if (!g.held && ax > SWIPE_START_PX && ax > ay * 1.5) {
+          g.swiping = true;
+          g.dir = dx > 0 ? 1 : -1;
+          warmChatRow(g.row); // the Reply button is ready by the time the finger lifts
+        } else if (ay > SWIPE_START_PX || (g.held ? false : ax > SWIPE_START_PX)) {
+          endChatGesture(); // scrolling, or a diagonal drag: not a swipe
+          return;
+        }
+        // Otherwise not clear yet which way the finger is going: wait for the next move.
         if (!g.swiping) return;
       }
-      g.dx = Math.max(0, Math.min(SWIPE_MAX_PX, dx - SWIPE_START_PX));
+      g.dx = Math.max(0, Math.min(SWIPE_MAX_PX, dx * g.dir - SWIPE_START_PX)); // distance the chosen way
       // One style change a frame, however many touch events arrive.
       if (!g.frame) {
         g.frame = requestAnimationFrame(function () {
@@ -133,7 +150,7 @@
           if (cg !== g) return;
           g.row.style.transition = '';
           g.row.style.willChange = 'transform';
-          g.row.style.transform = 'translate3d(' + g.dx + 'px,0,0)';
+          g.row.style.transform = 'translate3d(' + g.dx * g.dir + 'px,0,0)';
           chatSwipeHint(g).style.opacity = String(Math.min(1, g.dx / SWIPE_REPLY_PX));
         });
       }

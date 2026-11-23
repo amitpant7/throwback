@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The personal build's device admin (DECISIONS.md #34ii). -->
+<resources>
+    <string name="personal_admin_label">Throwback: stay installed</string>
+    <string name="personal_admin_description">While this is on, Throwback can\'t be uninstalled. Switch it off here first.</string>
+    <string name="personal_admin_disable_warning">You set this up so Throwback stays. Turning it off lets you uninstall it. Still want to?</string>
+</resources>

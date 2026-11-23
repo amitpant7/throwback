@@ -58,6 +58,12 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
+        // The owner's own phone only (DECISIONS.md #34ii): the release build plus a device-admin
+        // receiver (src/personal), so Throwback can't be uninstalled until its admin is switched off
+        // in Android's settings. Never published: GitHub and Play get the plain release build.
+        create("personal") {
+            initWith(getByName("release"))
+        }
     }
 
     compileOptions {

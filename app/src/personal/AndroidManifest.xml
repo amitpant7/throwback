@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The personal build only (DECISIONS.md #34ii): Throwback as a device admin, so it can't be
+     uninstalled while the admin is on. Switched on once with
+     adb shell dpm set-active-admin app.throwback/app.throwback.personal.UninstallGuard -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <receiver
+            android:name="app.throwback.personal.UninstallGuard"
+            android:description="@string/personal_admin_description"
+            android:exported="true"
+            android:label="@string/personal_admin_label"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/throwback_device_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

@@ -442,3 +442,10 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
         showing them, or typing random digits they won't remember. Then only the 7-day reset (#22)
         gets them out. To match: extensions need no PIN (#18), changing the PIN works at once (#21),
         and limits are 15, 30 or 45 minutes (#16).
+    ii. **Staying installed, on the owner's phone only** (owner, 2026-11-23): a `personal` build type
+        (the release build plus `src/personal`) makes Throwback a device admin, so Android won't
+        uninstall it until the admin is switched off in Settings › Security › Device admin apps.
+        Only a speed bump: Android lets the user switch it off at any time (no 3-day wait is
+        possible without device-owner mode, which needs a phone with no accounts). Never published:
+        Google Play restricts apps that use device admin to prevent removal, so GitHub and Play get
+        the plain release build. Turned on once over adb (`dpm set-active-admin`).

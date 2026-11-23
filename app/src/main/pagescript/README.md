@@ -40,6 +40,7 @@ fallback way and must still run there.
 | `26-chat-call.js` | The call button in chats (opens the chat in the Instagram app) |
 | `27-add-story.js` | A "+" on "Your story" once a story is up (another story: the app, or the website's upload) |
 | `28-instagram-app.js` | Posting and Instagram's own settings through the Instagram app |
+| `29-chat-gestures.js` | Chats: swipe a message to reply, hold it for the emoji bar |
 | `30-feed-end.js` | The bottom of the feed: "You're all caught up" and the support line |
 | `35-routing.js` | Which pages may show (mirrors `web/UrlRouter.kt`); in-page navigation |
 | `40-filtering.js` | Hiding by selector and by label; blocks between posts |

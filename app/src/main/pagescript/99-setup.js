@@ -78,6 +78,7 @@
   function start() {
     hookHistory();
     installHomeLongPress();
+    installChatGestures();
     watchResources();
     startTick();
     // Scrolling into Instagram's empty placeholder space changes nothing in the page, so check the

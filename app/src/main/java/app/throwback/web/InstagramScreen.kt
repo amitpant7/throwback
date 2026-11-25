@@ -82,6 +82,8 @@ fun InstagramScreen(
     modifier: Modifier = Modifier,
     startUrl: String? = null,
     onOpenSettings: () -> Unit = {},
+    /** The full address of the page now open, after every navigation (the login bar shows its host). */
+    onUrlChanged: (String) -> Unit = {},
     /** The chat's call button was tapped (chat id and the other person's username; either may be null). */
     onCallInApp: (String?, String?) -> Unit = { _, _ -> },
     /** False while a Throwback screen covers the page (Settings, the pause, the reel poster): back must not reach the page. */
@@ -153,6 +155,7 @@ fun InstagramScreen(
     val host = InstagramWebController.Host(
         onLocationChanged = { location, url ->
             onLocationChanged(location)
+            onUrlChanged(url)
             if (location.startsWith("/")) lastUrl = url // Instagram pages only
         },
         onStartUrlHandled = { handledStartUrl = it },

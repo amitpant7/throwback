@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -32,11 +33,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -243,6 +247,7 @@ private fun MainScreen(
     LaunchedEffect(pauseDone, pauseSkipped) { if (pauseDone || pauseSkipped) PauseOnce.done = true }
     var mode by rememberSaveable { mutableStateOf(WebMode.FULL) }
     var path by remember { mutableStateOf("/") }
+    var pageHost by remember { mutableStateOf<String?>(null) }
     val loggedIn by InstagramSession.loggedIn.collectAsStateWithLifecycle()
 
     // After the first login, offer the "Instagram app found" choice once (if the app is installed).
@@ -337,11 +342,12 @@ private fun MainScreen(
 
     Box(Modifier.fillMaxSize()) {
       Column(Modifier.fillMaxSize()) {
-        if (loginBar) LoginBar(onOpenSettings = onOpenSettings)
+        if (loginBar) LoginBar(host = pageHost, onOpenSettings = onOpenSettings)
         InstagramScreen(
             mode = mode,
             startUrl = deepLink,
             onLocationChanged = { path = it },
+            onUrlChanged = { url -> pageHost = runCatching { url.toUri() }.getOrNull()?.takeIf { it.scheme == "https" }?.host },
             onExitRequest = onCloseApp,
             onOpenSettings = onOpenSettings,
             onCallInApp = { thread, user ->
@@ -446,22 +452,41 @@ private fun MainScreen(
 private fun isLoginPath(path: String): Boolean =
     path.startsWith("/accounts/") || path.startsWith("/challenge") || path.startsWith("https://")
 
-/** Above Instagram's login page: Throwback's logo, what this page is for, and Settings. */
+/**
+ * Above Instagram's login page: Throwback's logo, what this page is for, Settings, and the address of
+ * the page actually open (🔒 and its host, as a browser shows it; read from the page, never fixed text).
+ */
 @Composable
-private fun LoginBar(onOpenSettings: () -> Unit) {
+private fun LoginBar(host: String?, onOpenSettings: () -> Unit) {
     val colors = ThrowbackTheme.colors
     Surface(color = colors.surface, modifier = Modifier.fillMaxWidth()) {
-        Row(
-            Modifier.statusBarsPadding().padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            ThrowbackLogo(28.dp)
-            Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                Text(stringResource(R.string.ui_login_bar_title), style = UiText.body14Strong, color = colors.text)
-                Text(stringResource(R.string.ui_login_bar_sub), style = UiText.fine, color = colors.muted)
+        Column(Modifier.statusBarsPadding().padding(start = 16.dp, end = 4.dp, top = 6.dp, bottom = 10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ThrowbackLogo(24.dp)
+                Text(
+                    stringResource(R.string.ui_login_bar_title),
+                    style = UiText.body14Strong,
+                    color = colors.text,
+                    modifier = Modifier.weight(1f).padding(start = 10.dp),
+                )
+                IconButton(onClick = onOpenSettings) {
+                    TbIcon(R.drawable.ic_settings, tint = colors.text, contentDescription = stringResource(R.string.ui_login_bar_settings))
+                }
             }
-            IconButton(onClick = onOpenSettings) {
-                TbIcon(R.drawable.ic_settings, tint = colors.text, contentDescription = stringResource(R.string.ui_login_bar_settings))
+            if (host != null) {
+                Row(
+                    Modifier
+                        .padding(end = 12.dp)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(colors.surface2)
+                        .padding(horizontal = 12.dp, vertical = 7.dp)
+                        .semantics(mergeDescendants = true) {},
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TbIcon(R.drawable.ic_lock, size = 14.dp, tint = colors.muted)
+                    Text(host, style = UiText.sub, color = colors.text, modifier = Modifier.padding(start = 8.dp))
+                }
             }
         }
     }

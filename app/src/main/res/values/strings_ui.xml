@@ -49,7 +49,6 @@
     <string name="ui_onb_settings_picture">The tab bar at the bottom of Instagram, with the Home tab held down.</string>
     <string name="ui_onb_private_note">Free. Not affiliated with Instagram or Meta.</string>
     <string name="ui_login_bar_title">Log in with your Instagram account</string>
-    <string name="ui_login_bar_sub">Instagram\'s own page, as in a browser</string>
     <string name="ui_login_bar_settings">Throwback settings</string>
 
     <!-- 1b · Instagram app found -->

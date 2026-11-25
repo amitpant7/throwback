@@ -461,3 +461,12 @@ The product decisions agreed during planning (2026-11-20). Change a decision her
         only inside the reel viewer, so a double tap on a message stays Instagram's heart reaction.
         A volume key turns the sound on for the video on screen (Instagram's own sound button, so
         the next videos keep it); the key still changes the volume.
+    ll. **First launch shows Throwback before Instagram** (owner, 2026-11-25): four welcome pages,
+        swiped or with Next: what Instagram looks like here; "Focus, if you want it" (daily limit,
+        the pause, Your day, with "Set a daily limit now" opening the native limit screen); "Settings,
+        one hold away" (a drawn tab bar with Home held, not a screenshot of Instagram); "Private by
+        design", then "Log in to Instagram". So a Play reviewer whose login gets stuck still sees
+        Throwback's own app. While logged out, Instagram's and Facebook's login pages get a slim
+        Throwback bar on top (logo, "Log in with your Instagram account", ⚙ for Settings). Back on
+        Instagram's login form closes Throwback instead of stepping back to Instagram's logged-out
+        start page; steps within a login (Facebook, two-factor) still go back one at a time.

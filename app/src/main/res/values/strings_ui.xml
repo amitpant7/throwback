@@ -26,9 +26,31 @@
     <!-- TalkBack for the ticked items, e.g. "Stories, still here". -->
     <string name="ui_onb_kept_description">%1$s, still here</string>
     <string name="ui_onb_login">Log in to Instagram</string>
-    <string name="ui_onb_collects_nothing">Throwback collects nothing</string>
-    <string name="ui_onb_code_public">Code is public</string>
-    <string name="ui_onb_note">You log in on Instagram\'s own page. Throwback never sees your password.\nFree. Not affiliated with Instagram or Meta.</string>
+    <string name="ui_onb_next">Next</string>
+    <string name="ui_onb_page">Page %1$d of %2$d</string>
+    <string name="ui_onb_focus_title">Focus, if you want it.</string>
+    <string name="ui_onb_focus_subtitle">Set it up now, or any time later in Settings.</string>
+    <string name="ui_onb_focus_limit_title">Daily time limit</string>
+    <string name="ui_onb_focus_limit_body">15, 30 or 45 minutes a day. Messages stay open when it\'s up, and calls never count.</string>
+    <string name="ui_onb_focus_pause_title">A pause before Instagram</string>
+    <string name="ui_onb_focus_pause_body">A few seconds with a question or a quote each time you open it. On from the start; you can switch it off.</string>
+    <string name="ui_onb_focus_day_title">Your day</string>
+    <string name="ui_onb_focus_day_body">Time spent, what\'s left today, and what was removed for you.</string>
+    <string name="ui_onb_focus_set_limit">Set a daily limit now</string>
+    <string name="ui_onb_private_title">Private by design.</string>
+    <string name="ui_onb_private_subtitle">A calmer way into Instagram, not a new account.</string>
+    <string name="ui_onb_private_nothing">No account, no tracking, no analytics. Nothing leaves your phone except Instagram\'s own traffic.</string>
+    <string name="ui_onb_private_password">You log in on Instagram\'s own page. Throwback never sees your password.</string>
+    <string name="ui_onb_private_code">The code is public on GitHub.</string>
+    <string name="ui_onb_settings_title">Settings, one hold away.</string>
+    <string name="ui_onb_settings_subtitle">There\'s no extra button on your feed.</string>
+    <string name="ui_onb_settings_hold">Hold</string>
+    <string name="ui_onb_settings_body">Press and hold the Home tab at the bottom for a moment, and Throwback\'s settings open: your daily limit, the pause, Your day and the Instagram app connection.</string>
+    <string name="ui_onb_settings_picture">The tab bar at the bottom of Instagram, with the Home tab held down.</string>
+    <string name="ui_onb_private_note">Free. Not affiliated with Instagram or Meta.</string>
+    <string name="ui_login_bar_title">Log in with your Instagram account</string>
+    <string name="ui_login_bar_sub">Throwback never sees your password</string>
+    <string name="ui_login_bar_settings">Throwback settings</string>
 
     <!-- 1b · Instagram app found -->
     <string name="ui_found_icon_description">Instagram app installed</string>

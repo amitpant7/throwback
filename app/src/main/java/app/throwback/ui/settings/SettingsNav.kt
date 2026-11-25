@@ -2,7 +2,7 @@ package app.throwback.ui.settings
 
 
 /** Where Settings opens: its home, Connect › Instagram, or Support. */
-enum class SettingsStart { Home, ConnectInstagram, Support }
+enum class SettingsStart { Home, ConnectInstagram, Support, TimeLimit }
 
 /** Screens reachable inside SettingsRoot. */
 internal enum class SettingsRoute {
@@ -35,6 +35,8 @@ internal object SettingsNav {
         SettingsStart.ConnectInstagram -> listOf(SettingsRoute.Messages)
         // "Say thanks" in the feed: Support, with Back going to Settings.
         SettingsStart.Support -> listOf(SettingsRoute.Home, SettingsRoute.Support)
+        // "Set a daily limit now" on the welcome pages: Back returns to them.
+        SettingsStart.TimeLimit -> listOf(SettingsRoute.TimeLimit)
     }
 
     fun push(stack: List<SettingsRoute>, route: SettingsRoute): List<SettingsRoute> =

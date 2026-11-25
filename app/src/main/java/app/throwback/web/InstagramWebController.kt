@@ -262,10 +262,22 @@ internal class InstagramWebController(
             }
             return false
         }
+        // Instagram's login form is the first screen while logged out: Back leaves Throwback instead of
+        // stepping back to the logged-out start page ("from Meta", #34ll). Steps of a login (Facebook,
+        // two-factor) still go back one at a time, to this form at most.
+        if (!InstagramSession.loggedIn.value && isLoginForm(webView.url)) return false
         if (!webView.canGoBack()) return false
         error = null
         webView.goBack()
         return true
+    }
+
+    /** Instagram's login form (or its logged-out start page, which leads to it). */
+    private fun isLoginForm(url: String?): Boolean {
+        val uri = url?.let { runCatching { it.toUri() }.getOrNull() } ?: return false
+        if (uri.host?.lowercase() != "www.instagram.com" && uri.host?.lowercase() != "instagram.com") return false
+        val path = uri.path.orEmpty()
+        return path == "/" || path.isEmpty() || LOGIN_FORM.matches(path)
     }
 
     fun retry() {
@@ -719,6 +731,7 @@ internal class InstagramWebController(
         var current: WeakReference<InstagramWebController>? = null
 
         private const val MAX_LOGIN_REDIRECTS = 2
+        private val LOGIN_FORM = Regex("^/accounts/login/?$")
         private const val TAG = "ThrowbackWeb"
         private const val BRIDGE_OBJECT = "throwbackNative"
         private const val LEGACY_BRIDGE_OBJECT = "throwbackBridge"

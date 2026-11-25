@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -49,6 +51,9 @@ import app.throwback.core.SupportAsk
 import app.throwback.core.WebMode
 import app.throwback.core.prefs.AppPrefs
 import app.throwback.core.theme.ThrowbackTheme
+import app.throwback.core.ui.TbIcon
+import app.throwback.core.ui.ThrowbackLogo
+import app.throwback.core.ui.UiText
 import app.throwback.timelimit.GuardOffPinScreen
 import app.throwback.timelimit.TimeLimitOverlay
 import app.throwback.timelimit.TimeLimitSettingsScreen
@@ -158,6 +163,8 @@ fun AppRoot(
                         onboardedNow = true
                         scope.launch { prefs.setOnboardingDone() }
                     },
+                    onSetLimit = { settingsOpen = SettingsStart.TimeLimit },
+                    backEnabled = settingsOpen == null,
                 )
             }
             true -> MainScreen(
@@ -324,8 +331,13 @@ private fun MainScreen(
     // keyboard's way while typing.
     val messagesBar = mode == WebMode.MESSAGES_ONLY && WindowInsets.ime.getBottom(LocalDensity.current) == 0
 
+    // Instagram's login pages (and Facebook's, during a login) get Throwback's bar on top: it says whose
+    // app this is and opens Settings before any login (owner, 2026-11-25, #34ll).
+    val loginBar = !loggedIn && mode == WebMode.FULL && isLoginPath(path)
+
     Box(Modifier.fillMaxSize()) {
       Column(Modifier.fillMaxSize()) {
+        if (loginBar) LoginBar(onOpenSettings = onOpenSettings)
         InstagramScreen(
             mode = mode,
             startUrl = deepLink,
@@ -369,6 +381,7 @@ private fun MainScreen(
             modifier = Modifier
                 .weight(1f)
                 .let { if (messagesBar) it.consumeWindowInsets(WindowInsets.navigationBars) else it }
+                .let { if (loginBar) it.consumeWindowInsets(WindowInsets.statusBars) else it }
                 .let { if (top != Layer.NONE) it.clearAndSetSemantics {} else it },
         )
         if (messagesBar) MessagesOnlyBar(onAskForMoreTime = { mode = WebMode.FULL })
@@ -422,6 +435,34 @@ private fun MainScreen(
         if (pauseShowing) {
             // The pause keeps its touches from reaching the page loading underneath.
             MindfulPauseScreen(onContinue = { pauseDone = true }, onBack = onCloseApp, backEnabled = top == Layer.PAUSE)
+        }
+    }
+}
+
+/**
+ * A login page: Instagram's account pages (login, two-factor, "confirm it's you") and challenges, or a
+ * Facebook login step (its location is the full URL). Only asked while logged out.
+ */
+private fun isLoginPath(path: String): Boolean =
+    path.startsWith("/accounts/") || path.startsWith("/challenge") || path.startsWith("https://")
+
+/** Above Instagram's login page: Throwback's logo, what this page is for, and Settings. */
+@Composable
+private fun LoginBar(onOpenSettings: () -> Unit) {
+    val colors = ThrowbackTheme.colors
+    Surface(color = colors.surface, modifier = Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.statusBarsPadding().padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ThrowbackLogo(28.dp)
+            Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                Text(stringResource(R.string.ui_login_bar_title), style = UiText.body14Strong, color = colors.text)
+                Text(stringResource(R.string.ui_login_bar_sub), style = UiText.fine, color = colors.muted)
+            }
+            IconButton(onClick = onOpenSettings) {
+                TbIcon(R.drawable.ic_shortcut_settings, tint = colors.text, contentDescription = stringResource(R.string.ui_login_bar_settings))
+            }
         }
     }
 }

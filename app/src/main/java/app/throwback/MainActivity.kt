@@ -1,5 +1,6 @@
 package app.throwback
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
@@ -110,13 +111,18 @@ class MainActivity : ComponentActivity() {
 
     /**
      * Volume keys turn the sound on for the reel or video on screen, as in the Instagram app (#34kk).
-     * The key still changes the volume: the event goes on as usual.
+     * The key still changes the volume: the event goes on as usual. Seen here, before any view: on the
+     * phone, onKeyDown didn't get them while the page was showing. ComponentActivity marks this
+     * override restricted (its own key dispatcher); calling super keeps that dispatcher working.
      */
-    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        if (event.repeatCount == 0 && (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
+    @SuppressLint("RestrictedApi")
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0 &&
+            (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
+        ) {
             InstagramWebController.current?.get()?.onVolumeKey()
         }
-        return super.onKeyDown(keyCode, event)
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onNewIntent(intent: Intent) {

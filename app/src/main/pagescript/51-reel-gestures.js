@@ -121,9 +121,38 @@
       setTimeout(function () {
         if (v.muted) v.muted = false;
       }, 200);
+    } else if (reels.viewer && reels.viewer.isConnected && reels.viewer.contains(v)) {
+      tapReelForSound(v);
     } else {
       v.muted = false;
     }
+  }
+
+  /**
+   * The reel viewer in chats has no labelled sound button: a tap on the reel is what switches its
+   * sound, so the key taps it the same way (Instagram's own state then keeps the sound for the next
+   * reels). If that tap paused it instead, a second tap plays it again and the video's own sound is
+   * switched on; the same if Instagram switched the sound straight back off.
+   */
+  function tapReelForSound(v) {
+    var r = v.getBoundingClientRect();
+    var x = Math.max(0, r.left) + Math.min(r.width, window.innerWidth) / 2;
+    var y = Math.max(0, r.top) + Math.min(r.height, window.innerHeight) / 2;
+    var target = document.elementFromPoint(x, y);
+    if (!target || !reels.viewer.contains(target) || target.closest('a, button, [role="button"]')) {
+      v.muted = false;
+      return;
+    }
+    var wasPlaying = !v.paused;
+    clickElement(target);
+    setTimeout(function () {
+      if (wasPlaying && v.paused) {
+        clickElement(target); // the tap paused it: play again
+        v.muted = false;
+      } else if (v.muted) {
+        v.muted = false;
+      }
+    }, 250);
   }
 
   function installReelGestures() {

@@ -21,6 +21,10 @@ I hope it helps you as well.
 
 ![Throwback's pause before Instagram opens, its settings, the daily time limit and the lock screen](docs/assets/overview.png)
 
+The first launch walks through what Throwback takes away, its focus tools, where its settings are and how it handles privacy, before Instagram's own login page:
+
+![Throwback's four welcome pages: what it takes away, focus tools, settings one hold away, private by design](docs/assets/welcome.png)
+
 More screens: [Your day](docs/assets/your-day.png) ·
 [Connect Instagram](docs/assets/connect-instagram.png) · [Support](docs/assets/support.png)
 

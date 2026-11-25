@@ -17,10 +17,9 @@
     <!-- 1 · First launch -->
     <string name="ui_onb_title">Instagram, the way it used to be.</string>
     <string name="ui_onb_subtitle">Only the people you follow and care about.</string>
-    <string name="ui_onb_no_reels">No Reels</string>
-    <string name="ui_onb_no_explore">No Explore grid</string>
-    <string name="ui_onb_no_suggested">No suggested posts</string>
-    <string name="ui_onb_no_ads">No ads</string>
+    <string name="ui_onb_removed_label">Taken out of Instagram</string>
+    <string name="ui_onb_kept_label">Still there</string>
+    <string name="ui_onb_feed">Your feed</string>
     <string name="ui_onb_stories">Stories</string>
     <string name="ui_onb_messages">Messages</string>
     <!-- TalkBack for the ticked items, e.g. "Stories, still here". -->

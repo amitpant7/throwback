@@ -380,33 +380,49 @@ private fun PageDots(current: Int, count: Int, modifier: Modifier = Modifier) {
     }
 }
 
+/** What Throwback takes out of Instagram, and what stays (labelled, so it can't read as missing from Throwback). */
 @Composable
 private fun FeatureGrid() {
+    val colors = ThrowbackTheme.colors
     val removed = listOf(
-        R.string.ui_onb_no_reels,
-        R.string.ui_onb_no_explore,
-        R.string.ui_onb_no_suggested,
-        R.string.ui_onb_no_ads,
-    ).map { stringResource(it) to false }
-    val kept = listOf(R.string.ui_onb_stories, R.string.ui_onb_messages).map { stringResource(it) to true }
-    val items = removed + kept
+        R.string.ui_removes_reels,
+        R.string.ui_removes_explore,
+        R.string.ui_removes_suggested,
+        R.string.ui_removes_ads,
+    ).map { stringResource(it) }
+    val kept = listOf(R.string.ui_onb_feed, R.string.ui_onb_stories, R.string.ui_onb_messages).map { stringResource(it) }
+    val removedDescription = stringResource(R.string.ui_onb_removed_label)
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        items.chunked(2).forEach { pair ->
+        GridLabel(stringResource(R.string.ui_onb_removed_label))
+        removed.chunked(2).forEach { pair ->
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                pair.forEach { (label, isKept) ->
-                    if (isKept) {
-                        FeatureItem(
-                            label, R.drawable.ic_check, highlighted = true, Modifier.weight(1f),
-                            description = stringResource(R.string.ui_onb_kept_description, label),
-                        )
-                    } else {
-                        FeatureItem(label, R.drawable.ic_blocked, highlighted = false, Modifier.weight(1f))
-                    }
+                pair.forEach { label ->
+                    FeatureItem(label, R.drawable.ic_blocked, highlighted = false, Modifier.weight(1f), description = "$removedDescription: $label")
                 }
                 if (pair.size == 1) Spacer(Modifier.weight(1f))
             }
         }
+        Spacer(Modifier.height(4.dp))
+        GridLabel(stringResource(R.string.ui_onb_kept_label))
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            kept.forEach { label ->
+                FeatureItem(
+                    label, R.drawable.ic_check, highlighted = true, Modifier.weight(1f),
+                    description = stringResource(R.string.ui_onb_kept_description, label),
+                )
+            }
+        }
     }
+}
+
+@Composable
+private fun GridLabel(text: String) {
+    Text(
+        text,
+        style = UiText.fine.copy(fontWeight = FontWeight.Bold),
+        color = ThrowbackTheme.colors.muted,
+        modifier = Modifier.semantics { heading() },
+    )
 }
 
 /** One item: [highlighted] in the accent colour (kept, or about Throwback), else muted (removed). */

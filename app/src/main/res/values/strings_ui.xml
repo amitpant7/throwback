@@ -38,7 +38,7 @@
     <string name="ui_onb_focus_day_body">Time spent, what\'s left today, and what was removed for you.</string>
     <string name="ui_onb_focus_set_limit">Set a daily limit now</string>
     <string name="ui_onb_private_title">Private by design.</string>
-    <string name="ui_onb_private_subtitle">A calmer way into Instagram, not a new account.</string>
+    <string name="ui_onb_private_subtitle">A calmer way into Instagram.</string>
     <string name="ui_onb_private_nothing">No account, no tracking, no analytics. Nothing leaves your phone except Instagram\'s own traffic.</string>
     <string name="ui_onb_private_password">Throwback works like a browser: it opens Instagram\'s own website, you log in there as usual, and Throwback filters what you see.</string>
     <string name="ui_onb_private_code">The code is public on GitHub.</string>

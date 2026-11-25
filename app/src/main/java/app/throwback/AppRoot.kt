@@ -461,7 +461,7 @@ private fun LoginBar(onOpenSettings: () -> Unit) {
                 Text(stringResource(R.string.ui_login_bar_sub), style = UiText.fine, color = colors.muted)
             }
             IconButton(onClick = onOpenSettings) {
-                TbIcon(R.drawable.ic_shortcut_settings, tint = colors.text, contentDescription = stringResource(R.string.ui_login_bar_settings))
+                TbIcon(R.drawable.ic_settings, tint = colors.text, contentDescription = stringResource(R.string.ui_login_bar_settings))
             }
         }
     }

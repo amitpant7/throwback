@@ -64,7 +64,7 @@ be a way round your own limits. The code that uses these permissions is in
 - **What leaves your phone:** only Instagram's own traffic, exactly as in a browser, and once a day a
   download of the public filter rules from this repository (GitHub sees an ordinary download, nothing
   about you).
-- **Your Instagram login** happens on Instagram's own page. Throwback never sees or stores your password.
+- **Throwback works like a browser:** it opens Instagram's own website, you log in on Instagram's own page as usual, and Throwback filters what you see. It keeps no copy of your login.
 - **What stays on your phone:** your settings, the daily limit with a salted hash of its PIN (never the
   PIN itself), and Your day's counts. Android's own backup keeps only the time-limit settings.
 - **Nothing is shared or sold**, because there is nothing to share.

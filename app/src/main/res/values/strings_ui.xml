@@ -40,7 +40,7 @@
     <string name="ui_onb_private_title">Private by design.</string>
     <string name="ui_onb_private_subtitle">A calmer way into Instagram, not a new account.</string>
     <string name="ui_onb_private_nothing">No account, no tracking, no analytics. Nothing leaves your phone except Instagram\'s own traffic.</string>
-    <string name="ui_onb_private_password">You log in on Instagram\'s own page. Throwback never sees your password.</string>
+    <string name="ui_onb_private_password">Throwback works like a browser: it opens Instagram\'s own website, you log in there as usual, and Throwback filters what you see.</string>
     <string name="ui_onb_private_code">The code is public on GitHub.</string>
     <string name="ui_onb_settings_title">Settings, one hold away.</string>
     <string name="ui_onb_settings_subtitle">There\'s no extra button on your feed.</string>
@@ -49,7 +49,7 @@
     <string name="ui_onb_settings_picture">The tab bar at the bottom of Instagram, with the Home tab held down.</string>
     <string name="ui_onb_private_note">Free. Not affiliated with Instagram or Meta.</string>
     <string name="ui_login_bar_title">Log in with your Instagram account</string>
-    <string name="ui_login_bar_sub">Throwback never sees your password</string>
+    <string name="ui_login_bar_sub">Instagram\'s own page, as in a browser</string>
     <string name="ui_login_bar_settings">Throwback settings</string>
 
     <!-- 1b · Instagram app found -->

@@ -316,8 +316,8 @@ private fun WelcomePrivatePage() {
     Spacer(Modifier.height(36.dp))
     WelcomeTitle(stringResource(R.string.ui_onb_private_title), stringResource(R.string.ui_onb_private_subtitle))
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        PrivateRow(R.drawable.ic_info, R.string.ui_onb_private_password)
         PrivateRow(R.drawable.ic_shield, R.string.ui_onb_private_nothing)
-        PrivateRow(R.drawable.ic_lock, R.string.ui_onb_private_password)
         PrivateRow(R.drawable.ic_code, R.string.ui_onb_private_code)
     }
 }
